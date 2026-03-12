@@ -19,7 +19,7 @@ export function HeroSection() {
 
         {/* H1 */}
         <h1 className="font-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-center leading-[0.95] tracking-tighter text-white">
-          Restaure fotos antigas em segundos
+          Construa algo incrível
         </h1>
 
       </div>
