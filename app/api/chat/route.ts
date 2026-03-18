@@ -1,33 +1,43 @@
-import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
-import { supabaseAdmin } from '../../../lib/supabase/admin';
-import { generatePrompt } from '../../../lib/agent/prompt';
-import { tools } from '../../../lib/agent/tools';
+import { GoogleGenAI } from '@google/genai';
+
+export const runtime = 'edge';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function POST(req: Request) {
-    const { message, whatsappNumber } = await req.json();
+  const { message } = await req.json();
 
-    // 1. Busca a configuração
-    const { data: config, error } = await supabaseAdmin
-        .from('agent_configs')
-        .select('*, organizations(name)')
-        .eq('whatsapp_number', whatsappNumber)
-        .single();
-
-    if (error || !config) return new Response('Agent not found', { status: 404 });
-
-    // 2. Monta o Prompt
-    const systemPrompt = generatePrompt(config.organizations.name, config.system_prompt);
-
-    // 3. Executa a IA (Com a Marreta do Diretor)
-    const { text } = await generateText({
-        model: google('gemini-1.5-pro-latest'),
-        system: systemPrompt,
-        prompt: message,
-        tools: tools as any, // 👈 Calando a boca do TypeScript nas ferramentas
-        // @ts-ignore
-        maxSteps: 5,         // 👈 Calando a boca do TypeScript no loop
+  try {
+    const responseStream = await ai.models.generateContentStream({
+      model: 'gemini-3.1-flash-lite-preview', // Using the standard or preview
+      contents: message,
+      config: {
+        systemInstruction: `Seu nome é AGENTE. Você opera sob o protocolo ELIZA (1966). Responda em Português Brasileiro. Mantenha o estilo: 'COMO VOCÊ ESTÁ. POR FAVOR, DIGA-ME O SEU PROBLEMA.' Use CAIXA ALTA (All-caps) para as respostas da IA para reforçar a estética de terminal antigo.`,
+      }
     });
 
-    return Response.json({ response: text });
-}
+    const stream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of responseStream) {
+          if (chunk.text) {
+            controller.enqueue(new TextEncoder().encode(chunk.text));
+          }
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error) {
+    console.error('Error generating streaming response:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to generate response' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
