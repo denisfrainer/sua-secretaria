@@ -57,7 +57,7 @@ export async function POST(req: Request) {
             // 6. Aciona a IA (Agora com contexto completo da conversa)
             console.log('🧠 IA Pensando com base no histórico...');
             const { text } = await generateText({
-                model: google('gemini-1.5-flash'),
+                model: google('gemini-2.5-flash'),
                 system: systemPrompt,
                 messages: messages, // 👈 Aqui está a mágica da memória! Substituímos o prompt simples
                 tools: tools as any,
