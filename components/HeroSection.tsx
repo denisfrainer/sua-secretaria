@@ -2,24 +2,11 @@ import Image from 'next/image';
 
 export function HeroSection() {
   return (
-    <section className="relative w-full min-h-[100svh] flex flex-col items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8 bg-black">
-      <div className="relative z-10 flex flex-col items-center gap-8" style={{ marginBottom: '148px' }}>
+    <section className="relative w-full flex flex-col items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8 bg-black pt-32 pb-24">
+      <div className="relative z-10 flex flex-col items-center gap-6">
 
-        {/* Logo centralizado */}
-        <Image
-          src="/assets/logo.avif"
-          alt="Logo"
-          width={220}
-          height={220}
-          priority={true}
-          fetchPriority="high"
-          loading="eager"
-          className="w-40 sm:w-52 md:w-60 h-auto"
-        />
-
-        {/* H1 */}
-        <h1 className="font-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-center leading-[0.95] tracking-tighter text-white">
-          Construa algo incrível
+        <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-center leading-[0.95] tracking-tighter text-white max-w-4xl px-4">
+          Atendente 24h. Vendendo. Respondendo e-mail.
         </h1>
 
       </div>

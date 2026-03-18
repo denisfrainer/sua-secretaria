@@ -9,27 +9,27 @@
   },
   "Header": {
     "brand": "Godspeed",
-    "features": "Serviços",
-    "contact": "Fale Conosco"
+    "features": "O que ele faz",
+    "contact": "Falar Conosco"
   },
   "FeaturesSection": {
-    "title": "Por Que Escolher Este Stack",
-    "subtitle": "Tudo que você precisa para entregar sites ultra-rápidos que convertem visitantes em clientes.",
-    "feature1Title": "Velocidade Máxima",
-    "feature1Description": "Construído com Next.js e SSG para PageSpeed 99+ direto da caixa. Seus clientes vão adorar a velocidade.",
-    "feature2Title": "SEO Blindado",
-    "feature2Description": "Páginas pré-renderizadas, HTML semântico e meta tags otimizadas garantem as melhores posições no Google.",
-    "feature3Title": "Multi-Idiomas Nativo",
-    "feature3Description": "Suporte completo a i18n com next-intl. Adicione novos idiomas simplesmente criando um arquivo JSON."
+    "title": "O que o seu atendente faz por você",
+    "subtitle": "Ele trabalha 24h, não cansa e atende seus clientes em segundos.",
+    "feature1Title": "Paciência infinita",
+    "feature1Description": "Ele atende cada cliente com educação, tira todas as dúvidas e nunca perde o tom.",
+    "feature2Title": "Agenda sempre cheia e sem furos",
+    "feature2Description": "Ele conversa com o cliente, vê seus horários e agenda o horário sem você mexer um dedo.",
+    "feature3Title": "Ele mesmo cobra e manda o PIX",
+    "feature3Description": "Gera a cobrança na hora e envia o código para o cliente pagar, acelerando o fechamento."
   },
   "CTASection": {
-    "title": "Pronto para começar?",
-    "description": "Clone este boilerplate e tenha o site do seu próximo cliente no ar em menos de 24 horas.",
-    "button": "Começar Agora"
+    "title": "Pronto para ter o seu melhor funcionário?",
+    "description": "Ative seu atendente agora e veja a diferença no seu faturamento já no primeiro dia.",
+    "button": "Fazer um teste gratuito"
   },
   "Footer": {
-    "brand": "Starter Kit",
-    "description": "Um boilerplate de alta performance para construir sites rápidos, bonitos e multilíngues.",
+    "brand": "Godspeed",
+    "description": "O atendente inteligente que vende por você 24 horas por dia.",
     "navigation": "Navegação",
     "features": "Funcionalidades",
     "contact": "Contato",
