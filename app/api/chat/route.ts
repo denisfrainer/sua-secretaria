@@ -2,9 +2,16 @@ import { GoogleGenAI } from '@google/genai';
 
 export const runtime = 'edge';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export async function POST(req: Request) {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'Missing Google Generative AI API Key' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const { message } = await req.json();
 
   try {
