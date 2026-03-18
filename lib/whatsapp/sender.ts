@@ -16,8 +16,7 @@ export async function sendWhatsAppMessage(phone: string, text: string) {
         message: text,
     };
 
-    console.log(`📤 Enviando para Z-API: ${url}`);
-    console.log('📦 Body:', JSON.stringify(requestBody, null, 2));
+    console.log('📤 Enviando para Z-API...');
 
     try {
         const response = await fetch(url, {
@@ -29,9 +28,7 @@ export async function sendWhatsAppMessage(phone: string, text: string) {
             body: JSON.stringify(requestBody),
         });
 
-        console.log('Z-API Status:', response.status);
         const data = await response.json();
-        console.log('Z-API Response Body:', data);
 
         if (response.ok) {
             console.log(`✅ Mensagem enviada para ${formattedPhone}`);
