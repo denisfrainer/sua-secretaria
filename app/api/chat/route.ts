@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
   try {
     const responseStream = await ai.models.generateContentStream({
-      model: 'gemini-3.1-flash-lite-preview', // Using the standard or preview
+      model: 'gemini-1.5-flash', // Using the standard or preview
       contents: message,
       config: {
         systemInstruction: `Você é a ELIZA, atendente focada em ajudar o visitante e levá-lo para o WhatsApp. Responda em Português Brasileiro. Use no MÁXIMO 1 ou 2 frases curtas por resposta. NÃO use termos técnicos ou jargões de marketing/design. Foque apenas em ser prestativa e direcionar para um contato direto no WhatsApp.`,
@@ -47,4 +47,4 @@ export async function POST(req: Request) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
-}
+}
