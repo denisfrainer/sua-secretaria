@@ -11,35 +11,55 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // 1. Filtro de Segurança: Só ouve mensagens diretas de texto (ignora grupos e o próprio bot)
+        // 1. Filtro de Segurança
         if (body.isGroup === false && body.text && body.text.message && !body.fromMe) {
-            const clientNumber = body.phone; // O número do cliente que mandou a mensagem
-            const clientMessage = body.text.message; // O texto que ele digitou
+            const clientNumber = body.phone;
+            const clientMessage = body.text.message;
 
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
             // 2. Busca o cérebro do Agente no Banco de Dados
-            // Como estamos no MVP, vamos puxar o primeiro agente configurado no seu Supabase
-            const { data: config, error } = await supabaseAdmin
+            const { data: config, error: configError } = await supabaseAdmin
                 .from('agent_configs')
                 .select('*, organizations(name)')
                 .limit(1)
                 .single();
 
-            if (error || !config) {
+            if (configError || !config) {
                 console.log('🚨 ERRO: Agente não encontrado no banco de dados.');
                 return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
             }
 
-            // 3. Prepara a mente do robô (O Prompt)
+            // 3. SALVAR A MENSAGEM DO CLIENTE NA MEMÓRIA
+            await supabaseAdmin.from('chat_history').insert({
+                whatsapp_number: clientNumber,
+                role: 'user',
+                content: clientMessage
+            });
+
+            // 4. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (A Memória de Curto Prazo)
+            const { data: history } = await supabaseAdmin
+                .from('chat_history')
+                .select('role, content')
+                .eq('whatsapp_number', clientNumber)
+                .order('created_at', { ascending: false }) // Pega as mais recentes
+                .limit(10); // Limita a 10 para economizar tokens e não confundir a IA
+
+            // Inverte a ordem para ficar cronológica para a IA (da mais antiga para a mais nova)
+            const messages = (history || []).reverse().map(msg => ({
+                role: msg.role as 'user' | 'assistant',
+                content: msg.content
+            }));
+
+            // 5. Prepara a mente do robô (O Prompt)
             const systemPrompt = generatePrompt(config.organizations.name, config.system_prompt);
 
-            // 4. Aciona a IA com a Marreta do Diretor (Pensa, usa ferramentas e responde)
-            console.log('🧠 IA Pensando...');
+            // 6. Aciona a IA (Agora com contexto completo da conversa)
+            console.log('🧠 IA Pensando com base no histórico...');
             const { text } = await generateText({
                 model: google('gemini-1.5-pro-latest'),
                 system: systemPrompt,
-                prompt: clientMessage,
+                messages: messages, // 👈 Aqui está a mágica da memória! Substituímos o prompt simples
                 tools: tools as any,
                 // @ts-ignore
                 maxSteps: 5,
@@ -47,7 +67,14 @@ export async function POST(req: Request) {
 
             console.log(`🗣️ IA RESPONDEU: "${text}"`);
 
-            // 5. Envia a mensagem de volta para o cliente no WhatsApp
+            // 7. SALVAR A RESPOSTA DA IA NA MEMÓRIA
+            await supabaseAdmin.from('chat_history').insert({
+                whatsapp_number: clientNumber,
+                role: 'assistant',
+                content: text
+            });
+
+            // 8. Envia a mensagem de volta para o cliente no WhatsApp
             await sendWhatsAppMessage(clientNumber, text);
 
             return NextResponse.json({ status: 'success' });

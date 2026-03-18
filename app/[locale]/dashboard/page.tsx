@@ -1,7 +1,9 @@
 import React from 'react';
+import Image from 'next/image';
 import { Bot, QrCode, Activity, Users, DollarSign, Settings, Power } from 'lucide-react';
 // Usamos o caminho relativo que funcionou para si
 import { supabaseAdmin } from '../../../lib/supabase/admin';
+import { AgentSettings } from '../../../components/AgentSettings';
 
 // Força o Next.js a procurar os dados sempre que a página for aberta (sem cache antigo)
 export const dynamic = 'force-dynamic';
@@ -29,9 +31,9 @@ export default async function AgentDashboard() {
             {/* 1. LEFT SIDEBAR */}
             <aside className="w-64 bg-[#1E1E1E] border-r border-[#2C2C2C] flex flex-col">
                 <div className="p-6 border-b border-[#2C2C2C]">
-                    <h1 className="font-heading text-lg font-bold tracking-tighter text-white">
-                        LP NEXUS
-                    </h1>
+                    <a href="/" className="inline-block">
+                        <Image src="/assets/logo.avif" alt="Logo" width={32} height={32} className="w-8 h-auto" />
+                    </a>
                 </div>
                 <nav className="flex-1 p-4 space-y-1">
                     <a href="#" className="flex items-center gap-3 p-3 bg-white text-black font-bold rounded-none text-sm font-body">
@@ -92,6 +94,12 @@ export default async function AgentDashboard() {
 
                         {/* COLUNA ESQUERDA: LISTA DE AGENTES */}
                         <div className="lg:col-span-2 space-y-6">
+                            {agentesReais[0] && (
+                                <AgentSettings 
+                                    agentId={agentesReais[0].id} 
+                                    initialPrompt={agentesReais[0].system_prompt || ''} 
+                                />
+                            )}
                             <div className="bg-[#1E1E1E] border border-[#2C2C2C] rounded-none p-6 shadow-none">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-lg font-semibold flex items-center gap-2 font-heading text-white">

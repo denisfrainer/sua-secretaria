@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { LayoutDashboard } from 'lucide-react';
 
 export function Header() {
   const t = useTranslations('Header');
@@ -19,15 +20,24 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-b border-white/20">
         <nav className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
-            <a href="/" className="font-heading text-lg font-bold">
-              <Image
-                src="/assets/logo.avif"
-                alt="Logo"
-                width={36}
-                height={36}
-                className="w-9 h-auto"
-              />
-            </a>
+            <div className="flex items-center gap-3">
+              <a href="/" className="font-heading text-lg font-bold">
+                <Image
+                  src="/assets/logo.avif"
+                  alt="Logo"
+                  width={34}
+                  height={34}
+                  className="w-8 h-auto"
+                />
+              </a>
+              <a 
+                href="/dashboard" 
+                className="text-gray-400 hover:text-white transition-colors" 
+                title="Ir para o Dashboard"
+              >
+                <LayoutDashboard size={18} />
+              </a>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">

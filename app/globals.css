@@ -9,21 +9,21 @@
   /* Base Colors */
   --background: #000000;
   --foreground: #ededed;
-  
+
   /* Depth Hierarchy */
   --primary: #1E1E1E;
   --secondary: #2C2C2C;
   --gray-medium: #3a3a3a;
   --gray-light: #6b7280;
   --gray-lighter: #9ca3af;
-  
+
   /* Accent Color (CTAs only) */
   --accent-blue: #404EED;
   --accent-blue-hover: #3640d9;
-  
+
   /* Success */
   --success-green: #22c55e;
-  
+
   /* Fonts */
   --font-heading: var(--font-space-grotesk);
   --font-body: var(--font-source-sans);
@@ -41,7 +41,12 @@ html {
 }
 
 /* Headings — Space Grotesk */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-space-grotesk), sans-serif;
   font-weight: 700;
 }
@@ -64,12 +69,26 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--gray-light);
 }
 
+/* ==========================================
+   ANIMAÇÃO DO TERMINAL (TYPEWRITER)
+   ========================================== */
+.animate-typewriter-blink {
+  animation: typewriter 3.5s steps(22) forwards, blink 1s step-end infinite;
+}
+
+@keyframes typewriter {
+  to {
+    width: 100%;
+  }
+}
+
 /* Animations — Transform + Opacity (zero PageSpeed cost) */
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(2rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -80,7 +99,27 @@ h1, h2, h3, h4, h5, h6 {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
+  }
+}
+
+/* ==========================================
+   CURSOR DE TERMINAL BLOCO (BLOCK BLINK)
+   ========================================== */
+.animate-blink-block {
+  animation: blink-block 1s step-end infinite;
+}
+
+@keyframes blink-block {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
   }
 }
