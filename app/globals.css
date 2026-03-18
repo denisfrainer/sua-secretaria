@@ -17,9 +17,9 @@
   --gray-light: #6b7280;
   --gray-lighter: #9ca3af;
 
-  /* Accent Color (CTAs only) */
-  --accent-blue: #404EED;
-  --accent-blue-hover: #3640d9;
+  /* Accent Color (Matrix Green) */
+  --accent-green: #00FF41;
+  --accent-green-hover: #00D135;
 
   /* Success */
   --success-green: #22c55e;

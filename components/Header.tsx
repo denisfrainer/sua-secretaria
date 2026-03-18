@@ -45,7 +45,7 @@ export function Header() {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="text-gray-300 hover:text-[var(--accent-blue)] transition-colors text-lg"
+                  className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-sm uppercase tracking-wider"
                 >
                   {item.label}
                 </a>
@@ -92,7 +92,7 @@ export function Header() {
               key={item.href}
               href={item.href}
               onClick={() => setIsMenuOpen(false)}
-              className="block text-gray-300 hover:text-[var(--accent-blue)] transition-colors text-lg py-2 whitespace-nowrap"
+              className="block text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-sm py-2 whitespace-nowrap uppercase tracking-wider"
             >
               {item.label}
             </a>

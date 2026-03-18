@@ -6,6 +6,8 @@
 import { locales } from '@/i18n';
 import { Header } from '@/components/Header';
 import { HeroSection } from '@/components/HeroSection';
+import SystemTerminal from '@/components/SystemTerminal';
+import { LogicSection } from '@/components/LogicSection';
 import { LogoCloud } from '@/components/LogoCloud';
 import { CtaButton } from '@/components/CtaButton';
 import { Users, Activity, Bot } from 'lucide-react';
@@ -23,7 +25,17 @@ export default function Home() {
         {/* 1. Hero Section */}
         <HeroSection />
 
-        {/* 2. Social Proof (Trust) */}
+        {/* 2. System Section (Second Fold) */}
+        <section className="min-h-[80vh] flex items-center justify-center bg-black border-t border-[#2C2C2C] px-4 py-20">
+          <div className="w-full">
+            <SystemTerminal />
+          </div>
+        </section>
+
+        {/* 3. The Logic (Third Fold) */}
+        <LogicSection />
+
+        {/* 4. Social Proof (Trust) */}
         <section className="pt-32 pb-32 bg-black border-t border-[#2C2C2C] overflow-hidden">
           <div className="text-center">
             <p className="font-body text-xs uppercase tracking-widest text-[#888888] mb-8">Powering AI for top-tier fleets</p>
@@ -71,7 +83,7 @@ export default function Home() {
 
         {/* 4. Pricing (The Deal) */}
         <section className="py-32 px-4 bg-black border-t border-[#2C2C2C]">
-          <div className="max-w-md mx-auto border border-white p-12 text-center rounded-none flex flex-col items-center gap-6 bg-black">
+          <div className="max-w-xl mx-auto border border-white p-12 text-center rounded-none flex flex-col items-stretch gap-6 bg-black">
             <p className="font-body text-xs uppercase tracking-widest text-[#888888]">Plano Único</p>
             <h3 className="font-heading text-5xl font-bold text-white">R$ 499<span className="text-xl text-[#888888]">/mês</span></h3>
             <p className="text-white font-body max-w-sm text-lg leading-relaxed">Mensagens ilimitadas. Memória completa da conversa. Zero taxa de setup.</p>

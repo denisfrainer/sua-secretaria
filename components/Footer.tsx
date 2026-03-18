@@ -23,12 +23,12 @@ export function Footer() {
             <h3 className="font-heading text-lg font-bold mb-4">{t('navigation')}</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#features" className="text-gray-400 hover:text-[var(--accent-blue)] text-sm transition-colors">
+                <a href="#features" className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-xs uppercase tracking-wider">
                   {t('features')}
                 </a>
               </li>
               <li>
-                <a href="#contact" className="text-gray-400 hover:text-[var(--accent-blue)] text-sm transition-colors">
+                <a href="#contact" className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-xs uppercase tracking-wider">
                   {t('contact')}
                 </a>
               </li>

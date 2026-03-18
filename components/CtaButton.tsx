@@ -8,12 +8,12 @@ interface CtaButtonProps {
 export const CtaButton = ({ text, href = "#" }: CtaButtonProps) => {
   return (
     <section className="w-full px-4 mt-8">
-      <div className="w-full mx-auto md:max-w-md">
+      <div className="w-full mx-auto px-4">
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl px-12 py-6 rounded-[12px] transition-all duration-200 active:scale-[0.98] shadow-lg whitespace-nowrap"
+          className="w-full flex items-center justify-center gap-3 border border-[#00FF41] rounded-2xl bg-transparent font-mono text-[#00FF41] tracking-widest font-bold text-xl px-12 py-6 [text-shadow:0_0_8px_rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] hover:bg-[#00FF41]/10 hover:shadow-[0_0_20px_rgba(0,255,65,0.6)] hover:[text-shadow:0_0_12px_rgba(0,255,65,1)] transition-all duration-300 ease-out active:scale-[0.98] whitespace-nowrap"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

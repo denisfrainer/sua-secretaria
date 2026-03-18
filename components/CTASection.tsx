@@ -19,7 +19,7 @@ export function CTASection() {
         </p>
         <a
           href="#"
-          className="inline-block bg-[var(--accent-blue)] hover:bg-[var(--accent-blue-hover)] text-white font-semibold px-8 py-4 rounded-lg text-[20px] transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+          className="flex w-full items-center justify-center text-center border border-[#00FF41] rounded-2xl bg-transparent font-mono text-[#00FF41] tracking-widest font-bold text-xl px-12 py-6 [text-shadow:0_0_8px_rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] hover:bg-[#00FF41]/10 hover:shadow-[0_0_20px_rgba(0,255,65,0.6)] hover:[text-shadow:0_0_12px_rgba(0,255,65,1)] transition-all duration-300 ease-out"
         >
           {t('button')}
         </a>

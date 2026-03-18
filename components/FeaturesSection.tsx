@@ -26,10 +26,10 @@ export function FeaturesSection() {
                     return (
                         <div
                             key={i}
-                            className="bg-[var(--primary)] p-6 sm:p-8 rounded-2xl border border-white/20 transition-all duration-300 hover:border-[var(--accent-blue)]/50 hover:bg-[var(--secondary)]"
+                            className="bg-[var(--primary)] p-6 sm:p-8 rounded-2xl border border-white/20 transition-all duration-300 hover:border-[#00FF41]/50 hover:bg-[var(--secondary)]"
                         >
-                            <div className="w-12 h-12 rounded-xl bg-[var(--accent-blue)]/10 flex items-center justify-center mb-5">
-                                <Icon className="w-6 h-6 text-[var(--accent-blue)]" />
+                            <div className="w-12 h-12 rounded-xl bg-[#00FF41]/10 flex items-center justify-center mb-5">
+                                <Icon className="w-6 h-6 text-[#00FF41]" />
                             </div>
                             <h3 className="font-heading text-xl sm:text-2xl font-bold mb-3">
                                 {t(`feature${i}Title`)}

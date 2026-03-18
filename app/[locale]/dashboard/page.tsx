@@ -1,7 +1,6 @@
 import React from 'react';
 import { Bot, Activity, Users, Settings, Plus, QrCode } from 'lucide-react';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
-import { AgentSettings } from '../../../components/AgentSettings';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,15 +69,7 @@ export default async function AgentDashboard() {
                 </div>
             </section>
 
-            {/* 4. SETTINGS LAYER IF AGENTS EXIST */}
-            {agentesReais[0] && (
-                <section className="py-8 border-b border-white">
-                    <AgentSettings 
-                        agentId={agentesReais[0].id} 
-                        initialPrompt={agentesReais[0].system_prompt || ''} 
-                    />
-                </section>
-            )}
+            {/* 4. SETTINGS LAYER IF AGENTS EXIST - REMOVED */}
 
             {/* 5. AGENT MANAGEMENT LIST */}
             <section className="py-8 flex-1">
