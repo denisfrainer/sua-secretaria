@@ -1,198 +1,117 @@
 import React from 'react';
-import Image from 'next/image';
-import { Bot, QrCode, Activity, Users, DollarSign, Settings, Power } from 'lucide-react';
-// Usamos o caminho relativo que funcionou para si
+import { Bot, Activity, Users, Settings, Plus, QrCode } from 'lucide-react';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import { AgentSettings } from '../../../components/AgentSettings';
 
-// Força o Next.js a procurar os dados sempre que a página for aberta (sem cache antigo)
 export const dynamic = 'force-dynamic';
 
 export default async function AgentDashboard() {
-    // ==========================================
-    // 🧠 CÉREBRO: PROCURAR DADOS REAIS
-    // ==========================================
-    const { data: agents, error } = await supabaseAdmin
+    const { data: agents } = await supabaseAdmin
         .from('agent_configs')
         .select('*, organizations(name)');
 
     const agentesReais = agents || [];
-
-    // ==========================================
-    // 📈 MATEMÁTICA DO MRR
-    // ==========================================
     const agentesAtivos = agentesReais.filter(a => a.is_active).length;
-    // Vamos assumir que cobra R$ 497 por cada agente ativo
-    const mrrCalculado = agentesAtivos * 497;
+    // Assuming 499 per agent
+    const mrrCalculado = agentesAtivos * 499;
 
     return (
-        <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
-
-            {/* 1. LEFT SIDEBAR */}
-            <aside className="w-64 bg-[#1E1E1E] border-r border-[#2C2C2C] flex flex-col">
-                <div className="p-6 border-b border-[#2C2C2C]">
-                    <a href="/" className="inline-block">
-                        <Image src="/assets/logo.avif" alt="Logo" width={32} height={32} className="w-8 h-auto" />
-                    </a>
+        <div className="min-h-screen bg-black text-white font-sans flex flex-col p-4 max-w-lg mx-auto sm:max-w-xl md:max-w-2xl border-x border-white">
+            
+            {/* 1. HEADER */}
+            <header className="flex justify-between items-center py-4 border-b border-white">
+                <div className="flex items-center gap-2">
+                    <span className="font-heading font-black text-xl tracking-tighter">LP.NEXUS</span>
                 </div>
-                <nav className="flex-1 p-4 space-y-1">
-                    <a href="#" className="flex items-center gap-3 p-3 bg-white text-black font-bold rounded-none text-sm font-body">
-                        <Activity size={18} /> Dashboard
-                    </a>
-                    <a href="#" className="flex items-center gap-3 p-3 text-white hover:bg-[#2C2C2C] transition-colors rounded-none text-sm font-body">
-                        <Bot size={18} /> Frota
-                    </a>
-                    <a href="#" className="flex items-center gap-3 p-3 text-white hover:bg-[#2C2C2C] transition-colors rounded-none text-sm font-body">
-                        <Settings size={18} /> Configurações
-                    </a>
-                </nav>
-                <div className="p-4 border-t border-[#2C2C2C]">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-white text-black font-bold flex items-center justify-center rounded-none font-heading">
-                            M
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-white font-body">Admin</p>
-                            <p className="text-xs text-[#888888] font-body">Sair</p>
-                        </div>
+                <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1 text-[10px] font-semibold tracking-widest text-[#00E676]">
+                        <span className="w-1.5 h-1.5 bg-[#00E676] inline-block" /> AGENTS: ACTIVE
+                    </span>
+                    <Settings size={18} className="text-white cursor-pointer" />
+                </div>
+            </header>
+
+            {/* 2. MAIN KPI SECTION */}
+            <section className="py-12 flex flex-col items-center justify-center border-b border-white">
+                <h1 className="text-4xl font-heading font-bold tracking-tight">R$ {mrrCalculado}</h1>
+                <p className="text-xs text-[#888888] mt-1 uppercase tracking-wider">vs R$ 0,00 last month</p>
+                <p className="text-sm text-white mt-1">MRR TOTAL</p>
+            </section>
+
+            {/* 3. AGENT STATUS GRID (2x2) */}
+            <section className="grid grid-cols-2 border-b border-white">
+                <div className="border-r border-b border-white p-5 space-y-2 flex flex-col">
+                    <Activity size={20} className="text-white" />
+                    <div>
+                        <p className="text-xs text-[#888888] uppercase font-semibold">Conversas</p>
+                        <p className="text-2xl font-bold">0</p>
                     </div>
                 </div>
-            </aside>
-
-            {/* 2. MAIN CONTENT AREA */}
-            <div className="flex-1 flex flex-col overflow-y-auto">
-
-                {/* TOP HEADER */}
-                <header className="h-16 bg-[#1E1E1E] border-b border-[#2C2C2C] flex items-center justify-between px-8 z-10 sticky top-0">
-                    <h2 className="font-heading text-lg font-bold text-white">Dashboard</h2>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-[#888888] font-body">18 Março, 2026</span>
+                <div className="border-b border-white p-5 space-y-2 flex flex-col">
+                    <Bot size={20} className="text-white" />
+                    <div>
+                        <p className="text-xs text-[#888888] uppercase font-semibold">Agentes Ativos</p>
+                        <p className="text-2xl font-bold">{agentesAtivos}</p>
                     </div>
-                </header>
-
-                {/* CONTENT MAIN */}
-                <main className="p-8 space-y-8">
-
-                    {/* STAT CARDS GRID */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <MetricCard
-                            title="Receita (MRR)"
-                            value={`R$ ${mrrCalculado},00`}
-                            icon={<DollarSign size={20} className="text-white" />}
-                        />
-                        <MetricCard
-                            title="Agentes Ativos"
-                            value={agentesAtivos.toString()}
-                            icon={<Bot size={20} className="text-white" />}
-                        />
-                        <MetricCard title="Conversas (24h)" value="0" icon={<Activity size={20} className="text-white" />} />
-                        <MetricCard title="Leads Capturados" value="0" icon={<Users size={20} className="text-white" />} />
+                </div>
+                <div className="border-r p-5 space-y-2 flex flex-col border-white">
+                    <Users size={20} className="text-white" />
+                    <div>
+                        <p className="text-xs text-[#888888] uppercase font-semibold">Leads</p>
+                        <p className="text-2xl font-bold">0</p>
                     </div>
+                </div>
+                <div className="p-5 space-y-2 flex flex-col">
+                    <QrCode size={20} className="text-white" />
+                    <div>
+                        <p className="text-xs text-[#888888] uppercase font-semibold">Status</p>
+                        <p className="text-sm font-bold text-[#00E676]">Conectado</p>
+                    </div>
+                </div>
+            </section>
 
-                    {/* DATA GRID */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* 4. SETTINGS LAYER IF AGENTS EXIST */}
+            {agentesReais[0] && (
+                <section className="py-8 border-b border-white">
+                    <AgentSettings 
+                        agentId={agentesReais[0].id} 
+                        initialPrompt={agentesReais[0].system_prompt || ''} 
+                    />
+                </section>
+            )}
 
-                        {/* COLUNA ESQUERDA: LISTA DE AGENTES */}
-                        <div className="lg:col-span-2 space-y-6">
-                            {agentesReais[0] && (
-                                <AgentSettings 
-                                    agentId={agentesReais[0].id} 
-                                    initialPrompt={agentesReais[0].system_prompt || ''} 
-                                />
-                            )}
-                            <div className="bg-[#1E1E1E] border border-[#2C2C2C] rounded-none p-6 shadow-none">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2 font-heading text-white">
-                                        <Bot className="text-white" size={22} /> Frota de Agentes
-                                    </h3>
-                                    <button className="bg-white hover:bg-gray-100 text-black font-bold px-4 py-2 rounded-none text-sm transition shadow-none font-body">
-                                        + Novo Cliente
-                                    </button>
-                                </div>
-
-                                {/* TABELA DE CLIENTES */}
-                                <div className="space-y-2">
-                                    {agentesReais.length === 0 ? (
-                                        <div className="text-center py-8 text-[#888888] border border-dashed border-[#2C2C2C] rounded-none font-body">
-                                            Nenhum agente configurado ainda.
-                                        </div>
-                                    ) : (
-                                        agentesReais.map((agent) => (
-                                            <AgentRow
-                                                key={agent.id}
-                                                name={agent.organizations?.name || 'Cliente Sem Nome'}
-                                                number={agent.whatsapp_number || 'Aguardando...'}
-                                                status={agent.is_active ? 'online' : 'offline'}
-                                                type="SDR / Vendas"
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                            </div>
+            {/* 5. AGENT MANAGEMENT LIST */}
+            <section className="py-8 flex-1">
+                <h3 className="font-heading text-lg font-bold mb-4 uppercase tracking-wider">Fleet Management</h3>
+                <div className="border border-white divide-y divide-white rounded-none">
+                    {agentesReais.length === 0 ? (
+                        <div className="text-center py-8 text-[#888888] text-sm">
+                            Nenhum agente configurado ainda.
                         </div>
-
-                        {/* COLUNA DIREITA: CONEXÃO WHATSAPP */}
-                        <div className="space-y-6">
-                            <div className="bg-[#1E1E1E] border border-[#2C2C2C] rounded-none p-6 text-center shadow-none">
-                                <h3 className="text-lg font-semibold mb-2 font-heading text-white">Conectar Dispositivo</h3>
-                                <p className="text-[#888888] text-sm mb-6 font-body">Leia o QR Code com o aplicativo para injetar a IA.</p>
-
-                                <div className="bg-white p-4 rounded-none inline-block mb-6 border border-[#2C2C2C]">
-                                    <QrCode size={160} className="text-black mx-auto" />
+                    ) : (
+                        agentesReais.map((agent) => (
+                            <div key={agent.id} className="flex justify-between items-center p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-2 h-2 rounded-none ${agent.is_active ? 'bg-[#00E676]' : 'bg-[#888888]'}`} />
+                                    <div>
+                                        <p className="text-sm font-bold uppercase">{agent.organizations?.name || 'Cliente'}</p>
+                                        <p className="text-xs text-[#888888]">{agent.whatsapp_number || 'Sem número'}</p>
+                                    </div>
                                 </div>
-
-                                <button className="w-full border border-[#2C2C2C] hover:bg-[#2C2C2C] text-white font-medium py-2 rounded-none transition flex items-center justify-center gap-2 shadow-none font-body text-sm">
-                                    <Power size={16} /> Gerar Novo QR Code
+                                <button className="border border-white px-3 py-1 text-xs font-bold uppercase rounded-none hover:bg-white hover:text-black transition">
+                                    Edit
                                 </button>
                             </div>
-                        </div>
-
-                    </div>
-                </main>
-            </div>
-        </div>
-    );
-}
-
-// ==========================================
-// COMPONENTES DE UI
-// ==========================================
-
-function MetricCard({ title, value, icon }: { title: string, value: string, icon: React.ReactNode }) {
-    return (
-        <div className="bg-[#1E1E1E] border border-[#2C2C2C] rounded-none p-5 flex items-center gap-4 hover:bg-[#252525] transition shadow-none">
-            <div className="bg-[#2C2C2C] p-3 rounded-none">
-                {icon}
-            </div>
-            <div>
-                <p className="text-[#888888] text-xs font-medium font-body uppercase tracking-wider">{title}</p>
-                <p className="text-2xl font-bold mt-1 text-white font-heading">{value}</p>
-            </div>
-        </div>
-    );
-}
-
-function AgentRow({ name, number, status, type }: { name: string, number: string, status: 'online' | 'offline', type: string }) {
-    return (
-        <div className="flex items-center justify-between p-4 rounded-none bg-[#1E1E1E] border border-[#2C2C2C] hover:bg-[#252525] transition group cursor-pointer shadow-none">
-            <div className="flex items-center gap-4">
-                <div className="relative">
-                    <div className="w-10 h-10 rounded-none bg-[#2C2C2C] flex items-center justify-center border border-[#2C2C2C]">
-                        <Bot size={20} className="text-white" />
-                    </div>
-                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-none border-2 border-[#1E1E1E] ${status === 'online' ? 'bg-white' : 'bg-[#888888]'}`}></div>
+                        ))
+                    )}
                 </div>
-                <div>
-                    <h4 className="font-semibold text-white font-body text-sm">{name}</h4>
-                    <p className="text-xs text-[#888888] font-body">{number}</p>
-                </div>
-            </div>
-            <div className="text-right flex items-center gap-4">
-                <span className="text-xs font-medium text-[#888888] bg-[#2C2C2C] px-2 py-1 rounded-none hidden md:block font-body">{type}</span>
-                <button className="text-[#888888] hover:text-white transition opacity-0 group-hover:opacity-100">
-                    <Settings size={18} />
-                </button>
-            </div>
+            </section>
+
+            {/* 6. FLOATING ACTION BUTTON (FAB) */}
+            <button className="fixed bottom-6 right-6 bg-black border border-white p-4 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all duration-200 group z-50">
+                <Plus size={24} className="text-white group-hover:text-black transition-colors" />
+            </button>
+
         </div>
     );
 }
