@@ -9,22 +9,37 @@ export async function sendWhatsAppMessage(phone: string, text: string) {
         return;
     }
 
+    const formattedPhone = phone.includes('@') ? phone : `${phone}@c.us`;
+    const url = `${zapiUrl}/send-text`;
+    const requestBody = {
+        phone: formattedPhone,
+        message: text,
+    };
+
+    console.log(`📤 Enviando para Z-API: ${url}`);
+    console.log('📦 Body:', JSON.stringify(requestBody, null, 2));
+
     try {
-        const response = await fetch(`${zapiUrl}/send-text`, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Client-Token': clientToken || '',
             },
-            body: JSON.stringify({
-                phone: phone, // A Z-API já entende o número direto
-                message: text,
-            }),
+            body: JSON.stringify(requestBody),
         });
 
+        console.log('Z-API Status:', response.status);
         const data = await response.json();
-        console.log(`✅ Mensagem enviada para ${phone}`);
-        return data;
+        console.log('Z-API Response Body:', data);
+
+        if (response.ok) {
+            console.log(`✅ Mensagem enviada para ${formattedPhone}`);
+            return data;
+        } else {
+            console.error(`❌ Erro no Z-API ao enviar para ${formattedPhone}`);
+            return data;
+        }
     } catch (error) {
         console.error('❌ Erro ao enviar mensagem via Z-API:', error);
     }
