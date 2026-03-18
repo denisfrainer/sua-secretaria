@@ -132,7 +132,7 @@ export default function Home() {
         <a
           href="#"
           className="fixed bottom-6 right-6 z-50 hover:scale-110 transition-transform duration-200"
-          title="Falar no WhatsApp"
+          title="Testar no WhatsApp"
         >
           <img src="/assets/WhatsApp.svg" alt="WhatsApp Float" className="w-14 h-14" />
         </a>
