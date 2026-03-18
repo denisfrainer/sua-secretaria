@@ -13,7 +13,7 @@ export default function ExpandingTerminal() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,17 +61,17 @@ export default function ExpandingTerminal() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      
+
       setMessages((prev) => [...prev, { role: 'ai', text: '' }]);
 
       let currentText = '';
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
         currentText += chunk;
-        
+
         setMessages((prev) => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
@@ -91,11 +91,10 @@ export default function ExpandingTerminal() {
 
   return (
     <div className="relative w-full max-w-xl mx-auto h-[60px] z-40">
-      <div 
+      <div
         onClick={handleExpand}
-        className={`absolute top-0 left-0 w-full border border-[#00FF41] rounded-[12px] bg-black/95 backdrop-blur-md font-mono text-[#00FF41] shadow-[0_0_25px_rgba(0,255,65,0.5)] overflow-hidden flicker ${
-          isOpen ? 'h-[500px] p-6 cursor-default z-40' : 'h-[60px] flex items-center px-6 cursor-pointer hover:shadow-[0_0_30px_rgba(0,255,65,0.7)]'
-        }`}
+        className={`absolute top-0 left-0 w-full border border-[#00FF41] rounded-[12px] bg-black/95 backdrop-blur-md font-mono text-[#00FF41] shadow-[0_0_25px_rgba(0,255,65,0.5)] overflow-hidden flicker ${isOpen ? 'h-[500px] p-6 cursor-default z-40' : 'h-[60px] flex items-center px-6 cursor-pointer hover:shadow-[0_0_30px_rgba(0,255,65,0.7)]'
+          }`}
         style={{
           clipPath: isOpen ? 'inset(0% 0% 0% 0% rounded 12px)' : 'inset(0% 0% calc(100% - 60px) 0% rounded 12px)',
           transition: 'clip-path 1800ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -104,7 +103,7 @@ export default function ExpandingTerminal() {
       >
         {/* Scanlines Effect */}
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_4px,3px_100%] z-10 opacity-50" />
-        
+
         {/* Glow Overlay */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(0,255,65,0.08)_0%,transparent_70%)] z-0" />
 
@@ -118,7 +117,7 @@ export default function ExpandingTerminal() {
           <div className="flex flex-col h-full w-full z-10">
             {/* ASCII Header */}
             <div className="flex justify-center items-center w-full overflow-hidden mb-1">
-              <pre 
+              <pre
                 className="text-[#00FF41] font-mono [text-shadow:0_0_5px_rgba(0,255,65,0.8)] opacity-90 select-none"
                 style={{
                   fontSize: 'clamp(4px, 1.5vw, 11px)',
@@ -126,7 +125,7 @@ export default function ExpandingTerminal() {
                   whiteSpace: 'pre',
                 }}
               >
-{`AAAAA   GGGGG  EEEEE  N   N  TTTTT  EEEEE
+                {`AAAAA   GGGGG  EEEEE  N   N  TTTTT  EEEEE
 A     A G       E      NN  N    T    E
 AAAAAAA G  GGG  EEEEE  N N N    T    EEEEE
 A     A G    G  E      N  NN    T    E
@@ -141,7 +140,7 @@ A     A  GGGGG  EEEEE  N   N    T    EEEEE`}
               ------------------------------------------------------------
             </div>
 
-            <div 
+            <div
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-[#00FF41] scrollbar-track-black"
             >
@@ -165,9 +164,9 @@ A     A  GGGGG  EEEEE  N   N    T    EEEEE`}
 
             <form onSubmit={handleSubmit} className="mt-4 flex items-center border-t border-[#00FF41]/30 pt-3 z-20" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-1 mr-2">
-                <button 
-                  type="button" 
-                  onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} 
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
                   className="text-[#00FF41] hover:text-[#00D135] cursor-pointer text-xs font-bold border border-[#00FF41]/30 rounded px-1.5 py-0.5 bg-black/50 [text-shadow:0_0_3px_rgba(0,255,65,0.5)]"
                   title="Minimizar"
                 >
