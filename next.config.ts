@@ -4,8 +4,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 const nextConfig: NextConfig = {
-  // CRÍTICO para SSG e Netlify/Vercel (Static Export)
-  output: 'export',
 
   // Recomendado para melhor compatibilidade com rotas estáticas e next-intl
   trailingSlash: true,
