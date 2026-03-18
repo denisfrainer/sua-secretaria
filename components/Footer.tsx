@@ -13,7 +13,7 @@ export function Footer() {
           {/* Column 1: About */}
           <div>
             <h3 className="font-heading text-lg font-bold mb-4">{t('brand')}</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-gray-400 text-base leading-relaxed">
               {t('description')}
             </p>
           </div>
@@ -23,12 +23,12 @@ export function Footer() {
             <h3 className="font-heading text-lg font-bold mb-4">{t('navigation')}</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#features" className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-xs uppercase tracking-wider">
+                <a href="#features" className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-base uppercase tracking-wider">
                   {t('features')}
                 </a>
               </li>
               <li>
-                <a href="#contact" className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-xs uppercase tracking-wider">
+                <a href="#contact" className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-base uppercase tracking-wider">
                   {t('contact')}
                 </a>
               </li>
@@ -38,7 +38,7 @@ export function Footer() {
 
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-white/20 text-center">
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-base">
             {currentYear} © {t('copyright')}
           </p>
         </div>

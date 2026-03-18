@@ -73,7 +73,7 @@ export function LanguageSwitcher() {
         aria-label="Selecionar idioma"
       >
         <Globe className="w-4 h-4 text-gray-400" />
-        <span className="text-sm font-medium text-gray-300">
+        <span className="text-base font-medium text-gray-300">
           {localeLabels[currentLocale]}
         </span>
         <svg
@@ -106,13 +106,13 @@ export function LanguageSwitcher() {
 
           {/* Menu Dropdown */}
           <div
-            className="absolute right-0 mt-2 w-20 bg-[#1E1E1E] border border-white/20 rounded-lg shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-20 bg-black/80 backdrop-blur-md border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden"
           >
             {inactiveLocales.map((locale) => (
               <Link
                 key={locale}
                 href={`/${locale}${pathnameWithoutLocale}`}
-                className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/10 transition-colors text-center"
+                className="block px-4 py-2 text-base text-gray-300 hover:bg-white/10 transition-colors text-center"
                 onClick={() => setIsOpen(false)}
               >
                 {localeLabels[locale]}

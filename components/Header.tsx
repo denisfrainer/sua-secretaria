@@ -11,8 +11,11 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { label: t('features'), href: '#features' },
-    { label: t('contact'), href: '#contact' },
+    { label: 'Home', href: '/' },
+    { label: 'Soluções', href: '#solucoes' },
+    { label: 'Preços', href: '#precos' },
+    { label: 'FAQ', href: '#faq' },
+    { label: 'Testar Agente', href: 'https://wa.me/yournumero', highlight: true },
   ];
 
   return (
@@ -45,7 +48,11 @@ export function Header() {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-sm uppercase tracking-wider"
+                  className={`font-mono transition-all text-base uppercase tracking-wider flex items-center
+                    ${(item as any).highlight 
+                      ? 'border border-[#00FF41] px-3 py-1 bg-[#00FF41]/10 rounded-md text-[#00FF41] shadow-[0_0_10px_rgba(0,255,65,0.3)] hover:bg-[#00FF41]/20' 
+                      : 'text-[#00FF41] hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50'
+                    }`}
                 >
                   {item.label}
                 </a>
@@ -77,22 +84,26 @@ export function Header() {
       {/* Mobile Menu */}
       <div
         className={`
-          fixed top-14 right-2 z-40 bg-[var(--primary)] backdrop-blur-md border border-white/20 rounded-lg
-          md:hidden w-[190px]
-          transition-all duration-500 ease-in-out
+          fixed top-14 right-2 z-40 bg-black/80 backdrop-blur-md border border-white/10 shadow-lg rounded-xl
+          md:hidden w-[180px]
+          transition-all duration-300 ease-in-out
           ${isMenuOpen
             ? 'translate-y-0 opacity-100'
             : '-translate-y-full opacity-0 pointer-events-none'
           }
         `}
       >
-        <nav className="px-6 py-3 space-y-2 text-right">
+        <nav className="px-4 py-3 space-y-1 text-right flex flex-col items-end">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
               onClick={() => setIsMenuOpen(false)}
-              className="block text-[#00FF41] font-mono hover:text-[#00D135] hover:underline underline-offset-4 decoration-[#00FF41]/50 transition-all text-sm py-2 whitespace-nowrap uppercase tracking-wider"
+              className={`block text-sm py-1.5 whitespace-nowrap font-body font-medium transition-all
+                ${(item as any).highlight 
+                  ? 'border border-[#00FF41] px-2 py-1 bg-[#00FF41]/10 rounded-md text-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.2)] mt-1 hover:bg-[#00FF41]/20 inline-block text-center w-full text-xs font-bold' 
+                  : 'text-gray-300 hover:text-[#00FF41]'
+                }`}
             >
               {item.label}
             </a>

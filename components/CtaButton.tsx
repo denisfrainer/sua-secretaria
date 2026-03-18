@@ -7,13 +7,13 @@ interface CtaButtonProps {
 
 export const CtaButton = ({ text, href = "#" }: CtaButtonProps) => {
   return (
-    <section className="w-full px-4 mt-8">
-      <div className="w-full mx-auto px-4">
+    <section className="w-full mt-8">
+      <div className="w-full mx-auto">
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full flex items-center justify-center gap-3 border border-[#00FF41] rounded-2xl bg-transparent font-mono text-[#00FF41] tracking-widest font-bold text-xl px-12 py-6 [text-shadow:0_0_8px_rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] hover:bg-[#00FF41]/10 hover:shadow-[0_0_20px_rgba(0,255,65,0.6)] hover:[text-shadow:0_0_12px_rgba(0,255,65,1)] transition-all duration-300 ease-out active:scale-[0.98] whitespace-nowrap"
+          className="w-full flex items-center justify-center gap-2 border border-[#00FF41] rounded-xl bg-transparent font-mono text-[#00FF41] tracking-widest font-bold text-lg md:text-xl px-4 md:px-12 py-5 md:py-6 [text-shadow:0_0_12px_rgba(0,255,65,1)] shadow-[0_0_15px_rgba(0,255,65,0.4)] hover:bg-[#00FF41]/10 hover:shadow-[0_0_25px_rgba(0,255,65,0.8)] hover:[text-shadow:0_0_16px_rgba(0,255,65,1)] transition-all duration-300 ease-out active:scale-[0.98] whitespace-nowrap"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
