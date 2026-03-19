@@ -123,9 +123,11 @@ export async function POST(req: Request) {
             }
 
             if (dataObj?.key && !dataObj.key.fromMe && !dataObj.key.remoteJid?.includes('@g.us')) {
-                // Ensure clientNumber is extracted DIRECTLY from the incoming Evolution API v2 payload.
-                // Use .replace(/\D/g, '') to keep ONLY digits.
-                const rawJid = String(dataObj.key.remoteJid);
+                // Ensure clientNumber is extracted from the correct field prioritizing the real phone number (remoteJidAlt vs LID)
+                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net')) 
+                    ? String(dataObj.key.remoteJidAlt) 
+                    : String(dataObj.key.remoteJid);
+                
                 clientNumber = rawJid.replace(/\D/g, '');
                 
                 const messageObj = dataObj.message;
