@@ -17,6 +17,8 @@ export async function sendWhatsAppMessage(phone: string, text: string) {
     const requestBody = {
         number: phone,
         text: text,
+        delay: 1200,
+        linkPreview: false,
     };
 
     console.log(`📤 Enviando para Evolution API (${phone})...`);
