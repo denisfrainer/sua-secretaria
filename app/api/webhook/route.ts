@@ -36,12 +36,24 @@ const functionDeclarations = [
             required: ['reason'],
         },
     },
+    {
+        name: 'notify_human_specialist',
+        description: 'Use this tool ONLY when the lead explicitly agrees to a meeting, asks to speak with a human specialist, or demonstrates high buying intent. This alerts the human sales team to take over the WhatsApp chat or send the calendar link.',
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                urgency_level: { type: Type.STRING, description: 'Nível de urgência: "high" ou "medium"' },
+                summary: { type: Type.STRING, description: 'Um breve resumo do que o lead deseja' },
+            },
+            required: ['urgency_level', 'summary'],
+        },
+    },
 ];
 
 // ==============================================================
 // 🛠️ TOOL EXECUTION (Supabase writes)
 // ==============================================================
-async function executeToolCall(name: string, args: Record<string, any>): Promise<Record<string, any>> {
+async function executeToolCall(name: string, args: Record<string, any>, clientPhone: string): Promise<Record<string, any>> {
     if (name === 'save_lead_data') {
         console.log(`💾 [LEAD DATA CAPTURED]:`, args);
         const updateData: Record<string, any> = {};
@@ -68,6 +80,21 @@ async function executeToolCall(name: string, args: Record<string, any>): Promise
         return { status: 'escalated', message: 'Um especialista foi alertado.' };
     }
 
+    if (name === 'notify_human_specialist') {
+        console.log(`🔥 [HOT LEAD ALERT - Urgency: ${args.urgency_level}]: ${args.summary} | Phone: ${clientPhone}`);
+        
+        const { error } = await supabaseAdmin
+            .from('leads_lobo')
+            .update({ status: 'hot_lead' })
+            .eq('telefone', clientPhone);
+
+        if (error) {
+            console.error('❌ Erro ao atualizar status para hot_lead:', error);
+            return { status: 'error', message: 'Falha ao notificar o especialista.' };
+        }
+        return { status: 'success', message: 'O especialista (Denis) foi notificado e assumirá o controle do chat em instantes.' };
+    }
+
     return { status: 'error', message: `Ferramenta desconhecida: ${name}` };
 }
 
@@ -75,6 +102,8 @@ async function executeToolCall(name: string, args: Record<string, any>): Promise
 // 📡 WEBHOOK HANDLER
 // ==============================================================
 export async function POST(req: Request) {
+    let processingPhone = null; // Para cleanup no finally
+
     try {
         const body = await req.json();
 
@@ -85,50 +114,103 @@ export async function POST(req: Request) {
 
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
-            // --- GODSPEED UNIFICATION (Pre-Flight Check) ---
-            const { data: lead, error: leadError } = await supabaseAdmin
+            // --- DEBOUNCER / BATCHING LOGIC START ---
+            
+            // 2. Fetch Lead
+            let { data: lead, error: leadError } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
                 .eq('telefone', clientNumber)
                 .maybeSingle();
 
-            let leadContext = '';
-
             if (leadError) {
                 console.error('❌ Erro ao buscar lead no Supabase:', leadError);
-            } else if (lead) {
-                console.log(`🐺 Lead encontrado: ${lead.nome} | Status: ${lead.status}`);
+            }
 
-                if (lead.status === 'isca_enviada') {
+            // 3. Create lead if new
+            if (!lead) {
+                console.log(`🌱 Lead novo. Criando registro como organico_inbound...`);
+                const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                    telefone: clientNumber,
+                    status: 'organico_inbound',
+                    nome: 'Lead inbound',
+                    message_buffer: '',
+                    is_processing: false,
+                }).select().single();
+                
+                lead = newLead;
+            }
+
+            // 4. Append to Buffer
+            const currentBuffer = lead?.message_buffer || '';
+            const newBuffer = currentBuffer ? `${currentBuffer}\n${clientMessage}` : clientMessage;
+
+            await supabaseAdmin
+                .from('leads_lobo')
+                .update({ message_buffer: newBuffer })
+                .eq('telefone', clientNumber);
+
+            // 5. Lock Check
+            if (lead?.is_processing === true) {
+                console.log(`⏳ Lock Ativo para ${clientNumber}. Mensagem anexada ao buffer. Abortando execução isolada.`);
+                return NextResponse.json({ status: 'Buffered', buffer: newBuffer }, { status: 200 });
+            }
+
+            // If not processing...
+            console.log(`🔒 Iniciando Lock (is_processing = true) para ${clientNumber}...`);
+            await supabaseAdmin
+                .from('leads_lobo')
+                .update({ is_processing: true })
+                .eq('telefone', clientNumber);
+            
+            // Mark for cleanup in finally block
+            processingPhone = clientNumber;
+
+            // 6. Wait for rapid-fire messages (4s window)
+            console.log(`🕒 Aguardando 4 segundos por mais mensagens de ${clientNumber}...`);
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // 7. Fetch final buffer and lead state
+            const { data: finalLead } = await supabaseAdmin
+                .from('leads_lobo')
+                .select('*')
+                .eq('telefone', clientNumber)
+                .single();
+
+            const finalMessageBuffer = finalLead?.message_buffer || newBuffer;
+            
+            console.log(`📦 Buffer final processado: "${finalMessageBuffer}"`);
+
+            // --- GODSPEED UNIFICATION (Pre-Flight Context) ---
+            let leadContext = '';
+            
+            if (finalLead) {
+                if (finalLead.status === 'isca_enviada') {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
-Atenção: Você está falando com ${lead.nome || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca perguntando se eles usam IA no atendimento. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
-Empresa: ${lead.empresa || 'Não informada'}.
-Dor Principal: ${lead.dor_principal || 'Não informada'}.`;
+Atenção: Você está falando com ${finalLead.nome || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca perguntando se eles usam IA no atendimento. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
+Empresa: ${finalLead.empresa || 'Não informada'}.
+Dor Principal: ${finalLead.dor_principal || 'Não informada'}.`;
 
                     await supabaseAdmin
                         .from('leads_lobo')
                         .update({ status: 'em_conversacao' })
-                        .eq('id', lead.id);
-                    console.log(`🔄 Status do lead ${lead.id} atualizado para 'em_conversacao'`);
+                        .eq('telefone', clientNumber);
+                    console.log(`🔄 Status do lead atualizado para 'em_conversacao'`);
                 } else {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
-Você está falando com ${lead.nome || 'o cliente'}.
-O status atual dele na base é: ${lead.status}.
-Empresa: ${lead.empresa || 'Não informada'}.
-Dor Principal: ${lead.dor_principal || 'Não informada'}.
-${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
+Você está falando com ${finalLead.nome || 'o cliente'}.
+O status atual dele na base é: ${finalLead.status}.
+Empresa: ${finalLead.empresa || 'Não informada'}.
+Dor Principal: ${finalLead.dor_principal || 'Não informada'}.
+${finalLead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
                 }
-            } else {
-                console.log(`🌱 Lead novo. Criando registro como organico_inbound...`);
-                await supabaseAdmin.from('leads_lobo').insert({
-                    telefone: clientNumber,
-                    status: 'organico_inbound',
-                    nome: 'Lead inbound',
-                });
-                leadContext = `\n\n[CONTEXTO DO LEAD]: Este é um lead orgânico inbound novo. Ele acabou de mandar mensagem. Colete o Nome, Empresa e Dor para salvar usando a tool.`;
+            }
+            
+            if (finalLead?.status === 'organico_inbound') {
+                 leadContext = `\n\n[CONTEXTO DO LEAD]: Este é um lead orgânico inbound novo. Ele acabou de mandar mensagem. Colete o Nome, Empresa e Dor para salvar usando a tool.`;
             }
 
-            // 2. Busca o cérebro do Agente no Banco de Dados
+            // 8. Busca o cérebro do Agente no Banco de Dados
             const { data: config, error: configError } = await supabaseAdmin
                 .from('agent_configs')
                 .select('*, organizations(name)')
@@ -140,14 +222,14 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
                 return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
             }
 
-            // 3. SALVAR A MENSAGEM DO CLIENTE NA MEMÓRIA
+            // 9. SALVAR A MENSAGEM DO CLIENTE NA MEMÓRIA (O BUFFER COMPLETO)
             await supabaseAdmin.from('chat_history').insert({
                 whatsapp_number: clientNumber,
                 role: 'user',
-                content: clientMessage,
+                content: finalMessageBuffer,
             });
 
-            // 4. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (Memória de Curto Prazo)
+            // 10. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (Memória de Curto Prazo)
             const { data: history } = await supabaseAdmin
                 .from('chat_history')
                 .select('role, content')
@@ -157,18 +239,22 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
 
             const chatHistory = (history || []).reverse();
 
-            // 5. Prepara o System Prompt
+            // 11. Prepara o System Prompt
             let systemPrompt = generatePrompt(config.organizations.name, config.system_prompt);
             systemPrompt += leadContext;
-            systemPrompt += `\n\n[IMPORTANTE]: Sempre que usar a ferramenta 'save_lead_data', você OBRIGATORIAMENTE deve passar o número de telefone do usuário: '${clientNumber}' no parâmetro 'phone'.`;
+            systemPrompt += `\n\n[IMPORTANTE - CAPTURA DE DADOS]: Sempre que usar a ferramenta 'save_lead_data', você OBRIGATORIAMENTE deve passar o número de telefone do usuário: '${clientNumber}' no parâmetro 'phone'.`;
+            systemPrompt += `\n\n[IMPORTANTE - REGRAS DE AGENDAMENTO/HANDOFF]:
+1. É estritamente PROIBIDO sugerir ligações telefônicas tradicionais.
+2. Prefira continuar o fechamento via WhatsApp de forma assíncrona ou sugerir uma rápida chamada de vídeo (Meet/Zoom).
+3. Quando o lead concordar com uma reunião, pedir para falar com um humano, ou demonstrar alta intenção de compra, você DEVE acionar a ferramenta 'notify_human_specialist' imediatamente.`;
 
-            // 6. BUILD CONTENTS ARRAY (Google Gen AI format)
+            // 12. BUILD CONTENTS ARRAY (Google Gen AI format)
             const contents: any[] = chatHistory.map((msg: any) => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }],
             }));
 
-            // 7. CALL GEMINI VIA @google/genai
+            // 13. CALL GEMINI VIA @google/genai
             console.log('🧠 IA Pensando com base no histórico e contexto do lead...');
             const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
 
@@ -183,7 +269,7 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
                 config: genConfig,
             });
 
-            // 8. FUNCTION CALLING LOOP (max 3 rounds)
+            // 14. FUNCTION CALLING LOOP (max 3 rounds)
             let finalText = response.text || '';
             let loopCount = 0;
 
@@ -192,25 +278,21 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
                 const fc = response.functionCalls[0];
                 console.log(`🔧 [TURN ${loopCount}] Tool chamada: ${fc.name}(${JSON.stringify(fc.args)})`);
 
-                // Execute the tool
-                const toolResult = await executeToolCall(fc.name!, fc.args as Record<string, any>);
+                const toolResult = await executeToolCall(fc.name!, fc.args as Record<string, any>, clientNumber);
                 console.log(`✅ [TURN ${loopCount}] Resultado da tool:`, toolResult);
 
-                // Build the function response part
                 const functionResponsePart = {
                     name: fc.name!,
                     response: toolResult,
                     id: fc.id,
                 };
 
-                // Append model's function call + our function response to contents
                 contents.push(response.candidates![0].content);
                 contents.push({
                     role: 'user',
                     parts: [{ functionResponse: functionResponsePart }],
                 });
 
-                // Second turn — model generates natural language from function result
                 response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents,
@@ -221,7 +303,7 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
                 console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${finalText}"`);
             }
 
-            // 9. FALLBACK — garantir que Z-API NUNCA receba string vazia
+            // 15. FALLBACK
             if (!finalText || finalText.trim() === '') {
                 console.log('⚠️ IA retornou string vazia. Usando fallback.');
                 finalText = 'Entendi! E como funciona o processo hoje?';
@@ -229,7 +311,7 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
 
             console.log(`🗣️ RESPOSTA FINAL: "${finalText}"`);
 
-            // 10. SALVAR A RESPOSTA DA IA NA MEMÓRIA
+            // 16. SALVAR A RESPOSTA DA IA NA MEMÓRIA
             await supabaseAdmin.from('chat_history').insert({
                 whatsapp_number: clientNumber,
                 role: 'assistant',
@@ -241,7 +323,7 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
             console.log(`⏳ Simulando digitação de ${typingDelay}ms...`);
             await new Promise((resolve) => setTimeout(resolve, typingDelay));
 
-            // 11. Envia a mensagem de volta para o cliente no WhatsApp
+            // 17. Envia a mensagem de volta para o cliente no WhatsApp
             await sendWhatsAppMessage(clientNumber, finalText);
 
             return NextResponse.json({ status: 'success' });
@@ -251,5 +333,14 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
     } catch (error) {
         console.error('❌ Erro Crítico no Webhook:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } finally {
+        // --- CLEANUP LOCK & BUFFER ---
+        if (processingPhone) {
+            console.log(`🧹 Removendo Lock e limpando buffer para ${processingPhone}...`);
+            await supabaseAdmin
+                .from('leads_lobo')
+                .update({ is_processing: false, message_buffer: '' })
+                .eq('telefone', processingPhone);
+        }
     }
 }
