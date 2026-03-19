@@ -115,14 +115,13 @@ export async function POST(req: Request) {
         const isEvolution = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
 
         if (isEvolution) {
-            const msgData = body.data?.message || body.data;
-            if (msgData?.key && !msgData.key.fromMe && !msgData.key.remoteJid?.includes('@g.us')) {
+            if (body.data?.key && !body.data.key.fromMe && !body.data.key.remoteJid?.includes('@g.us')) {
                 // O remoteJid costuma vir como "5511999999999@s.whatsapp.net". O replace extrai apenas os números.
-                clientNumber = msgData.key.remoteJid.replace(/\D/g, '');
+                clientNumber = body.data.key.remoteJid.replace(/\D/g, '');
                 
-                const content = msgData.message;
-                if (content) {
-                    clientMessage = content.conversation || content.extendedTextMessage?.text || content.imageMessage?.caption || content.videoMessage?.caption || '';
+                const messageObj = body.data.message;
+                if (messageObj) {
+                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || messageObj.imageMessage?.caption || messageObj.videoMessage?.caption || '';
                 }
                 
                 if (clientMessage && clientMessage.trim().length > 0) {
