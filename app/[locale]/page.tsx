@@ -62,7 +62,7 @@ export default function Home() {
               <div className="border border-white p-8 bg-black rounded-xl flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 border border-white flex items-center justify-center text-white"><Activity size={24} /></div>
-                  <h3 className="font-heading text-2xl font-bold text-white">Suporte 24/7</h3>
+                  <h3 className="font-heading text-2xl font-bold text-white">Suporte 24 horas por dia</h3>
                 </div>
                 <p className="text-white font-body text-lg leading-relaxed pb-1">Respostas imediatas a dúvidas frequentes, rastreamento de pedidos e triagem de chamados.</p>
               </div>
