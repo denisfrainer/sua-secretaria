@@ -39,7 +39,7 @@ export const tools = {
 
                 return {
                     status: 'success',
-                    message: 'Dados do lead registrados com sucesso no banco de dados.',
+                    message: 'Dados do lead registrados com sucesso no banco de dados. Obrigado.',
                 };
             } catch (err) {
                  console.error('❌ Erro inesperado ao atualizar lead:', err);

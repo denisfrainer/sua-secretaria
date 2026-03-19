@@ -119,13 +119,20 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
                 maxSteps: 5,
             });
 
-            console.log(`🗣️ IA RESPONDEU: "${text}"`);
+            // Fallback: Garantir que Z-API NUNCA receba uma string vazia!
+            let finalResponseText = text;
+            if (!finalResponseText || finalResponseText.trim() === '') {
+                console.log('⚠️ [TOOL CALL LOOP] IA retornou string vazia após a função. Usando fallback.');
+                finalResponseText = "Entendi! E como funciona o processo hoje?";
+            }
+
+            console.log(`🗣️ IA RESPONDEU: "${finalResponseText}"`);
 
             // 7. SALVAR A RESPOSTA DA IA NA MEMÓRIA
             await supabaseAdmin.from('chat_history').insert({
                 whatsapp_number: clientNumber,
                 role: 'assistant',
-                content: text
+                content: finalResponseText
             });
 
             // 🤖 ANTI-ROBOT: Simular tempo de digitação (2s a 4s)
@@ -134,7 +141,7 @@ ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa
             await new Promise(resolve => setTimeout(resolve, typingDelay));
 
             // 8. Envia a mensagem de volta para o cliente no WhatsApp
-            await sendWhatsAppMessage(clientNumber, text);
+            await sendWhatsAppMessage(clientNumber, finalResponseText);
 
             return NextResponse.json({ status: 'success' });
         }
