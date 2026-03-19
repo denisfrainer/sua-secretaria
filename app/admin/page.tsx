@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import ElizaToggle from '../../components/ElizaToggle';
 
 // ==============================================================
 // 🔧 TYPES
@@ -254,6 +255,9 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
                         </div>
+
+                        {/* Eliza Kill Switch */}
+                        <ElizaToggle adminKey={adminKey} />
 
                         {/* Refresh */}
                         <button
