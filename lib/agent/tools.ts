@@ -23,6 +23,7 @@ export const tools = {
                 if (args.name) updateData.nome = args.name;
                 if (args.company) updateData.empresa = args.company;
                 if (args.pain_point) updateData.dor_principal = args.pain_point;
+                if (args.revenue) updateData.faturamento = args.revenue;
                 // For structure safety, let's keep status 'em_conversacao'
                 updateData.status = 'em_conversacao';
 

@@ -13,12 +13,13 @@ export async function POST(req: Request) {
 
         // 1. Filtro de Segurança
         if (body.isGroup === false && body.text && body.text.message && !body.fromMe) {
-            const clientNumber = body.phone;
+            const clientNumber = body.phone.replace(/\D/g, ''); // Garante apenas números (ex: 5511999999999)
             const clientMessage = body.text.message;
 
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
             // --- NOVO: GODSPEED UNIFICATION (Pre-Flight Check) ---
+
             const { data: lead, error: leadError } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
@@ -31,12 +32,30 @@ export async function POST(req: Request) {
                 console.error('❌ Erro ao buscar lead no Supabase:', leadError);
             } else if (lead) {
                 console.log(`🐺 Lead encontrado: ${lead.nome} | Status: ${lead.status}`);
-                leadContext = `\n\n[CONTEXTO DO LEAD]:
+                
+                if (lead.status === 'isca_enviada') {
+                    // Lead de prospecção fria que acabou de responder a isca!
+                    leadContext = `\n\n[CONTEXTO DO LEAD]:
+Atenção: Você está falando com ${lead.nome || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca perguntando se eles usam IA no atendimento. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
+Empresa: ${lead.empresa || 'Não informada'}.
+Dor Principal: ${lead.dor_principal || 'Não informada'}.`;
+
+                    // Move automaticamente para em conversação
+                    await supabaseAdmin
+                        .from('leads_lobo')
+                        .update({ status: 'em_conversacao' })
+                        .eq('id', lead.id);
+                        
+                    console.log(`🔄 Status do lead ${lead.id} atualizado para 'em_conversacao'`);
+                } else {
+                    // Outros status
+                    leadContext = `\n\n[CONTEXTO DO LEAD]:
 Você está falando com ${lead.nome || 'o cliente'}.
 O status atual dele na base é: ${lead.status}.
 Empresa: ${lead.empresa || 'Não informada'}.
 Dor Principal: ${lead.dor_principal || 'Não informada'}.
 ${lead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
+                }
             } else {
                 console.log(`🌱 Lead novo. Criando registro como organico_inbound...`);
                 await supabaseAdmin.from('leads_lobo').insert({
