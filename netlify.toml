@@ -9,3 +9,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# 🐺 Lobo Prospectador — Cron Job (a cada 1 minuto)
+[functions."api/lobo-cron"]
+  schedule = "* * * * *"

@@ -2,54 +2,65 @@ import { z } from 'zod';
 
 export const tools = {
     // ==========================================
-    // 🛠️ TOOL 1: Analisador de URL
+    // 💾 TOOL: Salvar Dados do Lead
     // ==========================================
-    analyze_url: {
-        description: 'Analisa o site atual do cliente para encontrar falhas de conversão (CRO) e mobile.',
+    save_lead_data: {
+        description: 'Salva as informações capturadas do lead (nome, empresa, faturamento, dor). Chame isso sempre que o usuário fornecer qualquer um desses dados.',
         parameters: z.object({
-            url: z.string().describe('A URL do site ou Instagram do cliente que precisa ser analisada'),
+            phone: z.string().describe('O número de telefone do lead (para identificação na base de dados)'),
+            name: z.string().optional().describe('Nome do lead'),
+            company: z.string().optional().describe('Nome da empresa'),
+            revenue: z.union([z.string(), z.number()]).optional().describe('Faturamento total ou tamanho da equipe'),
+            pain_point: z.string().optional().describe('O principal desafio ou dor relatada pelo cliente'),
         }),
-        execute: async (args: { url: string }) => {
-            console.log(`Analisando URL: ${args.url}`);
-            return {
-                status: 'success',
-                has_mobile_optimization: false,
-                message: 'O site atual é lento no celular e não possui botões de chamada para ação claros.',
-            };
+        execute: async (args: any) => {
+            console.log(`💾 [LEAD DATA CAPTURED]:`, args);
+            
+            try {
+                const { supabaseAdmin } = await import('../supabase/admin');
+                
+                const updateData: any = {};
+                if (args.name) updateData.nome = args.name;
+                if (args.company) updateData.empresa = args.company;
+                if (args.pain_point) updateData.dor_principal = args.pain_point;
+                // For structure safety, let's keep status 'em_conversacao'
+                updateData.status = 'em_conversacao';
+
+                const { error } = await supabaseAdmin
+                    .from('leads_lobo')
+                    .update(updateData)
+                    .eq('telefone', args.phone);
+
+                if (error) {
+                    console.error('❌ Erro ao atualizar lead no Supabase:', error);
+                    return { status: 'error', message: 'Falha ao salvar dados no banco.' };
+                }
+
+                return {
+                    status: 'success',
+                    message: 'Dados do lead registrados com sucesso no banco de dados.',
+                };
+            } catch (err) {
+                 console.error('❌ Erro inesperado ao atualizar lead:', err);
+                 return { status: 'error', message: 'Erro ao processar atualização' };
+            }
         },
     },
 
     // ==========================================
-    // 💸 TOOL 2: Gerador de PIX (Fechamento)
+    // 🚨 TOOL: Notificar Humano (Escalonamento)
     // ==========================================
-    gerar_pix: {
-        description: 'Gera a cobrança via PIX quando o cliente concorda em comprar a Landing Page Express.',
+    notify_human: {
+        description: 'Aciona um humano caso o lead esteja irritado, use palavrões, peça expressamente por uma pessoa, ou apresente uma objeção insolúvel.',
         parameters: z.object({
-            customer_name: z.string().describe('O nome do cliente para registrar a cobrança'),
+            reason: z.string().describe('O motivo exacto pelo qual o suporte humano está sendo requisitado'),
+            chat_history: z.string().optional().describe('Resumo curto da conversa até o momento'),
         }),
-        execute: async (args: { customer_name: string }) => {
-            console.log(`Gerando PIX de R$ 600 para: ${args.customer_name}`);
-            return {
-                status: 'success',
-                amount: 600,
-                pix_code: '00020126580014br.gov.bcb.pix0136chave-aleatoria-pix-denis-600',
-            };
-        },
-    },
-
-    // ==========================================
-    // 🚨 TOOL 3: Acionar o Humano (Escalonamento)
-    // ==========================================
-    transferir_humano: {
-        description: 'Transfere o atendimento para o Denis (humano) se o cliente pedir desconto, fizer perguntas complexas ou ficar irritado.',
-        parameters: z.object({
-            reason: z.string().describe('O motivo exato pelo qual o humano foi chamado'),
-        }),
-        execute: async (args: { reason: string }) => {
-            console.log(`🚨 ALERTA HUMANO ACIONADO. Motivo: ${args.reason}`);
+        execute: async (args: { reason: string; chat_history?: string }) => {
+            console.log(`🚨 [HUMAN ESCALATION]: ${args.reason}`);
             return {
                 status: 'escalated',
-                message: 'Alertei o Engenheiro Chefe. Ele já vai assumir o atendimento.',
+                message: 'Um especialista foi alertado e assumirá a conversa.',
             };
         },
     },
