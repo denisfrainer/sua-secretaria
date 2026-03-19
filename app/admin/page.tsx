@@ -64,7 +64,9 @@ const ALL_STATUSES = [
     { value: 'pendente', label: '⏳ Pendente' },
     { value: 'isca_enviada', label: '🎣 Isca Enviada' },
     { value: 'em_conversacao', label: '💬 Em Conversação' },
-    { value: 'agendado', label: '🏆 Agendado' },
+    { value: 'hot_lead', label: '🔥 Hot Lead' },
+    { value: 'agendado', label: '📅 Agendado' },
+    { value: 'ganho', label: '🏆 Ganho' },
     { value: 'organico_inbound', label: '🌱 Orgânico Inbound' },
     { value: 'lixo', label: '🗑️ Lixo' },
 ];
@@ -200,14 +202,10 @@ export default function AdminDashboard() {
     };
 
     leads.forEach((lead) => {
-        const key = lead.status as StatusKey;
-        if (grouped[key]) {
-            grouped[key].push(lead);
-        }
-        // Leads with status 'organico_inbound' go to 'em_conversacao'
-        else if (lead.status === 'organico_inbound') {
-            grouped.em_conversacao.push(lead);
-        }
+        if (lead.status === 'pendente') grouped.pendente.push(lead);
+        else if (lead.status === 'isca_enviada') grouped.isca_enviada.push(lead);
+        else if (lead.status === 'em_conversacao' || lead.status === 'organico_inbound') grouped.em_conversacao.push(lead);
+        else if (lead.status === 'agendado' || lead.status === 'ganho' || lead.status === 'hot_lead') grouped.agendado.push(lead);
     });
 
     const totalLeads = leads.length;
@@ -378,6 +376,7 @@ function LeadCard({
     updatingId: string | null;
     muted?: boolean;
 }) {
+    const isHot = lead.status === 'hot_lead';
     const isUpdating = updatingId === lead.id;
     const formattedDate = new Date(lead.criado_em).toLocaleDateString('pt-BR', {
         day: '2-digit',
@@ -389,14 +388,17 @@ function LeadCard({
             className={`rounded-lg p-4 border transition-all duration-200 group ${
                 muted
                     ? 'bg-zinc-900/40 border-zinc-800/30 opacity-50'
+                    : isHot
+                    ? 'bg-rose-500/10 border-rose-500/50 hover:bg-rose-500/20 hover:border-rose-400'
                     : 'bg-zinc-800/70 border-zinc-700/50 hover:border-zinc-600/70 hover:bg-zinc-800'
             } ${isUpdating ? 'opacity-50 pointer-events-none' : ''}`}
         >
             {/* Top Row */}
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm text-white truncate">
+                    <p className="font-bold text-sm text-white truncate flex items-center gap-1.5">
                         {lead.nome || 'Sem nome'}
+                        {isHot && <span className="text-base animate-pulse" title="Lead pronto para fechamento!">🔥</span>}
                     </p>
                     <p className="text-xs text-zinc-500 font-mono mt-0.5">{lead.telefone}</p>
                 </div>

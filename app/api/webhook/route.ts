@@ -107,11 +107,35 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // 1. Filtro de Segurança
-        if (body.isGroup === false && body.text && body.text.message && !body.fromMe) {
-            const clientNumber = body.phone.replace(/\D/g, '');
-            const clientMessage = body.text.message;
+        // 1. Filtro e Extração de Mensagem (Evolution API v2 e fallback antigo)
+        let clientNumber = null;
+        let clientMessage = null;
+        let isValidMessage = false;
 
+        const isEvolution = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
+
+        if (isEvolution) {
+            const msgData = body.data?.message || body.data;
+            if (msgData?.key && !msgData.key.fromMe && !msgData.key.remoteJid?.includes('@g.us')) {
+                // O remoteJid costuma vir como "5511999999999@s.whatsapp.net". O replace extrai apenas os números.
+                clientNumber = msgData.key.remoteJid.replace(/\D/g, '');
+                
+                const content = msgData.message;
+                if (content) {
+                    clientMessage = content.conversation || content.extendedTextMessage?.text || content.imageMessage?.caption || content.videoMessage?.caption || '';
+                }
+                
+                if (clientMessage && clientMessage.trim().length > 0) {
+                    isValidMessage = true;
+                }
+            }
+        } else if (body.isGroup === false && body.text && body.text.message && !body.fromMe) {
+            clientNumber = body.phone?.replace(/\D/g, '');
+            clientMessage = body.text.message;
+            isValidMessage = true;
+        }
+
+        if (isValidMessage && clientNumber && clientMessage) {
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
             // --- DEBOUNCER / BATCHING LOGIC START ---
