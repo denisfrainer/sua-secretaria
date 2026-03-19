@@ -10,6 +10,6 @@
   to = "/index.html"
   status = 200
 
-# 🐺 Lobo Prospectador — Cron Job (a cada 1 minuto)
+# 🐺 Lobo Prospectador — Cron Job (Segunda a Sexta às 18h BRT / 21h UTC)
 [functions."api/lobo-cron"]
-  schedule = "* * * * *"
+  schedule = "0 21 * * 1-5"
