@@ -106,6 +106,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
+        console.log("FULL EVOLUTION BODY:", JSON.stringify(body, null, 2));
 
         // 1. Filtro e Extração de Mensagem (Evolution API v2 e fallback antigo)
         let clientNumber = null;
@@ -115,11 +116,19 @@ export async function POST(req: Request) {
         const isEvolution = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
 
         if (isEvolution) {
-            if (body.data?.key && !body.data.key.fromMe && !body.data.key.remoteJid?.includes('@g.us')) {
-                // O remoteJid costuma vir como "5511999999999@s.whatsapp.net". O replace extrai apenas os números.
-                clientNumber = body.data.key.remoteJid.replace(/\D/g, '');
+            let dataObj = body.data;
+            // Evolution API v2 sometimes sends data as an array.
+            if (Array.isArray(body.data)) {
+                dataObj = body.data[0];
+            }
+
+            if (dataObj?.key && !dataObj.key.fromMe && !dataObj.key.remoteJid?.includes('@g.us')) {
+                // Ensure clientNumber is extracted DIRECTLY from the incoming Evolution API v2 payload.
+                // Use .replace(/\D/g, '') to keep ONLY digits.
+                const rawJid = String(dataObj.key.remoteJid);
+                clientNumber = rawJid.replace(/\D/g, '');
                 
-                const messageObj = body.data.message;
+                const messageObj = dataObj.message;
                 if (messageObj) {
                     clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || messageObj.imageMessage?.caption || messageObj.videoMessage?.caption || '';
                 }
