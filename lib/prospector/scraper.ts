@@ -41,7 +41,7 @@ export async function processHunt(command: HuntCommand) {
     const maxResults = command.limit || 30;
     console.log(`🐺 INICIANDO CAÇADA (Scraper): Buscando "${command.query}" (Max: ${maxResults})`);
 
-    const actorId = 'apify~google-maps-scraper';
+    const actorId = 'compass~crawler-google-places';
     // Utiliza o endpoint de 'runs' para disparo assíncrono ao invés de 'run-sync-get-dataset-items'
     const runUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyToken}`;
 
