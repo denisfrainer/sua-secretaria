@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         const body = await req.json();
         console.log('📦 Webhook event payload:', JSON.stringify(body, null, 2));
 
-        const datasetId = body?.eventData?.datasetId;
+        const datasetId = body?.resource?.defaultDatasetId;
 
         if (!datasetId) {
             console.log('⚠️ Dataset ID não encontrado no payload do webhook');
