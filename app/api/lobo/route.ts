@@ -40,6 +40,7 @@ export async function POST(req: Request) {
                 .from('leads_lobo')
                 .select('*')
                 .eq('status', 'pending') // SÓ ATACA QUEM AINDA NÃO FOI ATACADO
+                .neq('name', 'Lead Teste') // Limpando testes antigos do banco
                 .limit(5); // 🚨 REDUZIDO PARA 5 para evitar Timeout do Netlify (10s-26s)
 
             if (error) {
@@ -82,8 +83,32 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         console.log(`⏳ Aguardando ${delay / 1000}s antes de abordar ${lead.name}...`);
         await sleep(delay);
 
-        // A Abordagem (Você pode mudar a copy depois)
-        const message = `Opa ${lead.name}, tudo bem? Vi sua empresa por aqui. Vocês já tão usando IA no atendimento ou ainda é tudo na mão?`;
+        // Humanized Spintax Logic
+        const currentHour = new Date().getUTCHours() - 3;
+        const localHour = currentHour < 0 ? currentHour + 24 : currentHour;
+        const saudacao = localHour < 12 ? 'bom dia' : 'boa tarde';
+
+        const validName = lead.name && !lead.name.toLowerCase().includes('lead') && !lead.name.toLowerCase().includes('desconhecido');
+        const firstName = validName ? lead.name.split(' ')[0].toLowerCase() : '';
+        const displayName = firstName ? `, ${firstName}` : '';
+        const displayNameSpace = firstName ? ` ${firstName}` : '';
+
+        const niche = lead.niche ? lead.niche.toLowerCase() : 'negócio';
+
+        const variations = [
+            `${saudacao}${displayName}! vi o ${niche} de vocês aqui. estão aceitando novos clientes?`,
+            `${saudacao}, tudo bem? vi o trampo de vocês no ${niche}. posso te fazer uma pergunta rápida?`,
+            `opa${displayNameSpace}, ${saudacao}. sou o denis. cara, vi seu ${niche} aqui no maps. estão conseguindo dar conta da demanda ou cabe mais?`,
+            `${saudacao}! tudo certo? vi o ${niche} de vocês. quem cuida da parte de vendas aí?`,
+            `fala${displayNameSpace}, ${saudacao}. vi o perfil de vocês aqui na pesquisa. como tá o volume de clientes nesse mês?`,
+            `${saudacao}${displayName}, beleza? achei massa o trampo de vocês com ${niche}. consegue me tirar uma dúvida rápida?`,
+            `opa, ${saudacao}. vi que vocês trabalham com ${niche}. a agenda de vocês tá lotada ou tem espaço pra mais projetos?`,
+            `${saudacao}! tudo tranquilo? caí no perfil de vocês aqui no maps. quem é o responsável pelos atendimentos?`,
+            `fala${displayNameSpace}! ${saudacao}. achei o perfil do seu ${niche}. vcs tao dando conta dos orçamentos hoje em dia?`,
+            `${saudacao}, beleza? vi o trampo de vocês. me tira uma dúvida rápida sobre a captação de clientes de vocês?`
+        ];
+
+        const message = variations[Math.floor(Math.random() * variations.length)];
 
         try {
             await sendWhatsAppMessage(lead.phone, message);
