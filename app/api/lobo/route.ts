@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     try {
         // 1. Security Check
         const token = req.headers.get('x-wolf-token');
-        if (!token || token !== process.env.WOLF_SECRET_TOKEN) {
+        if (!token || token !== process.env.WOLF_ADMIN_TOKEN) {
             console.log('⚠️ Token inválido ou ausente:', token);
             return new NextResponse('Unauthorized', { status: 401 });
         }
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
             console.log('📦 Nenhum JSON no body (Disparo de Cron assumido).');
         }
 
+        const batchSize = body.batch_size || 3;
         let leadsToProcess = [];
         const manualPhone = body.testPhone || body.test_number || body.number;
 
@@ -35,13 +36,14 @@ export async function POST(req: Request) {
             }];
         } else {
             // 📥 A CORREÇÃO DO SPAM: Buscando apenas 'pending'
-            console.log(`📥 Buscando leads 'pending' na tabela leads_lobo...`);
+            console.log(`📥 Buscando lote de ${batchSize} leads 'pending' na tabela leads_lobo...`);
             const { data: leads, error } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
                 .eq('status', 'pending') // SÓ ATACA QUEM AINDA NÃO FOI ATACADO
                 .neq('name', 'Lead Teste') // Limpando testes antigos do banco
-                .limit(5); // 🚨 REDUZIDO PARA 5 para evitar Timeout do Netlify (10s-26s)
+                .neq('name', 'Sem Nome')
+                .limit(batchSize); // 🚨 Respeitando o Payload Limit
 
             if (error) {
                 console.error('❌ Erro ao buscar leads no Supabase:', error);
@@ -77,7 +79,7 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         }
 
         // Delay anti-ban (reduzido para caber no limite de tempo do Serverless)
-        let delay = Math.floor(Math.random() * 3000) + 2000; // 2 a 5 segundos
+        let delay = Math.floor(Math.random() * 2000) + 2000; // 2 a 4 segundos
         if (!isFromDb) delay = 1000;
 
         console.log(`⏳ Aguardando ${delay / 1000}s antes de abordar ${lead.name}...`);
@@ -86,38 +88,42 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         // Humanized Spintax Logic
         const currentHour = new Date().getUTCHours() - 3;
         const localHour = currentHour < 0 ? currentHour + 24 : currentHour;
-        const saudacao = localHour < 12 ? 'bom dia' : 'boa tarde';
+        const saudacao = localHour < 12 ? 'Bom dia' : 'Boa tarde';
 
-        const rawName = lead.name && !lead.name.toLowerCase().includes('lead') && !lead.name.toLowerCase().includes('desconhecido') ? lead.name.split(' ')[0] : '';
+        const nameLower = lead.name.toLowerCase();
+        const rawName = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome') 
+            ? lead.name.split(' ')[0] 
+            : '';
+            
         const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : '';
-        const displayName = firstName ? `, ${firstName}` : '';
-        const displayNameSpace = firstName ? ` ${firstName}` : '';
+        const displayName = firstName ? ` ${firstName}` : '';
 
         const niche = lead.niche ? lead.niche.toLowerCase() : 'negócio';
+        const company = rawName === '' && lead.name && !nameLower.includes('sem nome') ? lead.name : '';
+        const identifier = company ? company : niche; // fallback to niche if no valid company name
 
         const variations = [
-            `${saudacao}${displayName}! vi o ${niche} de vocês aqui. estão aceitando novos clientes?`,
-            `${saudacao}, tudo bem? vi o trampo de vocês no ${niche}. posso te fazer uma pergunta rápida?`,
-            `opa${displayNameSpace}, ${saudacao}. sou o denis. cara, vi seu ${niche} aqui no maps. estão conseguindo dar conta da demanda ou cabe mais?`,
-            `${saudacao}! tudo certo? vi o ${niche} de vocês. quem cuida da parte de vendas aí?`,
-            `fala${displayNameSpace}, ${saudacao}. vi o perfil de vocês aqui na pesquisa. como tá o volume de clientes nesse mês?`,
-            `${saudacao}${displayName}, beleza? achei massa o trampo de vocês com ${niche}. consegue me tirar uma dúvida rápida?`,
-            `opa, ${saudacao}. vi que vocês trabalham com ${niche}. a agenda de vocês tá lotada ou tem espaço pra mais projetos?`,
-            `${saudacao}! tudo tranquilo? caí no perfil de vocês aqui no maps. quem é o responsável pelos atendimentos?`,
-            `fala${displayNameSpace}! ${saudacao}. achei o perfil do seu ${niche}. vcs tao dando conta dos orçamentos hoje em dia?`,
-            `${saudacao}, beleza? vi o trampo de vocês. me tira uma dúvida rápida sobre a captação de clientes de vocês?`
+            `Oi${displayName}, tudo bem? Vi que vocês são de ${identifier}. Estão pegando novos projetos agora?`,
+            `${saudacao}${displayName}, beleza? Achei o trampo de vocês com ${identifier}. Posso fazer uma pergunta rápida?`,
+            `Opa${displayName}, ${saudacao.toLowerCase()}. Sou o Denis, vi seu ${identifier} aqui no maps. A agenda tá lotada ou cabe mais?`,
+            `Fala${displayName}, ${saudacao.toLowerCase()}! Vi o perfil de vocês aqui. Como tá o volume de clientes nesse mês pra ${identifier}?`,
+            `Oi${displayName}! Tudo certo? Vi o ${identifier} de vocês. Quem cuida da parte de vendas aí?`,
+            `${saudacao}${displayName}, tudo tranquilo? Achei massa o trabalho com ${identifier}. Consegue me tirar uma dúvida?`,
+            `Opa, ${saudacao.toLowerCase()}. Vi seu perfil de ${identifier}. Vocês estão conseguindo dar conta da demanda?`,
+            `Fala${displayName}! ${saudacao.toLowerCase()}. Achei a página do seu ${identifier}. Vocês estão aceitando novos orçamentos?`,
+            `${saudacao}, beleza? Vi que vocês são da área de ${identifier}. Queria tirar uma duvida rápida sobre vendas?`,
+            `Oi${displayName}, tudo bem? Cai aqui no perfil do ${identifier}. Quem é o responsável pelos novos clientes?`
         ];
 
         const message = variations[Math.floor(Math.random() * variations.length)];
 
         try {
             await sendWhatsAppMessage(lead.phone, message);
-            console.log(`✅ Mensagem enviada para: ${lead.name}`);
 
-            // 4. A CORREÇÃO DA SANITY CHECK: Descomentado e ativo!
+            // 4. A CORREÇÃO DA SANITY CHECK E CONFORMIDADE AO ESQUEMA
             if (isFromDb && lead.id) {
                 await supabaseAdmin.from('leads_lobo').update({ status: 'contacted' }).eq('id', lead.id);
-                console.log(`🔄 Status atualizado para 'contacted' no banco.`);
+                console.log(`🐺 Lead ${lead.name} caçado com sucesso.`);
             }
         } catch (err) {
             console.error(`❌ Lobo falhou ao enviar mensagem para ${lead.name}:`, err);

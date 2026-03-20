@@ -1,53 +1,66 @@
 import { NextResponse } from 'next/server';
 
-// Optional: Netlify's Next.js adapter standard for scheduling
-export const config = { schedule: "0 11-20 * * 1-5" };
+// 🐺 AGUDA: Rodar a cada 15 minutos durante o horário comercial (Seg-Sex)
+// Isso permite enviar lotes pequenos com mais frequência, o que é MUITO mais seguro.
+export const config = {
+    schedule: "*/15 10-21 * * 1-5"
+};
 
 export async function POST(req: Request) {
-    console.log('\n--- 🐺 INICIANDO SCHEDULED CRON DO LOBO ---');
-    try {
-        const targetUrl = process.env.NEXT_PUBLIC_SITE_URL 
-            ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/lobo`
-            : 'https://wolfagent.netlify.app/api/lobo';
+    const cronId = Math.random().toString(36).substring(7); // ID para rastrear no log
+    console.log(`\n--- 🐺 [${cronId}] INICIANDO CAÇADA AGENDADA ---`);
 
-        const token = process.env.WOLF_SECRET_TOKEN;
-        
+    try {
+        const targetUrl = process.env.WOLF_SITE_URL
+            ? `${process.env.WOLF_SITE_URL}/api/lobo`
+            : 'http://localhost:3000/api/lobo';
+
+        // Padronizando para a mesma chave do Admin
+        const token = process.env.ADMIN_SECRET_PASSWORD;
+
         if (!token) {
-            console.error('❌ ERRO: WOLF_SECRET_TOKEN não configurado no servidor.');
-            return NextResponse.json({ error: 'Missing token in env' }, { status: 500 });
+            console.error(`❌ [${cronId}] ERRO: WOLF_ADMIN_TOKEN não configurado.`);
+            return NextResponse.json({ error: 'Missing token' }, { status: 500 });
         }
 
-        console.log(`📡 Disparando fetch interno para: ${targetUrl}`);
-        
+        console.log(`📡 [${cronId}] Disparando lote para: ${targetUrl}`);
+
+        // Timeout AbortController: Evita que a função fique "pendurada"
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-wolf-token': token
+                'x-wolf-token': token // Usando o header padronizado
             },
-            body: JSON.stringify({ type: 'daily_hunt' })
+            body: JSON.stringify({
+                type: 'daily_hunt',
+                batch_size: 3, // 🐺 SEGURANÇA: Processa apenas 3 leads por vez (a cada 15 min)
+                cron_ref: cronId
+            }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         const responseData = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-            console.error(`❌ Falha na rota do Lobo (Status: ${response.status})`, responseData);
-            return NextResponse.json(
-                { error: 'Lobo trigger failed', details: responseData },
-                { status: response.status }
-            );
+            throw new Error(`Lobo API respondeu com erro: ${response.status}`);
         }
 
-        console.log(`✅ Sucesso no Lobo Cron (Status: ${response.status}):`, responseData);
-        return NextResponse.json({ success: true, details: responseData });
-    } catch (error) {
-        console.error('❌ Erro Crítico durante execução do Lobo Cron:', error);
-        return NextResponse.json({ error: 'Cron execution failed' }, { status: 500 });
+        console.log(`✅ [${cronId}] Sucesso:`, responseData);
+        return NextResponse.json({ success: true, cronId, details: responseData });
+
+    } catch (error: any) {
+        const errorMsg = error.name === 'AbortError' ? 'Timeout na API do Lobo' : error.message;
+        console.error(`❌ [${cronId}] Erro Crítico:`, errorMsg);
+        return NextResponse.json({ error: errorMsg }, { status: 500 });
     }
 }
 
-// Netlify Cron normally triggers functions via GET requests, so we expose GET as well 
-// and just redirect it to the POST logic.
 export async function GET(req: Request) {
     return POST(req);
 }
