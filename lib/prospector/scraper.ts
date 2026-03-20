@@ -51,7 +51,7 @@ export async function processHunt(command: HuntCommand) {
             }
         ];
 
-        const webhooksEncoded = encodeURIComponent(JSON.stringify(webhooksConfig));
+        const webhooksEncoded = Buffer.from(JSON.stringify(webhooksConfig)).toString('base64');
         const apifyUrl = `https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token=${apifyToken}&webhooks=${webhooksEncoded}`;
 
         const apifyRes = await fetch(apifyUrl, {
