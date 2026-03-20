@@ -3,7 +3,7 @@
 export async function sendWhatsAppMessage(phone: string, text: string) {
     const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
-    const baseUrl = process.env.EVOLUTION_API_URL;
+    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
 
     // Calcula o tempo de digitação: 50ms por letra. Min: 2s, Max: 5s.
     const typingTime = Math.min(Math.max(text.length * 50, 2000), 5000); 

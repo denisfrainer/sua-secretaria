@@ -123,7 +123,13 @@ export async function POST(req: Request) {
                 dataObj = body.data[0];
             }
 
-            if (dataObj?.key && !dataObj.key.remoteJid?.includes('@g.us')) {
+            const remoteJid = dataObj?.key?.remoteJid || '';
+            if (remoteJid.endsWith('@g.us')) {
+                console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
+                return new NextResponse('Ignore Group', { status: 200 });
+            }
+
+            if (dataObj?.key) {
                 const isFromMe = dataObj.key.fromMe === true;
 
                 // Ensure clientNumber is extracted from the correct field prioritizing the real phone number (remoteJidAlt vs LID)
@@ -135,7 +141,11 @@ export async function POST(req: Request) {
 
                 const messageObj = dataObj.message;
                 if (messageObj) {
-                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || messageObj.imageMessage?.caption || messageObj.videoMessage?.caption || '';
+                    if (!messageObj.conversation && !messageObj.extendedTextMessage) {
+                        console.log('🔇 [WEBHOOK] Mídia/Áudio ignorado.');
+                        return NextResponse.json({ status: 'ignored', reason: 'media_not_supported' }, { status: 200 });
+                    }
+                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
                 }
 
                 if (clientMessage && clientMessage.trim().length > 0) {
