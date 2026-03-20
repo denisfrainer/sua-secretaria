@@ -195,8 +195,13 @@ export async function POST(req: Request) {
         if (isValidMessage && clientNumber && clientMessage) {
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
-
-
+            // 🤖 BOT KEYWORD FILTER: Drop messages from automated systems
+            const botKeywords = ['digite 1', 'escolha uma opção', 'assistente virtual', 'menu principal', 'opção inválida', 'digite o número', 'selecione uma'];
+            const msgLower = clientMessage.toLowerCase();
+            if (botKeywords.some(kw => msgLower.includes(kw))) {
+                console.log(`🤖 [CIRCUIT BREAKER] Mensagem de bot detectada de ${clientNumber}: "${clientMessage}". Descartando.`);
+                return NextResponse.json({ status: 'ignored', reason: 'bot_keyword_detected' }, { status: 200 });
+            }
             // --- DEBOUNCER / BATCHING LOGIC START ---
 
             // 2. Fetch Lead
@@ -217,6 +222,42 @@ export async function POST(req: Request) {
                     .update({ replied: true })
                     .eq('phone', clientNumber);
                 console.log(`✅ [WEBHOOK] Lead ${clientNumber} respondeu. Marcado para ignorar no Ghost Hunter.`);
+            }
+
+            // 🚨 CIRCUIT BREAKER: Lock if reply_count >= 10 (AI Loop War Prevention)
+            if (lead && (lead.reply_count || 0) >= 10) {
+                console.log(`🚨 [CIRCUIT BREAKER] Bot Loop detectado para lead ${clientNumber}. Travando conversa.`);
+                await supabaseAdmin
+                    .from('leads_lobo')
+                    .update({ is_locked: true, status: 'needs_human', ai_paused: true })
+                    .eq('phone', clientNumber);
+                return NextResponse.json({ status: 'locked', reason: 'circuit_breaker_reply_limit' }, { status: 200 });
+            }
+
+            // ⏱️ COOLDOWN: 5+ messages in under 2 minutes = auto-lock (Anti-Spam)
+            if (lead) {
+                const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+                const { count } = await supabaseAdmin
+                    .from('chat_history')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('whatsapp_number', clientNumber)
+                    .eq('role', 'user')
+                    .gte('created_at', twoMinAgo);
+
+                if ((count || 0) >= 5) {
+                    console.log(`🚨 [CIRCUIT BREAKER] Spam detectado de ${clientNumber}: ${count} msgs em 2min. Travando.`);
+                    await supabaseAdmin
+                        .from('leads_lobo')
+                        .update({ is_locked: true, status: 'needs_human', ai_paused: true })
+                        .eq('phone', clientNumber);
+                    return NextResponse.json({ status: 'locked', reason: 'cooldown_spam_detected' }, { status: 200 });
+                }
+            }
+
+            // 🔒 LOCKED CHECK: If already locked, stop immediately
+            if (lead && lead.is_locked === true) {
+                console.log(`🔒 [CIRCUIT BREAKER] Lead ${clientNumber} está travado. Ignorando.`);
+                return NextResponse.json({ status: 'ignored', reason: 'lead_locked' }, { status: 200 });
             }
 
             // Kill Switch: Human Takeover
@@ -423,6 +464,24 @@ ${finalLead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via
 
             // 17. Envia a mensagem de volta para o cliente no WhatsApp
             await sendWhatsAppMessage(clientNumber, finalText);
+
+            // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
+            try {
+                await supabaseAdmin.rpc('increment_reply_count', { lead_phone: clientNumber });
+                console.log(`📊 [CIRCUIT BREAKER] reply_count incrementado para ${clientNumber}`);
+            } catch {
+                // Fallback if RPC doesn't exist: manual increment
+                const { data: currentLead } = await supabaseAdmin
+                    .from('leads_lobo')
+                    .select('reply_count')
+                    .eq('phone', clientNumber)
+                    .single();
+                await supabaseAdmin
+                    .from('leads_lobo')
+                    .update({ reply_count: ((currentLead?.reply_count || 0) + 1) })
+                    .eq('phone', clientNumber);
+                console.log(`📊 [CIRCUIT BREAKER] reply_count incrementado via fallback para ${clientNumber}`);
+            }
 
             return NextResponse.json({ status: 'success' });
         }
