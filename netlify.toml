@@ -10,8 +10,10 @@
   to = "/index.html"
   status = 200
 
+# 🐺 Agendamento do Lobo (A cada 5 minutos)
 [functions."lobo-cron"]
   schedule = "*/5 10-20 * * 1-5"
 
+# 📊 Agendamento do Relatório (Final do dia)
 [functions."report-cron"]
   schedule = "20 21 * * 1-5"
