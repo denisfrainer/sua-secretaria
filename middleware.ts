@@ -20,16 +20,15 @@ export default createMiddleware({
 });
 
 export const config = {
-  // CRÍTICO para SSG: Matcher que IGNORA todos os arquivos estáticos
-  // Sem isso, o build SSG falha ao tentar processar imagens, favicon, etc.
   matcher: [
-    // Incluir todas as rotas EXCETO:
-    '/((?!_next|api|admin|favicon.ico|images|certificates|.*\\..*|.*\\..*).*)',
+    /*
+     * 🛡️ ESCUDO DO LOBO:
+     * 1. Ignora internamente o que não deve ser traduzido (api, _next, favicon, etc)
+     * 2. O comando (?!api) é o que impede o 308 Redirect no cron-job.
+     */
+    '/((?!api|_next/static|_next/image|admin|favicon.ico|images|certificates|.*\\..*).*)',
 
-    // Incluir rotas raiz
-    '/',
-
-    // Incluir rotas com locales
+    // Mantém as rotas de idioma funcionando apenas para as páginas reais
     '/(pt|en|es)/:path*'
-  ]
+  ],
 };
