@@ -57,16 +57,16 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
     if (name === 'save_lead_data') {
         console.log(`💾 [LEAD DATA CAPTURED]:`, args);
         const updateData: Record<string, any> = {};
-        if (args.name) updateData.nome = args.name;
-        if (args.company) updateData.empresa = args.company;
-        if (args.pain_point) updateData.dor_principal = args.pain_point;
-        if (args.revenue) updateData.faturamento = args.revenue;
-        updateData.status = 'em_conversacao';
+        if (args.name) updateData.name = args.name;
+        if (args.company) updateData.niche = args.company; // 'empresa' maps to 'niche' on the English schema conventionally 
+        if (args.pain_point) updateData.main_pain = args.pain_point;
+        if (args.revenue) updateData.revenue = args.revenue;
+        updateData.status = 'talking'; // mapped 'em_conversacao' to 'talking' based on English schemas!
 
         const { error } = await supabaseAdmin
             .from('leads_lobo')
             .update(updateData)
-            .eq('telefone', args.phone);
+            .eq('phone', args.phone);
 
         if (error) {
             console.error('❌ Erro ao atualizar lead no Supabase:', error);
@@ -86,7 +86,7 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
         const { error } = await supabaseAdmin
             .from('leads_lobo')
             .update({ status: 'hot_lead' })
-            .eq('telefone', clientPhone);
+            .eq('phone', clientPhone);
 
         if (error) {
             console.error('❌ Erro ao atualizar status para hot_lead:', error);
@@ -141,11 +141,11 @@ export async function POST(req: Request) {
                     if (isFromMe) {
                         const cmd = clientMessage.trim();
                         if (cmd === '/pausar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('telefone', clientNumber);
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
                             await sendWhatsAppMessage(clientNumber, "🛑 *[SISTEMA]* IA Pausada pelo Admin.");
                             return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
                         } else if (cmd === '/retomar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('telefone', clientNumber);
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('phone', clientNumber);
                             await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
                             return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                         }
@@ -165,11 +165,11 @@ export async function POST(req: Request) {
                 if (isFromMe) {
                     const cmd = clientMessage.trim();
                     if (cmd === '/pausar') {
-                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('telefone', clientNumber);
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
                         await sendWhatsAppMessage(clientNumber, "🛑 *[SISTEMA]* IA Pausada pelo Admin.");
                         return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
                     } else if (cmd === '/retomar') {
-                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('telefone', clientNumber);
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('phone', clientNumber);
                         await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
                         return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                     }
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
             let { data: lead, error: leadError } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
-                .eq('telefone', clientNumber)
+                .eq('phone', clientNumber)
                 .maybeSingle();
 
             if (leadError) {
@@ -209,9 +209,9 @@ export async function POST(req: Request) {
             if (!lead) {
                 console.log(`🌱 Lead novo. Criando registro como organico_inbound...`);
                 const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
-                    telefone: clientNumber,
+                    phone: clientNumber,
                     status: 'organico_inbound',
-                    nome: 'Lead inbound',
+                    name: 'Lead inbound',
                     message_buffer: '',
                     is_processing: false,
                 }).select().single();
@@ -226,7 +226,7 @@ export async function POST(req: Request) {
             await supabaseAdmin
                 .from('leads_lobo')
                 .update({ message_buffer: newBuffer })
-                .eq('telefone', clientNumber);
+                .eq('phone', clientNumber);
 
             // 5. Lock Check
             if (lead?.is_processing === true) {
@@ -239,7 +239,7 @@ export async function POST(req: Request) {
             await supabaseAdmin
                 .from('leads_lobo')
                 .update({ is_processing: true })
-                .eq('telefone', clientNumber);
+                .eq('phone', clientNumber);
 
             // Mark for cleanup in finally block
             processingPhone = clientNumber;
@@ -252,7 +252,7 @@ export async function POST(req: Request) {
             const { data: finalLead } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
-                .eq('telefone', clientNumber)
+                .eq('phone', clientNumber)
                 .single();
 
             const finalMessageBuffer = finalLead?.message_buffer || newBuffer;
@@ -263,24 +263,24 @@ export async function POST(req: Request) {
             let leadContext = '';
 
             if (finalLead) {
-                if (finalLead.status === 'isca_enviada') {
+                if (finalLead.status === 'contacted') {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
-Atenção: Você está falando com ${finalLead.nome || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca perguntando se eles usam IA no atendimento. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
-Empresa: ${finalLead.empresa || 'Não informada'}.
-Dor Principal: ${finalLead.dor_principal || 'Não informada'}.`;
+Atenção: Você está falando com ${finalLead.name || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca perguntando se eles usam IA no atendimento. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
+Empresa/Nicho: ${finalLead.niche || 'Não informada'}.
+Dor Principal: ${finalLead.main_pain || 'Não informada'}.`;
 
                     await supabaseAdmin
                         .from('leads_lobo')
-                        .update({ status: 'em_conversacao' })
-                        .eq('telefone', clientNumber);
-                    console.log(`🔄 Status do lead atualizado para 'em_conversacao'`);
+                        .update({ status: 'talking' })
+                        .eq('phone', clientNumber);
+                    console.log(`🔄 Status do lead atualizado para 'talking'`);
                 } else {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
-Você está falando com ${finalLead.nome || 'o cliente'}.
+Você está falando com ${finalLead.name || 'o cliente'}.
 O status atual dele na base é: ${finalLead.status}.
-Empresa: ${finalLead.empresa || 'Não informada'}.
-Dor Principal: ${finalLead.dor_principal || 'Não informada'}.
-${finalLead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
+Empresa/Nicho: ${finalLead.niche || 'Não informada'}.
+Dor Principal: ${finalLead.main_pain || 'Não informada'}.
+${finalLead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
                 }
             }
 
@@ -418,7 +418,7 @@ ${finalLead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção 
             await supabaseAdmin
                 .from('leads_lobo')
                 .update({ is_processing: false, message_buffer: '' })
-                .eq('telefone', processingPhone);
+                .eq('phone', processingPhone);
         }
     }
 }
