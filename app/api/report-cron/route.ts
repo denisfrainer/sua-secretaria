@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         // 4. Fetch the last 10 leads contacted
         const { data: recentLeads, error: leadsError } = await supabaseAdmin
             .from('leads_lobo')
-            .select('nome, name, telefone, phone, status, created_at')
+            .select('name, phone, status, created_at')
             .neq('status', 'pending')
             .order('created_at', { ascending: false })
             .limit(10);
@@ -82,8 +82,8 @@ export async function POST(req: Request) {
                     </thead>
                     <tbody>
                         ${recentLeads.map(lead => {
-                            const displayName = lead.nome || lead.name || 'Desconhecido';
-                            const displayPhone = lead.telefone || lead.phone || '-';
+                            const displayName = lead.name || 'Desconhecido';
+                            const displayPhone = lead.phone || '-';
                             return `
                             <tr>
                                 <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 14px;">${displayName}</td>
