@@ -53,7 +53,7 @@ export async function processHunt(command: HuntCommand) {
             searchStringsArray: [command.query],
             maxCrawlPages: 1,
             maxCrawledPlacesPerSearch: maxResults,
-            language: 'pt',
+            language: 'pt-BR',
             countryCode: 'br',
         };
 
