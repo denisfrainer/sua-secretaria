@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 
-export const config = { schedule: "20 21 * * 1-5" }; // 21:20 UTC = 18:20 BRT (Mon-Fri)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
     console.log('\n--- 📊 INICIANDO REPORT CRON (EXECUTIVE DIGEST) ---');

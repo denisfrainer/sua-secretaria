@@ -32,7 +32,7 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 type: 'daily_hunt',
-                batch_size: 2, // 🎯 A MATEMÁTICA PERFEITA: 2 leads x 8s = 16s totais.
+                batch_size: 1, // 🎯 MODO SINGLE-SHOT: 1 lead por vez (Imune a Timeouts)
                 cron_ref: cronId
             }),
             signal: controller.signal
