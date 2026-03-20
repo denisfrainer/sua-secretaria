@@ -202,6 +202,19 @@ export async function POST(req: Request) {
                 console.log(`🤖 [CIRCUIT BREAKER] Mensagem de bot detectada de ${clientNumber}: "${clientMessage}". Descartando.`);
                 return NextResponse.json({ status: 'ignored', reason: 'bot_keyword_detected' }, { status: 200 });
             }
+
+            // 🔴 GLOBAL KILL SWITCH: Check if Eliza is turned OFF in system_settings
+            const { data: killSwitchData } = await supabaseAdmin
+                .from('system_settings')
+                .select('value')
+                .eq('key', 'global_kill_switch')
+                .single();
+
+            if (killSwitchData && killSwitchData.value?.enabled === false) {
+                console.log(`🔴 [GLOBAL KILL SWITCH] Eliza está DESLIGADA. Ignorando mensagem de ${clientNumber}.`);
+                return NextResponse.json({ status: 'ignored', reason: 'eliza_globally_off' }, { status: 200 });
+            }
+
             // --- DEBOUNCER / BATCHING LOGIC START ---
 
             // 2. Fetch Lead

@@ -19,6 +19,8 @@ interface Lead {
     main_pain?: string;
     status: string;
     created_at: string;
+    reply_count?: number;
+    is_locked?: boolean;
 }
 
 type StatusKey = 'pending' | 'contacted' | 'talking' | 'closed';
@@ -71,7 +73,9 @@ const ALL_STATUSES = [
     { value: 'talking', label: 'Talking' },
     { value: 'hot_lead', label: 'Hot Lead' },
     { value: 'closed', label: 'Closed' },
-    { value: 'invalid_phone', label: 'Invalid' },
+    { value: 'needs_human', label: 'Needs Human' },
+    { value: 'invalid', label: 'Invalid' },
+    { value: 'invalid_phone', label: 'Invalid Phone' },
     { value: 'lixo', label: 'Descarte' },
 ];
 
@@ -85,6 +89,8 @@ function StatusPill({ status }: { status: string }) {
         talking:       { bg: 'bg-emerald-500/10',  text: 'text-emerald-400' },
         closed:        { bg: 'bg-indigo-500/10',   text: 'text-indigo-400' },
         hot_lead:      { bg: 'bg-orange-500/10',   text: 'text-orange-400' },
+        needs_human:   { bg: 'bg-red-500/10',      text: 'text-red-400' },
+        invalid:       { bg: 'bg-zinc-500/10',     text: 'text-zinc-500' },
         invalid_phone: { bg: 'bg-red-500/10',      text: 'text-red-400' },
         lixo:          { bg: 'bg-zinc-800/50',     text: 'text-zinc-600' },
     };
@@ -108,6 +114,9 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [quarantineLeads, setQuarantineLeads] = useState<Lead[]>([]);
+    const [resettingId, setResettingId] = useState<string | null>(null);
+    const [masterResetting, setMasterResetting] = useState(false);
 
     // AUTH
     useEffect(() => {
@@ -139,8 +148,66 @@ export default function AdminDashboard() {
     }, [adminKey]);
 
     useEffect(() => {
-        if (authorized) fetchLeads();
+        if (authorized) {
+            fetchLeads();
+            fetchQuarantine();
+        }
     }, [authorized, fetchLeads]);
+
+    // QUARANTINE FETCH
+    const fetchQuarantine = async () => {
+        if (!adminKey) return;
+        try {
+            const res = await fetch(`/api/admin/quarantine?token=${encodeURIComponent(adminKey)}`);
+            if (res.ok) {
+                const { leads: data } = await res.json();
+                setQuarantineLeads(data || []);
+            }
+        } catch (err) {
+            console.error('Quarantine fetch error:', err);
+        }
+    };
+
+    // SINGLE RESET
+    const resetLead = async (leadId: string) => {
+        setResettingId(leadId);
+        try {
+            const res = await fetch('/api/admin/quarantine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-wolf-token': adminKey },
+                body: JSON.stringify({ action: 'reset_single', leadId }),
+            });
+            if (res.ok) {
+                setQuarantineLeads(prev => prev.filter(l => l.id !== leadId));
+                fetchLeads();
+            }
+        } catch (err) {
+            console.error('Reset error:', err);
+        } finally {
+            setResettingId(null);
+        }
+    };
+
+    // MASTER RESET
+    const masterReset = async () => {
+        if (!confirm('MASTER RESET: Desbloquear TODOS os leads travados? Esta ação não pode ser desfeita.')) return;
+        setMasterResetting(true);
+        try {
+            const res = await fetch('/api/admin/quarantine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-wolf-token': adminKey },
+                body: JSON.stringify({ action: 'master_reset' }),
+            });
+            if (res.ok) {
+                setQuarantineLeads([]);
+                fetchLeads();
+            }
+        } catch (err) {
+            console.error('Master reset error:', err);
+        } finally {
+            setMasterResetting(false);
+        }
+    };
 
     // STATUS UPDATE
     const updateStatus = async (leadId: string, newStatus: string) => {
@@ -298,6 +365,79 @@ export default function AdminDashboard() {
                     ))}
                 </div>
             </main>
+
+            {/* QUARANTINE ZONE */}
+            {quarantineLeads.length > 0 && (
+                <div className="max-w-[1800px] mx-auto px-6 py-8 border-t border-red-500/20">
+                    <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                            <h2 className="text-sm font-medium text-red-400 uppercase tracking-widest">
+                                Quarantine Zone
+                            </h2>
+                            <span className="text-xs text-red-400/60 font-mono">({quarantineLeads.length} locked)</span>
+                        </div>
+                        <button
+                            onClick={masterReset}
+                            disabled={masterResetting}
+                            className={`
+                                px-4 py-2 text-xs font-medium uppercase tracking-wider rounded-lg border transition-all duration-200 cursor-pointer
+                                ${masterResetting
+                                    ? 'opacity-40 pointer-events-none border-red-500/20 text-red-400/40'
+                                    : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/40'
+                                }
+                            `}
+                        >
+                            {masterResetting ? 'Resetting...' : 'Master Reset All'}
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                        {quarantineLeads.map((lead) => (
+                            <div
+                                key={lead.id}
+                                className="rounded-lg p-4 border border-red-500/15 bg-red-500/[0.03] hover:border-red-500/25 transition-all duration-200"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[14px] font-medium text-white/90 truncate">{lead.name || 'Unknown'}</p>
+                                        <p className="text-[13px] text-white/25 font-mono tabular-nums">{lead.phone}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {(lead.reply_count || 0) > 0 && (
+                                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                                                {lead.reply_count} msgs
+                                            </span>
+                                        )}
+                                        {lead.is_locked && (
+                                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/20">
+                                                LOCKED
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 flex items-center justify-between">
+                                    <StatusPill status={lead.status} />
+                                    <button
+                                        onClick={() => resetLead(lead.id)}
+                                        disabled={resettingId === lead.id}
+                                        className={`
+                                            px-3 py-1 text-[11px] font-medium rounded-md border transition-all duration-200 cursor-pointer
+                                            ${resettingId === lead.id
+                                                ? 'opacity-40 pointer-events-none border-white/[0.08] text-white/30'
+                                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/40'
+                                            }
+                                        `}
+                                    >
+                                        {resettingId === lead.id ? 'Resetting...' : 'Unlock'}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* DISCARDS */}
             {filteredLeads.filter((l) => l.status === 'lixo').length > 0 && (
