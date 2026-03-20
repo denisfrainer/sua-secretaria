@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     try {
         // 1. Security Check
         const token = req.headers.get('x-wolf-token');
-        if (!token || token !== process.env.WOLF_ADMIN_TOKEN) {
+        if (!token || token !== process.env.ADMIN_SECRET_PASSWORD) {
             console.log('⚠️ Token inválido ou ausente:', token);
             return new NextResponse('Unauthorized', { status: 401 });
         }
@@ -91,10 +91,10 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         const saudacao = localHour < 12 ? 'Bom dia' : 'Boa tarde';
 
         const nameLower = lead.name.toLowerCase();
-        const rawName = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome') 
-            ? lead.name.split(' ')[0] 
+        const rawName = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')
+            ? lead.name.split(' ')[0]
             : '';
-            
+
         const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : '';
         const displayName = firstName ? ` ${firstName}` : '';
 
