@@ -124,8 +124,16 @@ async function processLeads(leads: any[], isFromDb: boolean) {
                 await supabaseAdmin.from('leads_lobo').update({ status: 'contacted' }).eq('id', lead.id);
                 console.log(`🐺 Lead ${lead.name} caçado com sucesso.`);
             }
-        } catch (err) {
-            console.error(`❌ Lobo falhou ao enviar mensagem para ${lead.name}:`, err);
+        } catch (err: any) {
+            const errorBody = err.message || '';
+            if (errorBody.includes('"exists":false')) {
+                console.log(`🚫 Lead ${lead.name} não possui WhatsApp. Marcando como inválido.`);
+                if (isFromDb && lead.id) {
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'invalid' }).eq('id', lead.id);
+                }
+            } else {
+                console.error(`❌ Lobo falhou ao enviar mensagem para ${lead.name}:`, err);
+            }
         }
     }
 
