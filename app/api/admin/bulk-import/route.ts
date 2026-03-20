@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase/admin';
+import { normalizePhone } from '../../../../lib/utils/phone';
 
 export async function POST(req: Request) {
     try {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
         const leadsToImport = rawItems.map((item: any) => {
             // Flexible extraction for either Apify raw outputs or pre-mapped objects
             const rawPhone = item.phone || item.phoneNumber || item.phoneUnformatted || '';
-            let phone = String(rawPhone).replace(/\D/g, '');
+            let phone = normalizePhone(String(rawPhone));
             
             // Standardize brazilian formatting if missing country code
             if (phone && !phone.startsWith('55')) {

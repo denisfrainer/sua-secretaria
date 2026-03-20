@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage } from '../../../../lib/whatsapp/sender';
 import { supabaseAdmin } from '../../../../lib/supabase/admin';
+import { normalizePhone } from '../../../../lib/utils/phone';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
         // 4. Execution & Status Update Loop
         for (const lead of leadsToFollowUp) {
             if (!lead.phone) continue;
+
+            lead.phone = normalizePhone(lead.phone);
 
             const nameLower = (lead.name || '').toLowerCase();
             const rawName = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')

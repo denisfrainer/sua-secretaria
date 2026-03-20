@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// 🐺 AGUDA: A cada 10 minutos durante o horário comercial
-export const config = {
-    schedule: "*/10 10-20 * * 1-5"
-};
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
     const cronId = Math.random().toString(36).substring(7);

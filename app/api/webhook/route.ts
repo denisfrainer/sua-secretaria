@@ -4,6 +4,7 @@ import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import { generatePrompt } from '../../../lib/agent/prompt';
+import { normalizePhone } from '../../../lib/utils/phone';
 
 // ==============================================================
 // 🔧 FUNCTION DECLARATIONS (Google Gen AI format)
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
                     ? String(dataObj.key.remoteJidAlt)
                     : String(dataObj.key.remoteJid);
 
-                clientNumber = rawJid.replace(/\D/g, '');
+                clientNumber = normalizePhone(rawJid);
 
                 const messageObj = dataObj.message;
                 if (messageObj) {
@@ -159,7 +160,7 @@ export async function POST(req: Request) {
             }
         } else if (body.isGroup === false && body.text && body.text.message) {
             const isFromMe = body.fromMe === true;
-            clientNumber = body.phone?.replace(/\D/g, '');
+            clientNumber = normalizePhone(body.phone || '');
             clientMessage = body.text.message;
             if (clientMessage && clientMessage.trim().length > 0) {
                 if (isFromMe) {

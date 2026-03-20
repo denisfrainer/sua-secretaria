@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
+import { normalizePhone } from '../../../lib/utils/phone';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -28,11 +29,12 @@ export async function POST(req: Request) {
         const manualPhone = body.testPhone || body.test_number || body.number;
 
         if (manualPhone) {
-            console.log(`🧪 TESTE MANUAL: Disparando para o número ${manualPhone}`);
+            const safePhone = normalizePhone(String(manualPhone));
+            console.log(`🧪 TESTE MANUAL: Disparando para o número ${safePhone}`);
             leadsToProcess = [{
                 id: 'test-id',
                 name: body.testName || body.name || 'Lead Teste',
-                phone: manualPhone
+                phone: safePhone
             }];
         } else {
             // 📥 A CORREÇÃO DO SPAM: Buscando apenas 'pending'
@@ -77,6 +79,8 @@ async function processLeads(leads: any[], isFromDb: boolean) {
             console.log(`⚠️ Lead ignorado (dados incompletos):`, lead);
             continue;
         }
+        
+        lead.phone = normalizePhone(lead.phone);
 
         // Delay anti-ban (reduzido para caber no limite de tempo do Serverless)
         let delay = Math.floor(Math.random() * 2000) + 2000; // 2 a 4 segundos
