@@ -66,19 +66,21 @@ export async function POST(req: Request) {
             // Ignore small phone instances
             if (phone.length < 12) continue;
 
-            // Mapeamento: title -> name, categoryName -> niche, city -> city
+            // Mapeamento para o Schema Gold Standard (Inglês)
             const name = item.title || 'Lead Desconhecido';
             const niche = item.categoryName || item.category || 'Desconhecido';
             const city = item.city || item.address?.split(',')?.pop()?.trim() || '';
 
-            // Upsert onto Supabase using the 'phone' unique key exactly as specified
             const { error } = await supabaseAdmin.from('leads_lobo').upsert(
                 {
-                    phone,
                     name,
-                    niche,
                     city,
-                    status: 'pending'
+                    phone,
+                    niche,
+                    status: 'pending',
+                    main_pain: null,
+                    revenue: null,
+                    updated_at: new Date().toISOString()
                 },
                 { onConflict: 'phone' }
             );
