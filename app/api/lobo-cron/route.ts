@@ -10,9 +10,9 @@ export async function POST(req: Request) {
     console.log(`\n--- 🐺 [${cronId}] INICIANDO CAÇADA AGENDADA (LOTE SEGURO) ---`);
 
     try {
-        const targetUrl = process.env.WOLF_SITE_URL
-            ? `${process.env.WOLF_SITE_URL}/api/lobo`
-            : 'http://localhost:3000/api/lobo';
+        // O código tenta primeiro a variável de ambiente, se não tiver, usa localhost
+        const baseUrl = process.env.WOLF_SITE_URL || 'http://localhost:3000';
+        const targetUrl = `${baseUrl}/api/lobo`;
 
         const token = process.env.ADMIN_SECRET_PASSWORD;
 
