@@ -82,7 +82,7 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
 
     if (name === 'notify_human_specialist') {
         console.log(`🔥 [HOT LEAD ALERT - Urgency: ${args.urgency_level}]: ${args.summary} | Phone: ${clientPhone}`);
-        
+
         const { error } = await supabaseAdmin
             .from('leads_lobo')
             .update({ status: 'hot_lead' })
@@ -122,34 +122,72 @@ export async function POST(req: Request) {
                 dataObj = body.data[0];
             }
 
-            if (dataObj?.key && !dataObj.key.fromMe && !dataObj.key.remoteJid?.includes('@g.us')) {
+            if (dataObj?.key && !dataObj.key.remoteJid?.includes('@g.us')) {
+                const isFromMe = dataObj.key.fromMe === true;
+
                 // Ensure clientNumber is extracted from the correct field prioritizing the real phone number (remoteJidAlt vs LID)
-                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net')) 
-                    ? String(dataObj.key.remoteJidAlt) 
+                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
+                    ? String(dataObj.key.remoteJidAlt)
                     : String(dataObj.key.remoteJid);
-                
+
                 clientNumber = rawJid.replace(/\D/g, '');
-                
+
                 const messageObj = dataObj.message;
                 if (messageObj) {
                     clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || messageObj.imageMessage?.caption || messageObj.videoMessage?.caption || '';
                 }
-                
+
                 if (clientMessage && clientMessage.trim().length > 0) {
+                    if (isFromMe) {
+                        const cmd = clientMessage.trim();
+                        if (cmd === '/pausar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('telefone', clientNumber);
+                            await sendWhatsAppMessage(clientNumber, "🛑 *[SISTEMA]* IA Pausada pelo Admin.");
+                            return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
+                        } else if (cmd === '/retomar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('telefone', clientNumber);
+                            await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
+                            return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
+                        }
+                        
+                        // Ignore other fromMe messages early
+                        return NextResponse.json({ status: 'ignored', reason: 'fromMe_not_command' }, { status: 200 });
+                    }
+
                     isValidMessage = true;
                 }
             }
-        } else if (body.isGroup === false && body.text && body.text.message && !body.fromMe) {
+        } else if (body.isGroup === false && body.text && body.text.message) {
+            const isFromMe = body.fromMe === true;
             clientNumber = body.phone?.replace(/\D/g, '');
             clientMessage = body.text.message;
-            isValidMessage = true;
+            if (clientMessage && clientMessage.trim().length > 0) {
+                if (isFromMe) {
+                    const cmd = clientMessage.trim();
+                    if (cmd === '/pausar') {
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('telefone', clientNumber);
+                        await sendWhatsAppMessage(clientNumber, "🛑 *[SISTEMA]* IA Pausada pelo Admin.");
+                        return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
+                    } else if (cmd === '/retomar') {
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('telefone', clientNumber);
+                        await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
+                        return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
+                    }
+                    
+                    return NextResponse.json({ status: 'ignored', reason: 'fromMe_not_command' }, { status: 200 });
+                }
+
+                isValidMessage = true;
+            }
         }
 
         if (isValidMessage && clientNumber && clientMessage) {
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
+
+
             // --- DEBOUNCER / BATCHING LOGIC START ---
-            
+
             // 2. Fetch Lead
             let { data: lead, error: leadError } = await supabaseAdmin
                 .from('leads_lobo')
@@ -159,6 +197,12 @@ export async function POST(req: Request) {
 
             if (leadError) {
                 console.error('❌ Erro ao buscar lead no Supabase:', leadError);
+            }
+
+            // Kill Switch: Human Takeover
+            if (lead && (lead as any).ai_paused === true) {
+                console.log(`🛑 [KILL SWITCH ATIVO] Humano no controle para o número: ${clientNumber}`);
+                return NextResponse.json({ status: 'ignored', reason: 'human_takeover' }, { status: 200 });
             }
 
             // 3. Create lead if new
@@ -171,7 +215,7 @@ export async function POST(req: Request) {
                     message_buffer: '',
                     is_processing: false,
                 }).select().single();
-                
+
                 lead = newLead;
             }
 
@@ -196,7 +240,7 @@ export async function POST(req: Request) {
                 .from('leads_lobo')
                 .update({ is_processing: true })
                 .eq('telefone', clientNumber);
-            
+
             // Mark for cleanup in finally block
             processingPhone = clientNumber;
 
@@ -212,12 +256,12 @@ export async function POST(req: Request) {
                 .single();
 
             const finalMessageBuffer = finalLead?.message_buffer || newBuffer;
-            
+
             console.log(`📦 Buffer final processado: "${finalMessageBuffer}"`);
 
             // --- GODSPEED UNIFICATION (Pre-Flight Context) ---
             let leadContext = '';
-            
+
             if (finalLead) {
                 if (finalLead.status === 'isca_enviada') {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
@@ -239,9 +283,9 @@ Dor Principal: ${finalLead.dor_principal || 'Não informada'}.
 ${finalLead.status === 'prospeccao_ativa' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
                 }
             }
-            
+
             if (finalLead?.status === 'organico_inbound') {
-                 leadContext = `\n\n[CONTEXTO DO LEAD]: Este é um lead orgânico inbound novo. Ele acabou de mandar mensagem. Colete o Nome, Empresa e Dor para salvar usando a tool.`;
+                leadContext = `\n\n[CONTEXTO DO LEAD]: Este é um lead orgânico inbound novo. Ele acabou de mandar mensagem. Colete o Nome, Empresa e Dor para salvar usando a tool.`;
             }
 
             // 8. Busca o cérebro do Agente no Banco de Dados

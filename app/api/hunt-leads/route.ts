@@ -32,15 +32,12 @@ export async function POST(req: Request) {
             );
         }
 
-        // 3. Iniciar Caçada Assíncrona (Fire and Forget)
-        // Isso evita que a requisição sofra Timeout enquanto o Apify raspa o maps.
-        processHunt({ query, limit }).catch((err) => {
-            console.error('❌ Erro catastrófico interno no Job do Scraper:', err);
-        });
+        // 3. Iniciar Caçada Assíncrona (Async Trigger with Webhooks)
+        await processHunt({ query, limit });
 
         return NextResponse.json({ 
             status: 'success',
-            message: 'A caçada foi iniciada com sucesso em background. Os leads serão adicionados ao seu Supabase em breve!',
+            message: 'Scraper triggered. Apify will ping the webhook when done.',
             query, 
             limit 
         });
