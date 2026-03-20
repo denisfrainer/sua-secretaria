@@ -55,8 +55,6 @@ export async function processHunt(command: HuntCommand) {
             maxCrawledPlacesPerSearch: maxResults,
             language: 'pt',
             countryCode: 'br',
-            reviewSort: 'newest',
-            minScore: 4.2
         };
 
         // Trigger the Apify job

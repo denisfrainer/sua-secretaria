@@ -30,55 +30,6 @@ export async function POST(req: Request) {
 
         const responseData = await response.json().catch(() => ({}));
 
-        let leadsCount = responseData.leadsCount || 0;
-        let jobStatus = responseData.status || (response.ok ? 'Operation Completed Successfully' : 'Operation Failed');
-
-        // Email logic via Resend
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const resendKey = process.env.RESEND_API_KEY;
-
-        if (adminEmail && resendKey) {
-            try {
-                const dateHeader = new Date().toLocaleDateString('pt-BR');
-                const htmlBody = `
-                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                        <h2>Wolf Agent Daily Summary</h2>
-                        <p><strong>Execution Time:</strong> 18:00 BRT</p>
-                        <p><strong>Leads Contacted Today:</strong> ${leadsCount}</p>
-                        <p><strong>Status:</strong> ${jobStatus}</p>
-                        <p><em>All messages were sent via Evolution API v2.</em></p>
-                        <hr />
-                        <p style="font-size: 12px; color: #666;">This is an automated report from your Wolf Agent.</p>
-                    </div>
-                `;
-
-                // Fire fetch to Resend
-                const resendRes = await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${resendKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        from: 'Wolf Agent <onboarding@resend.dev>',
-                        to: [adminEmail],
-                        subject: `🐺 Wolf Report: Daily Results - ${dateHeader}`,
-                        html: htmlBody
-                    })
-                });
-                
-                if (resendRes.ok) {
-                    console.log('📧 Relatório por email enviado com sucesso.');
-                } else {
-                    console.error('❌ Resend API rejeitou o email:', await resendRes.text());
-                }
-            } catch (emailErr) {
-                console.error('❌ Erro no envio do email de relatório (não fatal):', emailErr);
-            }
-        } else {
-            console.log('⚠️ ADMIN_EMAIL ou RESEND_API_KEY ausente no .env. Relatório não enviado.');
-        }
-
         if (!response.ok) {
             console.error(`❌ Falha na rota do Lobo (Status: ${response.status})`, responseData);
             return NextResponse.json(

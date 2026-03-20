@@ -12,3 +12,6 @@
 
 [functions."lobo-cron"]
   schedule = "0 11-20 * * 1-5"
+
+[functions."report-cron"]
+  schedule = "20 21 * * 1-5"
