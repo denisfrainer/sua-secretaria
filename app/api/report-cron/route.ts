@@ -12,12 +12,13 @@ export async function POST(req: Request) {
         const resendKey = process.env.RESEND_API_KEY;
         const adminEmail = process.env.ADMIN_EMAIL;
 
-        // Security check for manual triggers (if needed)
-        // Usually Netlify Cron doesn't send custom headers unless configured,
-        // but it's good practice for direct API calls.
-        const authHeader = req.headers.get('x-wolf-token');
-        if (authHeader && authHeader !== token) {
-             console.log('⚠️ Warning: Execution attempted without proper token matching.');
+        // --- STEP 0: Security & URL Param validation for cron-job.org ---
+        const { searchParams } = new URL(req.url);
+        const passedToken = searchParams.get('token');
+
+        if (!passedToken || passedToken !== token) {
+            console.log('⚠️ Security check failed: Invalid or missing URL token.');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         if (!resendKey || !adminEmail) {
@@ -43,7 +44,13 @@ export async function POST(req: Request) {
         const { count: invalidCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'invalid_phone');
+            .eq('status', 'invalid');
+
+        // 4. Count Quarantine (Needs Human or Is Locked)
+        const { count: quarantineCount } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('*', { count: 'exact', head: true })
+            .or('status.eq.needs_human,is_locked.eq.true');
 
         // 4. Fetch the last 10 leads contacted
         const { data: recentLeads, error: leadsError } = await supabaseAdmin
@@ -107,15 +114,20 @@ export async function POST(req: Request) {
                 <div style="padding: 30px;">
                     <h3 style="margin-top: 0; color: #111; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 18px;">Daily Funnel Metrics</h3>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 35px; text-align: center; gap: 10px;">
-                        <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 33%; border: 1px solid #e2e8f0;">
+                        <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
                             <div style="font-size: 28px; font-weight: 800; color: #0284c7;">${pendingCount || 0}</div>
                             <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Pending</div>
                         </div>
-                        <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 33%; border: 1px solid #e2e8f0;">
+                        <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
                             <div style="font-size: 28px; font-weight: 800; color: #16a34a;">${contactedCount || 0}</div>
                             <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Contacted</div>
                         </div>
-                        <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 33%; border: 1px solid #e2e8f0;">
+                        <!-- New Quarantine metric addition -->
+                        <div style="background: #fff1f2; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #fecdd3;">
+                            <div style="font-size: 28px; font-weight: 800; color: #e11d48;">${quarantineCount || 0}</div>
+                            <div style="font-size: 11px; color: #9f1239; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Quarantine</div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
                             <div style="font-size: 28px; font-weight: 800; color: #dc2626;">${invalidCount || 0}</div>
                             <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Invalid</div>
                         </div>

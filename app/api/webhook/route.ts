@@ -195,12 +195,17 @@ export async function POST(req: Request) {
         if (isValidMessage && clientNumber && clientMessage) {
             console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
-            // 🤖 BOT KEYWORD FILTER: Drop messages from automated systems
-            const botKeywords = ['digite 1', 'escolha uma opção', 'assistente virtual', 'menu principal', 'opção inválida', 'digite o número', 'selecione uma'];
+            // 🛡️ [SHIELD] Step 2: Keyword Blacklist (common Brazilian auto-reply phrases)
+            const autoReplyKeywords = [
+                'bem-vindo', 'bem vindo', 'horário de atendimento', 'neste momento não',
+                'digite 1', 'menu principal', 'mensagem automática', 'em breve retornaremos',
+                'agradece o contato', 'assistente virtual', 'escolha uma opção',
+                'opção inválida', 'digite o número', 'selecione uma'
+            ];
             const msgLower = clientMessage.toLowerCase();
-            if (botKeywords.some(kw => msgLower.includes(kw))) {
-                console.log(`🤖 [CIRCUIT BREAKER] Mensagem de bot detectada de ${clientNumber}: "${clientMessage}". Descartando.`);
-                return NextResponse.json({ status: 'ignored', reason: 'bot_keyword_detected' }, { status: 200 });
+            if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                console.log(`🛡️ [SHIELD] Auto-reply detected (Keywords) from ${clientNumber}: "${clientMessage}". Ignoring.`);
+                return NextResponse.json({ status: 'ignored', reason: 'auto_reply_keyword' }, { status: 200 });
             }
 
             // 🔴 GLOBAL KILL SWITCH: Check if Eliza is turned OFF in system_settings
@@ -235,6 +240,15 @@ export async function POST(req: Request) {
                     .update({ replied: true })
                     .eq('phone', clientNumber);
                 console.log(`✅ [WEBHOOK] Lead ${clientNumber} respondeu. Marcado para ignorar no Ghost Hunter.`);
+            }
+
+            // 🛡️ [SHIELD] Step 1: Speed Trap (reply arrived too fast = auto-reply)
+            if (lead?.updated_at) {
+                const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
+                if (timeSinceContact < 15000) {
+                    console.log(`🛡️ [SHIELD] Auto-reply detected (Too fast: ${Math.round(timeSinceContact)}ms < 15s) from ${clientNumber}. Ignoring.`);
+                    return NextResponse.json({ status: 'ignored', reason: 'auto_reply_speed_trap', delta_ms: timeSinceContact }, { status: 200 });
+                }
             }
 
             // 🚨 CIRCUIT BREAKER: Lock if reply_count >= 10 (AI Loop War Prevention)
