@@ -1,44 +1,40 @@
 import { NextResponse } from 'next/server';
 
-// 🐺 AGUDA: Rodar a cada 15 minutos durante o horário comercial (Seg-Sex)
-// Isso permite enviar lotes pequenos com mais frequência, o que é MUITO mais seguro.
-export const config = {
-    schedule: "*/15 10-21 * * 1-5"
+// 🐺 AGUDA: A cada 10 minutos durante o horário comercial
+export const config = { 
+    schedule: "*/10 10-20 * * 1-5" 
 };
 
 export async function POST(req: Request) {
-    const cronId = Math.random().toString(36).substring(7); // ID para rastrear no log
-    console.log(`\n--- 🐺 [${cronId}] INICIANDO CAÇADA AGENDADA ---`);
-
+    const cronId = Math.random().toString(36).substring(7);
+    console.log(`\n--- 🐺 [${cronId}] INICIANDO CAÇADA AGENDADA (LOTE SEGURO) ---`);
+    
     try {
-        const targetUrl = process.env.WOLF_SITE_URL
+        const targetUrl = process.env.WOLF_SITE_URL 
             ? `${process.env.WOLF_SITE_URL}/api/lobo`
             : 'http://localhost:3000/api/lobo';
 
-        // Padronizando para a mesma chave do Admin
-        const token = process.env.ADMIN_SECRET_PASSWORD;
-
+        const token = process.env.WOLF_ADMIN_TOKEN;
+        
         if (!token) {
             console.error(`❌ [${cronId}] ERRO: WOLF_ADMIN_TOKEN não configurado.`);
             return NextResponse.json({ error: 'Missing token' }, { status: 500 });
         }
 
-        console.log(`📡 [${cronId}] Disparando lote para: ${targetUrl}`);
-
-        // Timeout AbortController: Evita que a função fique "pendurada"
+        // Timeout AbortController: 20 Segundos é a linha vermelha do Serverless
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000); 
 
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-wolf-token': token // Usando o header padronizado
+                'x-wolf-token': token
             },
-            body: JSON.stringify({
+            body: JSON.stringify({ 
                 type: 'daily_hunt',
-                batch_size: 3, // 🐺 SEGURANÇA: Processa apenas 3 leads por vez (a cada 15 min)
-                cron_ref: cronId
+                batch_size: 2, // 🎯 A MATEMÁTICA PERFEITA: 2 leads x 8s = 16s totais.
+                cron_ref: cronId 
             }),
             signal: controller.signal
         });
@@ -55,7 +51,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, cronId, details: responseData });
 
     } catch (error: any) {
-        const errorMsg = error.name === 'AbortError' ? 'Timeout na API do Lobo' : error.message;
+        const errorMsg = error.name === 'AbortError' ? 'Timeout Preventivo de 20s acionado' : error.message;
         console.error(`❌ [${cronId}] Erro Crítico:`, errorMsg);
         return NextResponse.json({ error: errorMsg }, { status: 500 });
     }

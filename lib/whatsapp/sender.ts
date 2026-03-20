@@ -1,48 +1,41 @@
 // lib/whatsapp/sender.ts
 
 export async function sendWhatsAppMessage(phone: string, text: string) {
-    const evoUrl = process.env.EVOLUTION_URL;
-    const evoInstance = process.env.EVOLUTION_INSTANCE_NAME;
-    const evoApiKey = process.env.EVOLUTION_API_KEY;
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const baseUrl = process.env.EVOLUTION_API_URL;
 
-    if (!evoUrl || !evoInstance) {
-        console.error('🚨 ERRO: URL ou Instância da Evolution API faltando no .env.local');
-        return;
-    }
+    // Calcula o tempo de digitação: 50ms por letra. Min: 2s, Max: 5s.
+    const typingTime = Math.min(Math.max(text.length * 50, 2000), 5000); 
 
-    const url = `${evoUrl}/message/sendText/${evoInstance}`;
-    
-    // A Evolution aceita envio tanto com o ID formatado (ex: ...@s.whatsapp.net) 
-    // ou apenas o número (ex: 5511999999999).
-    const requestBody = {
+    // O Padrão Evolution V2+
+    const payload = {
         number: phone,
-        text: text,
-        delay: 1200,
-        linkPreview: false,
+        text: text, // 🎯 A MUDANÇA DE OURO ESTÁ AQUI (na raiz do objeto)
+        options: {
+            delay: typingTime,
+            presence: "composing",
+            linkPreview: false
+        }
     };
 
-    console.log(`📤 Enviando para Evolution API (${phone})...`);
+    const url = `${baseUrl}/message/sendText/${instanceName}`;
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': evoApiKey || '',
-            },
-            body: JSON.stringify(requestBody),
-        });
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': apikey as string
+        },
+        body: JSON.stringify(payload)
+    });
 
-        const data = await response.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({}));
 
-        if (response.ok) {
-            console.log(`✅ Mensagem enviada para ${phone}`);
-            return data;
-        } else {
-            console.error(`❌ Erro na Evolution API ao enviar para ${phone}:`, data);
-            return data;
-        }
-    } catch (error) {
-        console.error('❌ Erro ao enviar mensagem via Evolution API:', error);
+    if (!res.ok) {
+        // We use JSON.stringify to reveal the hidden '[Object]' error details
+        throw new Error(`Evolution API Error ${res.status}: ${JSON.stringify(data.message || data)}`);
     }
+
+    return data;
 }

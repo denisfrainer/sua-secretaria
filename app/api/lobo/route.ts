@@ -85,34 +85,29 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         console.log(`⏳ Aguardando ${delay / 1000}s antes de abordar ${lead.name}...`);
         await sleep(delay);
 
-        // Humanized Spintax Logic
-        const currentHour = new Date().getUTCHours() - 3;
+        // --- 🎯 THE CASUAL HOOK STRATEGY ---
+        const currentHour = new Date().getUTCHours() - 3; // Fuso horário Brasília
         const localHour = currentHour < 0 ? currentHour + 24 : currentHour;
-        const saudacao = localHour < 12 ? 'Bom dia' : 'Boa tarde';
+        const saudacao = localHour < 12 ? 'bom dia' : 'boa tarde';
 
-        const nameLower = lead.name.toLowerCase();
-        const rawName = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')
-            ? lead.name.split(' ')[0]
+        // Extrai o primeiro nome e capitaliza apenas a primeira letra (e.g., "João")
+        const nameLower = lead.name ? lead.name.toLowerCase() : '';
+        const rawNameLower = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')
+            ? lead.name.split(' ')[0].toLowerCase()
             : '';
-
-        const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : '';
-        const displayName = firstName ? ` ${firstName}` : '';
-
-        const niche = lead.niche ? lead.niche.toLowerCase() : 'negócio';
-        const company = rawName === '' && lead.name && !nameLower.includes('sem nome') ? lead.name : '';
-        const identifier = company ? company : niche; // fallback to niche if no valid company name
+            
+        const capitalizedName = rawNameLower ? rawNameLower.charAt(0).toUpperCase() + rawNameLower.slice(1) : '';
+        
+        // If we have a name, add a comma before it for natural phrasing, otherwise empty
+        const nomeFormatado = capitalizedName ? `, ${capitalizedName}` : '';
+        const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
 
         const variations = [
-            `Oi${displayName}, tudo bem? Vi que vocês são de ${identifier}. Estão pegando novos projetos agora?`,
-            `${saudacao}${displayName}, beleza? Achei o trampo de vocês com ${identifier}. Posso fazer uma pergunta rápida?`,
-            `Opa${displayName}, ${saudacao.toLowerCase()}. Sou o Denis, vi seu ${identifier} aqui no maps. A agenda tá lotada ou cabe mais?`,
-            `Fala${displayName}, ${saudacao.toLowerCase()}! Vi o perfil de vocês aqui. Como tá o volume de clientes nesse mês pra ${identifier}?`,
-            `Oi${displayName}! Tudo certo? Vi o ${identifier} de vocês. Quem cuida da parte de vendas aí?`,
-            `${saudacao}${displayName}, tudo tranquilo? Achei massa o trabalho com ${identifier}. Consegue me tirar uma dúvida?`,
-            `Opa, ${saudacao.toLowerCase()}. Vi seu perfil de ${identifier}. Vocês estão conseguindo dar conta da demanda?`,
-            `Fala${displayName}! ${saudacao.toLowerCase()}. Achei a página do seu ${identifier}. Vocês estão aceitando novos orçamentos?`,
-            `${saudacao}, beleza? Vi que vocês são da área de ${identifier}. Queria tirar uma duvida rápida sobre vendas?`,
-            `Oi${displayName}, tudo bem? Cai aqui no perfil do ${identifier}. Quem é o responsável pelos novos clientes?`
+            `opa${nomeFormatado}, ${saudacao}! sou aqui da região também. tava procurando vocês no google mas não achei o site, vocês tão atendendo só pelo insta?`,
+            `fala${nomeFormatado}, tudo bem? vi o perfil do ${nichoFormatado} de vocês. me tira uma dúvida rápida, vocês não usam página de orçamentos online?`,
+            `${saudacao}${nomeFormatado}! tudo certo? dei uma olhada no trampo de vocês. como a galera faz pra ver os serviços fora daqui, tem algum link?`,
+            `opa, ${saudacao}! achei o ${nichoFormatado} de vocês aqui no maps. notei que o link do site de vocês tá vazio, tá em manutenção?`,
+            `fala${nomeFormatado}, beleza? vi que o ${nichoFormatado} de vocês tá bombando, mas reparei que não tem um site direto. é proposital?`
         ];
 
         const message = variations[Math.floor(Math.random() * variations.length)];
