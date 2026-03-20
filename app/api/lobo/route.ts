@@ -79,7 +79,7 @@ async function processLeads(leads: any[], isFromDb: boolean) {
             console.log(`⚠️ Lead ignorado (dados incompletos):`, lead);
             continue;
         }
-        
+
         lead.phone = normalizePhone(lead.phone);
 
         // Delay anti-ban (reduzido para caber no limite de tempo do Serverless)
@@ -99,19 +99,23 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         const rawNameLower = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')
             ? lead.name.split(' ')[0].toLowerCase()
             : '';
-            
+
         const capitalizedName = rawNameLower ? rawNameLower.charAt(0).toUpperCase() + rawNameLower.slice(1) : '';
-        
+
         // If we have a name, add a comma before it for natural phrasing, otherwise empty
         const nomeFormatado = capitalizedName ? `, ${capitalizedName}` : '';
         const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
 
         const variations = [
-            `opa${nomeFormatado}, ${saudacao}! sou aqui da região também. tava procurando vocês no google mas não achei o site, vocês tão atendendo só pelo insta?`,
-            `fala${nomeFormatado}, tudo bem? vi o perfil do ${nichoFormatado} de vocês. me tira uma dúvida rápida, vocês não usam página de orçamentos online?`,
-            `${saudacao}${nomeFormatado}! tudo certo? dei uma olhada no trampo de vocês. como a galera faz pra ver os serviços fora daqui, tem algum link?`,
-            `opa, ${saudacao}! achei o ${nichoFormatado} de vocês aqui no maps. notei que o link do site de vocês tá vazio, tá em manutenção?`,
-            `fala${nomeFormatado}, beleza? vi que o ${nichoFormatado} de vocês tá bombando, mas reparei que não tem um site direto. é proposital?`
+            `opa, ${saudacao}! sou aqui da região também. tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`,
+
+            `fala pessoal, ${saudacao}! achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`,
+
+            `opa, tudo bem? Denis aqui. o trabalho de vocês é muito bom pra ficar só na rede social. vocês já chegaram a ter um site próprio pra criar mais autoridade alguma vez?`,
+
+            `${saudacao}, pessoal! tava dando uma olhada no perfil de vocês. a galera que procura pelo Google consegue achar vocês fácil hoje, ou a captação de clientes tá sendo toda no boca a boca?`,
+
+            `fala, ${saudacao}! passei pelo ${nichoFormatado} de vocês agora há pouco. me tira uma dúvida rápida: a operação de vocês tá rodando sem site oficial mesmo?`
         ];
 
         const message = variations[Math.floor(Math.random() * variations.length)];
