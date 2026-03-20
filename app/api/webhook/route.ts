@@ -210,6 +210,15 @@ export async function POST(req: Request) {
                 console.error('❌ Erro ao buscar lead no Supabase:', leadError);
             }
 
+            // 🛡️ FRIENDLY FIRE PROTECTION: Mark as replied so Ghost Hunter ignores them
+            if (lead) {
+                await supabaseAdmin
+                    .from('leads_lobo')
+                    .update({ replied: true })
+                    .eq('phone', clientNumber);
+                console.log(`✅ [WEBHOOK] Lead ${clientNumber} respondeu. Marcado para ignorar no Ghost Hunter.`);
+            }
+
             // Kill Switch: Human Takeover
             if (lead && (lead as any).ai_paused === true) {
                 console.log(`🛑 [KILL SWITCH ATIVO] Humano no controle para o número: ${clientNumber}`);

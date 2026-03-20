@@ -18,11 +18,12 @@ export async function POST(req: Request) {
         // 2. The 48-Hour Logic (Supabase)
         const deadline = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
         
-        console.log(`📥 Buscando leads fantasma na tabela leads_lobo com limite anterior a ${deadline}...`);
+        console.log(`📥 Buscando leads fantasma (sem resposta) com limite anterior a ${deadline}...`);
         const { data: leadsToFollowUp, error } = await supabaseAdmin
             .from('leads_lobo')
             .select('*')
             .eq('status', 'contacted')
+            .eq('replied', false)       // 🛡️ FRIENDLY FIRE: Só alveja quem NÃO respondeu
             .lte('updated_at', deadline)
             .limit(3);
 
@@ -32,13 +33,13 @@ export async function POST(req: Request) {
         }
 
         if (!leadsToFollowUp || leadsToFollowUp.length === 0) {
-            console.log('💤 Nenhum lead necessitando follow-up agora (0 encontrados).');
+            console.log('💤 Nenhum lead fantasma encontrado (todos responderam ou fora do prazo).');
             return NextResponse.json({ status: 'success', message: 'No ghost leads found' }, { status: 200 });
         }
 
         console.log(`👻 GHOST HUNTER ATIVADO: ${leadsToFollowUp.length} leads na mira.`);
 
-        // 4. Execution & Status Update Loop
+        // 3. Execution & Status Update Loop
         for (const lead of leadsToFollowUp) {
             if (!lead.phone) continue;
 
@@ -52,11 +53,12 @@ export async function POST(req: Request) {
             const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : '';
             const displayName = firstName ? ` ${firstName}` : '';
 
+            // 🎯 Low-pressure "lost message" copywriting
             const variations = [
-                `Olá${displayName}, tudo bem? Conseguiste ver a minha mensagem acima?`,
-                `${firstName ? firstName + ', p' : 'P'}assando só para reavivar o contacto. Teria disponibilidade para uma breve troca de ideias esta semana?`,
-                `Boas${displayName}! Sei que a rotina deve estar corrida. Apenas a confirmar se recebeste a minha mensagem anterior.`,
-                `Olá${displayName}. Imagino que a caixa de mensagens esteja cheia, mas não queria deixar passar. Ainda faz sentido falarmos?`
+                `oi${displayName}, imaginei que a mensagem pudesse ter ficado perdida por aí. ainda faz sentido a gente trocar uma ideia?`,
+                `${firstName ? firstName.toLowerCase() + ', ' : ''}só passando pra ver se recebeu minha msg anterior. sem pressa nenhuma!`,
+                `fala${displayName}! sei que a rotina é corrida. só queria confirmar se chegou a ver minha mensagem.`,
+                `oi${displayName}, tudo bem? minha mensagem pode ter ido parar no limbo do whatsapp rs. ainda tem interesse em conversar?`,
             ];
 
             const message = variations[Math.floor(Math.random() * variations.length)];
@@ -67,19 +69,24 @@ export async function POST(req: Request) {
             await sleep(delay);
 
             try {
-                // Call Evolution API
                 await sendWhatsAppMessage(lead.phone, message);
                 
-                // CRITICAL: Update the lead's status in Supabase so they move on Kanban and escape the loop
+                // Update status so they escape the Ghost Hunter loop
                 await supabaseAdmin
                     .from('leads_lobo')
-                    .update({ status: 'follow_up' }) // Moved natively to 'follow_up'
+                    .update({ status: 'follow_up' })
                     .eq('id', lead.id);
 
                 console.log(`👻 Ghost Hunter: Follow-up enviado para ${lead.name || 'Desconhecido'}`);
                 
-            } catch (err) {
-                console.error(`❌ Ghost Hunter falhou com ${lead.name}:`, err);
+            } catch (err: any) {
+                const errorBody = err.message || '';
+                if (errorBody.includes('"exists":false')) {
+                    console.log(`🚫 Ghost Hunter: ${lead.name} sem WhatsApp. Marcando como inválido.`);
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'invalid' }).eq('id', lead.id);
+                } else {
+                    console.error(`❌ Ghost Hunter falhou com ${lead.name}:`, err);
+                }
             }
         }
 
@@ -90,4 +97,9 @@ export async function POST(req: Request) {
         console.error('❌ Erro Crítico roteando o Ghost Hunter:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
+}
+
+// 🧪 GET support for browser testing
+export async function GET(req: Request) {
+    return POST(req);
 }
