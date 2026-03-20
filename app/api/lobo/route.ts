@@ -88,8 +88,8 @@ async function processLeads(leads: any[], isFromDb: boolean) {
         const localHour = currentHour < 0 ? currentHour + 24 : currentHour;
         const saudacao = localHour < 12 ? 'bom dia' : 'boa tarde';
 
-        const validName = lead.name && !lead.name.toLowerCase().includes('lead') && !lead.name.toLowerCase().includes('desconhecido');
-        const firstName = validName ? lead.name.split(' ')[0].toLowerCase() : '';
+        const rawName = lead.name && !lead.name.toLowerCase().includes('lead') && !lead.name.toLowerCase().includes('desconhecido') ? lead.name.split(' ')[0] : '';
+        const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : '';
         const displayName = firstName ? `, ${firstName}` : '';
         const displayNameSpace = firstName ? ` ${firstName}` : '';
 

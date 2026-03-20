@@ -1,78 +1,105 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
+import { Inter } from 'next/font/google';
 import ElizaToggle from '../../components/ElizaToggle';
 
+const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600'] });
+
 // ==============================================================
-// 🔧 TYPES
+// TYPES
 // ==============================================================
 interface Lead {
     id: string;
-    nome: string;
-    telefone: string;
-    empresa?: string;
-    dor_principal?: string;
+    name: string;
+    phone: string;
+    niche?: string;
+    city?: string;
+    main_pain?: string;
     status: string;
-    criado_em: string;
+    created_at: string;
 }
 
-type StatusKey = 'pendente' | 'isca_enviada' | 'em_conversacao' | 'agendado';
+type StatusKey = 'pending' | 'contacted' | 'talking' | 'closed';
 
 interface ColumnConfig {
     key: StatusKey;
     label: string;
-    emoji: string;
-    accentColor: string;
-    glowColor: string;
+    pillBg: string;
+    pillText: string;
+    pillBorder: string;
 }
 
 // ==============================================================
-// 🎨 COLUMN DEFINITIONS
+// COLUMN DEFINITIONS
 // ==============================================================
 const COLUMNS: ColumnConfig[] = [
     {
-        key: 'pendente',
+        key: 'pending',
         label: 'Pendentes',
-        emoji: '⏳',
-        accentColor: 'text-amber-400',
-        glowColor: 'shadow-amber-500/10',
+        pillBg: 'bg-zinc-500/10',
+        pillText: 'text-zinc-400',
+        pillBorder: 'border-zinc-500/20',
     },
     {
-        key: 'isca_enviada',
+        key: 'contacted',
         label: 'Iscas Enviadas',
-        emoji: '🎣',
-        accentColor: 'text-sky-400',
-        glowColor: 'shadow-sky-500/10',
+        pillBg: 'bg-blue-500/10',
+        pillText: 'text-blue-400',
+        pillBorder: 'border-blue-500/20',
     },
     {
-        key: 'em_conversacao',
-        label: 'Em Conversação',
-        emoji: '💬',
-        accentColor: 'text-emerald-400',
-        glowColor: 'shadow-emerald-500/10',
+        key: 'talking',
+        label: 'Em Conversacao',
+        pillBg: 'bg-emerald-500/10',
+        pillText: 'text-emerald-400',
+        pillBorder: 'border-emerald-500/20',
     },
     {
-        key: 'agendado',
-        label: 'Agendados / Ganhos',
-        emoji: '🏆',
-        accentColor: 'text-[#00FF41]',
-        glowColor: 'shadow-[#00FF41]/10',
+        key: 'closed',
+        label: 'Agendados',
+        pillBg: 'bg-indigo-500/10',
+        pillText: 'text-indigo-400',
+        pillBorder: 'border-indigo-500/20',
     },
 ];
 
 const ALL_STATUSES = [
-    { value: 'pendente', label: '⏳ Pendente' },
-    { value: 'isca_enviada', label: '🎣 Isca Enviada' },
-    { value: 'em_conversacao', label: '💬 Em Conversação' },
-    { value: 'hot_lead', label: '🔥 Hot Lead' },
-    { value: 'agendado', label: '📅 Agendado' },
-    { value: 'ganho', label: '🏆 Ganho' },
-    { value: 'organico_inbound', label: '🌱 Orgânico Inbound' },
-    { value: 'lixo', label: '🗑️ Lixo' },
+    { value: 'pending', label: 'Pendente' },
+    { value: 'contacted', label: 'Contacted' },
+    { value: 'talking', label: 'Talking' },
+    { value: 'hot_lead', label: 'Hot Lead' },
+    { value: 'closed', label: 'Closed' },
+    { value: 'invalid_phone', label: 'Invalid' },
+    { value: 'lixo', label: 'Descarte' },
 ];
 
 // ==============================================================
-// 🧩 COMPONENT
+// STATUS PILL COMPONENT
+// ==============================================================
+function StatusPill({ status }: { status: string }) {
+    const config: Record<string, { bg: string; text: string }> = {
+        pending:       { bg: 'bg-zinc-500/10',    text: 'text-zinc-400' },
+        contacted:     { bg: 'bg-blue-500/10',     text: 'text-blue-400' },
+        talking:       { bg: 'bg-emerald-500/10',  text: 'text-emerald-400' },
+        closed:        { bg: 'bg-indigo-500/10',   text: 'text-indigo-400' },
+        hot_lead:      { bg: 'bg-orange-500/10',   text: 'text-orange-400' },
+        invalid_phone: { bg: 'bg-red-500/10',      text: 'text-red-400' },
+        lixo:          { bg: 'bg-zinc-800/50',     text: 'text-zinc-600' },
+    };
+    const c = config[status] || config.pending;
+    const label = ALL_STATUSES.find(s => s.value === status)?.label || status;
+
+    return (
+        <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase rounded-full ${c.bg} ${c.text}`}>
+            {label}
+        </span>
+    );
+}
+
+// ==============================================================
+// MAIN COMPONENT
 // ==============================================================
 export default function AdminDashboard() {
     const [authorized, setAuthorized] = useState<boolean | null>(null);
@@ -80,41 +107,32 @@ export default function AdminDashboard() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // ----------------------------------------------------------
-    // 🔐 AUTH CHECK
-    // ----------------------------------------------------------
+    // AUTH
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const key = params.get('key') || '';
-        setAdminKey(key);
-
-        if (!key) {
+        const token = params.get('token') || '';
+        setAdminKey(token);
+        if (!token) {
             setAuthorized(false);
             setLoading(false);
             return;
         }
-
         setAuthorized(true);
     }, []);
 
-    // ----------------------------------------------------------
-    // 📡 DATA FETCHING (via secure server API)
-    // ----------------------------------------------------------
+    // FETCH
     const fetchLeads = useCallback(async () => {
         if (!adminKey) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/admin/leads?key=${encodeURIComponent(adminKey)}`);
-            if (!res.ok) {
-                console.error('Falha ao buscar leads');
-                setAuthorized(false);
-                return;
-            }
+            const res = await fetch(`/api/admin/leads?token=${encodeURIComponent(adminKey)}`);
+            if (!res.ok) { setAuthorized(false); return; }
             const { leads: data } = await res.json();
             setLeads(data || []);
         } catch (err) {
-            console.error('Erro de rede:', err);
+            console.error('Network error:', err);
         } finally {
             setLoading(false);
         }
@@ -124,183 +142,175 @@ export default function AdminDashboard() {
         if (authorized) fetchLeads();
     }, [authorized, fetchLeads]);
 
-    // ----------------------------------------------------------
-    // 🔄 STATUS UPDATE
-    // ----------------------------------------------------------
+    // STATUS UPDATE
     const updateStatus = async (leadId: string, newStatus: string) => {
         setUpdatingId(leadId);
         try {
             const res = await fetch('/api/admin/update-status', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-key': adminKey,
-                },
+                headers: { 'Content-Type': 'application/json', 'x-wolf-token': adminKey },
                 body: JSON.stringify({ leadId, newStatus }),
             });
-
             if (res.ok) {
-                // Optimistic update
-                setLeads((prev) =>
-                    prev.map((l) =>
-                        l.id === leadId ? { ...l, status: newStatus } : l
-                    )
-                );
-            } else {
-                console.error('Falha ao atualizar status');
+                setLeads((prev) => prev.map((l) => l.id === leadId ? { ...l, status: newStatus } : l));
             }
         } catch (err) {
-            console.error('Erro ao atualizar:', err);
+            console.error('Update error:', err);
         } finally {
             setUpdatingId(null);
         }
     };
 
-    // ----------------------------------------------------------
-    // 🛑 UNAUTHORIZED SCREEN
-    // ----------------------------------------------------------
+    // UNAUTHORIZED
     if (authorized === false) {
         return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                    <div className="text-6xl">🐺</div>
-                    <h1 className="text-2xl font-bold text-red-500 font-[family-name:var(--font-space-grotesk)]">
-                        Acesso Negado
-                    </h1>
-                    <p className="text-zinc-500 text-sm">
-                        Você precisa de credenciais válidas para acessar o Command Center.
-                    </p>
+            <div className={`min-h-screen bg-black flex items-center justify-center ${inter.className}`}>
+                <div className="text-center space-y-5">
+                    <Image src="/assets/wolf.png" width={48} height={48} alt="WolfAgent" className="mx-auto opacity-40" />
+                    <h1 className="text-xl font-medium text-white/80 tracking-tight">Access Denied</h1>
+                    <p className="text-sm text-white/30">Valid credentials required.</p>
                 </div>
             </div>
         );
     }
 
-    // ----------------------------------------------------------
-    // ⏳ LOADING
-    // ----------------------------------------------------------
+    // LOADING
     if (loading) {
         return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-                <div className="text-center space-y-3">
-                    <div className="text-4xl animate-pulse">🐺</div>
-                    <p className="text-zinc-500 text-sm tracking-widest uppercase">
-                        Carregando dados...
-                    </p>
+            <div className={`min-h-screen bg-black flex items-center justify-center ${inter.className}`}>
+                <div className="text-center space-y-5">
+                    <Image src="/assets/wolf.png" width={40} height={40} alt="WolfAgent" className="mx-auto animate-pulse opacity-30" />
+                    <p className="text-sm text-white/30 tracking-widest uppercase">Loading...</p>
                 </div>
             </div>
         );
     }
 
-    // ----------------------------------------------------------
-    // 📊 GROUP LEADS BY STATUS
-    // ----------------------------------------------------------
-    const grouped: Record<StatusKey, Lead[]> = {
-        pendente: [],
-        isca_enviada: [],
-        em_conversacao: [],
-        agendado: [],
-    };
+    // GROUP
+    const grouped: Record<StatusKey, Lead[]> = { pending: [], contacted: [], talking: [], closed: [] };
+    const filteredLeads = searchQuery
+        ? leads.filter(l =>
+            l.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            l.phone?.includes(searchQuery) ||
+            l.niche?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : leads;
 
-    leads.forEach((lead) => {
-        if (lead.status === 'pendente') grouped.pendente.push(lead);
-        else if (lead.status === 'isca_enviada') grouped.isca_enviada.push(lead);
-        else if (lead.status === 'em_conversacao' || lead.status === 'organico_inbound') grouped.em_conversacao.push(lead);
-        else if (lead.status === 'agendado' || lead.status === 'ganho' || lead.status === 'hot_lead') grouped.agendado.push(lead);
+    filteredLeads.forEach((lead) => {
+        if (lead.status === 'pending') grouped.pending.push(lead);
+        else if (lead.status === 'contacted') grouped.contacted.push(lead);
+        else if (lead.status === 'talking' || lead.status === 'organico_inbound') grouped.talking.push(lead);
+        else if (lead.status === 'closed' || lead.status === 'ganho' || lead.status === 'hot_lead') grouped.closed.push(lead);
     });
 
     const totalLeads = leads.length;
-    const totalAgendados = grouped.agendado.length;
+    const totalClosed = grouped.closed.length;
+    const conversionRate = totalLeads > 0 ? Math.round((totalClosed / totalLeads) * 100) : 0;
 
-    // ----------------------------------------------------------
-    // 🖥️ RENDER
-    // ----------------------------------------------------------
+    // RENDER
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
-            {/* ==================== HEADER ==================== */}
-            <header className="border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
-                <div className="max-w-[1600px] mx-auto px-6 py-5 flex items-center justify-between">
+        <div className={`min-h-screen bg-black text-white ${inter.className}`}>
+            {/* HEADER */}
+            <header className="border-b border-white/[0.08] bg-black sticky top-0 z-50">
+                <div className="max-w-[1800px] mx-auto px-6 h-16 flex items-center justify-between">
+                    {/* Left: Logo + Title */}
                     <div className="flex items-center gap-4">
-                        <span className="text-3xl">🐺</span>
-                        <div>
-                            <h1 className="text-xl font-bold tracking-tight font-[family-name:var(--font-space-grotesk)]">
-                                WolfAgent Command Center
+                        <Image src="/assets/wolf.png" width={32} height={32} alt="WolfAgent" className="opacity-80" />
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-[15px] font-medium text-white/90 tracking-tight">
+                                WolfAgent
                             </h1>
-                            <p className="text-xs text-zinc-500 tracking-wider uppercase mt-0.5">
-                                Painel de Controle Operacional
-                            </p>
+                            <span className="text-white/20">/</span>
+                            <span className="text-[15px] text-white/50">Command Center</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        {/* Stats */}
-                        <div className="hidden md:flex items-center gap-6 text-sm">
-                            <div className="text-center">
-                                <p className="text-zinc-500 text-xs uppercase tracking-wider">Total</p>
-                                <p className="text-lg font-bold text-white">{totalLeads}</p>
+                    {/* Center: Search */}
+                    <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+                        <div className="relative w-full group">
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <svg className="w-4 h-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
                             </div>
-                            <div className="w-px h-8 bg-zinc-800" />
-                            <div className="text-center">
-                                <p className="text-zinc-500 text-xs uppercase tracking-wider">Ganhos</p>
-                                <p className="text-lg font-bold text-[#00FF41]">{totalAgendados}</p>
+                            <input
+                                type="text"
+                                placeholder="Search leads..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg pl-10 pr-12 py-2 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all duration-200"
+                            />
+                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-white/20 bg-white/[0.04] border border-white/[0.08] rounded">
+                                    /
+                                </kbd>
                             </div>
-                            <div className="w-px h-8 bg-zinc-800" />
-                            <div className="text-center">
-                                <p className="text-zinc-500 text-xs uppercase tracking-wider">Taxa</p>
-                                <p className="text-lg font-bold text-emerald-400">
-                                    {totalLeads > 0
-                                        ? `${Math.round((totalAgendados / totalLeads) * 100)}%`
-                                        : '—'}
-                                </p>
+                        </div>
+                    </div>
+
+                    {/* Right: Stats + Controls */}
+                    <div className="flex items-center gap-5">
+                        <div className="hidden lg:flex items-center gap-5 text-sm">
+                            <div className="flex items-center gap-2">
+                                <span className="text-white/30">Total</span>
+                                <span className="text-white/80 font-medium tabular-nums">{totalLeads}</span>
+                            </div>
+                            <div className="w-px h-4 bg-white/[0.08]" />
+                            <div className="flex items-center gap-2">
+                                <span className="text-white/30">Closed</span>
+                                <span className="text-indigo-400 font-medium tabular-nums">{totalClosed}</span>
+                            </div>
+                            <div className="w-px h-4 bg-white/[0.08]" />
+                            <div className="flex items-center gap-2">
+                                <span className="text-white/30">Rate</span>
+                                <span className="text-emerald-400 font-medium tabular-nums">{conversionRate}%</span>
                             </div>
                         </div>
 
-                        {/* Eliza Kill Switch */}
+                        <div className="w-px h-4 bg-white/[0.08]" />
                         <ElizaToggle adminKey={adminKey} />
 
-                        {/* Refresh */}
                         <button
                             onClick={fetchLeads}
-                            className="px-4 py-2 text-xs uppercase tracking-wider border border-zinc-700 rounded-lg hover:bg-zinc-800 hover:border-zinc-600 transition-all duration-200 cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.15] transition-all duration-200 cursor-pointer"
                         >
-                            ↻ Atualizar
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* ==================== KANBAN BOARD ==================== */}
-            <main className="max-w-[1600px] mx-auto p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-                    {COLUMNS.map((col) => (
+            {/* KANBAN */}
+            <main className="max-w-[1800px] mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 min-h-[calc(100vh-64px)]">
+                    {COLUMNS.map((col, i) => (
                         <KanbanColumn
                             key={col.key}
                             config={col}
                             leads={grouped[col.key]}
                             onStatusChange={updateStatus}
                             updatingId={updatingId}
+                            isLast={i === COLUMNS.length - 1}
                         />
                     ))}
                 </div>
             </main>
 
-            {/* ==================== LEADS WITHOUT KANBAN (lixo, etc) ==================== */}
-            {leads.filter((l) => l.status === 'lixo').length > 0 && (
-                <div className="max-w-[1600px] mx-auto px-6 pb-10">
-                    <details className="group">
-                        <summary className="cursor-pointer text-sm text-zinc-600 hover:text-zinc-400 transition-colors">
-                            🗑️ Leads descartados ({leads.filter((l) => l.status === 'lixo').length})
+            {/* DISCARDS */}
+            {filteredLeads.filter((l) => l.status === 'lixo').length > 0 && (
+                <div className="max-w-[1800px] mx-auto px-6 pb-12 border-t border-white/[0.08]">
+                    <details className="group pt-6">
+                        <summary className="cursor-pointer text-xs font-medium text-white/30 hover:text-white/50 transition-colors uppercase tracking-widest">
+                            Discarded ({filteredLeads.filter((l) => l.status === 'lixo').length})
                         </summary>
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                            {leads
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                            {filteredLeads
                                 .filter((l) => l.status === 'lixo')
                                 .map((lead) => (
-                                    <LeadCard
-                                        key={lead.id}
-                                        lead={lead}
-                                        onStatusChange={updateStatus}
-                                        updatingId={updatingId}
-                                        muted
-                                    />
+                                    <LeadCard key={lead.id} lead={lead} onStatusChange={updateStatus} updatingId={updatingId} muted />
                                 ))}
                         </div>
                     </details>
@@ -311,50 +321,45 @@ export default function AdminDashboard() {
 }
 
 // ==============================================================
-// 🏗️ KANBAN COLUMN
+// KANBAN COLUMN
 // ==============================================================
 function KanbanColumn({
     config,
     leads,
     onStatusChange,
     updatingId,
+    isLast,
 }: {
     config: ColumnConfig;
     leads: Lead[];
     onStatusChange: (id: string, status: string) => void;
     updatingId: string | null;
+    isLast: boolean;
 }) {
     return (
-        <div
-            className={`bg-zinc-900/60 rounded-xl border border-zinc-800/50 flex flex-col shadow-lg ${config.glowColor}`}
-        >
+        <div className={`flex flex-col ${!isLast ? 'border-r border-white/[0.08]' : ''}`}>
             {/* Column Header */}
-            <div className="px-4 py-3.5 border-b border-zinc-800/40 flex items-center justify-between">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.08]">
                 <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{config.emoji}</span>
-                    <h2 className={`text-sm font-bold tracking-wide uppercase ${config.accentColor}`}>
+                    <span className={`inline-block w-2 h-2 rounded-full ${config.pillBg} ring-2 ${config.pillBorder}`} />
+                    <h2 className="text-[13px] font-medium text-white/60 tracking-tight">
                         {config.label}
                     </h2>
                 </div>
-                <span className="text-xs font-mono bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full">
+                <span className="text-[12px] text-white/25 font-mono tabular-nums">
                     {leads.length}
                 </span>
             </div>
 
-            {/* Cards Container */}
-            <div className="p-3 space-y-2.5 flex-1 overflow-y-auto max-h-[calc(100vh-220px)] custom-scrollbar">
+            {/* Cards */}
+            <div className="px-3 py-3 space-y-2 flex-1 overflow-y-auto max-h-[calc(100vh-130px)]">
                 {leads.length === 0 ? (
-                    <div className="text-center py-10 text-zinc-700 text-xs italic">
-                        Nenhum lead aqui
+                    <div className="flex items-center justify-center h-32">
+                        <p className="text-[13px] text-white/15">No leads</p>
                     </div>
                 ) : (
                     leads.map((lead) => (
-                        <LeadCard
-                            key={lead.id}
-                            lead={lead}
-                            onStatusChange={onStatusChange}
-                            updatingId={updatingId}
-                        />
+                        <LeadCard key={lead.id} lead={lead} onStatusChange={onStatusChange} updatingId={updatingId} />
                     ))
                 )}
             </div>
@@ -363,7 +368,7 @@ function KanbanColumn({
 }
 
 // ==============================================================
-// 🃏 LEAD CARD
+// LEAD CARD
 // ==============================================================
 function LeadCard({
     lead,
@@ -378,62 +383,66 @@ function LeadCard({
 }) {
     const isHot = lead.status === 'hot_lead';
     const isUpdating = updatingId === lead.id;
-    const formattedDate = new Date(lead.criado_em).toLocaleDateString('pt-BR', {
+    const formattedDate = new Date(lead.created_at || new Date()).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'short',
     });
 
     return (
         <div
-            className={`rounded-lg p-4 border transition-all duration-200 group ${
-                muted
-                    ? 'bg-zinc-900/40 border-zinc-800/30 opacity-50'
+            className={`
+                group rounded-lg p-4 border transition-all duration-200 cursor-default
+                ${muted
+                    ? 'bg-[#0B0E14]/50 border-white/[0.04] opacity-40'
                     : isHot
-                    ? 'bg-rose-500/10 border-rose-500/50 hover:bg-rose-500/20 hover:border-rose-400'
-                    : 'bg-zinc-800/70 border-zinc-700/50 hover:border-zinc-600/70 hover:bg-zinc-800'
-            } ${isUpdating ? 'opacity-50 pointer-events-none' : ''}`}
+                    ? 'bg-[#0B0E14] border-white/[0.08] shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:border-white/[0.15]'
+                    : 'bg-[#0B0E14] border-white/[0.06] hover:bg-[#12141D] hover:border-white/[0.15]'
+                }
+                ${isUpdating ? 'opacity-40 pointer-events-none' : ''}
+            `}
         >
             {/* Top Row */}
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm text-white truncate flex items-center gap-1.5">
-                        {lead.nome || 'Sem nome'}
-                        {isHot && <span className="text-base animate-pulse" title="Lead pronto para fechamento!">🔥</span>}
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-1">
+                    <p className="text-[14px] font-medium text-white/90 truncate leading-tight">
+                        {lead.name || 'Unknown'}
                     </p>
-                    <p className="text-xs text-zinc-500 font-mono mt-0.5">{lead.telefone}</p>
+                    <p className="text-[13px] text-white/25 font-mono tabular-nums">{lead.phone}</p>
                 </div>
-                <span className="text-[10px] text-zinc-600 whitespace-nowrap mt-0.5">
-                    {formattedDate}
-                </span>
+                <span className="text-[11px] text-white/20 whitespace-nowrap mt-0.5 font-mono">{formattedDate}</span>
             </div>
 
             {/* Details */}
-            {(lead.empresa || lead.dor_principal) && (
-                <div className="mt-2.5 pt-2.5 border-t border-zinc-700/30 space-y-1">
-                    {lead.empresa && (
-                        <p className="text-xs text-zinc-400 flex items-center gap-1.5">
-                            <span className="text-zinc-600">🏢</span> {lead.empresa}
-                        </p>
+            {(lead.niche || lead.main_pain) && (
+                <div className="mt-3 pt-3 border-t border-white/[0.06] space-y-2">
+                    {lead.niche && (
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[11px] text-white/20 uppercase tracking-wider font-medium shrink-0">Niche</span>
+                            <span className="text-[13px] text-white/50 truncate">
+                                {lead.niche}{lead.city ? ` · ${lead.city}` : ''}
+                            </span>
+                        </div>
                     )}
-                    {lead.dor_principal && (
-                        <p className="text-xs text-zinc-500 flex items-start gap-1.5">
-                            <span className="text-zinc-600 shrink-0">🎯</span>
-                            <span className="line-clamp-2">{lead.dor_principal}</span>
-                        </p>
+                    {lead.main_pain && (
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[11px] text-white/20 uppercase tracking-wider font-medium shrink-0">Pain</span>
+                            <span className="text-[13px] text-white/50 line-clamp-2">{lead.main_pain}</span>
+                        </div>
                     )}
                 </div>
             )}
 
-            {/* Status Dropdown */}
-            <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            {/* Status Row */}
+            <div className="mt-3 flex items-center justify-between gap-2">
+                <StatusPill status={lead.status} />
                 <select
                     value={lead.status}
                     onChange={(e) => onStatusChange(lead.id, e.target.value)}
-                    className="w-full text-xs bg-zinc-900 border border-zinc-700/50 rounded-md px-2.5 py-1.5 text-zinc-400 hover:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#00FF41]/30 cursor-pointer appearance-none"
+                    className="opacity-0 group-hover:opacity-100 text-[11px] bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-white/40 hover:text-white/60 hover:border-white/[0.15] focus:outline-none cursor-pointer appearance-none transition-all duration-200"
                     disabled={isUpdating}
                 >
                     {ALL_STATUSES.map((s) => (
-                        <option key={s.value} value={s.value}>
+                        <option key={s.value} value={s.value} className="bg-[#0B0E14] text-white/80">
                             {s.label}
                         </option>
                     ))}

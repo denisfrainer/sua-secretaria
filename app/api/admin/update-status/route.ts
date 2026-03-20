@@ -4,8 +4,8 @@ import { supabaseAdmin } from '../../../../lib/supabase/admin';
 
 export async function POST(req: Request) {
     try {
-        const secret = req.headers.get('x-admin-key');
-        if (!secret || secret !== process.env.ADMIN_SECRET_PASSWORD) {
+        const secret = req.headers.get('x-wolf-token');
+        if (!secret || secret !== process.env.WOLF_SECRET_TOKEN) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
@@ -16,10 +16,12 @@ export async function POST(req: Request) {
         }
 
         const validStatuses = [
-            'pendente',
-            'isca_enviada',
-            'em_conversacao',
-            'agendado',
+            'pending',
+            'contacted',
+            'talking',
+            'hot_lead',
+            'closed',
+            'invalid_phone',
             'organico_inbound',
             'lixo',
         ];

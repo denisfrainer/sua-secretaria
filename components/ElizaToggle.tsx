@@ -1,32 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ElizaToggle({ adminKey }: { adminKey: string }) {
     const [isOnline, setIsOnline] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch(`/api/admin/system-config?token=${adminKey}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setIsOnline(data.enabled);
+                }
+            } catch (err) {
+                console.error("Erro ao buscar status da Eliza");
+            }
+        };
+        if (adminKey) fetchStatus();
+    }, [adminKey]);
 
     const toggle = async () => {
         const newState = !isOnline;
         setIsLoading(true);
 
         try {
-            const res = await fetch('/api/admin/toggle-eliza', {
+            const res = await fetch('/api/admin/system-config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${adminKey}`,
+                    'x-wolf-token': adminKey,
                 },
-                body: JSON.stringify({ active: newState }),
+                body: JSON.stringify({ enabled: newState }),
             });
 
             if (res.ok) {
                 setIsOnline(newState);
             } else {
-                console.error('Falha ao alternar Eliza');
+                const errorData = await res.json();
+                console.error('API Error:', errorData.error);
             }
         } catch (err) {
-            console.error('Erro de rede:', err);
+            console.error('Network error:', err);
         } finally {
             setIsLoading(false);
         }
@@ -37,59 +53,25 @@ export default function ElizaToggle({ adminKey }: { adminKey: string }) {
             onClick={toggle}
             disabled={isLoading}
             className={`
-                group relative flex items-center gap-3 px-4 py-2.5 rounded-xl border
-                transition-all duration-300 cursor-pointer select-none
-                ${isLoading ? 'opacity-60 pointer-events-none' : ''}
-                ${
-                    isOnline
-                        ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/60 shadow-lg shadow-emerald-500/5'
-                        : 'bg-zinc-900/60 border-zinc-700/50 hover:border-zinc-600/70'
-                }
+                flex items-center gap-2.5 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer select-none
+                ${isLoading ? 'opacity-40 pointer-events-none' : ''}
+                bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15]
             `}
         >
-            {/* Toggle Track */}
-            <div
-                className={`
-                    relative w-11 h-6 rounded-full transition-colors duration-300
-                    ${isOnline ? 'bg-emerald-500/80' : 'bg-zinc-700'}
-                `}
-            >
-                {/* Toggle Knob */}
-                <div
-                    className={`
-                        absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md
-                        transition-all duration-300 ease-in-out
-                        ${isOnline ? 'left-[22px]' : 'left-0.5'}
-                    `}
-                >
-                    {/* Loading spinner inside knob */}
-                    {isLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                    )}
-                </div>
-
-                {/* Glow ring when online */}
+            {/* Dot indicator */}
+            <div className="relative flex items-center justify-center">
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${isOnline ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
                 {isOnline && !isLoading && (
-                    <div className="absolute -inset-1 rounded-full bg-emerald-400/20 animate-pulse" />
+                    <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-40" />
+                )}
+                {isLoading && (
+                    <div className="absolute -inset-1 w-4 h-4 border border-white/20 border-t-transparent rounded-full animate-spin" />
                 )}
             </div>
 
-            {/* Label */}
-            <div className="flex flex-col items-start">
-                <span
-                    className={`
-                        text-xs font-bold tracking-wider uppercase
-                        ${isOnline ? 'text-emerald-400' : 'text-zinc-500'}
-                    `}
-                >
-                    {isOnline ? 'ONLINE' : 'SLEEPING'}
-                </span>
-                <span className="text-[10px] text-zinc-600 font-mono">
-                    Eliza {isOnline ? '☀️' : '🌙'}
-                </span>
-            </div>
+            <span className={`text-xs font-medium tracking-wide ${isOnline ? 'text-white/60' : 'text-white/30'}`}>
+                {isOnline ? 'Online' : 'Offline'}
+            </span>
         </button>
     );
 }

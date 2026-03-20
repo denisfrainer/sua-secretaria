@@ -1,0 +1,180 @@
+[
+    {
+        "title": "Artusi Restaurante",
+        "totalScore": 4.7,
+        "reviewsCount": 2335,
+        "street": "R. Bocaiúva, 2090",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.artusiristorante.com.br/",
+        "phone": "+55 48 3067-4444",
+        "categories": [
+            "Restaurante italiano"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Artusi%20Restaurante&query_place_id=ChIJb-IXQRc4J5URpUC30rp1jgw",
+        "categoryName": "Restaurante italiano"
+    },
+    {
+        "title": "Ostradamus",
+        "totalScore": 4.7,
+        "reviewsCount": 9788,
+        "street": "Rod. Baldicero Filomeno, 7640",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.ostradamus.com.br/",
+        "phone": "+55 48 3337-5711",
+        "categories": [
+            "Restaurante",
+            "Bar",
+            "Bar e restaurante de ostras",
+            "Restaurante de frutos do mar"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Ostradamus&query_place_id=ChIJp0zB1w4wJ5URHtGQ71WzQXo",
+        "categoryName": "Restaurante"
+    },
+    {
+        "title": "O Timoneiro",
+        "totalScore": 4.7,
+        "reviewsCount": 4851,
+        "street": "R. Laurindo José de Souza, 205",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.restauranteotimoneiro.com/",
+        "phone": "+55 48 3204-4084",
+        "categories": [
+            "Restaurante de frutos do mar"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=O%20Timoneiro&query_place_id=ChIJb9Ls7l0-J5UR75CXQFqDFT4",
+        "categoryName": "Restaurante de frutos do mar"
+    },
+    {
+        "title": "Dolce Vita Restaurante",
+        "totalScore": 4.7,
+        "reviewsCount": 893,
+        "street": "R. Laurindo Januário da Silveira, 1233",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://dolcevitarestaurante.com.br/",
+        "phone": "+55 48 98427-6643",
+        "categories": [
+            "Restaurante de frutos do mar",
+            "Local para eventos"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Dolce%20Vita%20Restaurante&query_place_id=ChIJz2zTQUo5J5URyX5EK17Luno",
+        "categoryName": "Restaurante de frutos do mar"
+    },
+    {
+        "title": "Restaurante Olivia Cucina",
+        "totalScore": 4.6,
+        "reviewsCount": 2242,
+        "street": "Al. Annita Hoepcke da Silva, 70",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 99194-1808",
+        "categories": [
+            "Restaurante italiano"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Restaurante%20Olivia%20Cucina&query_place_id=ChIJbVunRxI5J5URkYlg_x1yLK4",
+        "categoryName": "Restaurante italiano"
+    },
+    {
+        "title": "Coco Bambu",
+        "totalScore": 4.9,
+        "reviewsCount": 26758,
+        "street": "Av. Me. Benvenuta, 687",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://cocobambu.com/unidades/florianopolis/",
+        "phone": "+55 48 98845-4418",
+        "categories": [
+            "Restaurante",
+            "Local para eventos",
+            "Local com música ao vivo"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Coco%20Bambu&query_place_id=ChIJqTuaTU85J5URBp0VAMRlmTY",
+        "categoryName": "Restaurante"
+    },
+    {
+        "title": "Restaurante Guacamole Cocina Mexicana - Floripa",
+        "totalScore": 4.7,
+        "reviewsCount": 10007,
+        "street": "Av. Jorn. Rubéns de Arruda Ramos, 2006",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.guacamole.com.br/gcfl",
+        "phone": "+55 48 3225-0900",
+        "categories": [
+            "Restaurante mexicano",
+            "Bar",
+            "Delivery"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Restaurante%20Guacamole%20Cocina%20Mexicana%20-%20Floripa&query_place_id=ChIJhy1ZgRk4J5URA9gJR123PC4",
+        "categoryName": "Restaurante mexicano"
+    },
+    {
+        "title": "Restaurante Didge Steakhouse Pub - Floripa",
+        "totalScore": 4.7,
+        "reviewsCount": 6626,
+        "street": "Av. Jorn. Rubéns de Arruda Ramos, 1976",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.didge.com.br/",
+        "phone": "+55 48 99204-7090",
+        "categories": [
+            "Restaurante australiano",
+            "Churrascaria",
+            "Bar",
+            "Cervejaria",
+            "Hamburgueria",
+            "Delivery",
+            "Restaurante de carne"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Restaurante%20Didge%20Steakhouse%20Pub%20-%20Floripa&query_place_id=ChIJt9wrgRk4J5URwmKJN63P5gQ",
+        "categoryName": "Restaurante australiano"
+    },
+    {
+        "title": "Taberna Ibérica",
+        "totalScore": 4.7,
+        "reviewsCount": 1353,
+        "street": "R. Felipe Schmidt, 1333",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.tabernaiberica.com.br/",
+        "phone": "+55 48 3225-0913",
+        "categories": [
+            "Restaurante português"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Taberna%20Ib%C3%A9rica&query_place_id=ChIJG1E63h84J5UR63AtSGTQj84",
+        "categoryName": "Restaurante português"
+    },
+    {
+        "title": "Píer 54 Restaurante",
+        "totalScore": 4.6,
+        "reviewsCount": 2020,
+        "street": "Av. Osvaldo Rodrigues Cabral, 1251",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://pier54.com.br/",
+        "phone": "+55 48 99662-6260",
+        "categories": [
+            "Restaurante de frutos do mar",
+            "Organização de eventos e cerimonial",
+            "Local para eventos",
+            "Bar informal",
+            "Local para casamentos",
+            "Adega"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=P%C3%ADer%2054%20Restaurante&query_place_id=ChIJk61sHfY3J5URYDe4bmG5lEc",
+        "categoryName": "Restaurante de frutos do mar"
+    }
+]

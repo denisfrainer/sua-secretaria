@@ -5,16 +5,16 @@ import { supabaseAdmin } from '../../../../lib/supabase/admin';
 export async function GET(req: Request) {
     try {
         const url = new URL(req.url);
-        const key = url.searchParams.get('key') || req.headers.get('x-admin-key') || '';
+        const token = url.searchParams.get('token') || req.headers.get('x-wolf-token') || req.headers.get('x-admin-key') || '';
 
-        if (!key || key !== process.env.ADMIN_SECRET_PASSWORD) {
+        if (!token || token !== process.env.WOLF_SECRET_TOKEN) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
         const { data, error } = await supabaseAdmin
             .from('leads_lobo')
             .select('*')
-            .order('criado_em', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('❌ Erro ao buscar leads:', error);
