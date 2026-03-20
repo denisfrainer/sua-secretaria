@@ -41,34 +41,28 @@ export async function processHunt(command: HuntCommand) {
     const maxResults = command.limit || 30;
     console.log(`🐺 INICIANDO CAÇADA (Scraper): Buscando "${command.query}" (Max: ${maxResults})`);
 
-    const actorId = 'compass~crawler-google-places';
-    // Utiliza o endpoint de 'runs' para disparo assíncrono ao invés de 'run-sync-get-dataset-items'
-    const runUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyToken}`;
-
-    // Configuração do Webhook callback URL
-    const webhookUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/apify-webhook?token=${process.env.WOLF_SECRET_TOKEN}`;
-
     try {
-        const payload = {
-            searchStringsArray: [command.query],
-            maxCrawlPages: 1,
-            maxCrawledPlacesPerSearch: maxResults,
-            language: 'pt-BR',
-            countryCode: 'br'
-        };
+        const webhookUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/apify-webhook/?token=${process.env.WOLF_SECRET_TOKEN}`;
 
-        // Trigger the Apify job
-        const apifyRes = await fetch(runUrl, {
+        const webhooksConfig = [
+            {
+                eventTypes: ["ACTOR.RUN.SUCCEEDED"],
+                requestUrl: webhookUrl
+            }
+        ];
+
+        const webhooksEncoded = encodeURIComponent(JSON.stringify(webhooksConfig));
+        const apifyUrl = `https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token=${apifyToken}&webhooks=${webhooksEncoded}`;
+
+        const apifyRes = await fetch(apifyUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ...payload,
-                webhooks: [
-                    {
-                        eventTypes: ["ACTOR.RUN.SUCCEEDED"],
-                        requestUrl: webhookUrl
-                    }
-                ]
+                searchStringsArray: [command.query],
+                maxCrawlPages: 1,
+                maxCrawledPlacesPerSearch: maxResults,
+                language: 'pt-BR',
+                countryCode: 'br'
             })
         });
 
