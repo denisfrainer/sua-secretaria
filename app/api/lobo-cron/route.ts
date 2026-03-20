@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 // Optional: Netlify's Next.js adapter standard for scheduling
-export const config = { schedule: "0 21 * * 1-5" };
+export const config = { schedule: "0 11-20 * * 1-5" };
 
 export async function POST(req: Request) {
     console.log('\n--- 🐺 INICIANDO SCHEDULED CRON DO LOBO ---');
