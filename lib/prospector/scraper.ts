@@ -38,7 +38,7 @@ export async function processHunt(command: HuntCommand) {
         return;
     }
 
-    const maxResults = command.limit || 30;
+    const maxResults = command.limit || 200;
     console.log(`🐺 INICIANDO CAÇADA (Scraper): Buscando "${command.query}" (Max: ${maxResults})`);
 
     try {
@@ -58,7 +58,15 @@ export async function processHunt(command: HuntCommand) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                searchStringsArray: [command.query],
+                searchStringsArray: [
+                    command.query,
+                    "Empresas em Florianópolis",
+                    "Lojas em Florianópolis",
+                    "Serviços em Florianópolis",
+                    "Comércio em Florianópolis",
+                    "Negócios locais em Florianópolis"
+                ],
+                locationQuery: "Florianópolis, SC",
                 maxCrawlPages: 1,
                 maxCrawledPlacesPerSearch: maxResults,
                 language: 'pt-BR',
