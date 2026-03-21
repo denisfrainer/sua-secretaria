@@ -1,180 +1,501 @@
 [
     {
-        "title": "Artusi Restaurante",
-        "totalScore": 4.7,
-        "reviewsCount": 2335,
-        "street": "R. Bocaiúva, 2090",
+        "title": "Outlet Brás Floripa Centro",
+        "totalScore": 5,
+        "reviewsCount": 660,
+        "street": "R. Trajano, 100",
         "city": "Florianópolis",
         "state": "Santa Catarina",
         "countryCode": "BR",
-        "website": "https://www.artusiristorante.com.br/",
-        "phone": "+55 48 3067-4444",
+        "website": "https://www.instagram.com/outletbrasfloripa?igsh=ZG83bjBkb284YmYw",
+        "phone": "+55 48 99698-8010",
         "categories": [
-            "Restaurante italiano"
+            "Loja de moda feminina"
         ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Artusi%20Restaurante&query_place_id=ChIJb-IXQRc4J5URpUC30rp1jgw",
-        "categoryName": "Restaurante italiano"
+        "url": "https://www.google.com/maps/search/?api=1&query=Outlet%20Br%C3%A1s%20Floripa%20Centro&query_place_id=ChIJpzVXOas5J5URcukJr4aJj-8",
+        "categoryName": "Loja de moda feminina"
     },
     {
-        "title": "Ostradamus",
-        "totalScore": 4.7,
-        "reviewsCount": 9788,
-        "street": "Rod. Baldicero Filomeno, 7640",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.ostradamus.com.br/",
-        "phone": "+55 48 3337-5711",
-        "categories": [
-            "Restaurante",
-            "Bar",
-            "Bar e restaurante de ostras",
-            "Restaurante de frutos do mar"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Ostradamus&query_place_id=ChIJp0zB1w4wJ5URHtGQ71WzQXo",
-        "categoryName": "Restaurante"
-    },
-    {
-        "title": "O Timoneiro",
-        "totalScore": 4.7,
-        "reviewsCount": 4851,
-        "street": "R. Laurindo José de Souza, 205",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.restauranteotimoneiro.com/",
-        "phone": "+55 48 3204-4084",
-        "categories": [
-            "Restaurante de frutos do mar"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=O%20Timoneiro&query_place_id=ChIJb9Ls7l0-J5UR75CXQFqDFT4",
-        "categoryName": "Restaurante de frutos do mar"
-    },
-    {
-        "title": "Dolce Vita Restaurante",
-        "totalScore": 4.7,
-        "reviewsCount": 893,
-        "street": "R. Laurindo Januário da Silveira, 1233",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://dolcevitarestaurante.com.br/",
-        "phone": "+55 48 98427-6643",
-        "categories": [
-            "Restaurante de frutos do mar",
-            "Local para eventos"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Dolce%20Vita%20Restaurante&query_place_id=ChIJz2zTQUo5J5URyX5EK17Luno",
-        "categoryName": "Restaurante de frutos do mar"
-    },
-    {
-        "title": "Restaurante Olivia Cucina",
+        "title": "Mozão Floripa do Brás",
         "totalScore": 4.6,
-        "reviewsCount": 2242,
-        "street": "Al. Annita Hoepcke da Silva, 70",
+        "reviewsCount": 32,
+        "street": "R. Fúlvio Aducci, 804",
         "city": "Florianópolis",
         "state": "Santa Catarina",
         "countryCode": "BR",
-        "phone": "+55 48 99194-1808",
+        "phone": "+55 48 99174-5008",
         "categories": [
-            "Restaurante italiano"
+            "Loja de moda feminina",
+            "Butique",
+            "Loja de Roupa"
         ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Restaurante%20Olivia%20Cucina&query_place_id=ChIJbVunRxI5J5URkYlg_x1yLK4",
-        "categoryName": "Restaurante italiano"
+        "url": "https://www.google.com/maps/search/?api=1&query=Moz%C3%A3o%20Floripa%20do%20Br%C3%A1s&query_place_id=ChIJORSeSSdIJ5UROwx4y35WNDY",
+        "categoryName": "Loja de moda feminina"
     },
     {
-        "title": "Coco Bambu",
+        "title": "Loja Soho Moda Feminina/Casual Chique",
+        "totalScore": 4.6,
+        "reviewsCount": 11,
+        "street": "Av. Pref. Osmar Cunha, 106 - Loja 23",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://instagram.com/lojasoho?igshid=MzRlODBiNWFlZA==",
+        "phone": "+55 48 99609-2309",
+        "categories": [
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Soho%20Moda%20Feminina%2FCasual%20Chique&query_place_id=ChIJ6fPlbSM4J5URfHoeQYVnGKY",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Floripa Store",
+        "totalScore": 4.3,
+        "reviewsCount": 163,
+        "street": "R. Ten. Silveira, 127",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.facebook.com/FloripaStore",
+        "phone": "+55 48 3365-4938",
+        "categories": [
+            "Loja de Roupa"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Floripa%20Store&query_place_id=ChIJ64ZJhCQ4J5URP8xry23UZvk",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Grazie",
+        "totalScore": 4.8,
+        "reviewsCount": 71,
+        "street": "Em frente ao HU - R. Profa. Maria Flora Pausewang, 40",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 98428-1616",
+        "categories": [
+            "Loja de moda feminina",
+            "Loja de acessórios de moda"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Grazie&query_place_id=ChIJiVJyCVU4J5UR1uqpAyLfqqw",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Outlet Brás Floripa - Ingleses",
+        "totalScore": 4.8,
+        "reviewsCount": 139,
+        "street": "Comercial Posto Petrol - Rodovia Armando Calil Bulos, 6777 Centro",
+        "city": "Florianópolis",
+        "state": "SC",
+        "countryCode": "BR",
+        "website": "https://www.instagram.com/outletbrasfloripa/",
+        "phone": "+55 48 99637-6906",
+        "categories": [
+            "Loja de Roupa"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Outlet%20Br%C3%A1s%20Floripa%20-%20Ingleses&query_place_id=ChIJ4za2jrlpJ5URSl8dzXN0awk",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "LStore Floripa",
+        "totalScore": 4.8,
+        "reviewsCount": 53,
+        "street": "R. Des. Pedro Silva, 2649 - Sala 08",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://lstorefloripa.com.br/",
+        "phone": "+55 48 99143-7707",
+        "categories": [
+            "Loja de Roupa",
+            "Loja de acessórios de moda",
+            "Loja de calçado"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=LStore%20Floripa&query_place_id=ChIJmZi2E6U3J5URjzNQ43ZKZ_s",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Estação & Mar",
+        "totalScore": 5,
+        "reviewsCount": 95,
+        "street": "Estr. Dom João Becker, 545 - LOJA 05",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://estacaoemar.com.br/",
+        "phone": "+55 48 98473-4889",
+        "categories": [
+            "Loja de moda feminina",
+            "Loja de acessórios de moda"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Esta%C3%A7%C3%A3o%20%26%20Mar&query_place_id=ChIJAfXZHQNqJ5URr4oKQUXbnIQ",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Lojas Kanto A",
+        "totalScore": 4.8,
+        "reviewsCount": 47,
+        "street": "R. dos Ilhéus, 59",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 3025-7212",
+        "categories": [
+            "Loja de moda feminina",
+            "Loja de roupas de designer"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Lojas%20Kanto%20A&query_place_id=ChIJjaJqMjs4J5URWGTxGrXUZ_Y",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Lojas Kanto A",
+        "totalScore": 4.8,
+        "reviewsCount": 40,
+        "street": "R. Esteves Júnior, 213",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 3369-6767",
+        "categories": [
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Lojas%20Kanto%20A&query_place_id=ChIJg1ElFCI4J5URTdv9V17mG80",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Srta. Michels Closet Loja de roupas no norte da Ilha",
         "totalScore": 4.9,
-        "reviewsCount": 26758,
-        "street": "Av. Me. Benvenuta, 687",
+        "reviewsCount": 78,
+        "street": "Rod. João Gualberto Soares, 274",
         "city": "Florianópolis",
         "state": "Santa Catarina",
         "countryCode": "BR",
-        "website": "https://cocobambu.com/unidades/florianopolis/",
-        "phone": "+55 48 98845-4418",
+        "website": "http://www.srtamichelscloset.com.br/",
+        "phone": "+55 48 99600-8373",
         "categories": [
-            "Restaurante",
-            "Local para eventos",
-            "Local com música ao vivo"
+            "Loja de Roupa",
+            "Loja de vestidos"
         ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Coco%20Bambu&query_place_id=ChIJqTuaTU85J5URBp0VAMRlmTY",
-        "categoryName": "Restaurante"
+        "url": "https://www.google.com/maps/search/?api=1&query=Srta.%20Michels%20Closet%20Loja%20de%20roupas%20no%20norte%20da%20Ilha&query_place_id=ChIJpz0knpVBJ5URR6qiB2mevbU",
+        "categoryName": "Loja de Roupa"
     },
     {
-        "title": "Restaurante Guacamole Cocina Mexicana - Floripa",
-        "totalScore": 4.7,
-        "reviewsCount": 10007,
-        "street": "Av. Jorn. Rubéns de Arruda Ramos, 2006",
+        "title": "Myah Store",
+        "totalScore": 4.9,
+        "reviewsCount": 50,
+        "street": "Edifício Continental Park, Av. Eng. Max de Souza, 790 - Loja 4",
+        "city": "Florianópolis",
+        "state": "SC",
+        "countryCode": "BR",
+        "website": "http://myahstore.com.br/",
+        "phone": "+55 48 99141-0524",
+        "categories": [
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Myah%20Store&query_place_id=ChIJdUlh-ZQ3J5URQ2h1y7pTGes",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Floripa Boho",
+        "totalScore": 5,
+        "reviewsCount": 49,
+        "street": "Rodovia Dr. Antônio Luiz Moura Gonzaga, 3137",
         "city": "Florianópolis",
         "state": "Santa Catarina",
         "countryCode": "BR",
-        "website": "https://www.guacamole.com.br/gcfl",
-        "phone": "+55 48 3225-0900",
+        "phone": "+55 48 98811-3756",
         "categories": [
-            "Restaurante mexicano",
-            "Bar",
-            "Delivery"
+            "Loja de Roupa"
         ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Restaurante%20Guacamole%20Cocina%20Mexicana%20-%20Floripa&query_place_id=ChIJhy1ZgRk4J5URA9gJR123PC4",
-        "categoryName": "Restaurante mexicano"
+        "url": "https://www.google.com/maps/search/?api=1&query=Floripa%20Boho&query_place_id=ChIJn_AFCNY5J5URvvz13ViOXOA",
+        "categoryName": "Loja de Roupa"
     },
     {
-        "title": "Restaurante Didge Steakhouse Pub - Floripa",
-        "totalScore": 4.7,
-        "reviewsCount": 6626,
-        "street": "Av. Jorn. Rubéns de Arruda Ramos, 1976",
+        "title": "Top 15 Floripa",
+        "totalScore": 4.8,
+        "reviewsCount": 4,
+        "street": "R. Deodoro, 221",
         "city": "Florianópolis",
         "state": "Santa Catarina",
         "countryCode": "BR",
-        "website": "https://www.didge.com.br/",
-        "phone": "+55 48 99204-7090",
+        "phone": "+55 48 99688-8744",
         "categories": [
-            "Restaurante australiano",
-            "Churrascaria",
-            "Bar",
-            "Cervejaria",
-            "Hamburgueria",
-            "Delivery",
-            "Restaurante de carne"
+            "Loja de Roupa"
         ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Restaurante%20Didge%20Steakhouse%20Pub%20-%20Floripa&query_place_id=ChIJt9wrgRk4J5URwmKJN63P5gQ",
-        "categoryName": "Restaurante australiano"
+        "url": "https://www.google.com/maps/search/?api=1&query=Top%2015%20Floripa&query_place_id=ChIJmeo1xOc5J5URRjAf97hdfNU",
+        "categoryName": "Loja de Roupa"
     },
     {
-        "title": "Taberna Ibérica",
-        "totalScore": 4.7,
-        "reviewsCount": 1353,
-        "street": "R. Felipe Schmidt, 1333",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.tabernaiberica.com.br/",
-        "phone": "+55 48 3225-0913",
-        "categories": [
-            "Restaurante português"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Taberna%20Ib%C3%A9rica&query_place_id=ChIJG1E63h84J5UR63AtSGTQj84",
-        "categoryName": "Restaurante português"
-    },
-    {
-        "title": "Píer 54 Restaurante",
+        "title": "Direto de São Paulo Floripa",
         "totalScore": 4.6,
-        "reviewsCount": 2020,
-        "street": "Av. Osvaldo Rodrigues Cabral, 1251",
+        "reviewsCount": 99,
+        "street": "Rod. João Gualberto Soares, 4656 - Sala 1",
         "city": "Florianópolis",
         "state": "Santa Catarina",
         "countryCode": "BR",
-        "website": "http://pier54.com.br/",
-        "phone": "+55 48 99662-6260",
+        "website": "https://www.instagram.com/diretodesaopaulofloripa?igsh=b2trNzVnbHo5OXhw",
+        "phone": "+55 48 98828-1649",
         "categories": [
-            "Restaurante de frutos do mar",
-            "Organização de eventos e cerimonial",
-            "Local para eventos",
-            "Bar informal",
-            "Local para casamentos",
-            "Adega"
+            "Loja de Roupa"
         ],
-        "url": "https://www.google.com/maps/search/?api=1&query=P%C3%ADer%2054%20Restaurante&query_place_id=ChIJk61sHfY3J5URYDe4bmG5lEc",
-        "categoryName": "Restaurante de frutos do mar"
+        "url": "https://www.google.com/maps/search/?api=1&query=Direto%20de%20S%C3%A3o%20Paulo%20Floripa&query_place_id=ChIJVcPDl8BDJ5URF4pZLVq1PrY",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Loja de Roupa Feminina - Clob",
+        "totalScore": 5,
+        "reviewsCount": 26,
+        "street": "Anexo ao Posto Galo Pedrita - Rodovia Dr. Antônio Luiz Moura Gonzaga, 2361 - sala 01",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 99961-7883",
+        "categories": [
+            "Loja de moda feminina",
+            "Loja de roupas de praia",
+            "Loja de Roupa",
+            "Loja de jeans",
+            "Loja de vestidos"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20de%20Roupa%20Feminina%20-%20Clob&query_place_id=ChIJYzpn6j49J5UR5zVaULg6StU",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Lojas Kanto A",
+        "totalScore": 4.8,
+        "reviewsCount": 22,
+        "street": "R. Ten. Silveira, 116",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 4141-4664",
+        "categories": [
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Lojas%20Kanto%20A&query_place_id=ChIJWYLL2CA5J5URvl7aAHJi1oI",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Lojas Marisa",
+        "totalScore": 4.2,
+        "reviewsCount": 1542,
+        "street": "Praça XV de Novembro, 111",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.marisa.com.br/?IDParceiro=06348000&utm_source=gmb&utm_medium=local_organic&utm_campaign=locasty_130",
+        "phone": "+55 11 4004-2211",
+        "categories": [
+            "Loja de Roupa",
+            "Loja de acessórios de moda",
+            "Loja de calçado",
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Lojas%20Marisa&query_place_id=ChIJVVVV2SQ4J5URVGhBduGdl8g",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Loja Campeche Jurerê Open Shoping",
+        "totalScore": 4.7,
+        "reviewsCount": 114,
+        "street": "Av. das Raias, 883 - Loja 01",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.instagram.com/usecampeche",
+        "phone": "+55 48 99203-5872",
+        "categories": [
+            "Loja de roupas de praia"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Campeche%20Jurer%C3%AA%20Open%20Shoping&query_place_id=ChIJp91F-V5EJ5UR7-4C04woT5c",
+        "categoryName": "Loja de roupas de praia"
+    },
+    {
+        "title": "Clio Modas",
+        "totalScore": 4.9,
+        "reviewsCount": 34,
+        "street": "R. Humberto de Campos, 69",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.cliomodas.com.br/",
+        "phone": "+55 48 3234-4112",
+        "categories": [
+            "Loja de moda feminina",
+            "Loja de roupas de praia",
+            "Loja de Roupa",
+            "Loja de roupas com tamanhos especiais"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Clio%20Modas&query_place_id=ChIJl9CO11k4J5URtndT-f7FMiY",
+        "categoryName": "Loja de moda feminina"
+    },
+    {
+        "title": "Estoril Moda Masculina | Loja de Moda Masculina em Florianópolis",
+        "totalScore": 4.7,
+        "reviewsCount": 38,
+        "street": "R. Felipe Schmidt, 119",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 3222-1268",
+        "categories": [
+            "Loja de moda masculina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Estoril%20Moda%20Masculina%20%7C%20Loja%20de%20Moda%20Masculina%20em%20Florian%C3%B3polis&query_place_id=ChIJxb2_YSQ4J5URrChSPv5aRu8",
+        "categoryName": "Loja de moda masculina"
+    },
+    {
+        "title": "Outlet Brás Floripa Campeche",
+        "totalScore": 4.9,
+        "reviewsCount": 85,
+        "street": "Av. Pequeno Príncipe, 1390",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.instagram.com/outletbrasfloripa/",
+        "phone": "+55 48 99633-3089",
+        "categories": [
+            "Loja de Roupa"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Outlet%20Br%C3%A1s%20Floripa%20Campeche&query_place_id=ChIJo-MotI87J5UR5JxolRhcHZY",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Bila Bella Fit - Moda Fitnes - Loja de roupa fitness feminina",
+        "totalScore": 4.9,
+        "reviewsCount": 54,
+        "street": "R. Felipe Schmidt, 249",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://linktr.ee/bilabellafit",
+        "phone": "+55 48 99124-0263",
+        "categories": [
+            "Loja de Roupa",
+            "Loja de roupas para atividades externas",
+            "Loja de roupas com tamanhos especiais",
+            "Loja de roupas esportivas",
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Bila%20Bella%20Fit%20-%20Moda%20Fitnes%20-%20Loja%20de%20roupa%20fitness%20feminina&query_place_id=ChIJG4igEOM5J5URYZCNOpP3HLk",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Lojas Renner",
+        "totalScore": 4.3,
+        "reviewsCount": 2149,
+        "street": "R. Felipe Schmidt, 376",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://www.lojasrenner.com.br/",
+        "phone": "+55 48 4007-1407",
+        "categories": [
+            "Loja de Roupa",
+            "Loja de roupas de praia",
+            "Loja de moda infantil",
+            "Loja de cosmético",
+            "Loja de moda masculina",
+            "Perfumaria",
+            "Loja de calçado",
+            "Loja de moda feminina",
+            "Loja de roupas para jovens"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Lojas%20Renner&query_place_id=ChIJF3yeVzs4J5UROZLF7xUFaZQ",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Loja Oficial Docthos Florianópolis",
+        "totalScore": 5,
+        "reviewsCount": 185,
+        "street": "Avenida Madre Benvenuta, 687 Villa Romana Shopping 209, L1",
+        "city": "Florianópolis",
+        "state": "SC",
+        "countryCode": "BR",
+        "website": "http://www.docthos.com.br/",
+        "phone": "+55 48 98817-3986",
+        "categories": [
+            "Loja de moda masculina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Oficial%20Docthos%20Florian%C3%B3polis&query_place_id=ChIJf0kMrNQ5J5URLO4p1Odiduw",
+        "categoryName": "Loja de moda masculina"
+    },
+    {
+        "title": "Loja Campeche Canasvieiras",
+        "totalScore": 4.7,
+        "reviewsCount": 99,
+        "street": "Av. das Nações, 625 - Loja 003",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 99203-5872",
+        "categories": [
+            "Loja de roupas de praia"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Campeche%20Canasvieiras&query_place_id=ChIJ4ZVoNy5DJ5URX9Gwz0REgbg",
+        "categoryName": "Loja de roupas de praia"
+    },
+    {
+        "title": "Floripa Store",
+        "totalScore": 4.2,
+        "reviewsCount": 221,
+        "street": "R. Felipe Schmidt, 91",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.facebook.com/floripastore",
+        "phone": "+55 48 3206-8555",
+        "categories": [
+            "Loja de Roupa"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Floripa%20Store&query_place_id=ChIJ_1ctdSQ4J5URo_rQM9ZvDGM",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Made in Floripa",
+        "totalScore": 4.3,
+        "reviewsCount": 59,
+        "street": "Estr. Dom João Becker, 414",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "https://madeinfloripa.store/",
+        "phone": "+55 48 99669-2269",
+        "categories": [
+            "Loja de Roupa"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Made%20in%20Floripa&query_place_id=ChIJ7TDP4lNrJ5URERTYQFDe6_A",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Promofashion - Florianópolis, Centro",
+        "totalScore": 3.4,
+        "reviewsCount": 27,
+        "street": "R. Felipe Schmidt, 399",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "website": "http://www.lojaspromofashion.com.br/",
+        "phone": "+55 48 99147-5484",
+        "categories": [
+            "Loja de Roupa"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Promofashion%20-%20Florian%C3%B3polis%2C%20Centro&query_place_id=ChIJ-zfEYSE4J5URexg6_MTiG2k",
+        "categoryName": "Loja de Roupa"
+    },
+    {
+        "title": "Loja Mellamour",
+        "totalScore": 4.7,
+        "reviewsCount": 13,
+        "street": "R. Lauro Linhares, 2123 - loja 22",
+        "city": "Florianópolis",
+        "state": "Santa Catarina",
+        "countryCode": "BR",
+        "phone": "+55 48 99199-8686",
+        "categories": [
+            "Loja de moda feminina"
+        ],
+        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Mellamour&query_place_id=ChIJN35n-l45J5URHPFI-rrRfJo",
+        "categoryName": "Loja de moda feminina"
     }
 ]

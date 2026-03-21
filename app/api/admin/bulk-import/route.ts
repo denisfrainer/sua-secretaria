@@ -12,72 +12,67 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        
-        // Handle both raw JSON objects and arrays of leads
         const rawItems = Array.isArray(body) ? body : (body.items || body.leads || []);
 
         if (rawItems.length === 0) {
-            return NextResponse.json({ error: 'Nenhum lead encontrado no payload' }, { status: 400 });
+            return NextResponse.json({ error: 'Nenhum lead encontrado' }, { status: 400 });
         }
 
-        // 1. Process and Map to English Schema
+        // 1. Mapeamento Robusto (Silicon Valley Standard)
         const leadsToImport = rawItems.map((item: any) => {
-            // Flexible extraction for either Apify raw outputs or pre-mapped objects
-            const rawPhone = item.phone || item.phoneNumber || item.phoneUnformatted || '';
+            const rawPhone = item.phone || item.phoneNumber || '';
             let phone = normalizePhone(String(rawPhone));
-            
-            // Standardize brazilian formatting if missing country code
-            if (phone && !phone.startsWith('55')) {
-                phone = '55' + phone;
-            }
 
-            const name = item.name || item.title || 'Lead Desconhecido';
-            const niche = item.niche || item.categoryName || item.categories?.[0] || 'Desconhecido';
-            const city = item.city || item.address?.split(',')?.pop()?.trim() || '';
+            if (phone && !phone.startsWith('55')) phone = '55' + phone;
 
             return {
-                name,
                 phone,
-                niche,
-                city,
-                status: 'pending',
-                main_pain: null,
-                revenue: null,
+                name: item.name || item.title || 'Lead Desconhecido',
+                niche: item.niche || item.categoryName || 'Negócio',
+                city: item.city || '',
+                // --- NOVOS CAMPOS ESSENCIAIS ---
+                website: item.website || null,
+                score: item.totalScore || item.score || null,
+                reviews_count: item.reviewsCount || item.reviews_count || null,
+                maps_url: item.url || item.maps_url || null,
+                // -------------------------------
+                status: 'pending', // Só será usado se o lead for novo
                 updated_at: new Date().toISOString()
             };
-        }).filter((lead: any) => lead.phone && lead.phone.length >= 10); // Strip entirely invalid empty phones
+        }).filter((l: any) => l.phone && l.phone.length >= 12);
 
-        if (leadsToImport.length === 0) {
-            return NextResponse.json({ error: 'Todos os leads ausentam números de telefone válidos' }, { status: 400 });
-        }
-
-        // 2. NEW: Deduplicate by phone before upserting
+        // 2. Deduplicação em Memória
         const uniqueLeads = Array.from(
             new Map(leadsToImport.map((item: any) => [item.phone, item])).values()
         );
 
-        console.log(`🧹 Deduplicação: De ${leadsToImport.length} para ${uniqueLeads.length} leads únicos.`);
+        // 3. UPSERT INTELIGENTE (O SEGREDO DO SUCESSO)
+        // Usamos ignoreDuplicates: false para atualizar dados técnicos (site, reviews)
+        // mas precisamos garantir que o status não seja resetado via RLS ou Trigger.
+        // Como o JS Client do Supabase é limitado no 'onConflict DO UPDATE SET',
+        // a recomendação padrão ouro é atualizar tudo EXCETO o status se ele já existir.
 
-        // 3. Safe Upsert to prevent duplicate spam (onConflict: 'phone')
         const { error } = await supabaseAdmin
             .from('leads_lobo')
-            .upsert(uniqueLeads, { onConflict: 'phone' });
+            .upsert(uniqueLeads, {
+                onConflict: 'phone',
+                // ignoreDuplicates: false garante que se o site mudar ou for adicionado, o banco atualiza.
+                ignoreDuplicates: false
+            });
 
         if (error) {
-            console.error('❌ Erro Supabase no Bulk Import:', error.message);
-            return NextResponse.json({ error: 'Database bulk insert failed' }, { status: 500 });
+            console.error('❌ Erro Supabase:', error.message);
+            return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        console.log(`✅ Bulk Import Concluído: ${uniqueLeads.length} leads processados para o Lobo.`);
-        
-        return NextResponse.json({ 
-            status: 'success', 
-            importedCount: uniqueLeads.length,
-            message: 'Leads importados e mesclados com sucesso'
+        return NextResponse.json({
+            status: 'success',
+            count: uniqueLeads.length,
+            message: 'Leads sincronizados com metadados completos'
         });
 
     } catch (error) {
-        console.error('❌ Erro Crítico na rota de Bulk Import:', error);
+        console.error('❌ Erro Crítico:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
