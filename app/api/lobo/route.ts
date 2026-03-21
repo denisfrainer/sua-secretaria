@@ -5,141 +5,159 @@ import { normalizePhone } from '../../../lib/utils/phone';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function parseSpintax(text: string): string {
+    const matches = text.match(/\{([^{}]+)\}/g);
+    if (!matches) return text;
+    let result = text;
+    for (const match of matches) {
+        const options = match.slice(1, -1).split('|');
+        const choice = options[Math.floor(Math.random() * options.length)];
+        result = result.replace(match, choice);
+    }
+    if (result.includes('{') && result.includes('}')) return parseSpintax(result);
+    return result;
+}
+
+function getBrazilDateString(): string {
+    const now = new Date();
+    const brTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    return brTime.toISOString().split('T')[0];
+}
+
 export async function POST(req: Request) {
-    console.log('\n--- 🐺 REQUISIÇÃO RECEBIDA NO LOBO ---');
     try {
-        // 1. Security Check
         const token = req.headers.get('x-wolf-token');
         if (!token || token !== process.env.ADMIN_SECRET_PASSWORD) {
-            console.log('⚠️ Token inválido ou ausente:', token);
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        // 2. Parse Payload (Graceful fallback for cron triggers)
-        let body: any = {};
-        try {
-            body = await req.json();
-            console.log('📦 Payload recebido:', body);
-        } catch (err) {
-            console.log('📦 Nenhum JSON no body (Disparo de Cron assumido).');
+        // 1. Verificação de Horário Comercial (Brasil UTC-3)
+        const currentHourBR = new Date().getUTCHours() - 3;
+        const localHour = currentHourBR < 0 ? currentHourBR + 24 : currentHourBR;
+
+        if (localHour < 8 || localHour >= 18) {
+            console.log(`🌙 Fora do horário comercial (${localHour}h). Lobo dormindo.`);
+            return NextResponse.json({ status: 'sleeping', reason: 'out_of_business_hours' });
         }
 
-        const batchSize = body.batch_size || 3;
-        let leadsToProcess = [];
-        const manualPhone = body.testPhone || body.test_number || body.number;
+        // 2. Controle de Cota Diária
+        const todayStr = getBrazilDateString();
+        const { data: statsData, error: statsError } = await supabaseAdmin
+            .from('lobo_daily_stats')
+            .select('*')
+            .eq('date_id', todayStr)
+            .single();
 
-        if (manualPhone) {
-            const safePhone = normalizePhone(String(manualPhone));
-            console.log(`🧪 TESTE MANUAL: Disparando para o número ${safePhone}`);
-            leadsToProcess = [{
-                id: 'test-id',
-                name: body.testName || body.name || 'Lead Teste',
-                phone: safePhone
-            }];
+        let currentStats = statsData;
+
+        if (!currentStats) {
+            const randomDailyLimit = Math.floor(Math.random() * (13 - 7 + 1)) + 7;
+            const { data: newStats, error: insertError } = await supabaseAdmin
+                .from('lobo_daily_stats')
+                .insert([{ date_id: todayStr, sent_count: 0, daily_limit: randomDailyLimit }])
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+            currentStats = newStats;
+        }
+
+        if (currentStats.sent_count >= currentStats.daily_limit) {
+            return NextResponse.json({ status: 'limit_reached' });
+        }
+
+        // 3. Clusterização Probabilística
+        const rand = Math.random();
+        let leadsToFetch = 0;
+
+        if (rand < 0.60) {
+            return NextResponse.json({ status: 'skipped', reason: 'human_sleep_simulation' });
+        } else if (rand < 0.90) {
+            leadsToFetch = 1;
         } else {
-            // 📥 A CORREÇÃO DO SPAM: Buscando apenas 'pending'
-            console.log(`📥 Buscando lote de ${batchSize} leads 'pending' na tabela leads_lobo...`);
-            const { data: leads, error } = await supabaseAdmin
-                .from('leads_lobo')
-                .select('*')
-                .eq('status', 'pending') // SÓ ATACA QUEM AINDA NÃO FOI ATACADO
-                .neq('name', 'Lead Teste') // Limpando testes antigos do banco
-                .neq('name', 'Sem Nome')
-                .limit(batchSize); // 🚨 Respeitando o Payload Limit
-
-            if (error) {
-                console.error('❌ Erro ao buscar leads no Supabase:', error);
-                return NextResponse.json({ error: 'Database error' }, { status: 500 });
-            }
-
-            leadsToProcess = leads || [];
+            leadsToFetch = 2;
         }
 
-        if (leadsToProcess.length === 0) {
-            console.log('💤 Nenhum lead novo para caçar hoje.');
-            return NextResponse.json({ status: 'success', message: 'No pending leads found' }, { status: 200 });
+        const remainingQuota = currentStats.daily_limit - currentStats.sent_count;
+        leadsToFetch = Math.min(leadsToFetch, remainingQuota);
+
+        if (leadsToFetch === 0) return NextResponse.json({ status: 'limit_reached_during_calc' });
+
+        // 4. Busca de Leads
+        const { data: leads, error: leadsError } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('*')
+            .eq('status', 'pending')
+            .limit(leadsToFetch);
+
+        if (leadsError || !leads || leads.length === 0) {
+            return NextResponse.json({ status: 'no_leads_found' });
         }
 
-        // 3. A CORREÇÃO DO TIMEOUT: Await na função para o Netlify não matar o processo
-        const isManualTest = !!manualPhone;
-        await processLeads(leadsToProcess, !isManualTest);
-
-        return NextResponse.json({ status: 'processing finished', leadsCount: leadsToProcess.length });
-    } catch (error) {
-        console.error('❌ Erro Crítico na Rota do Lobo:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
-}
-
-async function processLeads(leads: any[], isFromDb: boolean) {
-    console.log(`🐺 LOBO INICIANDO CAÇADA: ${leads.length} leads na lista.`);
-
-    for (const lead of leads) {
-        if (!lead.phone || !lead.name) {
-            console.log(`⚠️ Lead ignorado (dados incompletos):`, lead);
-            continue;
-        }
-
-        lead.phone = normalizePhone(lead.phone);
-
-        // Delay anti-ban (reduzido para caber no limite de tempo do Serverless)
-        let delay = Math.floor(Math.random() * 2000) + 2000; // 2 a 4 segundos
-        if (!isFromDb) delay = 1000;
-
-        console.log(`⏳ Aguardando ${delay / 1000}s antes de abordar ${lead.name}...`);
-        await sleep(delay);
-
-        // --- 🎯 THE CASUAL HOOK STRATEGY ---
-        const currentHour = new Date().getUTCHours() - 3; // Fuso horário Brasília
-        const localHour = currentHour < 0 ? currentHour + 24 : currentHour;
+        // 5. Processamento e Disparo
+        let successfulSends = 0;
         const saudacao = localHour < 12 ? 'bom dia' : 'boa tarde';
 
-        // Extrai o primeiro nome e capitaliza apenas a primeira letra (e.g., "João")
-        const nameLower = lead.name ? lead.name.toLowerCase() : '';
-        const rawNameLower = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')
-            ? lead.name.split(' ')[0].toLowerCase()
-            : '';
+        for (const lead of leads) {
+            if (!lead.phone) continue;
 
-        const capitalizedName = rawNameLower ? rawNameLower.charAt(0).toUpperCase() + rawNameLower.slice(1) : '';
+            const safePhone = normalizePhone(lead.phone);
+            const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
 
-        // If we have a name, add a comma before it for natural phrasing, otherwise empty
-        const nomeFormatado = capitalizedName ? `, ${capitalizedName}` : '';
-        const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
+            // Verifica se a propriedade website existe e não está vazia
+            const hasWebsite = lead.website && lead.website.trim() !== '';
 
-        const variations = [
-            `opa, ${saudacao}! sou aqui da região também. tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`,
+            let variations = [];
 
-            `fala pessoal, ${saudacao}! achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`,
-
-            `opa, tudo bem? Denis aqui. o trabalho de vocês é muito bom pra ficar só na rede social. vocês já chegaram a ter um site próprio pra criar mais autoridade alguma vez?`,
-
-            `${saudacao}, pessoal! tava dando uma olhada no perfil de vocês. a galera que procura pelo Google consegue achar vocês fácil hoje, ou a captação de clientes tá sendo toda no boca a boca?`,
-
-            `fala, ${saudacao}! passei pelo ${nichoFormatado} de vocês agora há pouco. me tira uma dúvida rápida: a operação de vocês tá rodando sem site oficial mesmo?`
-        ];
-
-        const message = variations[Math.floor(Math.random() * variations.length)];
-
-        try {
-            await sendWhatsAppMessage(lead.phone, message);
-
-            // 4. A CORREÇÃO DA SANITY CHECK E CONFORMIDADE AO ESQUEMA
-            if (isFromDb && lead.id) {
-                await supabaseAdmin.from('leads_lobo').update({ status: 'contacted' }).eq('id', lead.id);
-                console.log(`🐺 Lead ${lead.name} caçado com sucesso.`);
+            if (hasWebsite) {
+                // BIFURCAÇÃO 1: LEAD TEM SITE
+                variations = [
+                    `{opa|fala pessoal}, ${saudacao}! tava dando uma olhada no site de vocês. a operação tá rodando bem ou tem algo que vocês sentem que precisa melhorar no digital?`,
+                    `{opa|fala}, ${saudacao}! achei o ${nichoFormatado} de vocês no google e vi que já tem um site. vocês mesmos que cuidam da manutenção e atualização dele?`,
+                    `${saudacao}, tudo bem? Denis aqui. vi o site de vocês, o trabalho é muito bom. a maior captação de vocês hoje vem através do site ou do instagram?`
+                ];
+            } else {
+                // BIFURCAÇÃO 2: LEAD NÃO TEM SITE (Suas variações originais com spintax leve)
+                variations = [
+                    `{opa|fala}, ${saudacao}! sou aqui de Florianópolis também. tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`,
+                    `fala pessoal, ${saudacao}! achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`,
+                    `{opa|fala}, tudo bem? Denis aqui. o trabalho de vocês é muito bom pra ficar só na rede social. vocês já chegaram a ter um site próprio pra criar mais autoridade alguma vez?`,
+                    `${saudacao}, pessoal! tava dando uma olhada no perfil de vocês. a galera que procura pelo Google consegue achar vocês fácil hoje, ou a captação de clientes tá sendo toda no boca a boca?`,
+                    `{fala|opa}, ${saudacao}! passei pelo ${nichoFormatado} de vocês agora há pouco. me tira uma dúvida rápida: a operação de vocês tá rodando sem site oficial mesmo?`
+                ];
             }
-        } catch (err: any) {
-            const errorBody = err.message || '';
-            if (errorBody.includes('"exists":false')) {
-                console.log(`🚫 Lead ${lead.name} não possui WhatsApp. Marcando como inválido.`);
-                if (isFromDb && lead.id) {
+
+            const baseTemplate = variations[Math.floor(Math.random() * variations.length)];
+            const message = parseSpintax(baseTemplate);
+
+            try {
+                if (successfulSends > 0) {
+                    const interBurstDelay = Math.floor(Math.random() * 5000) + 3000;
+                    await sleep(interBurstDelay);
+                }
+
+                await sendWhatsAppMessage(safePhone, message);
+                await supabaseAdmin.from('leads_lobo').update({ status: 'contacted' }).eq('id', lead.id);
+                successfulSends++;
+            } catch (err: any) {
+                if (err.message?.includes('"exists":false')) {
                     await supabaseAdmin.from('leads_lobo').update({ status: 'invalid' }).eq('id', lead.id);
                 }
-            } else {
-                console.error(`❌ Lobo falhou ao enviar mensagem para ${lead.name}:`, err);
             }
         }
-    }
 
-    console.log(`🏁 LOBO FINALIZOU A CAÇADA!`);
+        // 6. Atualização do Contador Diário
+        if (successfulSends > 0) {
+            await supabaseAdmin.rpc('increment_lobo_sent_count', {
+                today_date: todayStr,
+                increment_by: successfulSends
+            });
+        }
+
+        return NextResponse.json({ status: 'success', sent: successfulSends });
+
+    } catch (error) {
+        console.error('❌ Erro Crítico:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
 }
