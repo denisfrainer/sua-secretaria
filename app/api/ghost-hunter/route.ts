@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { sendWhatsAppMessage } from '../../../../lib/whatsapp/sender';
-import { supabaseAdmin } from '../../../../lib/supabase/admin';
-import { normalizePhone } from '../../../../lib/utils/phone';
+import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
+import { supabaseAdmin } from '../../../lib/supabase/admin';
+import { normalizePhone } from '../../../lib/utils/phone';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
