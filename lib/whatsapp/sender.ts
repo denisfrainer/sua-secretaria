@@ -1,17 +1,19 @@
 // lib/whatsapp/sender.ts
 
-export async function sendWhatsAppMessage(phone: string, text: string) {
+export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number) {
     const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
     const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
 
     // Calcula o tempo de digitação: 50ms por letra. Min: 2s, Max: 5s.
-    const typingTime = Math.min(Math.max(text.length * 50, 2000), 5000); 
+    const typingTime = delayMs ?? Math.min(Math.max(text.length * 50, 2000), 5000); 
 
     // O Padrão Evolution V2+
     const payload = {
         number: phone,
         text: text, // 🎯 A MUDANÇA DE OURO ESTÁ AQUI (na raiz do objeto)
+        delay: typingTime,
+        presence: "composing",
         options: {
             delay: typingTime,
             presence: "composing",

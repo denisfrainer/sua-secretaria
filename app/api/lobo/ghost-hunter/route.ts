@@ -17,15 +17,15 @@ export async function POST(req: Request) {
 
         // 2. The 48-Hour Logic (Supabase)
         const deadline = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-        
+
         console.log(`📥 Buscando leads fantasma (sem resposta) com limite anterior a ${deadline}...`);
         const { data: leadsToFollowUp, error } = await supabaseAdmin
             .from('leads_lobo')
             .select('*')
             .eq('status', 'contacted')
-            .eq('replied', false)       // 🛡️ FRIENDLY FIRE: Só alveja quem NÃO respondeu
+            .eq('replied', false)
             .lte('updated_at', deadline)
-            .limit(3);
+            .limit(3); // Mantido em 3 para não estourar o limite de tempo do Serverless
 
         if (error) {
             console.error('❌ Erro Db:', error);
@@ -39,46 +39,49 @@ export async function POST(req: Request) {
 
         console.log(`👻 GHOST HUNTER ATIVADO: ${leadsToFollowUp.length} leads na mira.`);
 
-        // 3. Execution & Status Update Loop
-        for (const lead of leadsToFollowUp) {
-            if (!lead.phone) continue;
+        // 3. Execution (Parallel Processing para evitar Serverless Timeout)
+        const followUpPromises = leadsToFollowUp.map(async (lead, index) => {
+            if (!lead.phone) return;
 
-            lead.phone = normalizePhone(lead.phone);
+            const normalizedPhone = normalizePhone(lead.phone);
 
             const nameLower = (lead.name || '').toLowerCase();
             const rawName = nameLower && !nameLower.includes('lead') && !nameLower.includes('desconhecido') && !nameLower.includes('sem nome')
                 ? lead.name.split(' ')[0]
                 : '';
-            
+
             const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : '';
+            // Gramática Padrão Ouro: Se tem nome, põe espaço. Se não tem, vazio.
             const displayName = firstName ? ` ${firstName}` : '';
 
             // 🎯 Low-pressure "lost message" copywriting
             const variations = [
-                `oi${displayName}, imaginei que a mensagem pudesse ter ficado perdida por aí. ainda faz sentido a gente trocar uma ideia?`,
-                `${firstName ? firstName.toLowerCase() + ', ' : ''}só passando pra ver se recebeu minha msg anterior. sem pressa nenhuma!`,
-                `fala${displayName}! sei que a rotina é corrida. só queria confirmar se chegou a ver minha mensagem.`,
-                `oi${displayName}, tudo bem? minha mensagem pode ter ido parar no limbo do whatsapp rs. ainda tem interesse em conversar?`,
+                `Opa${displayName}, imaginei que a mensagem pudesse ter ficado perdida por aí rs. Ainda faz sentido a gente trocar uma ideia?`,
+                `${firstName ? firstName + ', ' : ''}só passando pra ver se recebeu minha msg anterior. Sem pressa nenhuma!`,
+                `Fala${displayName}! Sei que a rotina é corrida. Só queria confirmar se chegou a ver minha mensagem.`,
+                `Oi${displayName}, tudo bem? Minha mensagem pode ter ido parar no limbo do WhatsApp rs. Ainda tem interesse em conversar?`,
             ];
 
             const message = variations[Math.floor(Math.random() * variations.length)];
-            
-            // Wait 2 to 5 seconds
-            const delay = Math.floor(Math.random() * 3000) + 2000;
-            console.log(`⏳ Aguardando ${delay/1000}s para reengajar ${lead.name || 'Desconhecido'}...`);
-            await sleep(delay);
+
+            // Staggering (Cascata) para não bater limite de API do WhatsApp
+            // Lead 1 manda agora, Lead 2 manda em 2s, Lead 3 manda em 4s
+            const delay = index * 2000;
+            if (delay > 0) {
+                console.log(`⏳ Aguardando ${delay / 1000}s para reengajar ${lead.name || 'Desconhecido'}...`);
+                await sleep(delay);
+            }
 
             try {
-                await sendWhatsAppMessage(lead.phone, message);
-                
-                // Update status so they escape the Ghost Hunter loop
+                // Primeiro atualiza o banco (Garante que se falhar o envio, ele não fica preso num loop infinito de tentativas amanhã)
                 await supabaseAdmin
                     .from('leads_lobo')
                     .update({ status: 'follow_up' })
                     .eq('id', lead.id);
 
-                console.log(`👻 Ghost Hunter: Follow-up enviado para ${lead.name || 'Desconhecido'}`);
-                
+                await sendWhatsAppMessage(normalizedPhone, message);
+                console.log(`👻 Ghost Hunter: Follow-up enviado com sucesso para ${lead.name || 'Desconhecido'}`);
+
             } catch (err: any) {
                 const errorBody = err.message || '';
                 if (errorBody.includes('"exists":false')) {
@@ -88,7 +91,10 @@ export async function POST(req: Request) {
                     console.error(`❌ Ghost Hunter falhou com ${lead.name}:`, err);
                 }
             }
-        }
+        });
+
+        // Espera todos os disparos paralelos terminarem
+        await Promise.all(followUpPromises);
 
         console.log(`🏁 GHOST HUNTER FINALIZOU O PROCESSO!`);
         return NextResponse.json({ status: 'follow-ups finished', processed: leadsToFollowUp.length });
