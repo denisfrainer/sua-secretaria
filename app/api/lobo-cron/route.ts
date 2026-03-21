@@ -23,6 +23,22 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing token' }, { status: 500 });
         }
 
+        // --- SHIELD: HORÁRIO COMERCIAL E FIM DE SEMANA (America/Sao_Paulo) ---
+        const now = new Date();
+        const brasilTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+        const dayOfWeek = brasilTime.getDay(); // 0 = Domingo, 6 = Sábado
+        const hour = brasilTime.getHours();
+
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`💤 [${cronId}] Fim de semana. O Lobo está descansando.`);
+            return NextResponse.json({ status: 'ignored', reason: 'weekend' }, { status: 200 });
+        }
+
+        if (hour < 8 || hour >= 18) {
+            console.log(`🌙 [${cronId}] Fora do horário comercial (${hour}h). O Lobo está dormindo.`);
+            return NextResponse.json({ status: 'ignored', reason: 'outside_business_hours' }, { status: 200 });
+        }
+
         // --- STEALTH MODE: Check if it's time to hunt ---
         const { data: huntSetting } = await supabaseAdmin
             .from('system_settings')
@@ -168,7 +184,7 @@ export async function POST(req: Request) {
                 }
 
                 // Schedule next hunt (random 5-15 minutes from now)
-                const nextHuntMinutes = Math.floor(Math.random() * 11) + 5; // 5 to 15
+                const nextHuntMinutes = Math.floor(Math.random() * 11) + 8; // 5 to 15
                 const nextHuntAt = new Date(Date.now() + nextHuntMinutes * 60 * 1000).toISOString();
 
                 await supabaseAdmin
@@ -209,10 +225,19 @@ export async function POST(req: Request) {
                     // continue to next lead in the hunt
                     continue;
 
+                } else if (errorBody.includes('500') || errorBody.includes('Connection Closed')) {
+                    console.error(`🚨 [${cronId}] ERRO CRÍTICO NA INSTÂNCIA (DESCONECTADA)! Abortando caçada para não queimar leads.`);
+                    
+                    // Adiciona 15 minutos de cooldown para dar tempo do admin arrumar a Evolution API
+                    const retryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+                    await supabaseAdmin.from('system_settings').upsert({
+                        key: 'next_hunt_at', value: { timestamp: retryAt }
+                    }, { onConflict: 'key' });
+
+                    break; // Sai do loop imediatamente, protegendo os outros leads pendentes
                 } else {
-                    // Unknown error — log it but don't mark as invalid (could be transient)
+                    // Unknown error — log it but don't mark as invalid
                     console.error(`❌ [${cronId}] Erro inesperado ao enviar para ${lead.name}:`, errorBody);
-                    // Don't break or mark invalid — skip to next lead
                     continue;
                 }
             }
