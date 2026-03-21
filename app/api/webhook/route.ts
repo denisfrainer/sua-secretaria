@@ -60,8 +60,9 @@ const functionDeclarations = [
                 main_bottleneck: { type: Type.STRING, description: "Se o cliente tem poucos contatos, retorne 'LACK_OF_TRAFFIC'. Se tem muitos mas demora a responder, retorne 'LACK_OF_TIME'. Se não estiver claro, retorne 'UNKNOWN'." },
                 lead_temperature: { type: Type.STRING, description: "Retorne 'HOT' se pediu preço/urgência. 'WARM' se está tirando dúvidas. 'COLD' se foi rude ou sem interesse." },
                 pain_summary: { type: Type.STRING, description: "Resumo em 1 frase (em português) sobre a dor relatada. Ex: 'Recebe contatos do Insta, mas demora 2h para responder.'" },
+                lead_source: { type: Type.STRING, description: "A origem de como o lead conheceu a empresa. Retorne 'INSTAGRAM', 'GOOGLE', 'INDICACAO' ou 'DESCONHECIDO' baseado na resposta dele." }
             },
-            required: ['main_bottleneck', 'lead_temperature', 'pain_summary'],
+            required: ['main_bottleneck', 'lead_temperature', 'pain_summary', 'lead_source'],
         },
     },
     {
@@ -156,7 +157,8 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
             .update({
                 main_bottleneck: args.main_bottleneck,
                 lead_temperature: args.lead_temperature,
-                pain_summary: args.pain_summary
+                pain_summary: args.pain_summary,
+                lead_source: args.lead_source
             })
             .eq('phone', clientPhone);
 
@@ -593,6 +595,10 @@ Em toda primeira interação, após saudar o lead, você DEVE fazer a seguinte p
 "Pra eu te direcionar pra solução exata, me tira uma dúvida rápida: hoje o maior gargalo de vocês é que pouca gente chama no WhatsApp, ou até chama bastante gente, mas falta braço/tempo pra responder todo mundo rápido?"
 -> Se faltar tráfego/pessoas: O foco é vender o Site/LP Express.
 -> Se faltar tempo/muitas mensagens: O foco é vender Agentes de IA.
+
+STEP 1.5 - A DESCOBERTA DA ORIGEM (MANDATORY FOR ORGANIC LEADS):
+Se o lead iniciou a conversa do zero e a origem é desconhecida, encaixe uma pergunta natural no meio do bate-papo para descobrir de onde ele veio. 
+Exemplo: "Ah, e por curiosidade, como você conheceu a Wolf Agent? Foi indicação de alguém, achou no Instagram ou pelo Google?"
 
 STEP 2 - O FECHAMENTO (THE HANDSHAKE):
 NUNCA termine a conversa passivamente dizendo "Fico à disposição". Se o lead já entendeu a solução, chame o Denis para fechar:
