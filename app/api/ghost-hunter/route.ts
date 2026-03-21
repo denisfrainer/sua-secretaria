@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     try {
         // 1. Security Check
         const token = req.headers.get('x-wolf-token');
-        if (!token || token !== process.env.WOLF_ADMIN_TOKEN) {
+        if (!token || token !== process.env.ADMIN_SECRET_PASSWORD) {
             console.log('⚠️ Token inválido ou ausente:', token);
             return new NextResponse('Unauthorized', { status: 401 });
         }
