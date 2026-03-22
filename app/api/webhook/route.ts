@@ -253,7 +253,7 @@ export async function POST(req: Request) {
                 lead = newLead;
             }
 
-            // --- SERVERLESS DEBOUNCE LOGIC ---
+            // --- CONTINUOUS TYPING FLOW ---
 
             // 4. Save Message to Database IMMEDIATELY
             await supabaseAdmin.from('chat_history').insert({
@@ -262,27 +262,6 @@ export async function POST(req: Request) {
                 content: clientMessage,
                 message_id: incomingMessageId
             });
-
-            // 5. The 3-Second Holding Pattern
-            console.log(`🕒 [DEBOUNCE] Aguardando 3s por possíveis mensagens seguidas de ${clientNumber}...`);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-
-            // 6. The "Survival" Check
-            const { data: latestMsg } = await supabaseAdmin
-                .from('chat_history')
-                .select('message_id')
-                .eq('whatsapp_number', clientNumber)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
-
-            // Compare local incomingMessageId with latest message_id in DB
-            if (latestMsg && latestMsg.message_id !== incomingMessageId) {
-                console.log(`🛡️ [DEBOUNCE] Newer message detected. Aborting execution for msg: ${incomingMessageId}`);
-                return NextResponse.json({ status: "ignored_replaced_by_newer" });
-            }
-
-            console.log(`🚀 [DEBOUNCE] Sobrevivente: ${incomingMessageId}. Processando resposta conjunta...`);
 
             // --- GODSPEED UNIFICATION (Pre-Flight Context) ---
             let leadContext = '';
