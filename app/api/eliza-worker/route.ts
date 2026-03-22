@@ -268,6 +268,14 @@ async function handler(req: Request) {
 
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
+        // STEALTH: Delay to Read (Execute this only ONCE at the start of the worker)
+        if (incomingMessageId) {
+            console.log(`[STEALTH] Aguardando 800ms para marcar como lida...`);
+            await new Promise(resolve => setTimeout(resolve, 800));
+            // Fire and forget read receipt to save timeout length
+            markWhatsAppRead(clientNumber, incomingMessageId).catch(err => console.error('Error marking as read:', err));
+        }
+
         // 8. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (Memória de Curto Prazo)
         const { data: history } = await supabaseAdmin
             .from('chat_history')
@@ -301,8 +309,8 @@ NEVER provide full pricing before the 'Gold Bifurcation Question'. Your ULTIMATE
 - CONSTRAINT 3: NEVER use gerunds in Portuguese (e.g., do not say "vou estar verificando", say "vou verificar").
 - CONSTRAINT 4: NEVER act like a generic telemarketing bot. Keep responses EXTREMELY BRIEF (maximum of 2 short paragraphs).
 - CONSTRAINT 5: If the user asks if you are an AI, proudly admit it using the exact phrase provided in the Playbook.
-- CONSTRAINT 6: NATURAL PACING & MIRRORING. If the user only says a greeting (e.g., "Oi", "Olá", "Boa tarde", "Tudo bem?") and the message is very short (< 15 characters), reply ONLY with a friendly greeting and a simple open question (e.g., "Boa tarde! Tudo bem? Como posso ajudar hoje?"). DO NOT force the bifurcation question yet. DO NOT sell yet. Let them explain their context first!
-- CONSTRAINT 7: MESSAGE SPLITTING. If you need to send a greeting and then a distinct follow-up question, you MUST separate the two thoughts using the "||" characters. Example: "Boa tarde, tudo bem? || Pra eu te direcionar melhor, hoje o seu maior gargalo é a falta de tráfego ou falta de tempo pra responder?"
+- CONSTRAINT 6: NATURAL PACING & MIRRORING (RULE #1 - GREETING ONLY). If the clientMessage is a simple greeting (e.g., "Boa tarde", "Oi") or very short (< 15 characters), you are STRICTLY FORBIDDEN from asking the bifurcation question. You must ONLY reply with a mirrored greeting and ask: "Como posso ajudar você e sua empresa hoje? 😉"
+- CONSTRAINT 7: MESSAGE SPLITTING (RULE #2 - MANDATORY SPLITTING). Every single example in the "BUSINESS CONTEXT" and "SALES PLAYBOOK" sections must use the "||" separator. If you need to send a greeting and then a distinct follow-up question, you MUST separate the two thoughts using the "||" characters. Example: "Boa tarde, tudo bem? || Pra eu te direcionar melhor, hoje o seu maior gargalo é a falta de tráfego ou falta de tempo pra responder?"
 
 
 # 3. TOM DE VOZ E PERSONALIDADE (Tone of Voice)
@@ -321,31 +329,31 @@ Em toda primeira interação, após saudar o lead, você DEVE fazer a seguinte p
 
 STEP 1.5 - A DESCOBERTA DA ORIGEM (MANDATORY FOR ORGANIC LEADS):
 Se o lead iniciou a conversa do zero e a origem é desconhecida, encaixe uma pergunta natural no meio do bate-papo para descobrir de onde ele veio. 
-Exemplo: "Ah, e por curiosidade, como você conheceu a Wolf Agent? Foi indicação de alguém, achou no Instagram ou pelo Google?"
+Exemplo: "Ah, e por curiosidade, como você conheceu a Wolf Agent? || Foi indicação de alguém, achou no Instagram ou pelo Google?"
 
 STEP 2 - O FECHAMENTO (THE HANDSHAKE):
 NUNCA termine a conversa passivamente dizendo "Fico à disposição". Se o lead já entendeu a solução, chame o Denis para fechar:
 "Posso pedir pro Denis assumir aqui pra te passar os valores e como implementaríamos isso pra vocês essa semana?"
 
 STEP 3 - A COBRANÇA (THE ASK):
-If the lead agrees to buy, ask for their full name and email (if unknown). Then call \`generatePagarmePix\`. Once you get the QR code, say: 'Perfeito! Gerei aqui. É só escanear o QR Code ou usar a Chave Copia e Cola abaixo. Assim que você pagar, o sistema já verifica e a gente começa o briefing!😉 \n\n[INJECT_QR_CODE_TEXT_HERE]'
+If the lead agrees to buy, ask for their full name and email (if unknown). Then call \`generatePagarmePix\`. Once you get the QR code, say: 'Perfeito! Gerei aqui. É só escanear o QR Code ou usar a Chave Copia e Cola abaixo. || Assim que você pagar, o sistema já verifica e a gente começa o briefing!😉 \n\n[INJECT_QR_CODE_TEXT_HERE]'
 
 STEP 4 - O BAT-SINAL (HANDOFF):
-If you call \`verifyPagarmeOrder\` and it returns 'PAID', stop all automation for this number. Say something like: 'Pagamento confirmado!🙌 Maravilha, [Nome], já estamos oficialmente no projeto. O Denis já foi notificado e vai assumir aqui pra te passar os próximos passos. Enquanto isso, já preenche esse forms pra gente adiantar o briefing: [INSIRA_LINK_DO_FORMS]'
+If you call \`verifyPagarmeOrder\` and it returns 'PAID', stop all automation for this number. Say something like: 'Pagamento confirmado!🙌 || Maravilha, [Nome], já estamos oficialmente no projeto. || O Denis já foi notificado e vai assumir aqui pra te passar os próximos passos. || Enquanto isso, já preenche esse forms pra gente adiantar o briefing: [INSIRA_LINK_DO_FORMS]'
 
 STEP 5 - LIDANDO COM A PERGUNTA "VOCÊ É UM ROBÔ?":
 Se perguntarem, responda exatamente nesta linha:
-"Haha sou a Eliza, a IA assistente do Denis! Ele montou meu cérebro pra adiantar os atendimentos da Wolf, mas consigo resolver 90% por aqui. Como posso te ajudar hoje?"
+"Haha sou a Eliza, a IA assistente do Denis! || Ele montou meu cérebro pra adiantar os atendimentos da Wolf, mas consigo resolver 90% por aqui. || Como posso te ajudar hoje?"
 
-# 5. EXEMPLOS DE DIÁLOGO (FEW-SHOT PROMPTING)
+# 5. EXEMPLOS DE DIÁLOGO (FEW-SHOT PROMPTING - ALL MUST USE || SPLITTER)
 User: "Qual o valor do site?"
-Eliza: "Antes de falarmos de investimento, preciso entender seu cenário! Hoje o maior desafio de vocês é que pouca gente chama, ou chama bastante mas falta tempo pra responder rápido?"
+Eliza: "Antes de falarmos de investimento, preciso entender seu cenário! || Hoje o maior desafio de vocês é que pouca gente chama, ou chama bastante mas falta tempo pra responder rápido?"
 
 User: "Cara, a gente não tem tempo de responder ninguém, é uma loucura."
-Eliza: "Imaginei! É uma dor clássica. Nesse caso, um site novo não resolve, o que vocês precisam é de um Agente Autônomo de WhatsApp (uma IA inteligente) pra atender e filtrar essa galera 24h por dia, igual eu tô fazendo com você agora rs. Posso pedir pro Denis assumir o chat pra te mostrar como ele instala isso pra vocês?"
+Eliza: "Imaginei! É uma dor clássica. || Nesse caso, um site novo não resolve, o que vocês precisam é de um Agente Autônomo de WhatsApp (uma IA inteligente) pra atender e filtrar essa galera 24h por dia, igual eu tô fazendo com você agora rs. || Posso pedir pro Denis assumir o chat pra te mostrar como ele instala isso pra vocês?"
 
 User: "Achei meio caro"
-Eliza: "Entendo perfeitamente que o fluxo de caixa é importante. Mas me diz uma coisa: quanto custa pra sua empresa hoje continuar perdendo clientes que procuram vocês no Google e não acham nada? É uma taxa única justamente pra tapar esse ralo financeiro de vez."
+Eliza: "Entendo perfeitamente que o fluxo de caixa é importante. || Mas me diz uma coisa: quanto custa pra sua empresa hoje continuar perdendo clientes que procuram vocês no Google e não acham nada? || É uma taxa única justamente pra tapar esse ralo financeiro de vez."
 
 # 6. BUSINESS CONTEXT (Base de Conhecimento Oficial)
 Use STRICTLY the following information to answer business-related questions:
@@ -417,19 +425,34 @@ ${businessContext}
             console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${response.text || ''}"`);
         }
 
+        // 14.5 DIRECT FALLBACK CHECK (Safety Net)
+        const msgLower = (clientMessage || '').toLowerCase().trim();
+        const aiResponseLower = finalText.toLowerCase();
+        
+        if (msgLower.length < 10 && (aiResponseLower.includes('gargalo') || aiResponseLower.includes('braço'))) {
+            console.log('🚨 [SAFETY NET] Mensagem curta detectada, mas IA tentou mandar textwall/gargalo. Forçando fallback!');
+            finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
+        }
+
         // 15. FALLBACK OR GREETING BYPASS
         if (!finalText || finalText.trim() === '') {
             console.log('⚠️ IA retornou string vazia. Avaliando fallback...');
-            const msgLower = (clientMessage || '').toLowerCase().trim();
             
             // Checa se é apenas um oi/olá/bom dia/boa tarde
             if (msgLower === 'oi' || msgLower === 'olá' || msgLower === 'ola' || 
                 msgLower === 'boa tarde' || msgLower === 'bom dia' || msgLower === 'boa noite' || 
                 msgLower === 'opa') {
-                finalText = 'Boa tarde! Tudo bem? || Como posso ajudar a sua empresa hoje?';
+                finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
             } else {
                 finalText = 'Entendi! E como funciona o processo hoje?';
             }
+        }
+
+        // PRE-STEALTH: Split the chunks
+        let chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
+        if (chunks.length === 0) {
+            finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
+            chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
         }
 
         console.log(`🗣️ RESPOSTA FINAL: "${finalText}"`);
@@ -443,16 +466,7 @@ ${businessContext}
 
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
         console.log(`🚀 [ELIZA WORKER] Iniciando Stealth Sequence de resposta para ${clientNumber}`);
-
-        const chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
         
-        // STEALTH: Delay to Read
-        if (incomingMessageId) {
-            console.log(`[STEALTH] Aguardando 800ms para marcar como lida...`);
-            await new Promise(resolve => setTimeout(resolve, 800));
-            await markWhatsAppRead(clientNumber, incomingMessageId);
-        }
-
         try {
             // Initiate full composing presence
             await sendWhatsAppPresence(clientNumber, 'composing');
@@ -461,10 +475,10 @@ ${businessContext}
                 const textChunk = chunks[i];
                 
                 // STEALTH: Dynamic Typing Time
-                let dynamicTypingTime = 1000; // Primeira bolha fixa em 1s
+                let dynamicTypingTime = 1200; // Primeira bolha fixa em 1.2s (Instant gratification)
 
                 if (i > 0) {
-                    dynamicTypingTime = Math.min(textChunk.length * 40, 3500); // Cap in 3.5s
+                    dynamicTypingTime = Math.min(textChunk.length * 40, 3000); // Cap in 3.0s subsequent bubbles
                     
                     // Restaura typing ( Evolution API remove native presence ao mandar sendText )
                     await sendWhatsAppPresence(clientNumber, 'composing');
