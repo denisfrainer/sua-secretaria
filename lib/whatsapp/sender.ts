@@ -75,3 +75,37 @@ export async function sendWhatsAppPresence(phone: string, presence: 'composing' 
 
     return data;
 }
+
+export async function markWhatsAppRead(phone: string, messageId: string) {
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
+
+    const url = `${baseUrl}/chat/markMessageAsRead/${instanceName}`;
+
+    const payload = {
+        readMessages: [
+            {
+                remoteJid: phone,
+                fromMe: false,
+                id: messageId
+            }
+        ]
+    };
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': apikey as string
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        console.error(`Evolution API MarkRead Error ${res.status}: ${JSON.stringify(data.message || data)}`);
+    }
+
+    return data;
+}

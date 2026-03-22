@@ -1,6 +1,6 @@
 // app/api/eliza-worker/route.ts
 import { NextResponse } from 'next/server';
-import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
+import { sendWhatsAppMessage, sendWhatsAppPresence, markWhatsAppRead } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import path from 'path';
@@ -442,17 +442,42 @@ ${businessContext}
         });
 
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
-        console.log(`🚀 [ELIZA WORKER] Enviando reposta final para ${clientNumber} via Evolution API`);
+        console.log(`🚀 [ELIZA WORKER] Iniciando Stealth Sequence de resposta para ${clientNumber}`);
 
         const chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
+        
+        // STEALTH: Delay to Read
+        if (incomingMessageId) {
+            const readDelay = Math.floor(Math.random() * 2000) + 1000; // 1s to 3s
+            console.log(`[STEALTH] Aguardando ${readDelay}ms para marcar como lida...`);
+            await new Promise(resolve => setTimeout(resolve, readDelay));
+            await markWhatsAppRead(clientNumber, incomingMessageId);
+        }
 
         for (let i = 0; i < chunks.length; i++) {
-            await sendWhatsAppMessage(clientNumber, chunks[i]);
+            const textChunk = chunks[i];
+            
+            // STEALTH: Dynamic Typing Time
+            const baseTypeTime = Math.max(2000, Math.min(textChunk.length * 70, 7000));
+            const jitter = baseTypeTime * 0.15;
+            const dynamicTypingTime = Math.floor(baseTypeTime + (Math.random() * jitter * 2) - jitter); // +/- 15%
+            
+            console.log(`[STEALTH] Typing for ${dynamicTypingTime}ms for message length ${textChunk.length}`);
+            
+            try {
+                await sendWhatsAppPresence(clientNumber, 'composing');
+                await new Promise(resolve => setTimeout(resolve, dynamicTypingTime));
+                await sendWhatsAppMessage(clientNumber, textChunk, 0); // Passa 0 pra sobrescrever a espera embutida do helper
+            } catch (err) {
+                console.error(`❌ Erro ao enviar bolha ${i+1}:`, err);
+            } finally {
+                // Ensure presence stops
+                await sendWhatsAppPresence(clientNumber, 'available');
+            }
 
             if (i < chunks.length - 1) {
-                // Primeira bolha bem rápida simulando cumprimento, demais um pouco mais de tempo de digitação
-                const typingDelay = i === 0 ? 1000 : 2000;
-                await new Promise(resolve => setTimeout(resolve, typingDelay));
+                // Micro-pausa antes da proxima bolha
+                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
             }
         }
 

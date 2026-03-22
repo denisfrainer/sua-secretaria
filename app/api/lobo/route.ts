@@ -162,9 +162,14 @@ export async function POST(req: Request) {
                 }
 
                 await sendWhatsAppMessage(safePhone, msg1);
-                await sleep(2500); // Simulate typing break for bubble 2
-                await sendWhatsAppMessage(safePhone, msg2);
+                console.log(`[LOBO] Part 1 Sent to ${safePhone}`);
                 
+                await sleep(2500); // Simulate typing break for bubble 2
+                
+                await sendWhatsAppMessage(safePhone, msg2);
+                console.log(`[LOBO] Part 2 Sent to ${safePhone}`);
+                
+                // Status is ONLY updated here, meaning both messages successfully resolved without throwing
                 await supabaseAdmin.from('leads_lobo').update({ status: 'contacted' }).eq('id', lead.id);
                 successfulSends++;
             } catch (err: any) {

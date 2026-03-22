@@ -83,12 +83,13 @@ export async function POST(req: Request) {
 
                         // Fire and forget background trigger via QStash
                         const backgroundUrl = `${siteBaseUrl}/api/webhook-audio-background`;
-
+                        
+                        const qstashAudioDelaySec = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
                         try {
                             await qstash.publishJSON({
                                 url: backgroundUrl,
                                 body: body,
-                                delay: "7s"
+                                delay: qstashAudioDelaySec
                             });
                         } catch (err) {
                             console.error("❌ Erro ao invocar Background Function de Áudio no QStash:", err);
@@ -338,6 +339,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             });
 
             try {
+                const qstashDelaySec = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
                 await qstash.publishJSON({
                     url: `${siteBaseUrl}/api/eliza-worker`,
                     body: {
@@ -346,7 +348,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
                         incomingMessageId,
                         leadContext
                     },
-                    delay: "7s" // Aguarda ler/pensar
+                    delay: qstashDelaySec // Aguarda com jitter
                 });
             } catch (err) {
                 console.error("❌ Erro ao publicar texto para o eliza-worker no QStash:", err);
