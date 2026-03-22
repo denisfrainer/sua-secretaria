@@ -301,7 +301,7 @@ NEVER provide full pricing before the 'Gold Bifurcation Question'. Your ULTIMATE
 - CONSTRAINT 3: NEVER use gerunds in Portuguese (e.g., do not say "vou estar verificando", say "vou verificar").
 - CONSTRAINT 4: NEVER act like a generic telemarketing bot. Keep responses EXTREMELY BRIEF (maximum of 2 short paragraphs).
 - CONSTRAINT 5: If the user asks if you are an AI, proudly admit it using the exact phrase provided in the Playbook.
-- CONSTRAINT 6: NATURAL PACING. If the user only says "Oi" or "Boa tarde", reply ONLY with a friendly greeting and a simple open question (e.g., "Boa tarde! Tudo bem? Como posso ajudar a sua empresa hoje?"). DO NOT force the bifurcation question immediately if there is no conversational context.
+- CONSTRAINT 6: NATURAL PACING & MIRRORING. If the user only says a greeting (e.g., "Oi", "Olá", "Boa tarde", "Tudo bem?") and the message is very short (< 15 characters), reply ONLY with a friendly greeting and a simple open question (e.g., "Boa tarde! Tudo bem? Como posso ajudar hoje?"). DO NOT force the bifurcation question yet. DO NOT sell yet. Let them explain their context first!
 - CONSTRAINT 7: MESSAGE SPLITTING. If you need to send a greeting and then a distinct follow-up question, you MUST separate the two thoughts using the "||" characters. Example: "Boa tarde, tudo bem? || Pra eu te direcionar melhor, hoje o seu maior gargalo é a falta de tráfego ou falta de tempo pra responder?"
 
 
@@ -315,7 +315,7 @@ Exemplo: "Entendi perfeitamente o seu cenário. || Pra eu te direcionar melhor, 
 # 4. O PLAYBOOK DE VENDAS (The Sales Framework)
 STEP 1 - A PERGUNTA DE BIFURCAÇÃO (MANDATORY):
 Em toda primeira interação, após saudar o lead, você DEVE fazer a seguinte pergunta para diagnosticar a dor da empresa:
-"Pra eu te direcionar pra solução exata, me tira uma dúvida rápida: hoje o maior gargalo de vocês é que pouca gente chama no WhatsApp, ou até chama bastante gente, mas falta braço/tempo pra responder todo mundo rápido?"
+"Pra eu te direcionar pra solução exata, me tira uma dúvida rápida: || Hoje o maior gargalo de vocês é que pouca gente chama no WhatsApp, ou chama muita gente mas falta tempo pra responder todo mundo? 😉"
 -> Se faltar tráfego/pessoas: O foco é vender o Site/LP Express.
 -> Se faltar tempo/muitas mensagens: O foco é vender Agentes de IA.
 
@@ -448,37 +448,49 @@ ${businessContext}
         
         // STEALTH: Delay to Read
         if (incomingMessageId) {
-            const readDelay = Math.floor(Math.random() * 2000) + 1000; // 1s to 3s
+            const readDelay = Math.floor(Math.random() * 500) + 1000; // max 1500ms
             console.log(`[STEALTH] Aguardando ${readDelay}ms para marcar como lida...`);
             await new Promise(resolve => setTimeout(resolve, readDelay));
             await markWhatsAppRead(clientNumber, incomingMessageId);
         }
 
-        for (let i = 0; i < chunks.length; i++) {
-            const textChunk = chunks[i];
-            
-            // STEALTH: Dynamic Typing Time
-            const baseTypeTime = Math.max(2000, Math.min(textChunk.length * 70, 7000));
-            const jitter = baseTypeTime * 0.15;
-            const dynamicTypingTime = Math.floor(baseTypeTime + (Math.random() * jitter * 2) - jitter); // +/- 15%
-            
-            console.log(`[STEALTH] Typing for ${dynamicTypingTime}ms for message length ${textChunk.length}`);
-            
-            try {
-                await sendWhatsAppPresence(clientNumber, 'composing');
-                await new Promise(resolve => setTimeout(resolve, dynamicTypingTime));
-                await sendWhatsAppMessage(clientNumber, textChunk, 0); // Passa 0 pra sobrescrever a espera embutida do helper
-            } catch (err) {
-                console.error(`❌ Erro ao enviar bolha ${i+1}:`, err);
-            } finally {
-                // Ensure presence stops
-                await sendWhatsAppPresence(clientNumber, 'available');
-            }
+        try {
+            // Initiate full composing presence
+            await sendWhatsAppPresence(clientNumber, 'composing');
 
-            if (i < chunks.length - 1) {
-                // Micro-pausa antes da proxima bolha
-                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+            for (let i = 0; i < chunks.length; i++) {
+                const textChunk = chunks[i];
+                
+                // STEALTH: Dynamic Typing Time
+                let dynamicTypingTime = 1200; // Primeira bolha super rapida
+
+                if (i > 0) {
+                    const baseTypeTime = Math.min(textChunk.length * 50, 4500); // Cap in 4500ms
+                    const jitter = baseTypeTime * 0.15;
+                    dynamicTypingTime = Math.floor(baseTypeTime + (Math.random() * jitter * 2) - jitter); // +/- 15%
+                    
+                    // Restaura typing ( Evolution API remove native presence ao mandar sendText )
+                    await sendWhatsAppPresence(clientNumber, 'composing');
+                }
+                
+                console.log(`[STEALTH] Typing for ${dynamicTypingTime}ms for message length ${textChunk.length}`);
+                
+                await new Promise(resolve => setTimeout(resolve, dynamicTypingTime));
+                
+                try {
+                    await sendWhatsAppMessage(clientNumber, textChunk, 0); // Override buffer
+                } catch (err) {
+                    console.error(`❌ Erro ao enviar bolha ${i+1}:`, err);
+                }
+
+                if (i < chunks.length - 1) {
+                    // Micro-pausa
+                    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+                }
             }
+        } finally {
+            // Cleanup on aisle ghost typing
+            await sendWhatsAppPresence(clientNumber, 'available');
         }
 
         // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
