@@ -274,7 +274,7 @@ async function handler(req: Request) {
         // 0. IDEMPOTENCY CHECK
         if (incomingMessageId) {
             const { data: duplicateCheck } = await supabaseAdmin
-                .from('chat_history')
+                .from('messages')
                 .select('id')
                 .eq('message_id', incomingMessageId)
                 .eq('role', 'assistant')
@@ -286,15 +286,15 @@ async function handler(req: Request) {
             }
         }
 
-        // 8. RECUPERAR AS ÚLTIMAS 5 MENSAGENS (Memória de Curto Prazo Strict)
+        // 8. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (Memória de Curto Prazo Strict)
         const { data: history } = await supabaseAdmin
-            .from('chat_history')
+            .from('messages')
             .select('role, content')
-            .eq('whatsapp_number', clientNumber)
-            .order('created_at', { ascending: false })
-            .limit(5);
+            .eq('lead_phone', clientNumber)
+            .order('created_at', { ascending: true })
+            .limit(10);
 
-        const chatHistory = (history || []).reverse().slice(-5);
+        const chatHistory = history || [];
         t1 = performance.now(); // After DB Fetch
 
         // 11. Prepara o System Prompt
@@ -540,12 +540,16 @@ ${businessContext}
         t3 = performance.now(); // After WA Send
 
         // 16. SALVAR A RESPOSTA DA IA NA MEMÓRIA
-        await supabaseAdmin.from('chat_history').insert({
-            whatsapp_number: clientNumber,
-            role: 'assistant',
-            content: finalText,
-            message_id: incomingMessageId
-        });
+        try {
+            await supabaseAdmin.from('messages').insert({
+                lead_phone: clientNumber,
+                role: 'assistant',
+                content: finalText,
+                message_id: incomingMessageId
+            });
+        } catch (insertErr: any) {
+            console.error(`⚠️ [ELIZA WORKER] Save handled gracefully (possibly duplicate):`, insertErr.message);
+        }
 
         // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
         try {

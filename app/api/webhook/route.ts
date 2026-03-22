@@ -256,12 +256,16 @@ export async function POST(req: Request) {
             // --- CONTINUOUS TYPING FLOW ---
 
             // 4. Save Message to Database IMMEDIATELY
-            await supabaseAdmin.from('chat_history').insert({
-                whatsapp_number: clientNumber,
-                role: 'user',
-                content: clientMessage,
-                message_id: incomingMessageId
-            });
+            try {
+                await supabaseAdmin.from('messages').insert({
+                    lead_phone: clientNumber,
+                    role: 'user',
+                    content: clientMessage,
+                    message_id: incomingMessageId
+                });
+            } catch (insertErr: any) {
+                console.log(`⚠️ [WEBHOOK] Save handled gracefully (possible duplicate): ${insertErr.message}`);
+            }
 
             // --- GODSPEED UNIFICATION (Pre-Flight Context) ---
             let leadContext = '';
