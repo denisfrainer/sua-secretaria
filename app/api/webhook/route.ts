@@ -14,6 +14,12 @@ import fs from 'fs';
 export async function POST(req: Request) {
     let processingPhone = null; // Para cleanup no finally
 
+    // QStash requires absolute HTTPS URLs
+    const rawSiteUrl = process.env.WOLF_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'wolfagent.netlify.app';
+    const siteBaseUrl = rawSiteUrl.startsWith('http') 
+        ? rawSiteUrl.replace(/\/$/, '') 
+        : `https://${rawSiteUrl.replace(/\/$/, '')}`;
+
     // 🔴 GLOBAL KILL SWITCH CHECK
     const { data: killSwitchData } = await supabaseAdmin
         .from('system_settings')
@@ -76,8 +82,7 @@ export async function POST(req: Request) {
                         });
                         
                         // Fire and forget background trigger via QStash
-                        const reqUrl = new URL(req.url);
-                        const backgroundUrl = `${reqUrl.origin}/api/webhook-audio-background`;
+                        const backgroundUrl = `${siteBaseUrl}/api/webhook-audio-background`;
                         
                         try {
                             await qstash.publishJSON({
@@ -334,7 +339,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             
             try {
                 await qstash.publishJSON({
-                    url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/eliza-worker`,
+                    url: `${siteBaseUrl}/api/eliza-worker`,
                     body: {
                         clientNumber,
                         clientMessage,
