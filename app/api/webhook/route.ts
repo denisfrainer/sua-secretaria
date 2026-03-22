@@ -72,7 +72,7 @@ export async function POST(req: Request) {
                         const { Client } = await import('@upstash/qstash');
                         const qstash = new Client({ 
                             token: process.env.QSTASH_TOKEN!,
-                            baseUrl: 'https://qstash.upstash.io'
+                            baseUrl: "https://qstash-us-east-1.upstash.io"
                         });
                         
                         // Fire and forget background trigger via QStash
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
                             await sendWhatsAppPresence(clientNumber, 'available');
                         }
 
-                        return NextResponse.json({ status: "audio_processing_async" });
+                        return NextResponse.json({ status: 'queued_or_failed' }, { status: 200 });
                     }
 
                     if (!messageObj.conversation && !messageObj.extendedTextMessage) {
@@ -329,7 +329,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             const { Client } = await import('@upstash/qstash');
             const qstash = new Client({ 
                 token: process.env.QSTASH_TOKEN!,
-                baseUrl: 'https://qstash.upstash.io'
+                baseUrl: "https://qstash-us-east-1.upstash.io"
             });
             
             try {
@@ -348,7 +348,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
                 await sendWhatsAppPresence(clientNumber, 'available');
             }
 
-            return NextResponse.json({ status: 'queued' });
+            return NextResponse.json({ status: 'queued_or_failed' }, { status: 200 });
         }
 
         return NextResponse.json({ status: 'ignored_event' });
