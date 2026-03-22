@@ -70,7 +70,10 @@ export async function POST(req: Request) {
                         await sendWhatsAppPresence(clientNumber, 'recording_audio');
 
                         const { Client } = await import('@upstash/qstash');
-                        const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
+                        const qstash = new Client({ 
+                            token: process.env.QSTASH_TOKEN!,
+                            baseUrl: 'https://us.qstash.upstash.io'
+                        });
                         
                         // Fire and forget background trigger via QStash
                         const reqUrl = new URL(req.url);
@@ -319,7 +322,10 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             await sendWhatsAppPresence(clientNumber, 'composing');
 
             const { Client } = await import('@upstash/qstash');
-            const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
+            const qstash = new Client({ 
+                token: process.env.QSTASH_TOKEN!,
+                baseUrl: 'https://us.qstash.upstash.io'
+            });
             
             await qstash.publishJSON({
                 url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/eliza-worker`,
