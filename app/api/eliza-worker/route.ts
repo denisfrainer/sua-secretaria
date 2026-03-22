@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { verifySignatureAppRouter } from '@upstash/qstash/dist/nextjs';
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 // ==============================================================
@@ -425,12 +426,12 @@ ${businessContext}
 
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
         console.log(`🚀 [ELIZA WORKER] Enviando reposta final para ${clientNumber} via Evolution API`);
-        
+
         const chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
-        
+
         for (let i = 0; i < chunks.length; i++) {
             await sendWhatsAppMessage(clientNumber, chunks[i]);
-            
+
             if (i < chunks.length - 1) {
                 // Simulate human typing delay for the next bubble
                 await new Promise(resolve => setTimeout(resolve, 2000));
