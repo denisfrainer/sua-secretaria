@@ -262,6 +262,9 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
 // 📡 QSTASH WORKER HANDLER
 // ==============================================================
 async function handler(req: Request) {
+    const t0 = performance.now();
+    let t1 = t0, t2 = t0, t3 = t0, t4 = t0;
+
     try {
         const body = await req.json();
         const { clientNumber, clientMessage, incomingMessageId, leadContext } = body;
@@ -277,6 +280,7 @@ async function handler(req: Request) {
             .limit(5);
 
         const chatHistory = (history || []).reverse().slice(-5);
+        t1 = performance.now(); // After DB Fetch
 
         // 11. Prepara o System Prompt
         const contextPath = path.join(process.cwd(), 'business_context.json');
@@ -285,17 +289,17 @@ async function handler(req: Request) {
         // 2. Definindo o System Prompt Híbrido (Lógica em Inglês, Casca em Português)
         const elizaSystemPrompt = `
 
-# 0. PROTOCOLO DE SAUDAÇÃO (Obrigatório)
+# 1. PROTOCOLO DE SAUDAÇÃO (Obrigatório)
 - Se a mensagem do usuário for uma saudação (Oi, Olá, Bom dia, etc.), você DEVE iniciar sua resposta retribuindo a saudação de forma espelhada e educada ANTES de qualquer outra coisa.
 - Use sempre o separador "||" para separar o cumprimento da sua próxima fala.
 - EXEMPLO: "Boa tarde, tudo bem? || Pra eu te ajudar melhor..."
 
-# 1. IDENTITY & CORE MISSION
+# 2. IDENTITY & CORE MISSION
 You are Eliza, Senior Strategy Consultant and Executive Assistant to Denis, founder of Wolf Agent (a company that builds automated sales machines, high-performance websites, and AI Agents).
 Your PRIMARY OBJECTIVE is NOT to simply answer questions. Your goal is to QUALIFY the lead, diagnose their main bottleneck (lack of traffic vs. lack of time), and set the stage for Denis to close the deal.
 NEVER provide full pricing before the 'Gold Bifurcation Question'. Your ULTIMATE GOAL is to guide the lead through qualification, close the sale via PIX, verify payment, and handle the transition to Denis.
 
-# 2. STRICT RULES & GUARDRAILS
+# 3. STRICT RULES & GUARDRAILS
 - CONSTRAINT 1: NEVER hallucinate or invent services, prices, or deadlines. ALWAYS base your answers STRICTLY on the "BUSINESS CONTEXT" section below.
 - CONSTRAINT 2: NEVER send a menu or list of services. You must diagnose the client's pain point first.
 - CONSTRAINT 3: NEVER use gerunds in Portuguese (e.g., do not say "vou estar verificando", say "vou verificar").
@@ -305,14 +309,14 @@ NEVER provide full pricing before the 'Gold Bifurcation Question'. Your ULTIMATE
 - CONSTRAINT 7: MESSAGE SPLITTING (RULE #2 - MANDATORY SPLITTING). Every single example in the "BUSINESS CONTEXT" and "SALES PLAYBOOK" sections must use the "||" separator. If you need to send a greeting and then a distinct follow-up question, you MUST separate the two thoughts using the "||" characters. Example: "Boa tarde, tudo bem? || Pra eu te direcionar melhor, hoje o seu maior gargalo é a falta de tráfego ou falta de tempo pra responder?"
 
 
-# 3. TOM DE VOZ E PERSONALIDADE (Tone of Voice)
+# 4. TOM DE VOZ E PERSONALIDADE (Tone of Voice)
 - Seu tom é de uma especialista do Vale do Silício, mas com a pegada "parceira", direta e ágil do Brasil.
 - Você é simpática, mas vai direto ao ponto. Não enrola o cliente.
 - Use linguagem natural de WhatsApp. Pode usar um leve "rs" ou um emoji (😉, 🚀, 🐺) de vez em quando, mas sem poluir o texto.
 - DIVISÃO DE MENSAGENS: Se precisar mudar de assunto ou fazer uma pergunta após uma explicação, separe os blocos de texto com "||". 
 Exemplo: "Entendi perfeitamente o seu cenário. || Pra eu te direcionar melhor, hoje falta gente chamando ou falta tempo pra responder?"
 
-# 4. O PLAYBOOK DE VENDAS (The Sales Framework)
+# 5. O PLAYBOOK DE VENDAS (The Sales Framework)
 STEP 1 - A PERGUNTA DE BIFURCAÇÃO (MANDATORY):
 Em toda primeira interação, após saudar o lead, você DEVE fazer a seguinte pergunta para diagnosticar a dor da empresa:
 "Pra eu te direcionar pra solução exata, me tira uma dúvida rápida: || Hoje o maior gargalo de vocês é a falta de tráfego ou falta de braço pra responder todo mundo? 😉"
@@ -455,6 +459,8 @@ ${businessContext}
             }
         }
         
+        t2 = performance.now(); // After LLM
+
         // 14.5 DIRECT FALLBACK CHECK (Safety Net)
         const msgLower = (clientMessage || '').toLowerCase().trim();
         const aiResponseLower = finalText.toLowerCase();
@@ -491,13 +497,6 @@ ${businessContext}
 
         console.log(`🗣️ RESPOSTA FINAL: "${finalText}"`);
 
-        // 16. SALVAR A RESPOSTA DA IA NA MEMÓRIA
-        await supabaseAdmin.from('chat_history').insert({
-            whatsapp_number: clientNumber,
-            role: 'assistant',
-            content: finalText,
-        });
-
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
         console.log(`🚀 [ELIZA WORKER] Iniciando envio IMEDIATO para ${clientNumber}`);
         
@@ -512,6 +511,15 @@ ${businessContext}
                 console.error(`❌ Erro ao enviar bolha:`, err);
             }
         }
+
+        t3 = performance.now(); // After WA Send
+
+        // 16. SALVAR A RESPOSTA DA IA NA MEMÓRIA
+        await supabaseAdmin.from('chat_history').insert({
+            whatsapp_number: clientNumber,
+            role: 'assistant',
+            content: finalText,
+        });
 
         // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
         try {
@@ -531,10 +539,22 @@ ${businessContext}
             console.log(`📊 [CIRCUIT BREAKER] reply_count incrementado via fallback para ${clientNumber}`);
         }
 
+        t4 = performance.now(); // After DB Save
+
         return NextResponse.json({ status: 'success' });
     } catch (error) {
         console.error('❌ Erro Crítico no Worker:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } finally {
+        const tEnd = performance.now();
+        // Safe math for failsafe metric output
+        const dbFetchMs = Math.max(0, t1 - t0).toFixed(0);
+        const llmMs = Math.max(0, t2 - t1).toFixed(0);
+        const waApiMs = Math.max(0, t3 - t2).toFixed(0);
+        const dbSaveMs = Math.max(0, t4 - t3).toFixed(0);
+        const totalMs = Math.max(0, tEnd - t0).toFixed(0);
+
+        console.log(`📊 [PROFILER] Total: ${totalMs}ms | DB Fetch: ${dbFetchMs}ms | Gemini LLM: ${llmMs}ms | WA Send: ${waApiMs}ms | DB Save: ${dbSaveMs}ms`);
     }
 }
 
