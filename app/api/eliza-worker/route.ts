@@ -284,6 +284,12 @@ async function handler(req: Request) {
 
         // 2. Definindo o System Prompt Híbrido (Lógica em Inglês, Casca em Português)
         const elizaSystemPrompt = `
+
+# 0. PROTOCOLO DE SAUDAÇÃO (Obrigatório)
+- Se a mensagem do usuário for uma saudação (Oi, Olá, Bom dia, etc.), você DEVE iniciar sua resposta retribuindo a saudação de forma espelhada e educada ANTES de qualquer outra coisa.
+- Use sempre o separador "||" para separar o cumprimento da sua próxima fala.
+- EXEMPLO: "Boa tarde, tudo bem? || Pra eu te ajudar melhor..."
+
 # 1. IDENTITY & CORE MISSION
 You are Eliza, Senior Strategy Consultant and Executive Assistant to Denis, founder of Wolf Agent (a company that builds automated sales machines, high-performance websites, and AI Agents).
 Your PRIMARY OBJECTIVE is NOT to simply answer questions. Your goal is to QUALIFY the lead, diagnose their main bottleneck (lack of traffic vs. lack of time), and set the stage for Denis to close the deal.
@@ -405,14 +411,25 @@ ${businessContext}
                 config: genConfig,
             });
 
-            finalText = response.text || '';
-            console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${finalText}"`);
+            if (response.text?.trim()) {
+                finalText += (finalText ? ' || ' : '') + response.text.trim();
+            }
+            console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${response.text || ''}"`);
         }
 
         // 15. FALLBACK
         if (!finalText || finalText.trim() === '') {
-            console.log('⚠️ IA retornou string vazia. Usando fallback.');
-            finalText = 'Entendi! E como funciona o processo hoje?';
+            console.log('⚠️ IA retornou string vazia. Avaliando fallback...');
+            const msgLower = (clientMessage || '').toLowerCase().trim();
+            
+            // Checa se é apenas um oi/olá/bom dia/boa tarde
+            if (msgLower === 'oi' || msgLower === 'olá' || msgLower === 'ola' || 
+                msgLower === 'boa tarde' || msgLower === 'bom dia' || msgLower === 'boa noite' || 
+                msgLower === 'opa') {
+                finalText = 'Olá! Tudo bem? Como posso te ajudar hoje?';
+            } else {
+                finalText = 'Entendi! E como funciona o processo hoje?';
+            }
         }
 
         console.log(`🗣️ RESPOSTA FINAL: "${finalText}"`);
@@ -433,8 +450,9 @@ ${businessContext}
             await sendWhatsAppMessage(clientNumber, chunks[i]);
 
             if (i < chunks.length - 1) {
-                // Simulate human typing delay for the next bubble
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Primeira bolha bem rápida simulando cumprimento, demais um pouco mais de tempo de digitação
+                const typingDelay = i === 0 ? 1000 : 2000;
+                await new Promise(resolve => setTimeout(resolve, typingDelay));
             }
         }
 

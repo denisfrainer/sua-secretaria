@@ -16,8 +16,8 @@ export async function POST(req: Request) {
 
     // QStash requires absolute HTTPS URLs
     const rawSiteUrl = process.env.WOLF_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'wolfagent.netlify.app';
-    const siteBaseUrl = rawSiteUrl.startsWith('http') 
-        ? rawSiteUrl.replace(/\/$/, '') 
+    const siteBaseUrl = rawSiteUrl.startsWith('http')
+        ? rawSiteUrl.replace(/\/$/, '')
         : `https://${rawSiteUrl.replace(/\/$/, '')}`;
 
     // 🔴 GLOBAL KILL SWITCH CHECK
@@ -72,23 +72,23 @@ export async function POST(req: Request) {
                 if (messageObj) {
                     if (messageObj.audioMessage) {
                         console.log("🎙️ [WEBHOOK] Audio detectado. Acionando Background via QStash.");
-                        
+
                         await sendWhatsAppPresence(clientNumber, 'recording_audio');
 
                         const { Client } = await import('@upstash/qstash');
-                        const qstash = new Client({ 
+                        const qstash = new Client({
                             token: process.env.QSTASH_TOKEN!,
                             baseUrl: "https://qstash-us-east-1.upstash.io"
                         });
-                        
+
                         // Fire and forget background trigger via QStash
                         const backgroundUrl = `${siteBaseUrl}/api/webhook-audio-background`;
-                        
+
                         try {
                             await qstash.publishJSON({
                                 url: backgroundUrl,
                                 body: body,
-                                delay: "15s"
+                                delay: "7s"
                             });
                         } catch (err) {
                             console.error("❌ Erro ao invocar Background Function de Áudio no QStash:", err);
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
                             await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
                             return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                         }
-                        
+
                         // Ignore other fromMe messages early
                         return NextResponse.json({ status: 'ignored', reason: 'fromMe_not_command' }, { status: 200 });
                     }
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
                         await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
                         return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                     }
-                    
+
                     return NextResponse.json({ status: 'ignored', reason: 'fromMe_not_command' }, { status: 200 });
                 }
 
@@ -254,7 +254,7 @@ export async function POST(req: Request) {
             }
 
             // --- SERVERLESS DEBOUNCE LOGIC ---
-            
+
             // 4. Save Message to Database IMMEDIATELY
             await supabaseAdmin.from('chat_history').insert({
                 whatsapp_number: clientNumber,
@@ -327,16 +327,16 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
 
             // --- QSTASH ASYNC QUEUEING ---
             console.log(`🚀 [QSTASH] Enfileirando mensagem de ${clientNumber} para processamento assíncrono no eliza-worker...`);
-            
+
             // Ativa o "typing..." imediatamente pro lead já ver
             await sendWhatsAppPresence(clientNumber, 'composing');
 
             const { Client } = await import('@upstash/qstash');
-            const qstash = new Client({ 
+            const qstash = new Client({
                 token: process.env.QSTASH_TOKEN!,
                 baseUrl: "https://qstash-us-east-1.upstash.io"
             });
-            
+
             try {
                 await qstash.publishJSON({
                     url: `${siteBaseUrl}/api/eliza-worker`,
@@ -346,7 +346,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
                         incomingMessageId,
                         leadContext
                     },
-                    delay: "15s" // Aguarda ler/pensar
+                    delay: "7s" // Aguarda ler/pensar
                 });
             } catch (err) {
                 console.error("❌ Erro ao publicar texto para o eliza-worker no QStash:", err);
