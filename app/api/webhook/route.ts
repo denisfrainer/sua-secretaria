@@ -72,18 +72,23 @@ export async function POST(req: Request) {
                         const { Client } = await import('@upstash/qstash');
                         const qstash = new Client({ 
                             token: process.env.QSTASH_TOKEN!,
-                            baseUrl: 'https://us.qstash.upstash.io'
+                            baseUrl: 'https://qstash.upstash.io'
                         });
                         
                         // Fire and forget background trigger via QStash
                         const reqUrl = new URL(req.url);
                         const backgroundUrl = `${reqUrl.origin}/api/webhook-audio-background`;
                         
-                        await qstash.publishJSON({
-                            url: backgroundUrl,
-                            body: body,
-                            delay: "15s"
-                        }).catch(err => console.error("❌ Erro ao invocar Background Function de Áudio no QStash:", err));
+                        try {
+                            await qstash.publishJSON({
+                                url: backgroundUrl,
+                                body: body,
+                                delay: "15s"
+                            });
+                        } catch (err) {
+                            console.error("❌ Erro ao invocar Background Function de Áudio no QStash:", err);
+                            await sendWhatsAppPresence(clientNumber, 'available');
+                        }
 
                         return NextResponse.json({ status: "audio_processing_async" });
                     }
@@ -324,19 +329,24 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             const { Client } = await import('@upstash/qstash');
             const qstash = new Client({ 
                 token: process.env.QSTASH_TOKEN!,
-                baseUrl: 'https://us.qstash.upstash.io'
+                baseUrl: 'https://qstash.upstash.io'
             });
             
-            await qstash.publishJSON({
-                url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/eliza-worker`,
-                body: {
-                    clientNumber,
-                    clientMessage,
-                    incomingMessageId,
-                    leadContext
-                },
-                delay: "15s" // Aguarda ler/pensar
-            });
+            try {
+                await qstash.publishJSON({
+                    url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/eliza-worker`,
+                    body: {
+                        clientNumber,
+                        clientMessage,
+                        incomingMessageId,
+                        leadContext
+                    },
+                    delay: "15s" // Aguarda ler/pensar
+                });
+            } catch (err) {
+                console.error("❌ Erro ao publicar texto para o eliza-worker no QStash:", err);
+                await sendWhatsAppPresence(clientNumber, 'available');
+            }
 
             return NextResponse.json({ status: 'queued' });
         }
