@@ -45,3 +45,33 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
         return data;
     });
 }
+
+export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available') {
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
+
+    const url = `${baseUrl}/chat/sendPresence/${instanceName}`;
+
+    const payload = {
+        number: phone,
+        delay: 15000,
+        presence: presence
+    };
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': apikey as string
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        console.error(`Evolution API Presence Error ${res.status}: ${JSON.stringify(data.message || data)}`);
+    }
+
+    return data;
+}
