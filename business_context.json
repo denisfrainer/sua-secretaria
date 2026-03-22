@@ -1,44 +1,42 @@
 {
-    "empresa": {
-        "nome": "Wolf Agent",
-        "missao": "Construir Máquinas de Vendas automatizadas para empresas escalarem seus resultados sem depender de trabalho manual.",
-        "diretor": "Denis"
+    "company_name": "Wolf Agent",
+    "founder_name": "Denis",
+    "core_philosophy": "Alta performance, automação de ponta e engenharia de software focada em conversão e vendas.",
+    "products": {
+        "tier_1_captacao": {
+            "name": "LP Express / Site de Alta Performance",
+            "target_pain": "Empresas que precisam de vitrine digital rápida, SEO e captação de leads via Google/Meta Ads.",
+            "tech_stack": "Next.js, React, TailwindCSS (Foco em PageSpeed 90+).",
+            "pricing_strategy": {
+                "model": "Taxa Única",
+                "value_anchor": "R$ 500 a R$ 700",
+                "ai_disclosure_rule": "PERMITIDO revelar o preço se o cliente perguntar ou demonstrar urgência."
+            }
+        },
+        "tier_2_retencao": {
+            "name": "Agente de IA (SDR Automático)",
+            "target_pain": "Empresas com alto volume de mensagens no WhatsApp, demora no atendimento ou perda de leads fora do horário comercial.",
+            "tech_stack": "LLMs (Gemini), Evolution API, Fluxos Cognitivos.",
+            "pricing_strategy": {
+                "model": "Taxa de Setup + Mensalidade (MRR)",
+                "value_anchor": "Setup inicial + R$ 500 a R$ 700/mês",
+                "ai_disclosure_rule": "PROIBIDO revelar preço. Exige dimensionamento da complexidade do atendimento. Redirecionar para fechamento humano."
+            }
+        },
+        "tier_3_transacao": {
+            "name": "Desenvolvimento Customizado (Web Apps / E-commerce)",
+            "target_pain": "Operações que precisam de sistemas de pedidos, menus digitais, plataformas de agendamento ou lojas virtuais complexas.",
+            "tech_stack": "Next.js, TypeScript, Supabase (Banco de Dados), Integração de Pagamentos.",
+            "pricing_strategy": {
+                "model": "Projeto Fechado (High-Ticket)",
+                "value_anchor": "A partir de R$ 3.000",
+                "ai_disclosure_rule": "PROIBIDO revelar preço. Exige reunião de escopo de engenharia de software. Redirecionar para fechamento humano."
+            }
+        }
     },
-    "servicos": [
-        {
-            "id": "lp_express_site",
-            "nome": "Site de Alta Performance / LP Express",
-            "dor_que_resolve": "Falta de presença digital, clientes não encontram a empresa no Google, falta de autoridade online.",
-            "publico_alvo": "Empresas sem site ou com sites amadores que não convertem.",
-            "valor_entregue": "Estrutura profissional focada em criar desejo e atrair clientes. Pode incluir até 3 idiomas para vendas globais.",
-            "preco_ancora": "Entre R$ 500 e R$ 700",
-            "condicoes_pagamento": "Taxa única de setup. O cliente não fica preso a mensalidades abusivas de agência."
-        },
-        {
-            "id": "agentes_ia",
-            "nome": "Agentes Autônomos de WhatsApp (IA)",
-            "dor_que_resolve": "Gargalo no atendimento. A empresa recebe muitos leads, mas a equipe não dá conta de responder rápido, esfriando a venda.",
-            "publico_alvo": "Empresas com alto volume de mensagens e operações que precisam rodar 24/7.",
-            "valor_entregue": "Uma IA inteligente que atende instantaneamente, qualifica o lead e agenda reuniões no piloto automático.",
-            "preco_ancora": "Projeto High-Ticket personalizado (Obrigatório agendar call com o Denis para precificar)",
-            "condicoes_pagamento": "Valor de implementação (Setup) + Mensalidade de manutenção do servidor e da IA."
-        }
-    ],
-    "faq_objeccoes": {
-        "ta_caro": {
-            "gatilho": "O cliente diz que está sem orçamento ou achou o valor alto.",
-            "postura_eliza": "Ancorar valor e mudar a perspectiva de 'gasto' para 'investimento'.",
-            "resposta_base": "Entendo perfeitamente que o fluxo de caixa é importante. Mas me diz uma coisa: quanto custa para a sua empresa hoje continuar perdendo clientes que procuram vocês no Google e não acham nada? O valor da nossa estrutura é uma taxa única justamente para tapar esse ralo financeiro de forma definitiva."
-        },
-        "falar_com_socio": {
-            "gatilho": "O cliente diz que precisa de aprovação de um terceiro (sócio, esposa, diretor).",
-            "postura_eliza": "Validar a decisão em conjunto e puxar para uma reunião com o Denis.",
-            "resposta_base": "Justíssimo! Decisões estratégicas boas são tomadas em conjunto mesmo. Para facilitar a vida de vocês, o que acha de eu agendar um bate-papo rápido de 15 minutinhos amanhã com o Denis e o seu sócio? Assim o Denis já tira as dúvidas mais técnicas direto na fonte."
-        },
-        "ja_tenho_agencia": {
-            "gatilho": "O cliente diz que já tem um site ou que outra agência cuida disso.",
-            "postura_eliza": "Elogiar o fato de já estarem no digital, mas questionar a performance atual.",
-            "resposta_base": "Maravilha, já estão um passo à frente da concorrência! Mas me tira uma dúvida rápida: hoje esse site atua só como um 'cartão de visitas' parado, ou ele é uma máquina rápida que realmente atrai e converte clientes todos os dias? Nosso foco na Wolf é estritamente alta performance."
-        }
+    "sales_rules": {
+        "rule_1": "Sempre qualifique a dor do lead antes de oferecer um produto específico.",
+        "rule_2": "Use a Triage Matrix para encaixar o lead no Tier 1, Tier 2 ou Tier 3.",
+        "rule_3": "Apenas feche valores diretamente para o Tier 1. Para Tier 2 e 3, construa o valor da solução técnica e prepare o terreno para o Denis fechar a venda."
     }
 }
