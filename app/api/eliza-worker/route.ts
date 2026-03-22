@@ -284,7 +284,7 @@ async function handler(req: Request) {
             .order('created_at', { ascending: false })
             .limit(10);
 
-        const chatHistory = (history || []).reverse();
+        const chatHistory = (history || []).reverse().slice(-10);
 
         // 11. Prepara o System Prompt
         const contextPath = path.join(process.cwd(), 'business_context.json');
@@ -383,48 +383,86 @@ ${businessContext}
             systemInstruction: systemPrompt,
         };
 
-        let response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents,
-            config: genConfig,
-        });
+        const callGeminiWithTimeout = async (payload: any) => {
+            const timeoutPromise = new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error('LLM_TIMEOUT')), 12000)
+            );
+            return Promise.race([
+                ai.models.generateContent(payload),
+                timeoutPromise
+            ]);
+        };
 
-        // 14. FUNCTION CALLING LOOP (max 3 rounds)
-        let finalText = response.text || '';
-        let loopCount = 0;
+        let response: any;
+        let isTimeout = false;
+        let finalText = '';
 
-        while (response.functionCalls && response.functionCalls.length > 0 && loopCount < 3) {
-            loopCount++;
-            const fc = response.functionCalls[0];
-            console.log(`🔧 [TURN ${loopCount}] Tool chamada: ${fc.name}(${JSON.stringify(fc.args)})`);
-
-            const toolResult = await executeToolCall(fc.name!, fc.args as Record<string, any>, clientNumber);
-            console.log(`✅ [TURN ${loopCount}] Resultado da tool:`, toolResult);
-
-            const functionResponsePart = {
-                name: fc.name!,
-                response: toolResult,
-                id: fc.id,
-            };
-
-            contents.push(response.candidates![0].content);
-            contents.push({
-                role: 'user',
-                parts: [{ functionResponse: functionResponsePart }],
-            });
-
-            response = await ai.models.generateContent({
+        try {
+            response = await callGeminiWithTimeout({
                 model: 'gemini-2.5-flash',
                 contents,
                 config: genConfig,
             });
-
-            if (response.text?.trim()) {
-                finalText += (finalText ? ' || ' : '') + response.text.trim();
+        } catch (e: any) {
+            if (e.message === 'LLM_TIMEOUT') {
+                console.log('⏳ [LLM TIMEOUT] Gemini API excedeu 12s. Disparando fallback imediato.');
+                isTimeout = true;
+            } else {
+                throw e;
             }
-            console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${response.text || ''}"`);
         }
 
+        if (isTimeout) {
+            finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
+        } else {
+            // 14. FUNCTION CALLING LOOP (max 3 rounds)
+            finalText = response.text || '';
+            let loopCount = 0;
+
+            while (response && response.functionCalls && response.functionCalls.length > 0 && loopCount < 3) {
+                loopCount++;
+                const fc = response.functionCalls[0];
+                console.log(`🔧 [TURN ${loopCount}] Tool chamada: ${fc.name}(${JSON.stringify(fc.args)})`);
+
+                const toolResult = await executeToolCall(fc.name!, fc.args as Record<string, any>, clientNumber);
+                console.log(`✅ [TURN ${loopCount}] Resultado da tool:`, toolResult);
+
+                const functionResponsePart = {
+                    name: fc.name!,
+                    response: toolResult,
+                    id: fc.id,
+                };
+
+                contents.push(response.candidates![0].content);
+                contents.push({
+                    role: 'user',
+                    parts: [{ functionResponse: functionResponsePart }],
+                });
+
+                try {
+                    response = await callGeminiWithTimeout({
+                        model: 'gemini-2.5-flash',
+                        contents,
+                        config: genConfig,
+                    });
+                } catch (e: any) {
+                    if (e.message === 'LLM_TIMEOUT') {
+                        console.log(`⏳ [LLM TIMEOUT] Gemini API excedeu 12s no turno ${loopCount}. Abortando loop para fallback.`);
+                        isTimeout = true;
+                        finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
+                        break;
+                    } else {
+                        throw e;
+                    }
+                }
+
+                if (!isTimeout && response.text?.trim()) {
+                    finalText += (finalText ? ' || ' : '') + response.text.trim();
+                }
+                console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${response.text || ''}"`);
+            }
+        }
+        
         // 14.5 DIRECT FALLBACK CHECK (Safety Net)
         const msgLower = (clientMessage || '').toLowerCase().trim();
         const aiResponseLower = finalText.toLowerCase();
