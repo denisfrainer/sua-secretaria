@@ -455,6 +455,10 @@ ${businessContext}
             chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
         }
 
+        // SAFETY NET: Hard-Cap Hallucinations
+        // Never send more than 2 bubbles, no matter what the LLM hallucinates
+        chunks = chunks.slice(0, 2);
+
         console.log(`🗣️ RESPOSTA FINAL: "${finalText}"`);
 
         // 16. SALVAR A RESPOSTA DA IA NA MEMÓRIA

@@ -12,12 +12,26 @@ export async function withWhatsAppLock<T>(
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         const { data: lock, error: fetchError } = await supabaseAdmin
             .from('wolf_system_lock')
-            .select('is_busy')
+            .select('is_busy, updated_at')
             .eq('id', lockId)
             .single();
 
         if (fetchError && fetchError.code !== 'PGRST116') {
              console.error('Error fetching WhatsApp lock:', fetchError);
+        }
+
+        // Break stale lock (older than 15s)
+        if (lock?.is_busy && lock?.updated_at) {
+            const updatedAt = new Date(lock.updated_at).getTime();
+            const now = new Date().getTime();
+            if (now - updatedAt > 15000) {
+                console.log('🔓 [WhatsApp Lock] Breaking STALE lock older than 15s!');
+                await supabaseAdmin
+                    .from('wolf_system_lock')
+                    .update({ is_busy: false, updated_at: new Date().toISOString() })
+                    .eq('id', lockId);
+                lock.is_busy = false; // Override locally to try acquiring immediately below
+            }
         }
 
         if (!lock?.is_busy) {

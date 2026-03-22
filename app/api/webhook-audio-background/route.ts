@@ -139,7 +139,7 @@ Use STRICTLY the following information to answer business-related questions:
         console.log(`🧠 [BACKGROUND AUDIO] Analisando áudio de \${clientNumber} via Gemini 1.5 Pro...`);
 
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-pro',
+            model: 'gemini-2.5-flash',
             contents,
             config: {
                 systemInstruction: elizaSystemPrompt
