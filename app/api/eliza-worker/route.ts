@@ -271,6 +271,21 @@ async function handler(req: Request) {
 
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
+        // 0. IDEMPOTENCY CHECK
+        if (incomingMessageId) {
+            const { data: duplicateCheck } = await supabaseAdmin
+                .from('chat_history')
+                .select('id')
+                .eq('message_id', incomingMessageId)
+                .eq('role', 'assistant')
+                .single();
+
+            if (duplicateCheck) {
+                console.log(`🛡️ [IDEMPOTENCY] Duplicate payload detected for msg: ${incomingMessageId}. Ignoring.`);
+                return NextResponse.json({ status: 'ignored', reason: 'idempotent_duplicate' }, { status: 200 });
+            }
+        }
+
         // 8. RECUPERAR AS ÚLTIMAS 5 MENSAGENS (Memória de Curto Prazo Strict)
         const { data: history } = await supabaseAdmin
             .from('chat_history')
@@ -519,6 +534,7 @@ ${businessContext}
             whatsapp_number: clientNumber,
             role: 'assistant',
             content: finalText,
+            message_id: incomingMessageId
         });
 
         // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
@@ -541,20 +557,19 @@ ${businessContext}
 
         t4 = performance.now(); // After DB Save
 
-        return NextResponse.json({ status: 'success' });
-    } catch (error) {
-        console.error('❌ Erro Crítico no Worker:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    } finally {
-        const tEnd = performance.now();
-        // Safe math for failsafe metric output
         const dbFetchMs = Math.max(0, t1 - t0).toFixed(0);
         const llmMs = Math.max(0, t2 - t1).toFixed(0);
         const waApiMs = Math.max(0, t3 - t2).toFixed(0);
         const dbSaveMs = Math.max(0, t4 - t3).toFixed(0);
-        const totalMs = Math.max(0, tEnd - t0).toFixed(0);
+        const totalMs = Math.max(0, t4 - t0).toFixed(0);
 
         console.log(`📊 [PROFILER] Total: ${totalMs}ms | DB Fetch: ${dbFetchMs}ms | Gemini LLM: ${llmMs}ms | WA Send: ${waApiMs}ms | DB Save: ${dbSaveMs}ms`);
+
+        // Free up QStash connection immediately!
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('❌ Erro Crítico no Worker:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
