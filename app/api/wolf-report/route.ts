@@ -6,7 +6,7 @@ export const revalidate = 0;
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-    console.log('\n--- 📊 INICIANDO REPORT CRON (EXECUTIVE DIGEST) ---');
+    console.log('\n--- 📊 INICIANDO WOLF REPORT: DAILY RESULTS ---');
     try {
         const token = process.env.WOLF_SECRET_TOKEN;
         const resendKey = process.env.RESEND_API_KEY;
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
         // Build HTML for recent leads
         const dateHeader = new Date().toLocaleDateString('pt-BR');
-        
+
         let leadsHtml = '';
         if (recentLeads && recentLeads.length > 0) {
             leadsHtml = `
@@ -82,9 +82,9 @@ export async function POST(req: Request) {
                     </thead>
                     <tbody>
                         ${recentLeads.map(lead => {
-                            const displayName = lead.name || 'Desconhecido';
-                            const displayPhone = lead.phone || '-';
-                            return `
+                const displayName = lead.name || 'Desconhecido';
+                const displayPhone = lead.phone || '-';
+                return `
                             <tr>
                                 <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 14px;">${displayName}</td>
                                 <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 14px;">${displayPhone}</td>
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
                                 </td>
                             </tr>
                             `;
-                        }).join('')}
+            }).join('')}
                     </tbody>
                 </table>
             `;
@@ -154,11 +154,11 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 from: 'Wolf Agent <onboarding@resend.dev>',
                 to: [adminEmail],
-                subject: `🐺 Executive Digest - ${dateHeader}`,
+                subject: `🐺 Wolf Report: Daily Results - ${dateHeader}`,
                 html: htmlBody
             })
         });
-        
+
         if (resendRes.ok) {
             console.log('✅ Daily Report enviado com sucesso.');
             return NextResponse.json({ success: true, message: 'Report sent successfully' });
