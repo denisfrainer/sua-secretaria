@@ -385,6 +385,15 @@ ${businessContext}
             parts: [{ text: msg.content }],
         }));
 
+        // ❄️ [COLD START INJECTOR] If history is completely empty, satisfy the Gemini SDK requirements
+        if (contents.length === 0) {
+            console.log(`❄️ [COLD START] Contexto vazio detectado. Injetando clientMessage manualmente.`);
+            contents.push({
+                role: 'user',
+                parts: [{ text: clientMessage || 'Olá' }]
+            });
+        }
+
         // 13. CALL GEMINI VIA @google/genai
         console.log('🧠 IA Pensando com base no histórico e contexto do lead...');
         const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
@@ -419,7 +428,8 @@ ${businessContext}
                 console.log('⏳ [LLM TIMEOUT] Gemini API excedeu 12s. Disparando fallback imediato.');
                 isTimeout = true;
             } else {
-                throw e;
+                console.error('🚨 [GEMINI ERROR] Falha na estruturação/comunicação da API do Google:', e.message || e);
+                isTimeout = true; // Trigger the emergency fallback string automatically
             }
         }
 
