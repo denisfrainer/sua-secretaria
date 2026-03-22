@@ -1,6 +1,6 @@
 // app/api/eliza-worker/route.ts
 import { NextResponse } from 'next/server';
-import { sendWhatsAppMessage, sendWhatsAppPresence, markWhatsAppRead } from '../../../lib/whatsapp/sender';
+import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import path from 'path';
@@ -268,14 +268,6 @@ async function handler(req: Request) {
 
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
-        // STEALTH: Delay to Read (Execute this only ONCE at the start of the worker)
-        if (incomingMessageId) {
-            console.log(`[STEALTH] Aguardando 800ms para marcar como lida...`);
-            await new Promise(resolve => setTimeout(resolve, 800));
-            // Fire and forget read receipt to save timeout length
-            markWhatsAppRead(clientNumber, incomingMessageId).catch(err => console.error('Error marking as read:', err));
-        }
-
         // 8. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (Memória de Curto Prazo)
         const { data: history } = await supabaseAdmin
             .from('chat_history')
@@ -507,38 +499,18 @@ ${businessContext}
         });
 
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
-        console.log(`🚀 [ELIZA WORKER] Iniciando Stealth Sequence de resposta para ${clientNumber}`);
+        console.log(`🚀 [ELIZA WORKER] Iniciando envio IMEDIATO para ${clientNumber}`);
         
-        try {
-            // Initiate full composing presence
-            await sendWhatsAppPresence(clientNumber, 'composing');
-
-            for (let i = 0; i < chunks.length; i++) {
-                const textChunk = chunks[i];
-                
-                // STEALTH: Dynamic Typing Time
-                let dynamicTypingTime = 1200; // Primeira bolha fixa em 1.2s (Instant gratification)
-
-                if (i > 0) {
-                    dynamicTypingTime = Math.min(textChunk.length * 40, 3000); // Cap in 3.0s subsequent bubbles
-                    
-                    // Restaura typing ( Evolution API remove native presence ao mandar sendText )
-                    await sendWhatsAppPresence(clientNumber, 'composing');
-                }
-                
-                console.log(`[STEALTH] Typing for ${dynamicTypingTime}ms for message length ${textChunk.length}`);
-                
-                await new Promise(resolve => setTimeout(resolve, dynamicTypingTime));
-                
-                try {
-                    await sendWhatsAppMessage(clientNumber, textChunk, 0); // Override buffer
-                } catch (err) {
-                    console.error(`❌ Erro ao enviar bolha ${i+1}:`, err);
-                }
+        // Zero-Sleep Dispatch Loop
+        // Evolution API deals with the message queue and typing delays natively
+        for (const textChunk of chunks) {
+            try {
+                // By omitting the 3rd argument, sendWhatsAppMessage uses its built-in formula
+                // AND it already inherently wraps within 'withWhatsAppLock'.
+                await sendWhatsAppMessage(clientNumber, textChunk); 
+            } catch (err) {
+                console.error(`❌ Erro ao enviar bolha:`, err);
             }
-        } finally {
-            // Cleanup on aisle ghost typing
-            await sendWhatsAppPresence(clientNumber, 'available');
         }
 
         // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
