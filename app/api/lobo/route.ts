@@ -112,23 +112,48 @@ export async function POST(req: Request) {
             if (hasWebsite) {
                 // BIFURCAÇÃO 1: LEAD TEM SITE
                 variations = [
-                    `{opa|fala pessoal}, ${saudacao}! tava dando uma olhada no site de vocês. a operação tá rodando bem ou tem algo que vocês sentem que precisa melhorar no digital?`,
-                    `{opa|fala}, ${saudacao}! achei o ${nichoFormatado} de vocês no google e vi que já tem um site. vocês mesmos que cuidam da manutenção e atualização dele?`,
-                    `${saudacao}, tudo bem? Denis aqui. vi o site de vocês, o trabalho é muito bom. a maior captação de vocês hoje vem através do site ou do instagram?`
+                    { 
+                        part1: `{opa|fala pessoal}, ${saudacao}!`,
+                        part2: `tava dando uma olhada no site de vocês. a operação tá rodando bem ou tem algo que vocês sentem que precisa melhorar no digital?`
+                    },
+                    {
+                        part1: `{opa|fala}, ${saudacao}!`,
+                        part2: `achei o ${nichoFormatado} de vocês no google e vi que já tem um site. vocês mesmos que cuidam da manutenção e atualização dele?`
+                    },
+                    {
+                        part1: `${saudacao}, tudo bem? Denis aqui.`,
+                        part2: `vi o site de vocês, o trabalho é muito bom. a maior captação de vocês hoje vem através do site ou do instagram?`
+                    }
                 ];
             } else {
                 // BIFURCAÇÃO 2: LEAD NÃO TEM SITE (Suas variações originais com spintax leve)
                 variations = [
-                    `{opa|fala}, ${saudacao}! sou aqui de Florianópolis também. tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`,
-                    `fala pessoal, ${saudacao}! achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`,
-                    `{opa|fala}, tudo bem? Denis aqui. o trabalho de vocês é muito bom pra ficar só na rede social. vocês já chegaram a ter um site próprio pra criar mais autoridade alguma vez?`,
-                    `${saudacao}, pessoal! tava dando uma olhada no perfil de vocês. a galera que procura pelo Google consegue achar vocês fácil hoje, ou a captação de clientes tá sendo toda no boca a boca?`,
-                    `{fala|opa}, ${saudacao}! passei pelo ${nichoFormatado} de vocês agora há pouco. me tira uma dúvida rápida: a operação de vocês tá rodando sem site oficial mesmo?`
+                    {
+                        part1: `{opa|fala}, ${saudacao}! sou aqui de Florianópolis também.`,
+                        part2: `tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`
+                    },
+                    {
+                        part1: `fala pessoal, ${saudacao}!`,
+                        part2: `achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`
+                    },
+                    {
+                        part1: `{opa|fala}, tudo bem? Denis aqui.`,
+                        part2: `o trabalho de vocês é muito bom pra ficar só na rede social. vocês já chegaram a ter um site próprio pra criar mais autoridade alguma vez?`
+                    },
+                    {
+                        part1: `${saudacao}, pessoal!`,
+                        part2: `tava dando uma olhada no perfil de vocês. a galera que procura pelo Google consegue achar vocês fácil hoje, ou a captação de clientes tá sendo toda no boca a boca?`
+                    },
+                    {
+                        part1: `{fala|opa}, ${saudacao}!`,
+                        part2: `passei pelo ${nichoFormatado} de vocês agora há pouco. me tira uma dúvida rápida: a operação de vocês tá rodando sem site oficial mesmo?`
+                    }
                 ];
             }
 
-            const baseTemplate = variations[Math.floor(Math.random() * variations.length)];
-            const message = parseSpintax(baseTemplate);
+            const variation = variations[Math.floor(Math.random() * variations.length)];
+            const msg1 = parseSpintax(variation.part1);
+            const msg2 = parseSpintax(variation.part2);
 
             try {
                 if (successfulSends > 0) {
@@ -136,7 +161,10 @@ export async function POST(req: Request) {
                     await sleep(interBurstDelay);
                 }
 
-                await sendWhatsAppMessage(safePhone, message);
+                await sendWhatsAppMessage(safePhone, msg1);
+                await sleep(2500); // Simulate typing break for bubble 2
+                await sendWhatsAppMessage(safePhone, msg2);
+                
                 await supabaseAdmin.from('leads_lobo').update({ status: 'contacted' }).eq('id', lead.id);
                 successfulSends++;
             } catch (err: any) {

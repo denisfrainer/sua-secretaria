@@ -167,13 +167,13 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
             console.error('❌ Erro ao salvar inteligência no Supabase:', error);
             return { status: 'error', message: 'Falha ao salvar inteligência do lead.' };
         }
-        
+
         return { status: 'success', message: 'Database updated. Now reply to the user naturally based on this new context.' };
     }
 
     if (name === 'generatePagarmePix') {
         console.log(`🤑 [PAGAR.ME] Gerando Pedido PIX para: ${args.lead_name} (${args.product_id})`);
-        
+
         let amountCents = 100000;
         if (args.product_id === 'LP_EXPRESS') amountCents = 99700;
         else if (args.product_id === 'SITE_ALTA_PERFORMANCE') amountCents = 250000;
@@ -212,10 +212,10 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
 
             await supabaseAdmin.from('leads_lobo').update({ pagarme_order_id: orderId }).eq('phone', clientPhone);
 
-            return { 
-                status: 'success', 
-                order_id: orderId, 
-                qr_code: qrCode, 
+            return {
+                status: 'success',
+                order_id: orderId,
+                qr_code: qrCode,
                 pix_key: pixKey,
                 message: "Apresente a Chave Copia e Cola (qr_code) ao cliente para que ele efetue o pagamento. O pedido expira em 1 hora."
             };
@@ -239,14 +239,14 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
 
             if (pagarmeData.status === 'paid') {
                 await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientPhone);
-                return { 
-                    status: 'PAID', 
-                    message: "BINGO! O pagamento foi confirmado! Agradeça o lead por fechar com a Wolf Agent e acione a tool 'notify_human_specialist' para transferir o projeto." 
+                return {
+                    status: 'PAID',
+                    message: "BINGO! O pagamento foi confirmado! Agradeça o lead por fechar com a Wolf Agent e acione a tool 'notify_human_specialist' para transferir o projeto."
                 };
             } else {
-                return { 
-                    status: 'PENDING', 
-                    message: `O status na API consta como '${pagarmeData.status}'. Avise o lead que ainda não compensou na conta e peça pra confirmar ou esperar mais um minuto.` 
+                return {
+                    status: 'PENDING',
+                    message: `O status na API consta como '${pagarmeData.status}'. Avise o lead que ainda não compensou na conta e peça pra confirmar ou esperar mais um minuto.`
                 };
             }
         } catch (e: any) {
@@ -294,11 +294,16 @@ NEVER provide full pricing before the 'Gold Bifurcation Question'. Your ULTIMATE
 - CONSTRAINT 3: NEVER use gerunds in Portuguese (e.g., do not say "vou estar verificando", say "vou verificar").
 - CONSTRAINT 4: NEVER act like a generic telemarketing bot. Keep responses EXTREMELY BRIEF (maximum of 2 short paragraphs).
 - CONSTRAINT 5: If the user asks if you are an AI, proudly admit it using the exact phrase provided in the Playbook.
+- CONSTRAINT 6: NATURAL PACING. If the user only says "Oi" or "Boa tarde", reply ONLY with a friendly greeting and a simple open question (e.g., "Boa tarde! Tudo bem? Como posso ajudar a sua empresa hoje?"). DO NOT force the bifurcation question immediately if there is no conversational context.
+- CONSTRAINT 7: MESSAGE SPLITTING. If you need to send a greeting and then a distinct follow-up question, you MUST separate the two thoughts using the "||" characters. Example: "Boa tarde, tudo bem? || Pra eu te direcionar melhor, hoje o seu maior gargalo é a falta de tráfego ou falta de tempo pra responder?"
+
 
 # 3. TOM DE VOZ E PERSONALIDADE (Tone of Voice)
 - Seu tom é de uma especialista do Vale do Silício, mas com a pegada "parceira", direta e ágil do Brasil.
 - Você é simpática, mas vai direto ao ponto. Não enrola o cliente.
 - Use linguagem natural de WhatsApp. Pode usar um leve "rs" ou um emoji (😉, 🚀, 🐺) de vez em quando, mas sem poluir o texto.
+- DIVISÃO DE MENSAGENS: Se precisar mudar de assunto ou fazer uma pergunta após uma explicação, separe os blocos de texto com "||". 
+Exemplo: "Entendi perfeitamente o seu cenário. || Pra eu te direcionar melhor, hoje falta gente chamando ou falta tempo pra responder?"
 
 # 4. O PLAYBOOK DE VENDAS (The Sales Framework)
 STEP 1 - A PERGUNTA DE BIFURCAÇÃO (MANDATORY):
@@ -418,10 +423,19 @@ ${businessContext}
             content: finalText,
         });
 
-        // 17. Envia a mensagem de volta para o cliente no WhatsApp imediatamente
-        // (O delay humano real é agora gerenciado pelo QStash)
+        // 17. Envia a mensagem de volta para o cliente no WhatsApp
         console.log(`🚀 [ELIZA WORKER] Enviando reposta final para ${clientNumber} via Evolution API`);
-        await sendWhatsAppMessage(clientNumber, finalText);
+        
+        const chunks = finalText.split('||').map(c => c.trim()).filter(c => c !== '');
+        
+        for (let i = 0; i < chunks.length; i++) {
+            await sendWhatsAppMessage(clientNumber, chunks[i]);
+            
+            if (i < chunks.length - 1) {
+                // Simulate human typing delay for the next bubble
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
 
         // 📊 CIRCUIT BREAKER: Increment reply_count after Eliza responds
         try {
