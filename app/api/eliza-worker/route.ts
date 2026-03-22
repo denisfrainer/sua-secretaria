@@ -315,7 +315,7 @@ Exemplo: "Entendi perfeitamente o seu cenário. || Pra eu te direcionar melhor, 
 # 4. O PLAYBOOK DE VENDAS (The Sales Framework)
 STEP 1 - A PERGUNTA DE BIFURCAÇÃO (MANDATORY):
 Em toda primeira interação, após saudar o lead, você DEVE fazer a seguinte pergunta para diagnosticar a dor da empresa:
-"Pra eu te direcionar pra solução exata, me tira uma dúvida rápida: || Hoje o maior gargalo de vocês é que pouca gente chama no WhatsApp, ou chama muita gente mas falta tempo pra responder todo mundo? 😉"
+"Pra eu te direcionar pra solução exata, me tira uma dúvida rápida: || Hoje o maior gargalo de vocês é a falta de tráfego ou falta de braço pra responder todo mundo? 😉"
 -> Se faltar tráfego/pessoas: O foco é vender o Site/LP Express.
 -> Se faltar tempo/muitas mensagens: O foco é vender Agentes de IA.
 
@@ -417,7 +417,7 @@ ${businessContext}
             console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${response.text || ''}"`);
         }
 
-        // 15. FALLBACK
+        // 15. FALLBACK OR GREETING BYPASS
         if (!finalText || finalText.trim() === '') {
             console.log('⚠️ IA retornou string vazia. Avaliando fallback...');
             const msgLower = (clientMessage || '').toLowerCase().trim();
@@ -426,7 +426,7 @@ ${businessContext}
             if (msgLower === 'oi' || msgLower === 'olá' || msgLower === 'ola' || 
                 msgLower === 'boa tarde' || msgLower === 'bom dia' || msgLower === 'boa noite' || 
                 msgLower === 'opa') {
-                finalText = 'Olá! Tudo bem? Como posso te ajudar hoje?';
+                finalText = 'Boa tarde! Tudo bem? || Como posso ajudar a sua empresa hoje?';
             } else {
                 finalText = 'Entendi! E como funciona o processo hoje?';
             }
@@ -448,9 +448,8 @@ ${businessContext}
         
         // STEALTH: Delay to Read
         if (incomingMessageId) {
-            const readDelay = Math.floor(Math.random() * 500) + 1000; // max 1500ms
-            console.log(`[STEALTH] Aguardando ${readDelay}ms para marcar como lida...`);
-            await new Promise(resolve => setTimeout(resolve, readDelay));
+            console.log(`[STEALTH] Aguardando 800ms para marcar como lida...`);
+            await new Promise(resolve => setTimeout(resolve, 800));
             await markWhatsAppRead(clientNumber, incomingMessageId);
         }
 
@@ -462,12 +461,10 @@ ${businessContext}
                 const textChunk = chunks[i];
                 
                 // STEALTH: Dynamic Typing Time
-                let dynamicTypingTime = 1200; // Primeira bolha super rapida
+                let dynamicTypingTime = 1000; // Primeira bolha fixa em 1s
 
                 if (i > 0) {
-                    const baseTypeTime = Math.min(textChunk.length * 50, 4500); // Cap in 4500ms
-                    const jitter = baseTypeTime * 0.15;
-                    dynamicTypingTime = Math.floor(baseTypeTime + (Math.random() * jitter * 2) - jitter); // +/- 15%
+                    dynamicTypingTime = Math.min(textChunk.length * 40, 3500); // Cap in 3.5s
                     
                     // Restaura typing ( Evolution API remove native presence ao mandar sendText )
                     await sendWhatsAppPresence(clientNumber, 'composing');
@@ -481,11 +478,6 @@ ${businessContext}
                     await sendWhatsAppMessage(clientNumber, textChunk, 0); // Override buffer
                 } catch (err) {
                     console.error(`❌ Erro ao enviar bolha ${i+1}:`, err);
-                }
-
-                if (i < chunks.length - 1) {
-                    // Micro-pausa
-                    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
                 }
             }
         } finally {
