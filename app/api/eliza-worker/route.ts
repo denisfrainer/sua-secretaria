@@ -268,15 +268,15 @@ async function handler(req: Request) {
 
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
-        // 8. RECUPERAR AS ÚLTIMAS 10 MENSAGENS (Memória de Curto Prazo)
+        // 8. RECUPERAR AS ÚLTIMAS 5 MENSAGENS (Memória de Curto Prazo Strict)
         const { data: history } = await supabaseAdmin
             .from('chat_history')
             .select('role, content')
             .eq('whatsapp_number', clientNumber)
             .order('created_at', { ascending: false })
-            .limit(10);
+            .limit(5);
 
-        const chatHistory = (history || []).reverse().slice(-10);
+        const chatHistory = (history || []).reverse().slice(-5);
 
         // 11. Prepara o System Prompt
         const contextPath = path.join(process.cwd(), 'business_context.json');

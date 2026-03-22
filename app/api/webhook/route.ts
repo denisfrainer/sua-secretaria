@@ -346,7 +346,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
                         incomingMessageId,
                         leadContext
                     },
-                    delay: "4s" // Aguarda 4s
+                    delay: "10s" // Aguarda 10s (Simulando leitura humana enquanto a presence typing está on)
                 });
             } catch (err) {
                 console.error("❌ Erro ao publicar texto para o eliza-worker no QStash:", err);
