@@ -262,6 +262,18 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
 export async function POST(req: Request) {
     let processingPhone = null; // Para cleanup no finally
 
+    // 🔴 GLOBAL KILL SWITCH CHECK
+    const { data: killSwitchData } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'global_kill_switch')
+        .single();
+
+    if (killSwitchData && killSwitchData.value?.enabled === false) {
+        console.log(`[KILL SWITCH] System disabled. Execution blocked.`);
+        return NextResponse.json({ status: 'system_paused' }, { status: 200 });
+    }
+
     try {
         const body = await req.json();
         console.log("FULL EVOLUTION BODY:", JSON.stringify(body, null, 2));
@@ -382,18 +394,6 @@ export async function POST(req: Request) {
             if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
                 console.log(`🛡️ [SHIELD] Auto-reply detected (Keywords) from ${clientNumber}: "${clientMessage}". Ignoring.`);
                 return NextResponse.json({ status: 'ignored', reason: 'auto_reply_keyword' }, { status: 200 });
-            }
-
-            // 🔴 GLOBAL KILL SWITCH: Check if Eliza is turned OFF in system_settings
-            const { data: killSwitchData } = await supabaseAdmin
-                .from('system_settings')
-                .select('value')
-                .eq('key', 'global_kill_switch')
-                .single();
-
-            if (killSwitchData && killSwitchData.value?.enabled === false) {
-                console.log(`🔴 [GLOBAL KILL SWITCH] Eliza está DESLIGADA. Ignorando mensagem de ${clientNumber}.`);
-                return NextResponse.json({ status: 'ignored', reason: 'eliza_globally_off' }, { status: 200 });
             }
 
             // --- DEBOUNCER / BATCHING LOGIC START ---

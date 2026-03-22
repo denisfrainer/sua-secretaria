@@ -13,6 +13,18 @@ export async function POST(req: Request) {
     const cronId = Math.random().toString(36).substring(7);
     console.log(`\n--- 🐺 [${cronId}] HUNT UNTIL SUCCESS: INICIANDO CAÇADA ---`);
 
+    // 🔴 GLOBAL KILL SWITCH CHECK
+    const { data: killSwitchData } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'global_kill_switch')
+        .single();
+
+    if (killSwitchData && killSwitchData.value?.enabled === false) {
+        console.log(`[KILL SWITCH] System disabled. Execution blocked.`);
+        return NextResponse.json({ status: 'system_paused' }, { status: 200 });
+    }
+
     let invalidCount = 0;
     let successLead: string | null = null;
 
