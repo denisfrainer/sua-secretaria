@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import re
 import sys
 from pathlib import Path
@@ -62,19 +63,19 @@ def run_sniper():
         
         start_time = time.time()
 
-        # 3. Prompt: Adjust the prompt to ask for a structured text response
+        # 3. Prompt: Instruct the model to return a raw JSON string
         prompt = (
             f"Você é um especialista em vendas e performance web. "
             f"Analise o site {url}. "
             f"Identifique falhas visíveis de performance (LCP/FCP) usando ferramentas de busca. "
             f"Crie um 'Pitch Challenger' agressivo e curto (2 frases) em pt-BR. "
             f"A empresa tem nota {rating} no Google Maps. Conecte a nota com a falha do site para gerar urgência de compra de uma Landing Page Next.js. "
-            f"Retorne o resultado estritamente no formato: TECHNICAL_AUDIT: [resumo do problema técnico] | PITCH: [texto persuasivo]"
+            f"Retorne o resultado estritamente como um objeto JSON válido com as chaves: "
+            f"\"technical_audit\" (string) e \"pitch\" (string). Não adicione nenhum outro texto."
         )
 
         try:
             # 2. Tooling: Use ONLY 'tools=[types.Tool(google_search=types.GoogleSearch())]'
-            # Remove the 'update_lead_pitch' function declaration entirely.
             res = client.models.generate_content(
                 model="gemini-3-flash-preview", 
                 contents=prompt,
@@ -89,23 +90,19 @@ def run_sniper():
             print(f"⏱️ [LATENCY] API respondeu em {calc_time}s")
             sys.stdout.flush()
 
-            # 4. Logic: Parse the text to extract the audit and pitch
+            # 4. Logic: Parse the JSON response
             response_text = res.text if res.text else ""
             
-            if "TECHNICAL_AUDIT:" in response_text and "PITCH:" in response_text:
-                try:
-                    # Regex for more robust extraction matching the requested format
-                    match = re.search(r"TECHNICAL_AUDIT:(.*)\|.*PITCH:(.*)", response_text, re.DOTALL | re.IGNORECASE)
-                    if not match:
-                        # Fallback to simple split if regex fails but keys exist
-                        parts = response_text.split("|")
-                        audit = parts[0].replace("TECHNICAL_AUDIT:", "").strip()
-                        pitch = parts[1].replace("PITCH:", "").strip()
-                    else:
-                        audit = match.group(1).strip()
-                        pitch = match.group(2).strip()
+            # Clean possible markdown formatting
+            clean_json = re.sub(r'```json|```', '', response_text).strip()
+            
+            try:
+                data = json.loads(clean_json)
+                audit = data.get("technical_audit")
+                pitch = data.get("pitch")
 
-                    # 5. Persistence: Use the 'supabase' client directly to update
+                if audit and pitch:
+                    # 5. Persistence: Call supabase.table("leads_lobo").update(...) directly
                     supabase.table('leads_lobo').update({
                         "technical_audit": audit,
                         "ai_icebreaker": pitch
@@ -113,12 +110,12 @@ def run_sniper():
                     
                     print(f"   ✅ Sucesso! Pitch: {pitch}\n")
                     sys.stdout.flush()
-                except Exception as parse_err:
-                    print(f"   ⚠️ Erro ao processar formato de resposta: {parse_err}")
-                    print(f"   DEBUG_RAW: {response_text}")
+                else:
+                    print(f"   ⚠️ Erro: Campos obrigatórios ausentes no JSON. DEBUG_RAW: {response_text}")
                     sys.stdout.flush()
-            else:
-                print(f"   ⚠️ Resposta fora do formato esperado. DEBUG_RAW: {response_text}")
+
+            except json.JSONDecodeError:
+                print(f"   ⚠️ Erro ao decodificar JSON. DEBUG_RAW: {response_text}")
                 sys.stdout.flush()
 
         except Exception as e:
