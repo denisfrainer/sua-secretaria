@@ -45,6 +45,21 @@ def clean_website(url: str) -> str | None:
 def run_hunter():
     print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Broad Mining)...")
     sys.stdout.flush()
+
+    # 1. Database Sync: Query the name column to allow for O(1) duplicate checks
+    print("🔄 Sincronizando base de dados local...")
+    sys.stdout.flush()
+    existing_names = set()
+    try:
+        # Fetch names in batches or a single query if small enough
+        response = supabase.table('leads_lobo').select('name').execute()
+        if response.data:
+            existing_names = {row['name'] for row in response.data if row.get('name')}
+        print(f"📊 {len(existing_names)} leads já conhecidos carregados.")
+        sys.stdout.flush()
+    except Exception as e:
+        print(f"⚠️ Erro ao sincronizar base: {e}")
+        sys.stdout.flush()
     
     # 2. BROAD_KEYWORDS list
     BROAD_KEYWORDS = [
@@ -62,7 +77,6 @@ def run_hunter():
     selected_keywords = random.sample(BROAD_KEYWORDS, 3)
     
     for keyword in selected_keywords:
-        # Append 'em Florianópolis, SC' to each query
         query = f"{keyword} em Florianópolis, SC"
         print(f"\n🎯 Minerando Alvo: {query}...")
         sys.stdout.flush()
@@ -81,7 +95,6 @@ def run_hunter():
             sys.stdout.flush()
             
             start_api = time.time()
-            # 5. Grounding Configuration
             response = client.models.generate_content(
                 model="gemini-3-flash-preview", 
                 contents=prompt,
@@ -97,14 +110,26 @@ def run_hunter():
             leads_data = extract_json_from_text(response.text)
             
             if leads_data:
-                print(f"✅ {len(leads_data)} leads encontrados. Iniciando persistência...")
+                print(f"✅ {len(leads_data)} leads encontrados. Processando validação...")
                 sys.stdout.flush()
                 
                 for lead in leads_data:
-                    name = lead.get('name', 'Desconhecido')
+                    name = lead.get('name')
+                    
+                    # 2. Validation Logic: verify name is not None, empty, or "NULL"
+                    if not name or str(name).strip().upper() in ["", "NONE", "NULL"]:
+                        print(f"   🚫 [SKIP] Nome inválido: {name}")
+                        sys.stdout.flush()
+                        continue
+
+                    # 3. Deduplication: Check if lead already exists in local set
+                    if name in existing_names:
+                        print(f"   ⏭️ [SKIP] Lead já existente: {name}")
+                        sys.stdout.flush()
+                        continue
+
                     website = clean_website(lead.get('website'))
 
-                    # 6. Data Integrity: Tag leads without websites as [FANTASMA]
                     data = {
                         "name": name,
                         "niche": keyword.capitalize(),
@@ -115,13 +140,15 @@ def run_hunter():
                     }
 
                     try:
-                        # 6. Checking for duplicates (Supabase table unique constraints handle this)
                         supabase.table('leads_lobo').insert(data).execute()
                         status_tag = "SITE" if website else "FANTASMA"
                         print(f"   📥 [{status_tag}] {name}")
                         sys.stdout.flush()
-                    except Exception:
-                        print(f"   ⚠️ [DUPLICATE] {name}")
+                        
+                        # 4. State Management: add name to set to prevent duplicates in same run
+                        existing_names.add(name)
+                    except Exception as e:
+                        print(f"   ❌ [INSERT ERROR] {name}: {e}")
                         sys.stdout.flush()
                         continue
             else:
