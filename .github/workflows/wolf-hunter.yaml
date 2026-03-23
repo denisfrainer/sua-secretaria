@@ -2,8 +2,8 @@ name: Wolf Hunter
 
 on:
   schedule:
-    # Executa todas as segundas e quartas às 10:00 UTC (07:00 da manhã no Brasil)
-    - cron: '0 10 * * 1,3'
+    # Executa de Segunda (1) a Sexta (5) às 10:00 UTC (07:00 em Florianópolis)
+    - cron: '0 10 * * 1-5'
   workflow_dispatch: # Permite-lhe executar o script manualmente clicando num botão no GitHub
 
 jobs:
