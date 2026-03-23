@@ -43,10 +43,10 @@ def clean_website(url: str) -> str | None:
     return url
 
 def run_hunter():
-    print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Broad Mining)...")
+    print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Internal Knowledge Mode)...")
     sys.stdout.flush()
 
-    # 3. Database Sync: Local set deduplication logic
+    # 4. Deduplication logic with existing_names
     print("🔄 Sincronizando base de dados local...")
     sys.stdout.flush()
     existing_names = set()
@@ -60,7 +60,6 @@ def run_hunter():
         print(f"⚠️ Erro ao sincronizar base: {e}")
         sys.stdout.flush()
     
-    # 3. Maintain broad keyword strategy
     BROAD_KEYWORDS = [
         'restaurantes', 
         'clínicas odontológicas', 
@@ -79,37 +78,29 @@ def run_hunter():
         print(f"\n🎯 Minerando Alvo: {query}...")
         sys.stdout.flush()
 
+        # 3. Updated prompt to use internal knowledge
         prompt = (
-            f"Busque 15 '{keyword}' em Florianópolis, SC usando o Google Maps. "
+            f"Liste 15 empresas reais e conhecidas do nicho '{keyword}' em Florianópolis, SC. "
             "Retorne APENAS um array JSON válido com as chaves: "
             "'name' (string), 'website' (string ou null), 'phone' (string) e 'rating' (number). "
-            "Priorize o website oficial real. Nenhum texto adicional."
+            "Use seu conhecimento interno. Nenhum texto adicional."
         )
 
         try:
             timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"💓 [REQUEST] {timestamp} | Gemini-3-Flash-Preview (Grounding enabled)")
+            print(f"💓 [REQUEST] {timestamp} | Gemini-3-Flash-Preview (Internal Knowledge)")
             sys.stdout.flush()
             
             start_api = time.time()
             
-            # 4. Error Handling: specific try/except block for the API call
-            try:
-                # 1 & 2. Client Config: Set timeout (deadline) to 60 seconds
-                response = client.models.generate_content(
-                    model="gemini-3-flash-preview", 
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        tools=[types.Tool(google_search=types.GoogleSearch())],
-                        temperature=0.1
-                    ),
-                    http_options={'timeout': 60}
+            # 1 & 2. Completely remove 'tools' and 'http_options' (timeout) parameters
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview", 
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.1
                 )
-            except Exception as api_err:
-                # 4. Logs the error but allows the script to continue
-                print(f"❌ [API ERROR] Falha na chamada do Gemini: {api_err}")
-                sys.stdout.flush()
-                continue
+            )
 
             latency = time.time() - start_api
             print(f"⏱️ [LATENCY] {latency:.2f}s")
@@ -145,6 +136,7 @@ def run_hunter():
                         "status": "cold_lead"
                     }
 
+                    # 4. Supabase persistence
                     try:
                         supabase.table('leads_lobo').insert(data).execute()
                         status_tag = "SITE" if website else "FANTASMA"
@@ -163,7 +155,7 @@ def run_hunter():
             print(f"❌ [ERRO NO LOOP] {str(e)[:150]}")
             sys.stdout.flush()
         
-        # 5. sys.stdout.flush() after every significant step
+        # 5. sys.stdout.flush() maintained
         time.sleep(5)
         sys.stdout.flush()
 
