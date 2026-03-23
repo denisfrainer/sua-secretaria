@@ -93,14 +93,29 @@ def run_hunter():
             
             start_api = time.time()
             
-            # 1 & 2. Completely remove 'tools' and 'http_options' (timeout) parameters
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview", 
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.1
-                )
-            )
+            # 1. Exponential Backoff retry mechanism for the Gemini API call
+            response = None
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-3-flash-preview", 
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=0.1
+                        )
+                    )
+                    # 2. If the call is successful, break out of the retry loop
+                    break
+                except Exception as e:
+                    # 3. If an exception occurs, print a warning
+                    print(f"⚠️ [TENTATIVA {attempt+1}/3] Servidor ocupado, aguardando...")
+                    sys.stdout.flush()
+                    # 4. Exponential wait: 10s, 20s
+                    if attempt < 2:
+                        time.sleep(10 * (attempt + 1))
+                    else:
+                        # 5. If all 3 attempts fail, raise the exception to be caught by the outer loop
+                        raise e
 
             latency = time.time() - start_api
             print(f"⏱️ [LATENCY] {latency:.2f}s")
@@ -152,6 +167,7 @@ def run_hunter():
                 sys.stdout.flush()
 
         except Exception as e:
+            # 5. Outer loop catches the raised exception and moves to next keyword
             print(f"❌ [ERRO NO LOOP] {str(e)[:150]}")
             sys.stdout.flush()
         
