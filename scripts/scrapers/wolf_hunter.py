@@ -20,7 +20,7 @@ supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get(
 # 1. Initialize the Client with version='v1beta'
 client = genai.Client(
     api_key=os.environ.get("GEMINI_API_KEY"), 
-    http_options={'api_version': 'v1beta', 'timeout': 90}
+    http_options={'api_version': 'v1beta'}
 )
 
 def extract_json_from_text(text: str) -> list:
@@ -46,12 +46,11 @@ def run_hunter():
     print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Broad Mining)...")
     sys.stdout.flush()
 
-    # 1. Database Sync: Query the name column to allow for O(1) duplicate checks
+    # 3. Database Sync: Local set deduplication logic
     print("🔄 Sincronizando base de dados local...")
     sys.stdout.flush()
     existing_names = set()
     try:
-        # Fetch names in batches or a single query if small enough
         response = supabase.table('leads_lobo').select('name').execute()
         if response.data:
             existing_names = {row['name'] for row in response.data if row.get('name')}
@@ -61,7 +60,7 @@ def run_hunter():
         print(f"⚠️ Erro ao sincronizar base: {e}")
         sys.stdout.flush()
     
-    # 2. BROAD_KEYWORDS list
+    # 3. Maintain broad keyword strategy
     BROAD_KEYWORDS = [
         'restaurantes', 
         'clínicas odontológicas', 
@@ -73,7 +72,6 @@ def run_hunter():
         'hospedagens'
     ]
     
-    # 3. Randomization Logic: select 3 random keywords
     selected_keywords = random.sample(BROAD_KEYWORDS, 3)
     
     for keyword in selected_keywords:
@@ -81,7 +79,6 @@ def run_hunter():
         print(f"\n🎯 Minerando Alvo: {query}...")
         sys.stdout.flush()
 
-        # 4 & 5. Target Volume (15 leads) and Grounding Configuration
         prompt = (
             f"Busque 15 '{keyword}' em Florianópolis, SC usando o Google Maps. "
             "Retorne APENAS um array JSON válido com as chaves: "
@@ -95,14 +92,25 @@ def run_hunter():
             sys.stdout.flush()
             
             start_api = time.time()
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview", 
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    tools=[types.Tool(google_search=types.GoogleSearch())],
-                    temperature=0.1
+            
+            # 4. Error Handling: specific try/except block for the API call
+            try:
+                # 1 & 2. Client Config: Set timeout (deadline) to 60 seconds
+                response = client.models.generate_content(
+                    model="gemini-3-flash-preview", 
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        tools=[types.Tool(google_search=types.GoogleSearch())],
+                        temperature=0.1
+                    ),
+                    http_options={'timeout': 60}
                 )
-            )
+            except Exception as api_err:
+                # 4. Logs the error but allows the script to continue
+                print(f"❌ [API ERROR] Falha na chamada do Gemini: {api_err}")
+                sys.stdout.flush()
+                continue
+
             latency = time.time() - start_api
             print(f"⏱️ [LATENCY] {latency:.2f}s")
             sys.stdout.flush()
@@ -116,13 +124,11 @@ def run_hunter():
                 for lead in leads_data:
                     name = lead.get('name')
                     
-                    # 2. Validation Logic: verify name is not None, empty, or "NULL"
                     if not name or str(name).strip().upper() in ["", "NONE", "NULL"]:
                         print(f"   🚫 [SKIP] Nome inválido: {name}")
                         sys.stdout.flush()
                         continue
 
-                    # 3. Deduplication: Check if lead already exists in local set
                     if name in existing_names:
                         print(f"   ⏭️ [SKIP] Lead já existente: {name}")
                         sys.stdout.flush()
@@ -144,8 +150,6 @@ def run_hunter():
                         status_tag = "SITE" if website else "FANTASMA"
                         print(f"   📥 [{status_tag}] {name}")
                         sys.stdout.flush()
-                        
-                        # 4. State Management: add name to set to prevent duplicates in same run
                         existing_names.add(name)
                     except Exception as e:
                         print(f"   ❌ [INSERT ERROR] {name}: {e}")
@@ -156,11 +160,12 @@ def run_hunter():
                 sys.stdout.flush()
 
         except Exception as e:
-            print(f"❌ [ERRO] {str(e)[:150]}")
+            print(f"❌ [ERRO NO LOOP] {str(e)[:150]}")
             sys.stdout.flush()
         
-        # Delay for stability
+        # 5. sys.stdout.flush() after every significant step
         time.sleep(5)
+        sys.stdout.flush()
 
     print("\n🏁 SHUTDOWN: Extração broad finalizada com sucesso.")
     sys.stdout.flush()
