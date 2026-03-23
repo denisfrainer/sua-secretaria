@@ -7,8 +7,8 @@ export async function GET(req: Request) {
     try {
         const url = new URL(req.url);
         const token = url.searchParams.get('token');
+        const key = url.searchParams.get('key') || 'eliza_active';
         
-        // Fallback to WOLF_SECRET_TOKEN if WOLF_ADMIN_TOKEN is missing
         const validToken = process.env.WOLF_ADMIN_TOKEN || process.env.WOLF_SECRET_TOKEN;
 
         if (!token || token !== validToken) {
@@ -18,15 +18,14 @@ export async function GET(req: Request) {
         const { data, error } = await supabaseAdmin
             .from('system_settings')
             .select('value')
-            .eq('key', 'global_kill_switch')
+            .eq('key', key)
             .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found"
-            console.error('❌ Erro ao buscar configuração do sistema:', error);
+        if (error && error.code !== 'PGRST116') {
+            console.error(`❌ Erro ao buscar configuração ${key}:`, error);
             return NextResponse.json({ error: 'Database error' }, { status: 500 });
         }
 
-        // Return default status if not found
         const responseData = data ? data.value : { enabled: true };
         
         return NextResponse.json(responseData);
@@ -46,28 +45,29 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
+        const { key, enabled } = body;
         
-        if (typeof body.enabled !== 'boolean') {
-            return NextResponse.json({ error: 'Campo "enabled" boolean é obrigatório' }, { status: 400 });
+        if (!key || typeof enabled !== 'boolean') {
+            return NextResponse.json({ error: 'Campos "key" e "enabled" são obrigatórios' }, { status: 400 });
         }
 
         const { error } = await supabaseAdmin
             .from('system_settings')
             .upsert({
-                key: 'global_kill_switch',
-                value: { enabled: body.enabled },
+                key: key,
+                value: { enabled: enabled },
                 updated_at: new Date().toISOString()
             }, {
                 onConflict: 'key'
             });
 
         if (error) {
-            console.error('❌ Erro Supabase ao atualizar system_settings:', error.message);
+            console.error(`❌ Erro Supabase ao atualizar ${key}:`, error.message);
             return NextResponse.json({ error: 'Failed to update system settings' }, { status: 500 });
         }
 
-        console.log(`🔄 System Config Updated: Eliza is now ${body.enabled ? 'ON' : 'OFF'}`);
-        return NextResponse.json({ status: 'success', enabled: body.enabled });
+        console.log(`🔄 System Config Updated: ${key} is now ${enabled ? 'ON' : 'OFF'}`);
+        return NextResponse.json({ status: 'success', enabled: enabled });
         
     } catch (error) {
         console.error('❌ Erro Crítico na rota POST system-config:', error);

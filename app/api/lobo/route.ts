@@ -43,15 +43,15 @@ export async function POST(req: Request) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        // 2. Global Kill Switch
+        // 2. Global Kill Switch (Decoupled from Eliza via wolf_prospect_active key)
         const { data: killSwitchData } = await supabaseAdmin
             .from('system_settings')
             .select('value')
-            .eq('key', 'global_kill_switch')
+            .eq('key', 'wolf_prospect_active')
             .single();
 
         if (killSwitchData && killSwitchData.value?.enabled === false) {
-            console.log(`[KILL SWITCH] System disabled. Execution blocked.`);
+            console.log(`[KILL SWITCH] Wolf Prospecting disabled via 'wolf_prospect_active'. Execution blocked.`);
             return NextResponse.json({ status: 'system_paused' }, { status: 200 });
         }
 
