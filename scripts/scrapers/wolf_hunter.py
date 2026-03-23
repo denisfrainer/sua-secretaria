@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import random
 from playwright.sync_api import sync_playwright
 from supabase import create_client, Client
 
@@ -95,5 +96,17 @@ def run_wolf_hunter(search_query: str, limit=5):
         print(f"\n🏁 Caçada finalizada. {leads_captured} leads processados.")
 
 if __name__ == "__main__":
-    # Teste prático para Florianópolis
-    run_wolf_hunter("clínicas odontológicas em florianópolis", limit=5)
+    # Lista com seus nichos de alto ticket em Floripa
+    TARGET_NICHES = [
+        "clínicas de estética avançada em florianópolis",
+        "escritórios de advocacia corporativa em florianópolis",
+        "imobiliárias de alto padrão em florianópolis",
+        "clínicas odontológicas de implante em florianópolis",
+        "escritórios de arquitetura e interiores em florianópolis"
+    ]
+
+    # Sorteia um nicho aleatório toda vez que rodar
+    selected_query = random.choice(TARGET_NICHES)
+    
+    # Chama o scraper com o nicho sorteado e limite de 50
+    run_wolf_hunter(selected_query, limit=50)
