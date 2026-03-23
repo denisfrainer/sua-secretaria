@@ -1,4 +1,4 @@
-name: Wolf Hunter Automático
+name: Wolf Hunter
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Permite-lhe executar o script manualmente clicando num botão no GitHub
 
 jobs:
-  caçada-matinal:
+  morning-hunt:
     runs-on: ubuntu-latest # A máquina virtual gratuita que o GitHub nos empresta
     
     steps:
