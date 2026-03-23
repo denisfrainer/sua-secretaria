@@ -11,13 +11,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
 
 supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
-# Argumento version='v1' adicionado para forçar o endpoint estável
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"), http_options={'api_version': 'v1'})
+
+# 1. Initialize the Client with version='v1beta'
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    version='v1beta'
+)
 
 def run_sniper():
     print("🐺 [WOLF AGENT: SNIPER] Iniciando Auditoria e Copywriting...")
     
-    # 1. Busca leads que PRECISAM de auditoria (tem site, mas não tem pitch)
+    # 1. Busca leads que PRECISAM de auditoria (Batch de 20 conforme original)
     print("🔎 Consultando banco de dados por alvos...")
     try:
         response = supabase.table('leads_lobo') \
@@ -50,6 +54,7 @@ def run_sniper():
         
         start_time = time.time()
 
+        # 6. Mantendo o prompt original conforme solicitado
         prompt = (
             f"Você é um especialista em vendas e performance web. "
             f"Analise o site {url}. "
@@ -60,7 +65,8 @@ def run_sniper():
         )
 
         try:
-            # Configura a Custom Tool para salvar o Pitch
+            # 2 & 3. Correct tool declaration: strictly use google_search=types.GoogleSearch()
+            # Remove extra tool indices (UrlContext) and incompatible function declarations
             update_tool = types.Tool(
                 function_declarations=[{
                     "name": "update_lead_pitch",
@@ -77,17 +83,17 @@ def run_sniper():
             )
 
             res = client.models.generate_content(
-                model="gemini-3-flash",
+                # 1. Set model to 'gemini-3-flash-preview'
+                model="gemini-3-flash-preview",
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    tools=[types.UrlContext(), update_tool],
-                    tool_config=types.ToolConfig(
-                        include_server_side_tool_invocations=True,
-                        function_calling_config=types.FunctionCallingConfig(
-                            mode="ANY",
-                            allowed_function_names=["update_lead_pitch"]
-                        )
-                    ),
+                    # 2. Correct tool declaration strictly using google_search for Grounding
+                    # 3. Remove extra tool indices (UrlContext) triggering AFC warnings
+                    tools=[
+                        types.Tool(google_search=types.GoogleSearch()),
+                        update_tool
+                    ],
+                    # 4. Ensure tool configuration matches March 2026 requirements (no explicit tool_config for grounding)
                     temperature=0.3
                 )
             )
@@ -97,25 +103,29 @@ def run_sniper():
 
             # Processar a chamada de função
             sucesso = False
-            for part in res.candidates[0].content.parts:
-                if part.function_call and part.function_call.name == "update_lead_pitch":
-                    args = part.function_call.args
-                    audit = args.get('technical_audit')
-                    pitch = args.get('pitch')
-                    
-                    supabase.table('leads_lobo').update({
-                        "technical_audit": audit,
-                        "ai_icebreaker": pitch
-                    }).eq("id", lead_id).execute()
-                    
-                    print(f"   ✅ Sucesso! Pitch: {pitch}\n")
-                    sucesso = True
+            if res.candidates and res.candidates[0].content.parts:
+                for part in res.candidates[0].content.parts:
+                    if part.function_call and part.function_call.name == "update_lead_pitch":
+                        args = part.function_call.args
+                        audit = args.get('technical_audit')
+                        pitch = args.get('pitch')
+                        
+                        supabase.table('leads_lobo').update({
+                            "technical_audit": audit,
+                            "ai_icebreaker": pitch
+                        }).eq("id", lead_id).execute()
+                        
+                        print(f"   ✅ Sucesso! Pitch: {pitch}\n")
+                        sucesso = True
             
             if not sucesso:
                 print("   ⚠️ Aviso: A IA não chamou a ferramenta de persistência. Pulando...\n")
 
         except Exception as e:
             print(f"   ❌ ERRO DA API: Ocorreu uma falha no processamento deste lead.")
+            # 5. Capture precise validation failure
+            if hasattr(e, 'response') and e.response:
+                print(f"DEBUG_SNIPER: {e.response.text}")
             print(f"   🔍 Log: {str(e)[:150]}...\n") 
         
         time.sleep(3)
