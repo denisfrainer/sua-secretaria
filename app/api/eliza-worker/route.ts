@@ -271,6 +271,18 @@ async function handler(req: Request) {
 
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
+        // 0. Global Kill Switch Check (Eliza specific)
+        const { data: killSwitchData } = await supabaseAdmin
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'eliza_active')
+            .single();
+
+        if (killSwitchData && killSwitchData.value?.enabled === false) {
+            console.log(`[KILL SWITCH] Eliza disabled via 'eliza_active'. Execution blocked.`);
+            return NextResponse.json({ status: 'system_paused' }, { status: 200 });
+        }
+
         // 0. IDEMPOTENCY CHECK
         if (incomingMessageId) {
             const { data: duplicateCheck } = await supabaseAdmin
