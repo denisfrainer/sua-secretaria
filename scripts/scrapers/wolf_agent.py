@@ -24,7 +24,7 @@ def run_sniper():
             .eq("status", "cold_lead") \
             .is_("ai_icebreaker", "null") \
             .neq("website", "None") \
-            .limit(5) \
+            .limit(20) \
             .execute()
         leads = response.data
     except Exception as e:
