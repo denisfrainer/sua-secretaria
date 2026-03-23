@@ -56,7 +56,7 @@ def run_hunter():
         
         try:
             response = client.models.generate_content(
-                model="gemini-2.0-flash", # Ajustado para modelo estável se necessário, ou mantido conforme original
+                model="gemini-3-flash-preview", 
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     tools=[types.Tool(google_maps=types.GoogleMaps())],
