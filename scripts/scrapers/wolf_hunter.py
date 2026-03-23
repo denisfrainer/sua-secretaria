@@ -33,7 +33,7 @@ def run_wolf_hunter(search_query: str, limit=5):
     
     with sync_playwright() as p:
         # headless=False: Você verá o navegador abrir e fazer a busca
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         
         url = f"https://www.google.com/maps/search/{search_query.replace(' ', '+')}"
