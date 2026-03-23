@@ -11,7 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
 
 supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# Argumento version='v1' adicionado para forçar o endpoint estável
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"), http_options={'api_version': 'v1'})
 
 def run_sniper():
     print("🐺 [WOLF AGENT: SNIPER] Iniciando Auditoria e Copywriting...")
@@ -37,7 +38,7 @@ def run_sniper():
 
     print(f"🎯 {len(leads)} alvos encontrados. Carregando munição...\n")
 
-    # 2. Loop Agêntico (Com Silicon Troubleshoot)
+    # 2. Loop Agêntico
     for lead in leads:
         lead_id = lead['id']
         niche = lead['niche']
@@ -75,9 +76,8 @@ def run_sniper():
                 }]
             )
 
-            # Chamada da API com timeout implícito evitado pela remoção do Maps Grounding
             res = client.models.generate_content(
-                model="gemini-3-flash-preview",
+                model="gemini-3-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     tools=[types.UrlContext(), update_tool],
@@ -91,6 +91,9 @@ def run_sniper():
                     temperature=0.3
                 )
             )
+            
+            calc_time = round(time.time() - start_time, 1)
+            print(f"⏱️ [LATENCY] API respondeu em {calc_time}s")
 
             # Processar a chamada de função
             sucesso = False
@@ -100,26 +103,21 @@ def run_sniper():
                     audit = args.get('technical_audit')
                     pitch = args.get('pitch')
                     
-                    # Update direto no Supabase
                     supabase.table('leads_lobo').update({
                         "technical_audit": audit,
                         "ai_icebreaker": pitch
                     }).eq("id", lead_id).execute()
                     
-                    calc_time = round(time.time() - start_time, 1)
-                    print(f"   ✅ Sucesso! Concluído em {calc_time}s.")
-                    print(f"   📝 Pitch: {pitch}\n")
+                    print(f"   ✅ Sucesso! Pitch: {pitch}\n")
                     sucesso = True
             
             if not sucesso:
                 print("   ⚠️ Aviso: A IA não chamou a ferramenta de persistência. Pulando...\n")
 
         except Exception as e:
-            # Silicon Troubleshoot: Captura e trunca o erro para não destruir o terminal
             print(f"   ❌ ERRO DA API: Ocorreu uma falha no processamento deste lead.")
             print(f"   🔍 Log: {str(e)[:150]}...\n") 
         
-        # Respiro obrigatório (Rate Limit)
         time.sleep(3)
 
 if __name__ == "__main__":
