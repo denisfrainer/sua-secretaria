@@ -42,6 +42,22 @@ def clean_website(url: str) -> str | None:
         return None
     return url
 
+def normalize_phone(phone: str) -> str:
+    """Remove caracteres não numéricos e garante o prefixo 55 (Brasil)."""
+    if not phone or str(phone).lower() in ["none", "null", "sem telefone", ""]:
+        return "55"
+    
+    # Remove todos os caracteres não numéricos
+    digits = re.sub(r'\D', '', str(phone))
+    
+    if not digits:
+        return "55"
+    
+    # Garante que comece com 55
+    if digits.startswith('55'):
+        return digits
+    return f"55{digits}"
+
 def run_hunter():
     print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Internal Knowledge Mode)...")
     sys.stdout.flush()
@@ -78,9 +94,10 @@ def run_hunter():
         print(f"\n🎯 Minerando Alvo: {query}...")
         sys.stdout.flush()
 
-        # 3. Updated prompt to use internal knowledge
+        # 3. Updated prompt to use internal knowledge and prioritize companies without website
         prompt = (
             f"Liste 15 empresas reais e conhecidas do nicho '{keyword}' em Florianópolis, SC. "
+            "Priorize empresas que NÃO possuem site oficial ou página de vendas em seu banco de dados interno. "
             "Retorne APENAS um array JSON válido com as chaves: "
             "'name' (string), 'website' (string ou null), 'phone' (string) e 'rating' (number). "
             "Use seu conhecimento interno. Nenhum texto adicional."
@@ -140,14 +157,26 @@ def run_hunter():
                         sys.stdout.flush()
                         continue
 
+                    # Limpeza de Website (mantendo lógica anterior)
                     website = clean_website(lead.get('website'))
+                    
+                    # Normalização de Telefone (Nova função com regex e prefixo 55)
+                    raw_phone = lead.get('phone', '')
+                    normalized_phone = normalize_phone(raw_phone)
+                    
+                    # Garantia de maps_rating como 0.0 se nulo ou inválido
+                    try:
+                        raw_rating = lead.get('rating')
+                        maps_rating = float(raw_rating) if raw_rating is not None else 0.0
+                    except (ValueError, TypeError):
+                        maps_rating = 0.0
 
                     data = {
                         "name": name,
                         "niche": keyword.capitalize(),
                         "website": website if website else "None", 
-                        "phone": lead.get('phone', 'Sem telefone'),
-                        "maps_rating": float(lead.get('rating')) if lead.get('rating') else 0.0,
+                        "phone": normalized_phone,
+                        "maps_rating": maps_rating,
                         "status": "cold_lead"
                     }
 
@@ -155,7 +184,7 @@ def run_hunter():
                     try:
                         supabase.table('leads_lobo').insert(data).execute()
                         status_tag = "SITE" if website else "FANTASMA"
-                        print(f"   📥 [{status_tag}] {name}")
+                        print(f"   📥 [{status_tag}] {name} | 📱 {normalized_phone}")
                         sys.stdout.flush()
                         existing_names.add(name)
                     except Exception as e:

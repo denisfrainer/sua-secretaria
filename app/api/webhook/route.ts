@@ -59,9 +59,13 @@ export async function POST(req: Request) {
                 const messageObj = dataObj.message;
                 if (messageObj) {
                     if (messageObj.audioMessage) {
+                        // 🛡️ TRAVA DE SEGURANÇA: Se o áudio for SEU (Denis), ignora o processamento
+                        if (dataObj.key.fromMe) return NextResponse.json({ status: 'ignored' });
+
                         console.log("🎙️ [WEBHOOK] Audio detectado. Acionando Background via QStash.");
 
-                        await sendWhatsAppPresence(clientNumber, 'recording_audio');
+                        // ✅ O 'as any' silencia o erro do TS enquanto usamos o valor que o servidor exige
+                        await sendWhatsAppPresence(clientNumber, 'recording' as any);
 
                         const { Client } = await import('@upstash/qstash');
                         const qstash = new Client({
