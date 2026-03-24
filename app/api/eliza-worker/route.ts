@@ -293,15 +293,16 @@ async function handler(req: Request) {
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
         // 0. Global Kill Switch Check (Eliza specific)
-        const { data: killSwitchData } = await supabaseAdmin
-            .from('system_settings')
-            .select('value')
-            .eq('key', 'eliza_active')
+        // 🛡️ DOUBLE CHECK: Verifica se o Denis assumiu o controle enquanto a msg estava na fila do QStash
+        const { data: leadCheck } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('ai_paused')
+            .eq('phone', clientNumber)
             .single();
 
-        if (killSwitchData && killSwitchData.value?.enabled === false) {
-            console.log(`[KILL SWITCH] Eliza disabled via 'eliza_active'. Execution blocked.`);
-            return NextResponse.json({ status: 'system_paused' }, { status: 200 });
+        if (leadCheck && leadCheck.ai_paused === true) {
+            console.log(`🛑 [WORKER ABORT] Denis assumiu o chat ou IA está pausada para ${clientNumber}. Cancelando execução enfileirada.`);
+            return NextResponse.json({ status: 'aborted', reason: 'human_takeover_during_queue' }, { status: 200 });
         }
 
         // 0. IDEMPOTENCY CHECK

@@ -136,7 +136,7 @@ export async function POST(req: Request) {
         // 7. Processamento e Disparo (The Hunting Loop & 2-Bubble Strike)
         let successLead: string | null = null;
         let invalidCount = 0;
-        const saudacao = localHour < 12 ? 'bom dia' : 'boa tarde';
+        const saudacao = localHour < 12 ? 'Bom dia' : 'Boa tarde';
 
         for (const lead of leads) {
             if (!lead.phone || !lead.name) continue;
@@ -152,15 +152,15 @@ export async function POST(req: Request) {
             // --- 🎯 BIFURCATED LETHAL STRIKE: Two ammunition arrays ---
             const variationsNoSite = [
                 {
-                    part1: `{opa|fala}, ${saudacao}! sou aqui da região também.`,
-                    part2: `tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`
+                    part1: `${saudacao}, tudo bem? Sou desenvolvedor aqui de Floripa.`,
+                    part2: `Tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`
                 },
                 {
-                    part1: `fala pessoal, ${saudacao}!`,
+                    part1: `${saudacao} pessoal, tudo bem?`,
                     part2: `achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`
                 },
                 {
-                    part1: `{opa|fala}, tudo bem? Denis aqui.`,
+                    part1: `{opa|fala|oi|olá}, tudo bem? Me chamo Denis, sou desenvolvedor web e moro na Lagoa da Conceição.`,
                     part2: `tava pesquisando sobre ${nichoFormatado} e o perfil de vocês chamou atenção. vocês chegaram a desativar o site oficial ou a operação roda 100% na rede social hoje?`
                 },
                 {
@@ -168,35 +168,35 @@ export async function POST(req: Request) {
                     part2: `curti bastante o trampo de vocês! fui dar uma procurada num site pra ver mais detalhes e só achei o Insta. vocês concentram o atendimento todo por aqui mesmo?`
                 },
                 {
-                    part1: `{fala|opa}, ${saudacao}!`,
+                    part1: `{fala|opa|olá|oi}, ${saudacao}!`,
                     part2: `tava dando uma olhada no perfil de vocês aqui e fui procurar o link do site na bio pra ver mais, mas não achei. a operação de vocês tá toda centralizada no WhatsApp mesmo?`
                 }
             ];
 
-            const variationsWithSite = [
+            const variationsComSite = [
                 {
-                    part1: `{opa|fala pessoal}, ${saudacao}!`,
-                    part2: `dei uma olhada no site de vocês agora. visualmente tá ok, mas vocês já checaram como tá a performance dele no Google? tipo velocidade, SEO, essas coisas?`
+                    part1: `${saudacao}, tudo bem? Me chamo Denis sou desenvolvedor aqui de Floripa.`,
+                    part2: `dei uma navegada no site de vocês e achei o projeto bem massa. por acaso vocês costumam acompanhar como tá a performance dele lá no Google pra atrair cliente novo hoje em dia?`
                 },
                 {
-                    part1: `{opa|fala}, ${saudacao}!`,
-                    part2: `achei o ${nichoFormatado} de vocês no Maps e passei no site. me diz uma coisa: vocês sentem que o site traz cliente novo, ou ele tá mais parado?`
+                    part1: `{opa|fala|oi|olá}, ${saudacao}! Sou desenvolvedor web aqui de Floripa.`,
+                    part2: `achei o ${nichoFormatado} de vocês no Maps e acessei o site. o trampo é muito bom! hoje o site funciona mais como uma vitrine institucional pra vocês ou ele traz bastante orçamento recorrente?`
                 },
                 {
-                    part1: `${saudacao}! Denis aqui.`,
-                    part2: `vi que vocês já têm site, o que é ótimo. mas uma dúvida sincera: quando alguém pesquisa "${nichoFormatado}" no Google aí na região, vocês aparecem nos primeiros resultados?`
+                    part1: `${saudacao} pessoal, tudo bem?`,
+                    part2: `vi que a operação de vocês já tá com um site no ar, muito bacana. vocês tão focando bastante na captação pelo Google ultimamente ou o forte de vocês continua sendo o Insta?`
                 },
                 {
-                    part1: `{opa|fala}, tudo bem?`,
-                    part2: `passei pelo site de vocês rapidinho. ele tá carregando um pouco lento no celular — vocês sabiam? isso mata a conversão. já fizeram algum teste de velocidade nele?`
+                    part1: `{opa|fala|oi|olá}, ${saudacao}! tudo certo?`,
+                    part2: `passei pelo site de vocês agora pelo celular. o serviço é top, mas notei um detalhezinho técnico na velocidade de carregamento da página. vocês têm alguém de tecnologia que cuida dessa parte de otimização hoje?`
                 },
                 {
-                    part1: `{fala|opa}, ${saudacao}!`,
-                    part2: `vi que vocês têm um site rodando. vocês têm noção de quantas visitas ele recebe por mês? pergunto porque tem muito ${nichoFormatado} que tem site mas ele não gera lead nenhum.`
+                    part1: `{fala|opa|oi|olá}, ${saudacao}! tranquilo?`,
+                    part2: `esbarrei no site de vocês pesquisando aqui e curti demais o ${nichoFormatado}. a galera costuma chamar mais direto pelo botão do WhatsApp lá do site ou vocês rodam algum tráfego pago pra ele?`
                 }
             ];
 
-            const activeVariations = hasSite ? variationsWithSite : variationsNoSite;
+            const activeVariations = hasSite ? variationsComSite : variationsNoSite;
             const variation = activeVariations[Math.floor(Math.random() * activeVariations.length)];
 
             const msg1 = parseSpintax(variation.part1);
