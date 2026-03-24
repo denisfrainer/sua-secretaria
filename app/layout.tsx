@@ -23,7 +23,7 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL('http://localhost:3000'),
+    metadataBase: new URL('https://wolfagent.netlify.app'),
     title: "Agência Wolf Agent | Sistemas Inteligentes e Alta Performance",
     description: "Automação de vendas com agentes de IA e Landing Pages ultravelozes. Transformamos sua operação digital em uma máquina de gerar leads qualificados 24/7.",
     openGraph: {
