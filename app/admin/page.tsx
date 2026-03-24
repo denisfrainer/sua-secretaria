@@ -23,7 +23,7 @@ interface Lead {
     is_locked?: boolean;
 }
 
-type StatusKey = 'pending' | 'contacted' | 'talking' | 'closed';
+type StatusKey = 'pending' | 'contacted' | 'talking' | 'closed' | 'paid';
 
 interface ColumnConfig {
     key: StatusKey;
@@ -46,24 +46,31 @@ const COLUMNS: ColumnConfig[] = [
     },
     {
         key: 'contacted',
-        label: 'Baits Sent',
+        label: 'Contacted',
         pillBg: 'bg-blue-500/10',
         pillText: 'text-blue-400',
         pillBorder: 'border-blue-500/20',
     },
     {
         key: 'talking',
-        label: 'Em Conversacao',
+        label: 'Engaged',
         pillBg: 'bg-emerald-500/10',
         pillText: 'text-emerald-400',
         pillBorder: 'border-emerald-500/20',
     },
     {
         key: 'closed',
-        label: 'Agendados',
+        label: 'Closed',
         pillBg: 'bg-indigo-500/10',
         pillText: 'text-indigo-400',
         pillBorder: 'border-indigo-500/20',
+    },
+    {
+        key: 'paid',
+        label: 'Paid',
+        pillBg: 'bg-emerald-500/10',
+        pillText: 'text-emerald-500',
+        pillBorder: 'border-emerald-500/20',
     },
 ];
 
@@ -77,6 +84,7 @@ const ALL_STATUSES = [
     { value: 'invalid', label: 'Invalid' },
     { value: 'invalid_phone', label: 'Invalid Phone' },
     { value: 'lixo', label: 'Descarte' },
+    { value: 'paid', label: 'Paid' },
 ];
 
 // ==============================================================
@@ -254,7 +262,7 @@ export default function AdminDashboard() {
     }
 
     // GROUP
-    const grouped: Record<StatusKey, Lead[]> = { pending: [], contacted: [], talking: [], closed: [] };
+    const grouped: Record<StatusKey, Lead[]> = { pending: [], contacted: [], talking: [], closed: [], paid: [] };
     const filteredLeads = searchQuery
         ? leads.filter(l =>
             l.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
