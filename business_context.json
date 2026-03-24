@@ -9,24 +9,24 @@
             "tech_stack": "Next.js, React, TailwindCSS (Foco em PageSpeed 90+).",
             "pricing_strategy": {
                 "model": "Taxa Única",
-                "value_anchor": "R$ 500 a R$ 700",
-                "ai_disclosure_rule": "PERMITIDO revelar o preço se o cliente perguntar ou demonstrar urgência."
+                "value_anchor": "R$ 490 a R$ 997",
+                "ai_disclosure_rule": "PERMITIDO e ENCORAJADO revelar o preço. O objetivo da IA é fechar esta venda diretamente via PIX."
             }
         },
         "tier_2_retencao": {
             "name": "Agente de IA (SDR Automático)",
             "target_pain": "Empresas com alto volume de mensagens no WhatsApp, demora no atendimento ou perda de leads fora do horário comercial.",
-            "tech_stack": "LLMs (Gemini), Evolution API, Fluxos Cognitivos.",
+            "tech_stack": "LLMs (Gemini), Evolution API, Supabase, Fluxos Cognitivos.",
             "pricing_strategy": {
-                "model": "Taxa de Setup + Mensalidade (MRR)",
-                "value_anchor": "Setup inicial + R$ 500 a R$ 700/mês",
-                "ai_disclosure_rule": "PROIBIDO revelar preço. Exige dimensionamento da complexidade do atendimento. Redirecionar para fechamento humano."
+                "model": "Setup (Taxa Única) + Mensalidade (MRR)",
+                "value_anchor": "Setup de R$ 1.000 a R$ 2.500 + Mensalidade de R$ 500 a R$ 800",
+                "ai_disclosure_rule": "PROIBIDO revelar preço exato. Exige dimensionamento da complexidade da operação do cliente. Redirecionar para fechamento humano."
             }
         },
         "tier_3_transacao": {
-            "name": "Desenvolvimento Customizado (Web Apps / E-commerce)",
-            "target_pain": "Operações que precisam de sistemas de pedidos, menus digitais, plataformas de agendamento ou lojas virtuais complexas.",
-            "tech_stack": "Next.js, TypeScript, Supabase (Banco de Dados), Integração de Pagamentos.",
+            "name": "Desenvolvimento Customizado (Web Apps Fullstack / E-commerce)",
+            "target_pain": "Operações complexas como restauração de fotos com IA, e-commerce de roupas, sistemas para restaurantes, plataformas de hospedagens e reserva de experiências.",
+            "tech_stack": "Next.js, TypeScript, Supabase (Banco de Dados), Integração de Pagamentos, APIs de IA.",
             "pricing_strategy": {
                 "model": "Projeto Fechado (High-Ticket)",
                 "value_anchor": "A partir de R$ 3.000",
@@ -36,7 +36,8 @@
     },
     "sales_rules": {
         "rule_1": "Sempre qualifique a dor do lead antes de oferecer um produto específico.",
-        "rule_2": "Use a Triage Matrix para encaixar o lead no Tier 1, Tier 2 ou Tier 3.",
-        "rule_3": "Apenas feche valores diretamente para o Tier 1. Para Tier 2 e 3, construa o valor da solução técnica e prepare o terreno para o Denis fechar a venda."
+        "rule_2": "Use a Triage Matrix para encaixar o lead no Tier 1, Tier 2 ou Tier 3 com base no gargalo dele.",
+        "rule_3": "Para Tier 1 (LP Express), assuma a postura de fechadora. Para Tier 2 e 3, assuma postura consultiva e prepare o terreno para o fechamento humano.",
+        "rule_4": "Gere chaves de pagamento (PIX) de forma autônoma estritamente para o Tier 1."
     }
 }
