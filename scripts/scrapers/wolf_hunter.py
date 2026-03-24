@@ -43,20 +43,22 @@ def clean_website(url: str) -> str | None:
     return url
 
 def normalize_phone(phone: str) -> str:
-    """Remove caracteres não numéricos e garante o prefixo 55 (Brasil)."""
+    """Remove caracteres não numéricos e força o padrão de 12 dígitos (sem o 9)."""
     if not phone or str(phone).lower() in ["none", "null", "sem telefone", ""]:
         return "55"
     
-    # Remove todos os caracteres não numéricos
+    # Remove tudo que não for número
     digits = re.sub(r'\D', '', str(phone))
     
-    if not digits:
-        return "55"
+    # Adiciona prefixo 55 se não existir
+    if not digits.startswith('55'):
+        digits = f"55{digits}"
     
-    # Garante que comece com 55
-    if digits.startswith('55'):
-        return digits
-    return f"55{digits}"
+    # Se tiver 13 dígitos (DDI + DDD + 9 dígitos), remove o 5º dígito (o 9)
+    if len(digits) == 13:
+        digits = digits[:4] + digits[5:]
+        
+    return digits
 
 def run_hunter():
     print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Internal Knowledge Mode)...")

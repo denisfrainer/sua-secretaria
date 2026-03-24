@@ -1,13 +1,18 @@
-// lib/utils/phone.ts
-
-export function normalizePhone(phone: string): string {
+export const normalizePhone = (phone: string): string => {
   if (!phone) return '';
-  let clean = phone.replace(/\D/g, ''); // Remove non-digits
-  
-  // Brazil Logic: If it has 13 digits and starts with 55
-  // Example: 55 48 9 9167... -> 55 48 9167...
-  if (clean.startsWith('55') && clean.length === 13) {
-    return clean.substring(0, 4) + clean.substring(5);
+
+  // Remove caracteres não numéricos e o sufixo do whatsapp
+  let cleaned = phone.replace(/\D/g, '');
+
+  // Garante o prefixo 55
+  if (!cleaned.startsWith('55') && cleaned.length > 0) {
+    cleaned = `55${cleaned}`;
   }
-  return clean;
-}
+
+  // REGRA DE OURO: Se tiver 13 dígitos, remove o 9º dígito (posição 4 do index)
+  if (cleaned.length === 13) {
+    cleaned = cleaned.slice(0, 4) + cleaned.slice(5);
+  }
+
+  return cleaned;
+};
