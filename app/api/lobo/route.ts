@@ -43,16 +43,16 @@ export async function POST(req: Request) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        // 2. Global Kill Switch (Decoupled from Eliza via wolf_prospect_active key)
-        const { data: killSwitchData } = await supabaseAdmin
+        // 🐺 FEATURE FLAG: LOBO KILL SWITCH
+        const { data: loboSwitch } = await supabaseAdmin
             .from('system_settings')
             .select('value')
-            .eq('key', 'wolf_prospect_active')
+            .eq('key', 'lobo_active')
             .single();
 
-        if (killSwitchData && killSwitchData.value?.enabled === false) {
-            console.log(`[KILL SWITCH] Wolf Prospecting disabled via 'wolf_prospect_active'. Execution blocked.`);
-            return NextResponse.json({ status: 'system_paused' }, { status: 200 });
+        if (loboSwitch && loboSwitch.value?.enabled === false) {
+            console.log(`🛑 [FEATURE FLAG] Lobo Prospector DESLIGADO no painel. Abortando prospecção.`);
+            return NextResponse.json({ status: 'lobo_paused' }, { status: 200 });
         }
 
         // 3. Time/Day Shield (BR Time)
@@ -143,11 +143,11 @@ export async function POST(req: Request) {
 
             const safePhone = normalizePhone(lead.phone);
             const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
-            const hasSite = lead.website && lead.website.trim() !== '' && 
-                            lead.website.toLowerCase() !== 'null' &&
-                            !lead.website.includes('instagram.com') &&
-                            !lead.website.includes('facebook.com') &&
-                            !lead.website.includes('fb.com');
+            const hasSite = lead.website && lead.website.trim() !== '' &&
+                lead.website.toLowerCase() !== 'null' &&
+                !lead.website.includes('instagram.com') &&
+                !lead.website.includes('facebook.com') &&
+                !lead.website.includes('fb.com');
 
             // --- 🎯 BIFURCATED LETHAL STRIKE: Two ammunition arrays ---
             const variationsNoSite = [
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
             ];
 
             const variationsWithSite = [
-                { 
+                {
                     part1: `{opa|fala pessoal}, ${saudacao}!`,
                     part2: `dei uma olhada no site de vocês agora. visualmente tá ok, mas vocês já checaram como tá a performance dele no Google? tipo velocidade, SEO, essas coisas?`
                 },
@@ -204,12 +204,12 @@ export async function POST(req: Request) {
 
             try {
                 console.log(`📤 [${cronId}] Tentando enviar (2 bubbles) para ${lead.name} (${safePhone})...`);
-                
+
                 await sendWhatsAppMessage(safePhone, msg1);
                 console.log(`[${cronId}] Bolha 1 enviada para ${lead.phone}`);
-                
+
                 await sleep(2500); // Simulate human typing
-                
+
                 await sendWhatsAppMessage(safePhone, msg2);
                 console.log(`[${cronId}] Bolha 2 enviada para ${lead.phone}`);
 
@@ -239,7 +239,7 @@ export async function POST(req: Request) {
                     }, { onConflict: 'key' });
 
                 console.log(`⏰ [${cronId}] Próxima caçada agendada para: ${futureDate} (${nextHuntMinutes} min)`);
-                
+
                 // CRITICAL: Execute only one lead per trigger
                 break;
 
@@ -266,7 +266,7 @@ export async function POST(req: Request) {
                     await supabaseAdmin.from('system_settings').upsert({
                         key: 'next_hunt_at', value: { timestamp: retryAt }
                     }, { onConflict: 'key' });
-                    break; 
+                    break;
                 } else {
                     console.error(`❌ [${cronId}] Erro inesperado ao enviar para ${lead.name}:`, errorBody);
                     continue;

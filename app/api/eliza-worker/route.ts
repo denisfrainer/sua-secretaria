@@ -265,6 +265,27 @@ async function handler(req: Request) {
     const t0 = performance.now();
     let t1 = t0, t2 = t0, t3 = t0, t4 = t0;
 
+    // Injeção de Fuso Horário (BRT - Brasília Time)
+    const currentHour = new Date().toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        hour: "numeric",
+        hour12: false
+    });
+
+    let timeGreeting = "Bom dia";
+    if (Number(currentHour) >= 12 && Number(currentHour) < 18) {
+        timeGreeting = "Boa tarde";
+    } else if (Number(currentHour) >= 18) {
+        timeGreeting = "Boa noite";
+    }
+
+    // Compara o token do payload com o token secreto armazenado no .env
+    const token = process.env.WOLF_SECRET_TOKEN;
+    if (!token) {
+        console.error("❌ [SECURITY] WOLF_SECRET_TOKEN não configurado no ambiente.");
+        return NextResponse.json({ status: 'error', message: 'Server misconfigured (Missing Token)' }, { status: 500 });
+    }
+
     try {
         const body = await req.json();
         const { clientNumber, clientMessage, incomingMessageId, leadContext } = body;
@@ -318,8 +339,9 @@ async function handler(req: Request) {
 
 # 1. PROTOCOLO DE SAUDAÇÃO (Obrigatório)
 - Se a mensagem do usuário for uma saudação (Oi, Olá, Bom dia, etc.), você DEVE iniciar sua resposta retribuindo a saudação de forma espelhada e educada ANTES de qualquer outra coisa.
+- Atenção ao relógio: Agora no Brasil é o período de "${timeGreeting}". Use EXATAMENTE a expressão "${timeGreeting}" ao saudar o cliente. NUNCA diga Bom dia se for de tarde, e vice-versa.
 - Use sempre o separador "||" para separar o cumprimento da sua próxima fala.
-- EXEMPLO: "Boa tarde, tudo bem? || Pra eu te ajudar melhor..."
+- EXEMPLO: "${timeGreeting}, tudo bem? || Pra eu te ajudar melhor..."
 
 # 2. IDENTITY & CORE MISSION
 You are Eliza, Senior Strategy Consultant and Executive Assistant to Denis, founder of Wolf Agent (a company that builds automated sales machines, high-performance websites, and AI Agents).
@@ -368,15 +390,38 @@ Immediately after pitching the specific PATH, append the closing question in a n
 
 RULE: NEVER drop a price for PATH B or PATH C. Complex coding and AI agents require scoping. Only PATH A has a fixed anchor price.
 
-# 5. EXEMPLOS DE DIÁLOGO (FEW-SHOT PROMPTING - ALL MUST USE || SPLITTER)
-User: "Qual o valor do site?"
-Eliza: "Antes de falarmos de investimento, preciso entender seu cenário! || Hoje o maior desafio de vocês é que pouca gente chama, ou chama bastante mas falta tempo pra responder rápido?"
+# 5. THE TRIAGE MATRIX (SDR PLAYBOOK)
+YOU MUST FOLLOW THIS STRICT SEQUENCE. DO NOT SKIP STEPS, UNLESS THE LEAD SHOWS HIGH BUYING INTENT.
 
-User: "Cara, a gente não tem tempo de responder ninguém, é uma loucura."
-Eliza: "Imaginei! É uma dor clássica. || Nesse caso, um site novo não resolve, o que vocês precisam é de um Agente Autônomo de WhatsApp (uma IA inteligente) pra atender e filtrar essa galera 24h por dia, igual eu tô fazendo com você agora rs. || Posso pedir pro Denis assumir o chat pra te mostrar como ele instala isso pra vocês?"
+STEP 1: The Core Operation Question
+Once you have greeted the user and established basic rapport, you MUST diagnose their operational need before pitching any product.
+Use this specific split-bubble approach:
+"Pra eu entender exatamente o tamanho do projeto e como te ajudar: || O foco de vocês hoje é captar mais contatos/orçamentos, automatizar um WhatsApp que já não dá conta, ou vocês precisam de um sistema de vendas direto (como um e-commerce, delivery ou sistema de reservas)? 😉"
 
-User: "Achei meio caro"
-Eliza: "Entendo perfeitamente que o fluxo de caixa é importante. || Mas me diz uma coisa: quanto custa pra sua empresa hoje continuar perdendo clientes que procuram vocês no Google e não acham nada? || É uma taxa única justamente pra tapar esse ralo financeiro de vez."
+STEP 2: The Routing Protocol
+Listen to the user's answer and STRICTLY apply one of the following product pitches. Do not mix them.
+
+* PATH A (The "Captação" Lead): If they need traffic, visibility, or are a service business needing quotes.
+  - Product: LP Express / Site de Alta Performance.
+  - Pitch: "Perfeito. Pra quem precisa de captação, o ideal é a nossa estrutura de Site de Alta Performance. Ele funciona como uma máquina de conversão no Google. O investimento é taxa única (R$500 a R$700), sem mensalidade."
+
+* PATH B (The "Retenção" Lead): If they have too many messages, lack time, or are dropping leads in WhatsApp.
+  - Product: Agente de Inteligência Artificial.
+  - Pitch: "Entendi. Se o gargalo é o tempo de resposta, nós implementamos um Agente de IA treinado com as regras da sua empresa para atender, qualificar e até agendar clientes 24h por dia, sem você precisar colocar a mão."
+
+* PATH C (The "Transação" Lead): If they mention selling physical products, booking rooms, food delivery, or complex user flows.
+  - Product: Desenvolvimento Customizado (Web Apps/Next.js/Supabase).
+  - Pitch: "Legal! Projetos com transações, lojas ou sistemas de pedidos exigem uma infraestrutura mais robusta de engenharia de software, com banco de dados e painel de controle. É exatamente o que construímos sob medida."
+
+STEP 3: The Hand-off (Closing)
+Immediately after pitching the specific PATH, append the closing question in a new bubble using the separator:
+"|| Faz sentido pra sua operação? Se sim, me passa seu nome e o da empresa que eu peço pro Denis te chamar pra alinhar os detalhes técnicos."
+
+🚨 THE 'HOT LEAD' WARP PIPE (CRITICAL) 🚨
+Se o cliente demonstrar ALTA INTENÇÃO DE COMPRA em qualquer momento (ex: "quero comprar", "qual o pix", "como pago", "quero o site", "bora fechar", "parcela no cartão?"), VOCÊ DEVE ABANDONAR A TRIAGEM E PULAR IMEDIATAMENTE PARA O FECHAMENTO.
+- Responda a objeção (se houver, ex: "Parcelamos no cartão via link, sim!").
+- E diga: "Vou gerar a sua chave PIX ou Link de Pagamento agora mesmo! || Qual o e-mail responsável pela empresa para eu atrelar ao seu faturamento?"
+- Após o cliente enviar o e-mail, USE A TOOL 'generatePagarmePix' IMEDIATAMENTE (product_id='SITE_ALTA_PERFORMANCE', a não ser que o cliente tenha especificado outro). NUNCA PEÇA DESCULPAS E NUNCA VOLTE PARA A PERGUNTA DE GARGALO.
 
 # 6. BUSINESS CONTEXT (Base de Conhecimento Oficial)
 Use STRICTLY the following information to answer business-related questions:
@@ -416,7 +461,7 @@ ${businessContext}
         };
 
         const callGeminiWithTimeout = async (payload: any) => {
-            const timeoutPromise = new Promise<never>((_, reject) => 
+            const timeoutPromise = new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error('LLM_TIMEOUT')), 12000)
             );
             return Promise.race([
@@ -500,13 +545,13 @@ ${businessContext}
                 console.log(`🗣️ [TURN ${loopCount}] IA respondeu: "${response.text || ''}"`);
             }
         }
-        
+
         t2 = performance.now(); // After LLM
 
         // 14.5 DIRECT FALLBACK CHECK (Safety Net)
         const msgLower = (clientMessage || '').toLowerCase().trim();
         const aiResponseLower = finalText.toLowerCase();
-        
+
         // Anti-Loop Failsafe: Prevent repeating the bifurcation question after qualification
         if (qualifyCalled && aiResponseLower.includes('gargalo')) {
             console.log('🚨 [SAFETY NET] LLM tentou repetir a bifurcação após qualificar! Forçando Step 2.');
@@ -519,10 +564,10 @@ ${businessContext}
         // 15. FALLBACK OR GREETING BYPASS
         if (!finalText || finalText.trim() === '') {
             console.log('⚠️ IA retornou string vazia. Avaliando fallback...');
-            
+
             // Checa se é apenas um oi/olá/bom dia/boa tarde
-            if (msgLower === 'oi' || msgLower === 'olá' || msgLower === 'ola' || 
-                msgLower === 'boa tarde' || msgLower === 'bom dia' || msgLower === 'boa noite' || 
+            if (msgLower === 'oi' || msgLower === 'olá' || msgLower === 'ola' ||
+                msgLower === 'boa tarde' || msgLower === 'bom dia' || msgLower === 'boa noite' ||
                 msgLower === 'opa') {
                 finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
             } else {
@@ -545,14 +590,14 @@ ${businessContext}
 
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
         console.log(`🚀 [ELIZA WORKER] Iniciando envio IMEDIATO para ${clientNumber}`);
-        
+
         // Zero-Sleep Dispatch Loop
         // Evolution API deals with the message queue and typing delays natively
         for (const textChunk of chunks) {
             try {
                 // By omitting the 3rd argument, sendWhatsAppMessage uses its built-in formula
                 // AND it already inherently wraps within 'withWhatsAppLock'.
-                await sendWhatsAppMessage(clientNumber, textChunk); 
+                await sendWhatsAppMessage(clientNumber, textChunk);
             } catch (err) {
                 console.error(`❌ Erro ao enviar bolha:`, err);
             }

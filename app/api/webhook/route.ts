@@ -20,18 +20,6 @@ export async function POST(req: Request) {
         ? rawSiteUrl.replace(/\/$/, '')
         : `https://${rawSiteUrl.replace(/\/$/, '')}`;
 
-    // 🔴 GLOBAL KILL SWITCH CHECK
-    const { data: killSwitchData } = await supabaseAdmin
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'global_kill_switch')
-        .single();
-
-    if (killSwitchData && killSwitchData.value?.enabled === false) {
-        console.log(`[KILL SWITCH] System disabled. Execution blocked.`);
-        return NextResponse.json({ status: 'system_paused' }, { status: 200 });
-    }
-
     try {
         const body = await req.json();
         console.log("FULL EVOLUTION BODY:", JSON.stringify(body, null, 2));
@@ -83,7 +71,7 @@ export async function POST(req: Request) {
 
                         // Fire and forget background trigger via QStash
                         const backgroundUrl = `${siteBaseUrl}/api/webhook-audio-background`;
-                        
+
                         try {
                             await qstash.publishJSON({
                                 url: backgroundUrl,
@@ -306,6 +294,20 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             if (configError || !config) {
                 console.log('🚨 ERRO: Agente não encontrado no banco de dados.');
                 return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+            }
+
+            // 🛑 FEATURE FLAG: ELIZA KILL SWITCH
+            const { data: elizaSwitch } = await supabaseAdmin
+                .from('system_settings')
+                .select('value')
+                .eq('key', 'eliza_active')
+                .single();
+
+            if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                console.log(`🛑 [FEATURE FLAG] Eliza DESLIGADA. Mensagem salva no DB, mas IA não vai responder.`);
+                // Opcional: Atualizar status do lead para needs_human para você ver no painel
+                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human' }).eq('phone', clientNumber);
+                return NextResponse.json({ status: 'eliza_paused' }, { status: 200 });
             }
 
             // --- QSTASH ASYNC QUEUEING ---
