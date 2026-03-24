@@ -184,7 +184,7 @@ export async function POST(req: Request) {
                 },
                 {
                     part1: `${saudacao} pessoal, tudo bem?`,
-                    part2: `vi que a operação de vocês já tá com um site no ar, muito bacana. vocês tão focando bastante na captação pelo Google ultimamente ou o forte de vocês continua sendo o Insta?`
+                    part2: `vi que a operação de vocês já tá com um site no ar, muito bacana. vocês tão conseguindo captar clientes e gerar resultado com ele atualmente?`
                 },
                 {
                     part1: `{opa|fala|oi|olá}, ${saudacao}! tudo certo?`,
