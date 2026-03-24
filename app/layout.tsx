@@ -24,13 +24,21 @@ const sourceSans = Source_Sans_3({
 
 export const metadata: Metadata = {
     metadataBase: new URL('http://localhost:3000'),
-    title: "🐺 Wolf Agent",
-    description: "A high-performance, i18n-ready starter kit for building blazing-fast websites with Next.js.",
+    title: "Agência Wolf Agent | Sistemas Inteligentes e Alta Performance",
+    description: "Automação de vendas com agentes de IA e Landing Pages ultravelozes. Transformamos sua operação digital em uma máquina de gerar leads qualificados 24/7.",
     openGraph: {
-        title: "Vibe Coder Boilerplate",
-        description: "High-performance starter kit for Next.js websites",
-        locale: 'en_US',
+        title: "Agência Wolf Agent | Sistemas Inteligentes e Alta Performance",
+        description: "Automação de vendas com agentes de IA e Landing Pages ultravelozes. Transformamos sua operação digital em uma máquina de gerar leads qualificados 24/7.",
+        locale: 'pt_BR',
         type: 'website',
+        images: [
+            {
+                url: '/opengraph-image.jpg',
+                width: 1200,
+                height: 630,
+                alt: 'Wolf Agency',
+            },
+        ],
     },
 };
 
