@@ -161,15 +161,15 @@ export async function POST(req: Request) {
                 },
                 {
                     part1: `{opa|fala}, tudo bem? Denis aqui.`,
-                    part2: `o trabalho de vocês é muito bom pra ficar só na rede social. vocês já chegaram a ter um site próprio pra criar mais autoridade alguma vez?`
+                    part2: `tava pesquisando sobre ${nichoFormatado} e o perfil de vocês chamou atenção. vocês chegaram a desativar o site oficial ou a operação roda 100% na rede social hoje?`
                 },
                 {
                     part1: `${saudacao}, pessoal!`,
-                    part2: `tava dando uma olhada no perfil de vocês. a galera que procura pelo Google consegue achar vocês fácil hoje, ou a captação de clientes tá sendo toda no boca a boca?`
+                    part2: `curti bastante o trampo de vocês! fui dar uma procurada num site pra ver mais detalhes e só achei o Insta. vocês concentram o atendimento todo por aqui mesmo?`
                 },
                 {
                     part1: `{fala|opa}, ${saudacao}!`,
-                    part2: `passei pelo ${nichoFormatado} de vocês agora há pouco. me tira uma dúvida rápida: a operação de vocês tá rodando sem site oficial mesmo?`
+                    part2: `tava dando uma olhada no perfil de vocês aqui e fui procurar o link do site na bio pra ver mais, mas não achei. a operação de vocês tá toda centralizada no WhatsApp mesmo?`
                 }
             ];
 
