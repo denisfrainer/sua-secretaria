@@ -98,11 +98,9 @@ export async function POST(req: Request) {
                         const cmd = clientMessage.trim();
                         if (cmd === '/pausar') {
                             await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                            await sendWhatsAppMessage(clientNumber, "🛑 *[SISTEMA]* IA Pausada pelo Admin.");
                             return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
                         } else if (cmd === '/retomar') {
                             await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('phone', clientNumber);
-                            await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
                             return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                         }
 
@@ -131,7 +129,11 @@ export async function POST(req: Request) {
                         return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                     }
 
-                    return NextResponse.json({ status: 'ignored', reason: 'fromMe_not_command' }, { status: 200 });
+                    // 🛑 SILENT HANDOFF: Se o Denis enviou uma mensagem normal, trava a IA automaticamente
+                    await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                    console.log(`👤 [SILENT HANDOFF] Denis respondeu manualmente. IA pausada para ${clientNumber}.`);
+
+                    return NextResponse.json({ status: 'ignored', reason: 'silent_handoff' }, { status: 200 });
                 }
 
                 isValidMessage = true;

@@ -24,7 +24,7 @@ const sourceSans = Source_Sans_3({
 
 export const metadata: Metadata = {
     metadataBase: new URL('http://localhost:3000'),
-    title: "Godspeed Vibe Coding",
+    title: "🐺 Wolf Agent",
     description: "A high-performance, i18n-ready starter kit for building blazing-fast websites with Next.js.",
     openGraph: {
         title: "Vibe Coder Boilerplate",

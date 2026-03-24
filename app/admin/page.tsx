@@ -39,14 +39,14 @@ interface ColumnConfig {
 const COLUMNS: ColumnConfig[] = [
     {
         key: 'pending',
-        label: 'Pendentes',
+        label: 'Pending',
         pillBg: 'bg-zinc-500/10',
         pillText: 'text-zinc-400',
         pillBorder: 'border-zinc-500/20',
     },
     {
         key: 'contacted',
-        label: 'Iscas Enviadas',
+        label: 'Baits Sent',
         pillBg: 'bg-blue-500/10',
         pillText: 'text-blue-400',
         pillBorder: 'border-blue-500/20',
@@ -84,15 +84,15 @@ const ALL_STATUSES = [
 // ==============================================================
 function StatusPill({ status }: { status: string }) {
     const config: Record<string, { bg: string; text: string }> = {
-        pending:       { bg: 'bg-zinc-500/10',    text: 'text-zinc-400' },
-        contacted:     { bg: 'bg-blue-500/10',     text: 'text-blue-400' },
-        talking:       { bg: 'bg-emerald-500/10',  text: 'text-emerald-400' },
-        closed:        { bg: 'bg-indigo-500/10',   text: 'text-indigo-400' },
-        hot_lead:      { bg: 'bg-orange-500/10',   text: 'text-orange-400' },
-        needs_human:   { bg: 'bg-red-500/10',      text: 'text-red-400' },
-        invalid:       { bg: 'bg-zinc-500/10',     text: 'text-zinc-500' },
-        invalid_phone: { bg: 'bg-red-500/10',      text: 'text-red-400' },
-        lixo:          { bg: 'bg-zinc-800/50',     text: 'text-zinc-600' },
+        pending: { bg: 'bg-zinc-500/10', text: 'text-zinc-400' },
+        contacted: { bg: 'bg-blue-500/10', text: 'text-blue-400' },
+        talking: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+        closed: { bg: 'bg-indigo-500/10', text: 'text-indigo-400' },
+        hot_lead: { bg: 'bg-orange-500/10', text: 'text-orange-400' },
+        needs_human: { bg: 'bg-red-500/10', text: 'text-red-400' },
+        invalid: { bg: 'bg-zinc-500/10', text: 'text-zinc-500' },
+        invalid_phone: { bg: 'bg-red-500/10', text: 'text-red-400' },
+        lixo: { bg: 'bg-zinc-800/50', text: 'text-zinc-600' },
     };
     const c = config[status] || config.pending;
     const label = ALL_STATUSES.find(s => s.value === status)?.label || status;
@@ -535,8 +535,8 @@ function LeadCard({
                 ${muted
                     ? 'bg-[#0B0E14]/50 border-white/[0.04] opacity-40'
                     : isHot
-                    ? 'bg-[#0B0E14] border-white/[0.08] shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:border-white/[0.15]'
-                    : 'bg-[#0B0E14] border-white/[0.06] hover:bg-[#12141D] hover:border-white/[0.15]'
+                        ? 'bg-[#0B0E14] border-white/[0.08] shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:border-white/[0.15]'
+                        : 'bg-[#0B0E14] border-white/[0.06] hover:bg-[#12141D] hover:border-white/[0.15]'
                 }
                 ${isUpdating ? 'opacity-40 pointer-events-none' : ''}
             `}
