@@ -6,13 +6,12 @@ export const revalidate = 0;
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-    console.log('\n--- 📊 INICIANDO WOLF REPORT: DAILY RESULTS ---');
+    console.log('\n--- 📊 INICIANDO HUNT REPORT: DAILY RESULTS ---');
     try {
         const token = process.env.WOLF_SECRET_TOKEN;
         const resendKey = process.env.RESEND_API_KEY;
         const adminEmail = process.env.ADMIN_EMAIL;
 
-        // --- STEP 0: Security & URL Param validation for cron-job.org ---
         const { searchParams } = new URL(req.url);
         const passedToken = searchParams.get('token');
 
@@ -28,31 +27,40 @@ export async function POST(req: Request) {
 
         console.log('📈 Buscando métricas no Supabase...');
 
-        // 1. Count Pending
+        // --- CÁLCULO DO PERÍODO DIÁRIO (Meia-noite de hoje até agora) ---
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const startOfDayIso = startOfDay.toISOString();
+
+        // 1. Count Pending (Mantemos ALL-TIME, pois reflete o saldo do seu funil)
         const { count: pendingCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'pending');
 
-        // 2. Count Contacted / Processed
+        // 2. Count Contacted (DAILY - Apenas os contatados hoje/nas últimas 24h)
+        // Nota: Assumindo que seu banco tem a coluna 'updated_at' ou similar quando o status muda.
+        // Se você usa apenas created_at, troque 'updated_at' por 'created_at' (mas o ideal é updated_at)
         const { count: contactedCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'contacted');
+            .eq('status', 'contacted')
+            .gte('created_at', startOfDayIso); // Troque para 'updated_at' se você atualiza a coluna no disparo
 
-        // 3. Count Invalid
+        // 3. Count Invalid (DAILY)
         const { count: invalidCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'invalid');
+            .eq('status', 'invalid')
+            .gte('created_at', startOfDayIso); // Troque para 'updated_at' se aplicável
 
-        // 4. Count Quarantine (Needs Human or Is Locked)
+        // 4. Count Quarantine (ALL-TIME, para você saber quantos precisam de atenção sua)
         const { count: quarantineCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
             .or('status.eq.needs_human,is_locked.eq.true');
 
-        // 4. Fetch the last 10 leads contacted
+        // 5. Fetch the last 10 leads contacted (Continua igual)
         const { data: recentLeads, error: leadsError } = await supabaseAdmin
             .from('leads_lobo')
             .select('name, phone, status, created_at')
@@ -64,9 +72,9 @@ export async function POST(req: Request) {
             console.error('⚠️ Erro ao buscar leads recentes:', leadsError);
         }
 
-        console.log(`✅ Métricas extraídas: Pending=${pendingCount}, Contacted=${contactedCount}, Invalid=${invalidCount}`);
+        console.log(`✅ Métricas extraídas: Pending=${pendingCount}, Contacted Today=${contactedCount}, Invalid=${invalidCount}`);
 
-        // Build HTML for recent leads
+        // O resto do seu código HTML continua EXATAMENTE igual a partir daqui...
         const dateHeader = new Date().toLocaleDateString('pt-BR');
 
         let leadsHtml = '';
@@ -103,11 +111,10 @@ export async function POST(req: Request) {
             leadsHtml = '<p style="color: #666; font-size: 14px; padding: 10px 0;">Nenhum lead processado recentemente.</p>';
         }
 
-        // Build Executive Dashboard HTML
         const htmlBody = `
             <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <div style="background-color: #111; color: #fff; padding: 25px; text-align: center;">
-                    <h2 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">🐺 Wolf Executive Digest</h2>
+                    <h2 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">🐺 Hunt Report</h2>
                     <p style="margin: 5px 0 0 0; color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">${dateHeader} - Daily Report</p>
                 </div>
                 
@@ -116,20 +123,19 @@ export async function POST(req: Request) {
                     <div style="display: flex; justify-content: space-between; margin-bottom: 35px; text-align: center; gap: 10px;">
                         <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
                             <div style="font-size: 28px; font-weight: 800; color: #0284c7;">${pendingCount || 0}</div>
-                            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Pending</div>
+                            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Pending (Total)</div>
                         </div>
                         <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
                             <div style="font-size: 28px; font-weight: 800; color: #16a34a;">${contactedCount || 0}</div>
-                            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Contacted</div>
+                            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Contacted (Hoje)</div>
                         </div>
-                        <!-- New Quarantine metric addition -->
                         <div style="background: #fff1f2; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #fecdd3;">
                             <div style="font-size: 28px; font-weight: 800; color: #e11d48;">${quarantineCount || 0}</div>
-                            <div style="font-size: 11px; color: #9f1239; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Quarantine</div>
+                            <div style="font-size: 11px; color: #9f1239; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Quarantine (Total)</div>
                         </div>
                         <div style="background: #f8fafc; padding: 20px 10px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
                             <div style="font-size: 28px; font-weight: 800; color: #dc2626;">${invalidCount || 0}</div>
-                            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Invalid</div>
+                            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 5px; font-weight: 600;">Invalid (Hoje)</div>
                         </div>
                     </div>
                     
@@ -143,8 +149,7 @@ export async function POST(req: Request) {
             </div>
         `;
 
-        // Dispatch via Resend
-        console.log(`📧 Enviando Executive Digest para: ${adminEmail}`);
+        console.log(`📧 Enviando Wolf Report para: ${adminEmail}`);
         const resendRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -154,7 +159,7 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 from: 'Wolf Agent <onboarding@resend.dev>',
                 to: [adminEmail],
-                subject: `🐺 Wolf Report: Daily Results - ${dateHeader}`,
+                subject: `🐺 Hunt Report: Daily Results - ${dateHeader}`,
                 html: htmlBody
             })
         });
