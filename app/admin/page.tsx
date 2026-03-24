@@ -274,7 +274,7 @@ export default function AdminDashboard() {
     filteredLeads.forEach((lead) => {
         if (lead.status === 'pending') grouped.pending.push(lead);
         else if (lead.status === 'contacted') grouped.contacted.push(lead);
-        else if (lead.status === 'talking' || lead.status === 'organico_inbound' || lead.status === 'follow_up') grouped.talking.push(lead);
+        else if (lead.status === 'talking' || lead.status === 'organic_inbound' || lead.status === 'follow_up') grouped.talking.push(lead);
         else if (lead.status === 'closed' || lead.status === 'ganho' || lead.status === 'hot_lead') grouped.closed.push(lead);
     });
 

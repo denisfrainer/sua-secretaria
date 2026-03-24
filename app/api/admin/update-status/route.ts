@@ -22,7 +22,7 @@ export async function POST(req: Request) {
             'hot_lead',
             'closed',
             'invalid_phone',
-            'organico_inbound',
+            'organic_inbound',
             'lixo',
         ];
 

@@ -250,10 +250,10 @@ export async function POST(req: Request) {
 
             // 3. Create lead if new
             if (!lead) {
-                console.log(`🌱 Lead novo. Criando registro como organico_inbound...`);
+                console.log(`🌱 Lead novo. Criando registro como organic_inbound...`);
                 const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
                     phone: clientNumber,
-                    status: 'organico_inbound',
+                    status: 'organic_inbound',
                     name: 'Lead inbound',
                     message_buffer: '',
                     is_processing: false,
@@ -301,7 +301,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
                 }
             }
 
-            if (lead?.status === 'organico_inbound') {
+            if (lead?.status === 'organic_inbound') {
                 leadContext = `\n\n[CONTEXTO DO LEAD]: Este é um lead orgânico inbound novo. Ele acabou de mandar mensagem. Colete o Nome, Empresa e Dor para salvar usando a tool.`;
             }
 
