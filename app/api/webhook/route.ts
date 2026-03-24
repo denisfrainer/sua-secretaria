@@ -1,4 +1,7 @@
 // app/api/webhook/route.ts
+// SQL Command to add the column:
+// ALTER TABLE leads_lobo ADD COLUMN needs_human BOOLEAN DEFAULT FALSE;
+
 import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -62,6 +65,18 @@ export async function POST(req: Request) {
                         // 🛡️ TRAVA DE SEGURANÇA: Se o áudio for SEU (Denis), ignora o processamento
                         if (dataObj.key.fromMe) return NextResponse.json({ status: 'ignored' });
 
+                        // 🔍 Check if AI is paused or needs human before triggering audio background
+                        const { data: lead } = await supabaseAdmin
+                            .from('leads_lobo')
+                            .select('ai_paused, needs_human')
+                            .eq('phone', clientNumber)
+                            .maybeSingle();
+
+                        if (lead && (lead.ai_paused === true || lead.needs_human === true)) {
+                            console.log(`🛑 [SILICON TWEAK] Eliza silenciada para áudio de ${clientNumber} (AI Pausada ou Needs Human).`);
+                            return NextResponse.json({ status: 'ignored', reason: 'ai_paused_or_needs_human' }, { status: 200 });
+                        }
+
                         console.log("🎙️ [WEBHOOK] Audio detectado. Acionando Background via QStash.");
 
                         // ✅ O 'as any' silencia o erro do TS enquanto usamos o valor que o servidor exige
@@ -104,7 +119,7 @@ export async function POST(req: Request) {
                             await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
                             return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
                         } else if (cmd === '/retomar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('phone', clientNumber);
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
                             return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                         }
 
@@ -128,13 +143,13 @@ export async function POST(req: Request) {
                         await sendWhatsAppMessage(clientNumber, "🛑 *[SISTEMA]* IA Pausada pelo Admin.");
                         return NextResponse.json({ status: 'admin_command', command: 'pausar' }, { status: 200 });
                     } else if (cmd === '/retomar') {
-                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false }).eq('phone', clientNumber);
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
                         await sendWhatsAppMessage(clientNumber, "▶️ *[SISTEMA]* IA Reativada.");
                         return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                     }
 
                     // 🛑 SILENT HANDOFF: Se o Denis enviou uma mensagem normal, trava a IA automaticamente
-                    await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                    await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
                     console.log(`👤 [SILENT HANDOFF] Denis respondeu manualmente. IA pausada para ${clientNumber}.`);
 
                     return NextResponse.json({ status: 'ignored', reason: 'silent_handoff' }, { status: 200 });
@@ -196,7 +211,7 @@ export async function POST(req: Request) {
                 console.log(`🚨 [CIRCUIT BREAKER] Bot Loop detectado para lead ${clientNumber}. Travando conversa.`);
                 await supabaseAdmin
                     .from('leads_lobo')
-                    .update({ is_locked: true, status: 'needs_human', ai_paused: true })
+                    .update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true })
                     .eq('phone', clientNumber);
                 return NextResponse.json({ status: 'locked', reason: 'circuit_breaker_reply_limit' }, { status: 200 });
             }
@@ -215,7 +230,7 @@ export async function POST(req: Request) {
                     console.log(`🚨 [CIRCUIT BREAKER] Spam detectado de ${clientNumber}: ${count} msgs em 2min. Travando.`);
                     await supabaseAdmin
                         .from('leads_lobo')
-                        .update({ is_locked: true, status: 'needs_human', ai_paused: true })
+                        .update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true })
                         .eq('phone', clientNumber);
                     return NextResponse.json({ status: 'locked', reason: 'cooldown_spam_detected' }, { status: 200 });
                 }
@@ -227,10 +242,10 @@ export async function POST(req: Request) {
                 return NextResponse.json({ status: 'ignored', reason: 'lead_locked' }, { status: 200 });
             }
 
-            // Kill Switch: Human Takeover
-            if (lead && (lead as any).ai_paused === true) {
-                console.log(`🛑 [KILL SWITCH ATIVO] Humano no controle para o número: ${clientNumber}`);
-                return NextResponse.json({ status: 'ignored', reason: 'human_takeover' }, { status: 200 });
+            // 🛑 SILICON TWEAK DOUBLE LOCK: Human Takeover or AI Paused
+            if (lead && (lead.ai_paused === true || (lead as any).needs_human === true)) {
+                console.log(`🛑 [SILICON TWEAK] Humano no controle para o número: ${clientNumber} (ai_paused or needs_human)`);
+                return NextResponse.json({ status: 'ignored', reason: 'human_takeover_lock' }, { status: 200 });
             }
 
             // 3. Create lead if new
@@ -312,7 +327,7 @@ ${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo
             if (elizaSwitch && elizaSwitch.value?.enabled === false) {
                 console.log(`🛑 [FEATURE FLAG] Eliza DESLIGADA. Mensagem salva no DB, mas IA não vai responder.`);
                 // Opcional: Atualizar status do lead para needs_human para você ver no painel
-                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human' }).eq('phone', clientNumber);
+                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                 return NextResponse.json({ status: 'eliza_paused' }, { status: 200 });
             }
 

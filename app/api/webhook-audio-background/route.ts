@@ -1,7 +1,12 @@
+// app/api/webhook-audio-background/route.ts
+// SQL Command to add the column:
+// ALTER TABLE leads_lobo ADD COLUMN needs_human BOOLEAN DEFAULT FALSE;
+
 import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI } from '@google/genai';
 import { normalizePhone } from '../../../lib/utils/phone';
+import { supabaseAdmin } from '../../../lib/supabase/admin';
 import path from 'path';
 import fs from 'fs';
 
@@ -30,6 +35,19 @@ export async function POST(req: Request) {
             : String(dataObj.key.remoteJid);
 
         const clientNumber = normalizePhone(rawJid);
+
+        // 🛡️ SILICON TWEAK DOUBLE LOCK: Check if AI is paused or needs human before processing audio
+        const { data: lead } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('ai_paused, needs_human')
+            .eq('phone', clientNumber)
+            .maybeSingle();
+
+        if (lead && (lead.ai_paused === true || lead.needs_human === true)) {
+            console.log(`🛑 [SILICON TWEAK] Eliza silenciada para áudio em background de ${clientNumber} (AI Pausada ou Needs Human).`);
+            return NextResponse.json({ status: 'ignored', reason: 'ai_paused_or_needs_human' }, { status: 200 });
+        }
+
         const audioMsg = dataObj.message?.audioMessage;
 
         if (!audioMsg) {
