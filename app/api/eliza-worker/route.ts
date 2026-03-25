@@ -367,9 +367,9 @@ CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVE
 Follow this logical sequence organically. Do not sound like a robot reading a rigid script. Adapt your phrasing to match the user's conversational flow.
 
 STEP 0: The Discovery (Greeting & Rapport)
-If the user's FIRST message is a basic greeting ("Oi", "Bom dia", etc.) without context, you MUST ONLY mirror the greeting and ask a short, open-ended question.
-Example structure: "${timeGreeting}, tudo bem? || Como posso ajudar você e sua empresa hoje? Com quem eu falo? 😉"
-HARD RULE: You MUST wait for the user to answer this question. DO NOT proceed to Step 1 (Triage) in the same message block.
+- ONLY use this step if the conversation history is EMPTY of any previous assistant/Lobo messages.
+- If the customer says "Bom dia" or "Oi" but there is a previous message from "Denis" or "Lobo" asking about the business, IGNORE Step 0 and proceed directly to Step 1 or Step 2 to address their answer.
+- DO NOT restart the conversation if the client is already answering a question.
 
 STEP 1: The Core Operation Question (Triage)
 Once the user provides their name or explains what they are looking for, smoothly transition into identifying their operational bottleneck. 
@@ -401,7 +401,17 @@ Use STRICTLY the following information to answer business-related questions:
 ${businessContext}
 `;
 
-        let systemPrompt = elizaSystemPrompt;
+        // --- CONTEXT AWARENESS TWEAK (Silicon Standard) ---
+        const hasPreviousAssistantMessage = chatHistory.some((msg: any) => msg.role === 'assistant');
+        let dynamicInstruction = "";
+
+        if (hasPreviousAssistantMessage) {
+            dynamicInstruction = "\n\n[STATE: ACTIVE CONVERSATION] O Lobo (ou Denis) já iniciou o contato. NÃO use o STEP 0. Leia o histórico acima, veja o que foi perguntado e o que o cliente respondeu para dar continuidade direta.";
+        } else {
+            dynamicInstruction = "\n\n[STATE: NEW INBOUND] Este é um contato novo (inbound). Siga o STEP 0.";
+        }
+
+        let systemPrompt = elizaSystemPrompt + dynamicInstruction;
         systemPrompt += leadContext || '';
         systemPrompt += `\n\n[IMPORTANTE - CAPTURA DE DADOS]: Sempre que usar a ferramenta 'save_lead_data', você OBRIGATORIAMENTE deve passar o número de telefone do usuário: '${clientNumber}' no parâmetro 'phone'.`;
         systemPrompt += `\n\n[IMPORTANTE - REGRAS DE AGENDAMENTO/HANDOFF]:
@@ -525,24 +535,29 @@ ${businessContext}
         const msgLower = (clientMessage || '').toLowerCase().trim();
         const aiResponseLower = finalText.toLowerCase();
 
-        // Anti-Loop Failsafe: Prevent repeating the bifurcation question after qualification
+        // Anti-Loop Failsafe
         if (qualifyCalled && aiResponseLower.includes('gargalo')) {
             console.log('🚨 [SAFETY NET] LLM tentou repetir a bifurcação após qualificar! Forçando Step 2.');
-            finalText = 'Perfeito, entendi. || E como vocês têm tentado resolver essa falta de tráfego até agora?';
+            finalText = 'Perfeito, entendi. || E como vocês têm tentado resolver essa falta de tráfego/tempo até agora?';
         } else if (msgLower.length < 10 && (aiResponseLower.includes('gargalo') || aiResponseLower.includes('braço'))) {
-            console.log('🚨 [SAFETY NET] Mensagem curta detectada, mas IA tentou mandar textwall/gargalo. Forçando fallback!');
-            finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
+            console.log('🚨 [SAFETY NET] Mensagem curta detectada. Forçando fallback contextual!');
+            finalText = hasPreviousAssistantMessage
+                ? 'Certo, entendi! E como funciona o processo de vocês hoje?'
+                : `${timeGreeting}! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉`;
         }
 
         // 15. FALLBACK OR GREETING BYPASS
         if (!finalText || finalText.trim() === '') {
             console.log('⚠️ IA retornou string vazia. Avaliando fallback...');
 
-            // Checa se é apenas um oi/olá/bom dia/boa tarde
-            if (msgLower === 'oi' || msgLower === 'olá' || msgLower === 'ola' ||
-                msgLower === 'boa tarde' || msgLower === 'bom dia' || msgLower === 'boa noite' ||
-                msgLower === 'opa') {
-                finalText = 'Boa tarde! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉';
+            const isGreeting = ['oi', 'olá', 'ola', 'boa tarde', 'bom dia', 'boa noite', 'opa'].includes(msgLower);
+
+            if (isGreeting && !hasPreviousAssistantMessage) {
+                // É o PRIMEIRO contato de todos
+                finalText = `${timeGreeting}! Tudo bem? || Como posso ajudar você e sua empresa hoje? 😉`;
+            } else if (isGreeting && hasPreviousAssistantMessage) {
+                // Ele mandou só "oi/bom dia", mas o Lobo JÁ tinha feito uma pergunta antes
+                finalText = `${timeGreeting}! || Conseguiram dar uma olhada no que mandei acima?`;
             } else {
                 finalText = 'Entendi! E como funciona o processo hoje?';
             }
