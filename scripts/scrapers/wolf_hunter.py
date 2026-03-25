@@ -50,7 +50,7 @@ client = genai.Client(
 )
 
 def run_hunter():
-    print("🐺 [WOLF AGENT: HUNTER] Iniciando Caçada com Grounding (30 Leads)...")
+    print("🐺 [WOLF AGENT: HUNTER] Iniciando Caçada com Grounding (50 Leads)...")
 
     # --- ADICIONE ESTA PARTE AQUI (Sincronização com o Banco) ---
     existing_names = set()
@@ -81,11 +81,12 @@ def run_hunter():
     # PROMPT REDUZIDO PARA 3 LEADS (TESTE DE FOGO)
 # Mude o prompt para algo assim:
     prompt = (
-        f"Search for {30} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
+        f"Search for {50} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
         "CRITICAL: You must provide a valid phone number for every business. "
         "If the phone is not on the main page, check their Instagram or contact page. "
         "You must extract the phone number from the Google Search results. If a business does not have a valid, visible phone number, DO NOT include it in the final JSON array under any circumstances. Strictly return only businesses that possess a valid phone number."
         "Return a JSON array: [{'name': '...', 'website': '...', 'phone': '...', 'rating': ...}]"
+        "CRITICAL RULE: STOP GENERATION AT EXACTLY 50 LEADS. You must return a maximum of 50 valid items in the JSON array. Do not include a 51st item under any circumstances. Prioritize quality over quantity."
     )   
 
     try:
