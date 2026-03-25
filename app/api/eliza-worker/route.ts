@@ -338,7 +338,7 @@ async function handler(req: Request) {
             .select('role, content')
             .eq('lead_phone', clientNumber)
             .order('created_at', { ascending: true })
-            .limit(10);
+            .limit(30);
 
         const chatHistory = history || [];
         t1 = performance.now(); // After DB Fetch
