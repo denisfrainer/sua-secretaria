@@ -4,6 +4,9 @@ import time
 import requests
 from supabase import create_client, Client
 from urllib.parse import urlparse
+from dotenv import load_dotenv  # 1. Adicione o import
+
+load_dotenv()
 
 # --- CONFIGURAÇÕES ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")

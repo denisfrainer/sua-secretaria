@@ -23,7 +23,7 @@ supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get(
 # Initialize the Client with version='v1beta'
 client = genai.Client(
     api_key=os.environ.get("GEMINI_API_KEY"), 
-    http_options={'api_version': 'v1beta', 'timeout': 30.0}
+    http_options={'api_version': 'v1beta', 'timeout': 120.0}
 )
 
 def extract_json_from_text(text: str) -> list:
@@ -65,7 +65,7 @@ def normalize_phone(phone: str) -> str | None:
     return digits
 
 def run_hunter():
-    print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Internal Knowledge Mode)...")
+    print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Search Grounding Active)...")
     sys.stdout.flush()
 
     print("🔄 Sincronizando base de dados local...")
@@ -83,7 +83,7 @@ def run_hunter():
     
 # ---------------------------------------------------------
     # 🧠 SILICON TWEAK: ROULETTE STRATEGY
-    # ---------------------------------------------------------
+# ---------------------------------------------------------
     
     # Categoria 1: Foco em Landing Pages e Automação de Alto Valor (High-Ticket)
     HIGH_TICKET_NICHES = [
@@ -117,7 +117,7 @@ def run_hunter():
     
     # Seleciona 3 nichos aleatórios da estratégia sorteada
     selected_keywords = random.sample(target_list, 3)
-    # ---------------------------------------------------------
+# ---------------------------------------------------------
     
     for keyword in selected_keywords:
         query = f"{keyword} em Florianópolis, SC"
@@ -125,17 +125,17 @@ def run_hunter():
         sys.stdout.flush()
 
         prompt = (
-            f"List 15 real, existing businesses in the '{keyword}' niche located in Florianópolis, SC, Brazil. "
+            f"Use the Google Search tool to find 15 real, existing businesses in the '{keyword}' niche located in Florianópolis, SC, Brazil. "
             "CRITICAL RULES: "
-            "1. ANTI-GHOST PROTOCOL: Every single business MUST have a valid URL in the 'website' field. This URL can be an Instagram profile link, a Linktree, a Facebook page, or an outdated/basic website. NEVER return null for the website field. "
-            "2. TARGET QUALIFICATION: Prioritize businesses that rely exclusively on social media profiles (like Instagram) or have very poor websites. These are prospects for high-ticket web development. "
-            "3. ACCURATE CONTACTS: Provide their real contact number. DO NOT hallucinate or invent numbers ending in '0000', '1111', or repeating patterns. If you do not know the exact number, rely on the website URL so my scraper can find it. "
+            "1. LIVE SEARCH REQUIRED: You MUST query the internet right now to guarantee the names and phone numbers are real and currently active. Do not hallucinate or invent data. "
+            "2. ANTI-GHOST PROTOCOL: Every single business MUST have a valid URL in the 'website' field. This URL can be an Instagram profile link, a Linktree, a Facebook page, or an outdated/basic website. NEVER return null for the website field. "
+            "3. ACCURATE CONTACTS: Provide their real contact number extracted from the search results. DO NOT invent numbers ending in '0000', '1111', or repeating patterns. If you do not know the exact number, rely on the website URL. "
             "Return ONLY a valid JSON array with the keys: 'name' (string), 'website' (string), 'phone' (string), and 'rating' (number). Output nothing else."
         )
 
         try:
             timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"💓 [REQUEST] {timestamp} | Gemini-3.1-Flash-Lite-Preview (Internal Knowledge)")
+            print(f"💓 [REQUEST] {timestamp} | Gemini-3.1-Flash-Lite-Preview (Search Grounding Active)")
             sys.stdout.flush()
             
             start_api = time.time()
@@ -147,7 +147,8 @@ def run_hunter():
                         model="gemini-3.1-flash-lite-preview", 
                         contents=prompt,
                         config=types.GenerateContentConfig(
-                            temperature=0.1
+                            temperature=0.1,
+                            tools=[{"google_search": {}}]
                         )
                     )
                     break
@@ -230,7 +231,7 @@ def run_hunter():
 
                     try:
                         supabase.table('leads_lobo').insert(data).execute()
-                        status_tag = "SITE" if website else "FANTASMA"
+                        status_tag = "SITE" if website else "GROUNDED"
                         print(f"   📥 [{status_tag}] {name} | 📱 {normalized_phone}")
                         sys.stdout.flush()
                         existing_names.add(name)
@@ -246,8 +247,9 @@ def run_hunter():
             print(f"❌ [ERRO NO LOOP] {str(e)[:150]}")
             sys.stdout.flush()
         
-        time.sleep(15)
+        print("⏳ [COOLDOWN] Aguardando 45 segundos para respeitar a API do Google...")
         sys.stdout.flush()
+        time.sleep(45)
 
     print("\n🏁 SHUTDOWN: Extração broad finalizada com sucesso.")
     sys.stdout.flush()
