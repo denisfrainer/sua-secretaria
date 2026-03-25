@@ -54,6 +54,7 @@ def run_hunter():
 
     # --- ADICIONE ESTA PARTE AQUI (Sincronização com o Banco) ---
     existing_names = set()
+    existing_phones = set()
     try:
         # Busca apenas os nomes dos leads já cadastrados
         res = supabase.table('leads_lobo').select('name').execute()
@@ -150,7 +151,7 @@ def run_hunter():
                     clean_phone = clean_phone[:4] + clean_phone[5:]
                 
                 # --- BLOCO DE VERIFICAÇÃO ---
-                if name in existing_names:
+                if name in existing_names or clean_phone in existing_names:
                     print(f"   ⏭️ [SKIP] Lead já salvo: {name}")
                     sys.stdout.flush()
                     continue
