@@ -50,7 +50,7 @@ client = genai.Client(
 )
 
 def run_hunter():
-    print("🐺 [WOLF AGENT: HUNTER] Iniciando Caçada com Grounding (20 Leads)...")
+    print("🐺 [WOLF AGENT: HUNTER] Iniciando Caçada com Grounding (30 Leads)...")
 
     # --- ADICIONE ESTA PARTE AQUI (Sincronização com o Banco) ---
     existing_names = set()
@@ -81,9 +81,10 @@ def run_hunter():
     # PROMPT REDUZIDO PARA 3 LEADS (TESTE DE FOGO)
 # Mude o prompt para algo assim:
     prompt = (
-        f"Search for {20} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
+        f"Search for {30} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
         "CRITICAL: You must provide a valid phone number for every business. "
         "If the phone is not on the main page, check their Instagram or contact page. "
+        "You must extract the phone number from the Google Search results. If a business does not have a valid, visible phone number, DO NOT include it in the final JSON array under any circumstances. Strictly return only businesses that possess a valid phone number."
         "Return a JSON array: [{'name': '...', 'website': '...', 'phone': '...', 'rating': ...}]"
     )   
 
