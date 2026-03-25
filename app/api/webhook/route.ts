@@ -123,8 +123,19 @@ export async function POST(req: Request) {
                             return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                         }
 
-                        // Ignore other fromMe messages early
-                        return NextResponse.json({ status: 'ignored', reason: 'fromMe_not_command' }, { status: 200 });
+                        // 🛡️ THE SILICON TWEAK: API vs Human Detection
+                        // Mensagens enviadas pela API do Evolution (Baileys) possuem IDs que começam com "BAE5" ou "B2B"
+                        const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+
+                        if (isAPI) {
+                            console.log(`🤖 [WEBHOOK] Mensagem de saída da API detectada. Ignorando para não causar auto-trava.`);
+                            return NextResponse.json({ status: 'ignored', reason: 'api_outbound' }, { status: 200 });
+                        } else {
+                            // 🛑 SILENT HANDOFF: Foi o Denis quem digitou no celular ou WhatsApp Web!
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat via Evolution. IA pausada para ${clientNumber}.`);
+                            return NextResponse.json({ status: 'ignored', reason: 'silent_handoff' }, { status: 200 });
+                        }
                     }
 
                     isValidMessage = true;
@@ -148,11 +159,16 @@ export async function POST(req: Request) {
                         return NextResponse.json({ status: 'admin_command', command: 'retomar' }, { status: 200 });
                     }
 
-                    // 🛑 SILENT HANDOFF: Se o Denis enviou uma mensagem normal, trava a IA automaticamente
-                    await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                    console.log(`👤 [SILENT HANDOFF] Denis respondeu manualmente. IA pausada para ${clientNumber}.`);
+                    const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
 
-                    return NextResponse.json({ status: 'ignored', reason: 'silent_handoff' }, { status: 200 });
+                    if (isAPI) {
+                        return NextResponse.json({ status: 'ignored', reason: 'api_outbound' }, { status: 200 });
+                    } else {
+                        // 🛑 SILENT HANDOFF: Se o Denis enviou uma mensagem normal, trava a IA automaticamente
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                        console.log(`👤 [SILENT HANDOFF] Denis respondeu manualmente. IA pausada para ${clientNumber}.`);
+                        return NextResponse.json({ status: 'ignored', reason: 'silent_handoff' }, { status: 200 });
+                    }
                 }
 
                 isValidMessage = true;
