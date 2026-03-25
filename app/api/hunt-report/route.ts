@@ -27,10 +27,17 @@ export async function POST(req: Request) {
 
         console.log('📈 Buscando métricas no Supabase...');
 
-        // --- CÁLCULO DO PERÍODO DIÁRIO (Meia-noite de hoje até agora) ---
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const startOfDayIso = startOfDay.toISOString();
+        // --- CÁLCULO DO PERÍODO DIÁRIO (Fuso Horário BRT - America/Sao_Paulo) ---
+        const now = new Date();
+        // Converte o momento exato para o fuso do Brasil
+        const brTimeStr = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+        const startOfDayBR = new Date(brTimeStr);
+        // Zera as horas usando o referencial brasileiro
+        startOfDayBR.setHours(0, 0, 0, 0);
+
+        // Re-converte para ISO (UTC) para o Supabase poder comparar corretamente no banco
+        // Adicionando 3 horas para compensar a ida para o UTC
+        const startOfDayIso = new Date(startOfDayBR.getTime() + 3 * 60 * 60 * 1000).toISOString();
 
         // 1. Count Pending (Mantemos ALL-TIME, pois reflete o saldo do seu funil)
         const { count: pendingCount } = await supabaseAdmin
