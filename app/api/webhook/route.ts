@@ -348,11 +348,21 @@ export async function POST(req: Request) {
                 return NextResponse.json({ status: 'eliza_paused' }, { status: 200 });
             }
 
-            // --- QSTASH ASYNC QUEUEING ---
-            console.log(`🚀 [QSTASH] Enfileirando mensagem de ${clientNumber} para processamento assíncrono no eliza-worker...`);
+            // --- QSTASH ASYNC QUEUEING (TWO-TIER HUMAN DELAY) ---
+            console.log(`🚀 [QSTASH] Enfileirando mensagem de ${clientNumber} para processamento assíncrono...`);
 
-            // Ativa o "typing..." imediatamente pro lead já ver
-            await sendWhatsAppPresence(clientNumber, 'composing');
+            // 1. Cálculo Dinâmico de Delay
+            let delaySeconds = 10; // Delay padrão para conversas ativas (talking)
+            const isFirstReply = lead?.status === 'contacted' || lead?.status === 'waiting_reply' || lead?.status === 'lead_replied';
+
+            if (isFirstReply) {
+                // Randomiza entre 30 e 60 minutos (1800 a 3600 segundos) para simular o Denis ocupado
+                delaySeconds = Math.floor(Math.random() * (3600 - 1800 + 1)) + 1800;
+                console.log(`⏳ [STEALTH DELAY] Primeira resposta detectada. A IA responderá em ${Math.floor(delaySeconds / 60)} minutos.`);
+            } else {
+                // Só ativa o "typing..." imediatamente se a conversa já estiver fluindo
+                await sendWhatsAppPresence(clientNumber, 'composing');
+            }
 
             const { Client } = await import('@upstash/qstash');
             const qstash = new Client({
@@ -369,7 +379,7 @@ export async function POST(req: Request) {
                         incomingMessageId,
                         leadContext
                     },
-                    delay: "10s", // Aguarda 10s (Simulando leitura humana enquanto a presence typing está on)
+                    delay: delaySeconds,
                     retries: 0 // CRITICAL: Prevents Ghost Retries
                 });
             } catch (err) {
