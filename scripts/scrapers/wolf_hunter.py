@@ -1,3 +1,4 @@
+import socket
 import os
 import json
 import re
@@ -11,248 +12,171 @@ from google import genai
 from google.genai import types
 from supabase import create_client, Client
 
-# Importa o módulo que você criou
-from discover_whatsapp import discover_whatsapp
-
-# --- Setup de Ambiente ---
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(dotenv_path=BASE_DIR / '.env')
-
-supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
-
-# Initialize the Client with version='v1beta'
-client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"), 
-    http_options={'api_version': 'v1beta', 'timeout': 120.0}
-)
-
-def extract_json_from_text(text: str) -> list:
-    """Extrai e limpa o JSON da resposta do Gemini."""
-    try:
-        match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL | re.IGNORECASE)
-        json_str = match.group(1) if match else text.strip()
-        return json.loads(json_str)
-    except json.JSONDecodeError as e:
-        print(f"❌ Falha de decodificação JSON: {e}")
-        sys.stdout.flush()
-        return []
-
-def clean_website(url: str) -> str | None:
-    """Filtra as URLs internas do Google Maps."""
-    if not url or str(url).lower() in ["none", "null", ""]:
-        return None
-    if "googleusercontent.com" in url or "maps.google.com" in url:
-        return None
-    return url
+# --- PATCH CRÍTICO: FORÇAR IPV4 PARA EVITAR TIMEOUT NO WINDOWS ---
+orig_getaddrinfo = socket.getaddrinfo
+def patched_getaddrinfo(*args, **kwargs):
+    responses = orig_getaddrinfo(*args, **kwargs)
+    return [res for res in responses if res[0] == socket.AF_INET]
+socket.getaddrinfo = patched_getaddrinfo
+# --------------------------------------------------------------
 
 def normalize_phone(phone: str) -> str | None:
-    """Remove caracteres não numéricos e força o padrão. Retorna None se inválido."""
-    if not phone or str(phone).lower() in ["none", "null", "sem telefone", ""]:
+    """Remove caracteres não numéricos e garante o padrão DDI 55."""
+    if not phone or str(phone).lower() in ["none", "null", "n/a", ""]:
         return None
     
+    # Mantém apenas números
     digits = re.sub(r'\D', '', str(phone))
     
     if not digits:
         return None
         
+    # Garante o DDI 55 (Brasil)
     if not digits.startswith('55'):
         digits = f"55{digits}"
-    
-    # Se tiver 13 dígitos (DDI + DDD + 9 dígitos), remove o 5º dígito (o 9)
-    if len(digits) == 13:
-        digits = digits[:4] + digits[5:]
         
     return digits
 
-def run_hunter():
-    print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Search Grounding Active)...")
-    sys.stdout.flush()
+# Setup de Ambiente
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=BASE_DIR / '.env')
 
-    print("🔄 Sincronizando base de dados local...")
-    sys.stdout.flush()
+supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
+
+# Inicialização do Client (v1beta + Timeout de 5 minutos)
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY"), 
+    http_options={'api_version': 'v1beta'}
+)
+
+def run_hunter():
+    print("🐺 [WOLF AGENT: HUNTER] Iniciando Teste de Grounding (15 Leads)...")
+
+    # --- ADICIONE ESTA PARTE AQUI (Sincronização com o Banco) ---
     existing_names = set()
     try:
-        response = supabase.table('leads_lobo').select('name').execute()
-        if response.data:
-            existing_names = {row['name'] for row in response.data if row.get('name')}
+        # Busca apenas os nomes dos leads já cadastrados
+        res = supabase.table('leads_lobo').select('name').execute()
+        if res.data:
+            existing_names = {row['name'] for row in res.data if row.get('name')}
         print(f"📊 {len(existing_names)} leads já conhecidos carregados.")
-        sys.stdout.flush()
     except Exception as e:
         print(f"⚠️ Erro ao sincronizar base: {e}")
-        sys.stdout.flush()
-    
-# ---------------------------------------------------------
-    # 🧠 SILICON TWEAK: ROULETTE STRATEGY
-# ---------------------------------------------------------
-    
-    # Categoria 1: Foco em Landing Pages e Automação de Alto Valor (High-Ticket)
-    HIGH_TICKET_NICHES = [
-        'clínicas de estética avançada', 
-        'clínicas odontológicas', 
-        'escritórios de advocacia', 
-        'escritórios de arquitetura',
-        'imobiliárias de alto padrão'
-    ]
-    
-    # Categoria 2: Foco em Sistemas de Pedido, Reservas e Bots de Atendimento (Volume/B2C)
-    VOLUME_NICHES = [
-        'restaurantes e pizzarias', 
-        'hospedagens e pousadas', 
-        'experiências e turismo',
-        'pet shops', 
-        'academias e crossfit'
-    ]
-    
-    # O Lobo joga a moeda para decidir a estratégia da rodada
-    hunting_strategy = random.choice(["HIGH_TICKET", "VOLUME"])
-    
-    if hunting_strategy == "HIGH_TICKET":
-        print("\n🎯 [ESTRATÉGIA] HIGH-TICKET: Buscando empresas com alto LTV...")
-        target_list = HIGH_TICKET_NICHES
-    else:
-        print("\n🎯 [ESTRATÉGIA] VOLUME: Buscando empresas com alto fluxo de clientes...")
-        target_list = VOLUME_NICHES
+    # ------------------------------------------------------------
 
     sys.stdout.flush()
+
+# Automated niche selection
+    nichos = [
+        "restaurantes", "pousadas", "clinicas", "imobiliarias", 
+        "academias", "passeios", "estetica", "energia solar", 
+        "advogados", "oficinas", "pet shops"
+    ]
+    keyword = random.choice(nichos)
+    query = f"{keyword} em Florianópolis, SC"
     
-    # Seleciona 3 nichos aleatórios da estratégia sorteada
-    selected_keywords = random.sample(target_list, 3)
-# ---------------------------------------------------------
+    print(f"🎯 Target Niche: {keyword.upper()}")
     
-    for keyword in selected_keywords:
-        query = f"{keyword} em Florianópolis, SC"
-        print(f"\n🎯 Minerando Alvo: {query}...")
+    # PROMPT REDUZIDO PARA 3 LEADS (TESTE DE FOGO)
+# Mude o prompt para algo assim:
+    prompt = (
+        f"Search for {15} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
+        "CRITICAL: You must provide a valid phone number for every business. "
+        "If the phone is not on the main page, check their Instagram or contact page. "
+        "Return a JSON array: [{'name': '...', 'website': '...', 'phone': '...', 'rating': ...}]"
+    )   
+
+    try:
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"💓 [REQUEST] {timestamp} | Gemini-2.5-Flash-Lite + Google Search")
         sys.stdout.flush()
 
-        prompt = (
-            f"Use the Google Search tool to find 15 real, existing businesses in the '{keyword}' niche located in Florianópolis, SC, Brazil. "
-            "CRITICAL RULES: "
-            "1. LIVE SEARCH REQUIRED: You MUST query the internet right now to guarantee the names and phone numbers are real and currently active. Do not hallucinate or invent data. "
-            "2. ANTI-GHOST PROTOCOL: Every single business MUST have a valid URL in the 'website' field. This URL can be an Instagram profile link, a Linktree, a Facebook page, or an outdated/basic website. NEVER return null for the website field. "
-            "3. ACCURATE CONTACTS: Provide their real contact number extracted from the search results. DO NOT invent numbers ending in '0000', '1111', or repeating patterns. If you do not know the exact number, rely on the website URL. "
-            "Return ONLY a valid JSON array with the keys: 'name' (string), 'website' (string), 'phone' (string), and 'rating' (number). Output nothing else."
+        # --- ADICIONE ESTA LINHA AQUI ---
+        start_api = time.time()
+
+        # Chamada com a sintaxe correta para 2026
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-lite", 
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.1,
+                # Sintaxe oficial: GoogleSearch() sem o "Retrieval"
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
         )
 
-        try:
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"💓 [REQUEST] {timestamp} | Gemini-3.1-Flash-Lite-Preview (Search Grounding Active)")
-            sys.stdout.flush()
-            
-            start_api = time.time()
-            
-            response = None
-            for attempt in range(3):
-                try:
-                    response = client.models.generate_content(
-                        model="gemini-3.1-flash-lite-preview", 
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            temperature=0.1,
-                            tools=[{"google_search": {}}]
-                        )
-                    )
-                    break
-                except Exception as e:
-                    print(f"⚠️ [TENTATIVA {attempt+1}/3] Servidor ocupado, aguardando...")
-                    sys.stdout.flush()
-                    if attempt < 2:
-                        time.sleep(10 * (attempt + 1))
-                    else:
-                        raise e
-
-            latency = time.time() - start_api
-            print(f"⏱️ [LATENCY] {latency:.2f}s")
-            sys.stdout.flush()
-            
-            leads_data = extract_json_from_text(response.text)
-            
-            if leads_data:
-                print(f"✅ {len(leads_data)} leads encontrados. Processando validação...")
-                sys.stdout.flush()
-                
-                for lead in leads_data:
-                    name = lead.get('name')
-                    
-                    if not name or str(name).strip().upper() in ["", "NONE", "NULL"]:
-                        print(f"   🚫 [SKIP] Nome inválido: {name}")
-                        sys.stdout.flush()
-                        continue
-
-                    if name in existing_names:
-                        print(f"   ⏭️ [SKIP] Lead já existente: {name}")
-                        sys.stdout.flush()
-                        continue
-
-                    website = clean_website(lead.get('website'))
-                    raw_phone = lead.get('phone', '')
-                    
-                    # ---------------------------------------------------------
-                    # 🔎 INTERCEPTAÇÃO: SITE DISCOVERY
-                    # ---------------------------------------------------------
-                    digits_only = re.sub(r'\D', '', str(raw_phone))
-                    # Se não tem telefone, ou se parece um fixo local (ex: 48 3xxx xxxx -> 10 dígitos)
-                    if (not digits_only or len(digits_only) <= 10) and website:
-                        print(f"   🔎 [DISCOVERY] Telefone ausente/suspeito para {name}. Vasculhando: {website}")
-                        sys.stdout.flush()
-                        
-                        found_phone = discover_whatsapp(website)
-                        
-                        if found_phone:
-                            print(f"   🎯 [DISCOVERY SUCCESS] WhatsApp extraído: {found_phone}")
-                            sys.stdout.flush()
-                            raw_phone = found_phone
-                        else:
-                            print(f"   ⚠️ [DISCOVERY FAILED] Nenhum número encontrado no site.")
-                            sys.stdout.flush()
-                    # ---------------------------------------------------------
-
-                    normalized_phone = normalize_phone(raw_phone)
-                    
-                    # Filtro final de segurança contra lixo no banco
-                    if not normalized_phone or len(normalized_phone) < 12:
-                        print(f"   🚫 [SKIP] Sem telefone válido após varredura: {name}")
-                        sys.stdout.flush()
-                        continue
-
-                    try:
-                        raw_rating = lead.get('rating')
-                        maps_rating = float(raw_rating) if raw_rating is not None else 0.0
-                    except (ValueError, TypeError):
-                        maps_rating = 0.0
-
-                    data = {
-                        "name": name,
-                        "niche": keyword.capitalize(),
-                        "website": website if website else "None", 
-                        "phone": normalized_phone,
-                        "maps_rating": maps_rating,
-                        "status": "cold_lead"
-                    }
-
-                    try:
-                        supabase.table('leads_lobo').insert(data).execute()
-                        status_tag = "SITE" if website else "GROUNDED"
-                        print(f"   📥 [{status_tag}] {name} | 📱 {normalized_phone}")
-                        sys.stdout.flush()
-                        existing_names.add(name)
-                    except Exception as e:
-                        print(f"   ❌ [INSERT ERROR] {name}: {e}")
-                        sys.stdout.flush()
-                        continue
-            else:
-                print(f"⚠️ Nenhum dado extraído para a query: {query}")
-                sys.stdout.flush()
-
-        except Exception as e:
-            print(f"❌ [ERRO NO LOOP] {str(e)[:150]}")
-            sys.stdout.flush()
-        
-        print("⏳ [COOLDOWN] Aguardando 45 segundos para respeitar a API do Google...")
+        latency = time.time() - start_api
+        print(f"⏱️ [LATENCY] {latency:.2f}s")    
         sys.stdout.flush()
-        time.sleep(45)
 
-    print("\n🏁 SHUTDOWN: Extração broad finalizada com sucesso.")
-    sys.stdout.flush()
+        # ... (depois do latency)
+        if not response.text:
+            print("⚠️ O Gemini retornou uma resposta vazia. Verifique o Safety Filter ou Rate Limit.")
+            return # Sai da função para não quebrar no json.loads
+            
+        print(f"DEBUG RAW RESPONSE: {response.text[:100]}...") # Vê o início da resposta
+
+# Extração de dados robusta com sanitização
+        leads_data = []
+        try:
+            match = re.search(r'```json\s*(.*?)\s*```', response.text, re.DOTALL | re.IGNORECASE)
+            json_str = match.group(1) if match else response.text.strip()
+            
+            if json_str:
+                # Remove caracteres de controle invisíveis que quebram a leitura
+                json_str_clean = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', json_str)
+                leads_data = json.loads(json_str_clean, strict=False)
+                
+        except Exception as json_err:
+            print(f"❌ Falha ao processar JSON: {json_err}")
+            with open("error_log.txt", "a", encoding="utf-8") as f:
+                f.write(f"\n--- ERRO ---\n{response.text}\n")
+
+        if leads_data:
+            print(f"✅ SUCESSO! O Lobo encontrou {len(leads_data)} empresas reais:")
+            for lead in leads_data:
+                name = lead.get('name')
+                raw_phone = lead.get('phone')
+                clean_phone = normalize_phone(raw_phone)
+                print(f"   📥 [GROUNDED] {lead.get('name')} | 📱 {lead.get('phone')}")
+
+                # 2. Trava de Qualidade: Descarta imediatamente se não houver telefone
+                if not clean_phone or len(clean_phone) < 10:
+                    print(f"   🗑️ [REJECT] {name} | Motivo: Sem telefone válido")
+                    continue # <-- Esta é a palavra-chave que pula o salvamento
+
+                # --- REMOÇÃO DO 9º DÍGITO ---
+                if len(clean_phone) == 13 and clean_phone[4] == '9':
+                    clean_phone = clean_phone[:4] + clean_phone[5:]
+                
+                # --- BLOCO DE VERIFICAÇÃO ---
+                if name in existing_names:
+                    print(f"   ⏭️ [SKIP] Lead já salvo: {name}")
+                    sys.stdout.flush()
+                    continue
+                # ----------------------------
+                # --- BLOCO DE SALVAMENTO NO SUPABASE ---
+                data = {
+                    "name": name,
+                    "niche": keyword.capitalize(),
+                    "website": lead.get('website') or "None",
+                    "phone": clean_phone,
+                    "maps_rating": float(lead.get('rating') or 0.0),
+                    "status": "cold_lead"
+                }
+
+                try:
+                    supabase.table('leads_lobo').insert(data).execute()
+                    print(f"   💾 [DB] {name} salvo com sucesso.")
+                    existing_names.add(name) # Evita duplicados na mesma rodada
+                except Exception as e:
+                    print(f"   ❌ [DB ERROR] Falha ao salvar {name}: {e}")
+                # ---------------------------------------
+        else:
+            print("⚠️ O modelo respondeu, mas não trouxe leads.")
+
+    except Exception as e:
+        print(f"❌ ERRO TÉCNICO: {e}")
 
 if __name__ == "__main__":
     run_hunter()
