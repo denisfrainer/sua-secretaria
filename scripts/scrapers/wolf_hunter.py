@@ -50,7 +50,7 @@ client = genai.Client(
 )
 
 def run_hunter():
-    print("🐺 [WOLF AGENT: HUNTER] Iniciando Teste de Grounding (15 Leads)...")
+    print("🐺 [WOLF AGENT: HUNTER] Iniciando Caçada com Grounding (20 Leads)...")
 
     # --- ADICIONE ESTA PARTE AQUI (Sincronização com o Banco) ---
     existing_names = set()
@@ -71,7 +71,7 @@ def run_hunter():
     nichos = [
         "restaurantes", "pousadas", "clinicas", "imobiliarias", 
         "academias", "passeios", "estetica", "energia solar", 
-        "advogados", "oficinas", "pet shops"
+        "experiências", "escritórios", "pet shops", "hospedagens",
     ]
     keyword = random.choice(nichos)
     query = f"{keyword} em Florianópolis, SC"
