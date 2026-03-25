@@ -157,19 +157,19 @@ export async function POST(req: Request) {
                 },
                 {
                     part1: `${saudacao} pessoal, tudo bem?`,
-                    part2: `achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`
+                    part2: `Achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`
                 },
                 {
                     part1: `{opa|fala|oi|olá}, tudo bem? Me chamo Denis, sou desenvolvedor web e moro na Lagoa da Conceição.`,
-                    part2: `tava pesquisando sobre ${nichoFormatado} e o perfil de vocês chamou atenção. vocês chegaram a desativar o site oficial ou a operação roda 100% na rede social hoje?`
+                    part2: `Tava pesquisando sobre ${nichoFormatado} e o perfil de vocês chamou atenção. vocês chegaram a desativar o site oficial ou a operação roda 100% na rede social hoje?`
                 },
                 {
                     part1: `${saudacao}, pessoal!`,
-                    part2: `curti bastante o trampo de vocês! fui dar uma procurada num site pra ver mais detalhes e só achei o Insta. vocês concentram o atendimento todo por aqui mesmo?`
+                    part2: `Curti bastante o trampo de vocês! Fui dar uma procurada num site pra ver mais detalhes e só achei o Insta. vocês concentram o atendimento todo por aqui mesmo?`
                 },
                 {
                     part1: `{fala|opa|olá|oi}, ${saudacao}!`,
-                    part2: `tava dando uma olhada no perfil de vocês aqui e fui procurar o link do site na bio pra ver mais, mas não achei. a operação de vocês tá toda centralizada no WhatsApp mesmo?`
+                    part2: `Tava dando uma olhada no perfil de vocês aqui e fui procurar o link do site na bio pra ver mais, mas não achei. a operação de vocês tá toda centralizada no WhatsApp mesmo?`
                 }
             ];
 
@@ -259,15 +259,20 @@ export async function POST(req: Request) {
                             .update({ status: 'invalid' })
                             .eq('id', lead.id);
                     }
-                    continue;
-                } else if (errorBody.includes('500') || errorBody.includes('Connection Closed')) {
-                    console.error(`🚨 [${cronId}] ERRO CRÍTICO NA INSTÂNCIA! Abortando caçada.`);
-                    const retryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+                    // CORREÇÃO: Consumir a cota diária e agendar o próximo tiro, mesmo falhando
+                    await supabaseAdmin.rpc('increment_lobo_sent_count', { today_date: getBrazilDateString(), increment_by: 1 });
+
+                    const nextHuntMinutes = Math.floor(Math.random() * (45 - 25 + 1)) + 25;
+                    const futureDate = new Date(Date.now() + nextHuntMinutes * 60 * 1000).toISOString();
+
                     await supabaseAdmin.from('system_settings').upsert({
-                        key: 'next_hunt_at', value: { timestamp: retryAt }
+                        key: 'next_hunt_at', value: { timestamp: futureDate, scheduled_by: cronId }, updated_at: new Date().toISOString()
                     }, { onConflict: 'key' });
-                    break;
-                } else {
+
+                    break; // Aborta a rodada para respeitar o cooldown
+
+                } else if (errorBody.includes('500') || errorBody.includes('Connection Closed')) {
                     console.error(`❌ [${cronId}] Erro inesperado ao enviar para ${lead.name}:`, errorBody);
                     continue;
                 }

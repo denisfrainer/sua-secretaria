@@ -38,21 +38,19 @@ export async function POST(req: Request) {
             .select('*', { count: 'exact', head: true })
             .eq('status', 'pending');
 
-        // 2. Count Contacted (DAILY - Apenas os contatados hoje/nas últimas 24h)
-        // Nota: Assumindo que seu banco tem a coluna 'updated_at' ou similar quando o status muda.
-        // Se você usa apenas created_at, troque 'updated_at' por 'created_at' (mas o ideal é updated_at)
+        // 2. Count Contacted (DAILY - Apenas os contatados hoje)
         const { count: contactedCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'contacted')
-            .gte('created_at', startOfDayIso); // Troque para 'updated_at' se você atualiza a coluna no disparo
+            .gte('updated_at', startOfDayIso); // Alterado de created_at para updated_at
 
         // 3. Count Invalid (DAILY)
         const { count: invalidCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'invalid')
-            .gte('created_at', startOfDayIso); // Troque para 'updated_at' se aplicável
+            .gte('updated_at', startOfDayIso); // Alterado de created_at para updated_at
 
         // 4. Count Quarantine (ALL-TIME, para você saber quantos precisam de atenção sua)
         const { count: quarantineCount } = await supabaseAdmin

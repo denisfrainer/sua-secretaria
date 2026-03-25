@@ -11,16 +11,19 @@ from google import genai
 from google.genai import types
 from supabase import create_client, Client
 
+# Importa o módulo que você criou
+from discover_whatsapp import discover_whatsapp
+
 # --- Setup de Ambiente ---
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
 
 supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
-# 1. Initialize the Client with version='v1beta'
+# Initialize the Client with version='v1beta'
 client = genai.Client(
     api_key=os.environ.get("GEMINI_API_KEY"), 
-    http_options={'api_version': 'v1beta'}
+    http_options={'api_version': 'v1beta', 'timeout': 30.0}
 )
 
 def extract_json_from_text(text: str) -> list:
@@ -42,15 +45,16 @@ def clean_website(url: str) -> str | None:
         return None
     return url
 
-def normalize_phone(phone: str) -> str:
-    """Remove caracteres não numéricos e força o padrão de 12 dígitos (sem o 9)."""
+def normalize_phone(phone: str) -> str | None:
+    """Remove caracteres não numéricos e força o padrão. Retorna None se inválido."""
     if not phone or str(phone).lower() in ["none", "null", "sem telefone", ""]:
-        return "55"
+        return None
     
-    # Remove tudo que não for número
     digits = re.sub(r'\D', '', str(phone))
     
-    # Adiciona prefixo 55 se não existir
+    if not digits:
+        return None
+        
     if not digits.startswith('55'):
         digits = f"55{digits}"
     
@@ -64,7 +68,6 @@ def run_hunter():
     print("🐺 [WOLF AGENT: HUNTER] Iniciando Estratégia de Alto Volume (Internal Knowledge Mode)...")
     sys.stdout.flush()
 
-    # 4. Deduplication logic with existing_names
     print("🔄 Sincronizando base de dados local...")
     sys.stdout.flush()
     existing_names = set()
@@ -78,62 +81,82 @@ def run_hunter():
         print(f"⚠️ Erro ao sincronizar base: {e}")
         sys.stdout.flush()
     
-    BROAD_KEYWORDS = [
-        'restaurantes', 
+# ---------------------------------------------------------
+    # 🧠 SILICON TWEAK: ROULETTE STRATEGY
+    # ---------------------------------------------------------
+    
+    # Categoria 1: Foco em Landing Pages e Automação de Alto Valor (High-Ticket)
+    HIGH_TICKET_NICHES = [
+        'clínicas de estética avançada', 
         'clínicas odontológicas', 
         'escritórios de advocacia', 
-        'academias', 
-        'estética', 
-        'pet shops', 
-        'imobiliárias', 
-        'hospedagens'
+        'escritórios de arquitetura',
+        'imobiliárias de alto padrão'
     ]
     
-    selected_keywords = random.sample(BROAD_KEYWORDS, 3)
+    # Categoria 2: Foco em Sistemas de Pedido, Reservas e Bots de Atendimento (Volume/B2C)
+    VOLUME_NICHES = [
+        'restaurantes e pizzarias', 
+        'hospedagens e pousadas', 
+        'experiências e turismo',
+        'pet shops', 
+        'academias e crossfit'
+    ]
+    
+    # O Lobo joga a moeda para decidir a estratégia da rodada
+    hunting_strategy = random.choice(["HIGH_TICKET", "VOLUME"])
+    
+    if hunting_strategy == "HIGH_TICKET":
+        print("\n🎯 [ESTRATÉGIA] HIGH-TICKET: Buscando empresas com alto LTV...")
+        target_list = HIGH_TICKET_NICHES
+    else:
+        print("\n🎯 [ESTRATÉGIA] VOLUME: Buscando empresas com alto fluxo de clientes...")
+        target_list = VOLUME_NICHES
+
+    sys.stdout.flush()
+    
+    # Seleciona 3 nichos aleatórios da estratégia sorteada
+    selected_keywords = random.sample(target_list, 3)
+    # ---------------------------------------------------------
     
     for keyword in selected_keywords:
         query = f"{keyword} em Florianópolis, SC"
         print(f"\n🎯 Minerando Alvo: {query}...")
         sys.stdout.flush()
 
-        # 3. Updated prompt to use internal knowledge and prioritize companies without website
         prompt = (
-            f"Liste 15 empresas reais e conhecidas do nicho '{keyword}' em Florianópolis, SC. "
-            "Priorize empresas que NÃO possuem site oficial ou página de vendas em seu banco de dados interno. "
-            "Retorne APENAS um array JSON válido com as chaves: "
-            "'name' (string), 'website' (string ou null), 'phone' (string) e 'rating' (number). "
-            "Use seu conhecimento interno. Nenhum texto adicional."
+            f"List 15 real, existing businesses in the '{keyword}' niche located in Florianópolis, SC, Brazil. "
+            "CRITICAL RULES: "
+            "1. ANTI-GHOST PROTOCOL: Every single business MUST have a valid URL in the 'website' field. This URL can be an Instagram profile link, a Linktree, a Facebook page, or an outdated/basic website. NEVER return null for the website field. "
+            "2. TARGET QUALIFICATION: Prioritize businesses that rely exclusively on social media profiles (like Instagram) or have very poor websites. These are prospects for high-ticket web development. "
+            "3. ACCURATE CONTACTS: Provide their real contact number. DO NOT hallucinate or invent numbers ending in '0000', '1111', or repeating patterns. If you do not know the exact number, rely on the website URL so my scraper can find it. "
+            "Return ONLY a valid JSON array with the keys: 'name' (string), 'website' (string), 'phone' (string), and 'rating' (number). Output nothing else."
         )
 
         try:
             timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"💓 [REQUEST] {timestamp} | Gemini-3-Flash-Preview (Internal Knowledge)")
+            print(f"💓 [REQUEST] {timestamp} | Gemini-3.1-Flash-Lite-Preview (Internal Knowledge)")
             sys.stdout.flush()
             
             start_api = time.time()
             
-            # 1. Exponential Backoff retry mechanism for the Gemini API call
             response = None
             for attempt in range(3):
                 try:
                     response = client.models.generate_content(
-                        model="gemini-3-flash-preview", 
+                        model="gemini-3.1-flash-lite-preview", 
                         contents=prompt,
                         config=types.GenerateContentConfig(
                             temperature=0.1
                         )
                     )
-                    # 2. If the call is successful, break out of the retry loop
                     break
                 except Exception as e:
-                    # 3. If an exception occurs, print a warning
                     print(f"⚠️ [TENTATIVA {attempt+1}/3] Servidor ocupado, aguardando...")
                     sys.stdout.flush()
-                    # 4. Exponential wait: 10s, 20s
                     if attempt < 2:
                         time.sleep(10 * (attempt + 1))
                     else:
-                        # 5. If all 3 attempts fail, raise the exception to be caught by the outer loop
                         raise e
 
             latency = time.time() - start_api
@@ -159,14 +182,37 @@ def run_hunter():
                         sys.stdout.flush()
                         continue
 
-                    # Limpeza de Website (mantendo lógica anterior)
                     website = clean_website(lead.get('website'))
-                    
-                    # Normalização de Telefone (Nova função com regex e prefixo 55)
                     raw_phone = lead.get('phone', '')
+                    
+                    # ---------------------------------------------------------
+                    # 🔎 INTERCEPTAÇÃO: SITE DISCOVERY
+                    # ---------------------------------------------------------
+                    digits_only = re.sub(r'\D', '', str(raw_phone))
+                    # Se não tem telefone, ou se parece um fixo local (ex: 48 3xxx xxxx -> 10 dígitos)
+                    if (not digits_only or len(digits_only) <= 10) and website:
+                        print(f"   🔎 [DISCOVERY] Telefone ausente/suspeito para {name}. Vasculhando: {website}")
+                        sys.stdout.flush()
+                        
+                        found_phone = discover_whatsapp(website)
+                        
+                        if found_phone:
+                            print(f"   🎯 [DISCOVERY SUCCESS] WhatsApp extraído: {found_phone}")
+                            sys.stdout.flush()
+                            raw_phone = found_phone
+                        else:
+                            print(f"   ⚠️ [DISCOVERY FAILED] Nenhum número encontrado no site.")
+                            sys.stdout.flush()
+                    # ---------------------------------------------------------
+
                     normalized_phone = normalize_phone(raw_phone)
                     
-                    # Garantia de maps_rating como 0.0 se nulo ou inválido
+                    # Filtro final de segurança contra lixo no banco
+                    if not normalized_phone or len(normalized_phone) < 12:
+                        print(f"   🚫 [SKIP] Sem telefone válido após varredura: {name}")
+                        sys.stdout.flush()
+                        continue
+
                     try:
                         raw_rating = lead.get('rating')
                         maps_rating = float(raw_rating) if raw_rating is not None else 0.0
@@ -182,7 +228,6 @@ def run_hunter():
                         "status": "cold_lead"
                     }
 
-                    # 4. Supabase persistence
                     try:
                         supabase.table('leads_lobo').insert(data).execute()
                         status_tag = "SITE" if website else "FANTASMA"
@@ -198,12 +243,10 @@ def run_hunter():
                 sys.stdout.flush()
 
         except Exception as e:
-            # 5. Outer loop catches the raised exception and moves to next keyword
             print(f"❌ [ERRO NO LOOP] {str(e)[:150]}")
             sys.stdout.flush()
         
-        # 5. sys.stdout.flush() maintained
-        time.sleep(5)
+        time.sleep(15)
         sys.stdout.flush()
 
     print("\n🏁 SHUTDOWN: Extração broad finalizada com sucesso.")

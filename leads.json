@@ -1,846 +1,1680 @@
 [
-    {
-        "title": "FM Surf - Pranchas de Surf e Stand Up Paddle",
-        "totalScore": 4.9,
-        "reviewsCount": 325,
-        "street": "Servidão Revoar das Perdizes, 407",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.fmsurf.com.br/",
-        "phone": "+55 48 98817-5807",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=FM%20Surf%20-%20Pranchas%20de%20Surf%20e%20Stand%20Up%20Paddle&query_place_id=ChIJMW4rHjw7J5URXBtY33kyyA0",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Tikehau Surf Shop",
-        "totalScore": 4.9,
-        "reviewsCount": 145,
-        "street": "Rodovia Dr. Antônio Luiz Moura Gonzaga, 2593",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "phone": "+55 48 3233-3295",
-        "categories": [
-            "Loja de surfe",
-            "Loja de acessórios de moda",
-            "Loja de roupas esportivas"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Tikehau%20Surf%20Shop&query_place_id=ChIJk2Z6vIc7J5UR_OUMGBDgMiw",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Jbay",
-        "totalScore": 4.8,
-        "reviewsCount": 310,
-        "street": "R. Bocaiúva, 2468 - 119",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.jbay.com.br/",
-        "phone": "+55 48 3028-9950",
-        "categories": [
-            "Loja de surfe",
-            "Loja de calçado",
-            "Loja de skate"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Jbay&query_place_id=ChIJzci37yM4J5URib1UHMo9E6w",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Floripa Surf Club Surf School",
-        "totalScore": 5,
-        "reviewsCount": 247,
-        "street": "R. Aconchego do Mar, 60",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://www.instagram.com/floripasurfcluboficial/",
-        "phone": "+55 48 99991-3535",
-        "categories": [
-            "Escola de surfe",
-            "Escola de esportes"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Floripa%20Surf%20Club%20Surf%20School&query_place_id=ChIJVZQSWFY_J5URC6mw5fMHN-Y",
-        "categoryName": "Escola de surfe"
-    },
-    {
-        "title": "Bazar Do Surf",
-        "totalScore": 4.7,
-        "reviewsCount": 32,
-        "street": "R. Prof. Abelardo Souza, 67",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "phone": "+55 48 3232-1408",
-        "categories": [
-            "Loja de surfe",
-            "Outlet"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Bazar%20Do%20Surf&query_place_id=ChIJSWxc6EU-J5URko1MvsHZPAI",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Go LongBoard Surf",
-        "totalScore": 5,
-        "reviewsCount": 103,
-        "street": "R. Aconchego do Mar, 60",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://golongboardsurf.com.br/",
-        "phone": "+55 48 99127-0756",
-        "categories": [
-            "Loja de surfe",
-            "Loja de roupas de praia",
-            "Loja de diversões de praia",
-            "Loja de moda masculina",
-            "Loja de artigos para esportes ao ar livre",
-            "Loja de artigos esportivos",
-            "Loja de roupas esportivas",
-            "Loja de Roupa",
-            "Loja de roupas de banho",
-            "Loja de moda feminina"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Go%20LongBoard%20Surf&query_place_id=ChIJK11zTSw_J5UR2h-felhGEPA",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Java Surf Shop",
-        "totalScore": 4.5,
-        "reviewsCount": 105,
-        "street": "R. Álvaro de Carvalho, 105",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "phone": "+55 48 3028-7034",
-        "categories": [
-            "Loja de artigos para esportes ao ar livre"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Java%20Surf%20Shop&query_place_id=ChIJI0D15yM4J5URO2YDr-pZ3kE",
-        "categoryName": "Loja de artigos para esportes ao ar livre"
-    },
-    {
-        "title": "Lojas Jbay - Centro Comercial ARS Piso Térreo, Loja 13",
-        "totalScore": 5,
-        "reviewsCount": 192,
-        "street": "Galeria ARS - R. Felipe Schmidt, 249 - Loja 012",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.jbay.com.br/",
-        "phone": "+55 48 3028-9954",
-        "categories": [
-            "Loja de surfe",
-            "Loja de calçado",
-            "Loja de skate"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Lojas%20Jbay%20-%20Centro%20Comercial%20ARS%20Piso%20T%C3%A9rreo%2C%20Loja%2013&query_place_id=ChIJQ987MiA4J5UR2RYEsAxqDLA",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Underground Surf e Skate Shop",
-        "totalScore": 4.9,
-        "reviewsCount": 30,
-        "street": "R. Francisco Viêira, 261 - loja 3",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.undergroundsurfskate.com.br/",
-        "phone": "+55 48 99150-0582",
-        "categories": [
-            "Loja de surfe",
-            "Loja de roupas de praia",
-            "Loja de moda masculina",
-            "Outlet",
-            "Loja de skate",
-            "Loja de roupas esportivas",
-            "Loja de moda feminina",
-            "Loja de roupas para jovens"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Underground%20Surf%20e%20Skate%20Shop&query_place_id=ChIJ6_76Umk7J5URkD6i3Oy95KQ",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Escola de Surf Evandro dos Santos",
-        "totalScore": 5,
-        "reviewsCount": 232,
-        "street": "R. Santos Réis, 88",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.escoladesurfflorianopolis.com/",
-        "phone": "+55 48 99104-6867",
-        "categories": [
-            "Loja de surfe",
-            "Escola de surfe",
-            "Escola de esportes"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Escola%20de%20Surf%20Evandro%20dos%20Santos&query_place_id=ChIJdbCBt1A-J5UR8h7PE5VeJ0k",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Jamaica Shop - Floripa Shopping",
-        "totalScore": 4.8,
-        "reviewsCount": 370,
-        "street": "Rod. Virgílio Várzea, 587 - Loja 143",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://www.instagram.com/jamaicashopofc/",
-        "phone": "+55 48 3238-9884",
-        "categories": [
-            "Loja de surfe",
-            "Loja de Roupa",
-            "Loja de skate",
-            "Loja de óculos de sol"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Jamaica%20Shop%20-%20Floripa%20Shopping&query_place_id=ChIJ56O7DJo4J5URziLhuPJAXnI",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Magic Surf",
-        "totalScore": 4.7,
-        "reviewsCount": 70,
-        "street": "Servidão Waldomiro Torquato Viganico, 305",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://magicsurf.com.br/",
-        "phone": "+55 48 99854-0332",
-        "categories": [
-            "Loja de surfe",
-            "Fabricante"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Magic%20Surf&query_place_id=ChIJnVil5Zg7J5URVPaGC4sw3bE",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Barra Floripa Surf School",
-        "totalScore": 5,
-        "reviewsCount": 110,
-        "street": "Tv. Manoel Florentino Vieira, 0030",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://barrafloripasurfschool.com.br/",
-        "phone": "+55 48 99900-2584",
-        "categories": [
-            "Escola de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Barra%20Floripa%20Surf%20School&query_place_id=ChIJ-UShH9s_J5URg5C0C3LFUvw",
-        "categoryName": "Escola de surfe"
-    },
-    {
-        "title": "Swell - Casa de Surf - Surf Shop",
-        "totalScore": 4.5,
-        "reviewsCount": 51,
-        "street": "Av. Pref. Acácio Garibaldi São Thiago, 834",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://agenciaryar.wixsite.com/swellcasadesurf",
-        "phone": "+55 48 3232-0366",
-        "categories": [
-            "Loja de surfe",
-            "Serviço de aluguel de bicicletas",
-            "Loja de skate",
-            "Loja de roupas para jovens"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Swell%20-%20Casa%20de%20Surf%20-%20Surf%20Shop&query_place_id=ChIJ997SLik8J5UR3j32HgfjjNo",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Jamaica Shop - Centro Comercial ARS",
-        "totalScore": 4.8,
-        "reviewsCount": 102,
-        "street": "Centro Comercial ARS - R. Felipe Schmidt, 249 - Loja 07",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://www.instagram.com/jamaicashopofc/",
-        "phone": "+55 48 3028-7036",
-        "categories": [
-            "Loja de surfe",
-            "Loja de Roupa",
-            "Loja de skate",
-            "Loja de óculos de sol"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Jamaica%20Shop%20-%20Centro%20Comercial%20ARS&query_place_id=ChIJKZN4dSQ4J5UR9BjFjxf_RQQ",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Loja Hydro Oka Floripa",
-        "totalScore": 5,
-        "reviewsCount": 28,
-        "street": "SC-405, 4397",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://www.lojahydro.com/",
-        "phone": "+55 48 3748-0588",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Hydro%20Oka%20Floripa&query_place_id=ChIJVXjjPYU7J5UR0IM_YjV-Iqk",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Santa Monica Boardshop",
-        "totalScore": 5,
-        "reviewsCount": 18,
-        "street": "Rua Canto da Amizade",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://www.instagram.com/santamonica_boardshop/",
-        "phone": "+55 48 99602-2062",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Santa%20Monica%20Boardshop&query_place_id=ChIJVRw2YS85J5URTxtNINJ_ayU",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Jbay - Villa Romana",
-        "totalScore": 4.9,
-        "reviewsCount": 324,
-        "street": "Av. Me. Benvenuta, 687",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.jbay.com.br/",
-        "phone": "+55 48 99151-4846",
-        "categories": [
-            "Loja de surfe",
-            "Loja de calçado",
-            "Loja de skate"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Jbay%20-%20Villa%20Romana&query_place_id=ChIJxbmrmCA5J5URo66uTHloR70",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Loja Hydro Multi Open Shopping",
-        "totalScore": 5,
-        "reviewsCount": 24,
-        "street": "Rodovia Dr. Antônio Luiz Moura Gonzaga, 3339",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://www.lojahydro.com/",
-        "phone": "+55 48 3236-4766",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Hydro%20Multi%20Open%20Shopping&query_place_id=ChIJxyO7SZY7J5UR_zFTA7tL7kE",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Maldivas Surf Shop",
-        "totalScore": 4.9,
-        "reviewsCount": 63,
-        "street": "Av. das Rendeiras, 1046 - loja1",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.maldivasshop.com/",
-        "phone": "+55 48 99963-0569",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Maldivas%20Surf%20Shop&query_place_id=ChIJy_QDfXFAJ5URWrXgLG_R1zA",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Spider Surf Shop",
-        "totalScore": 4.5,
-        "reviewsCount": 28,
-        "street": "Estr. Dom João Becker, 185",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "phone": "+55 48 3369-0619",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Spider%20Surf%20Shop&query_place_id=ChIJ-2dFlPhpJ5URWjV1E6IAJ8c",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "SRS Surfboards",
-        "totalScore": 4.7,
-        "reviewsCount": 34,
-        "street": "R. Maria Madalena Bilck, 25",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://srssurfboards.com/",
-        "phone": "+55 48 98831-0143",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=SRS%20Surfboards&query_place_id=ChIJla_BhPckJ5UR2WCWKROxXb4",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Joaquina Surf Shop",
-        "totalScore": 4,
-        "reviewsCount": 2,
-        "street": "Av. Pref. Acácio Garibaldi São Thiago",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "phone": "+55 48 3232-5232",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Joaquina%20Surf%20Shop&query_place_id=ChIJSSEjI7M9J5URScbekH4sudg",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Campeche Surf School",
-        "totalScore": 4.9,
-        "reviewsCount": 313,
-        "street": "Servidão Caminho dos Surfistas, 181",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.campechesurfschool.com.br/",
-        "phone": "+55 48 99680-6449",
-        "categories": [
-            "Escola de surfe",
-            "Escola de esportes",
-            "Aulas particulares"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Campeche%20Surf%20School&query_place_id=ChIJu0NY6FA7J5URCE2kD3fgp2k",
-        "categoryName": "Escola de surfe"
-    },
-    {
-        "title": "Casa das Pranchas",
-        "totalScore": 4.6,
-        "reviewsCount": 35,
-        "street": "Servidão Mar do Leste, 265",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "http://www.casadaspranchas.com.br/",
-        "phone": "+55 48 3238-1253",
-        "categories": [
-            "Loja de artigos esportivos"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Casa%20das%20Pranchas&query_place_id=ChIJkz3Gm7A9J5URc5KkGdBhfTc",
-        "categoryName": "Loja de artigos esportivos"
-    },
-    {
-        "title": "Lombok Surf Shop",
-        "totalScore": 4.3,
-        "reviewsCount": 21,
-        "street": "R. Me. Maria Villac, 1089 - Loja 02",
-        "city": "Florianópolis",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "phone": "+55 48 3369-2092",
-        "categories": [
-            "Loja de surfe",
-            "Loja de Roupa",
-            "Loja de skate"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Lombok%20Surf%20Shop&query_place_id=ChIJ8bcL2phDJ5URo0PS2a8cbbA",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Natal Free Surf",
-        "totalScore": 4.9,
-        "reviewsCount": 91,
-        "street": "Praia de - Av. Praia Grande, 5A",
-        "city": "Parnamirim",
-        "state": "Rio Grande do Norte",
-        "countryCode": "BR",
-        "phone": "+55 84 99911-4283",
-        "categories": [
-            "Escola de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Natal%20Free%20Surf&query_place_id=ChIJgd48Oof_sgcR7X2oCSnZwxE",
-        "categoryName": "Escola de surfe"
-    },
-    {
-        "title": "Praia Baía dos Golfinhos Pipa",
-        "totalScore": 4.8,
-        "reviewsCount": 1474,
-        "street": null,
-        "city": "Tibau do Sul",
-        "state": "Rio Grande do Norte",
-        "countryCode": "BR",
-        "website": "http://www.domuspipa.com/ru-ru/atracoes-da-area.htm",
-        "categories": [
-            "Praia"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Praia%20Ba%C3%ADa%20dos%20Golfinhos%20Pipa&query_place_id=ChIJ3cSwIJWPsgcRv-3RgMnXkp4",
-        "categoryName": "Praia"
-    },
-    {
-        "title": "Khlun",
-        "totalScore": 4.5,
-        "reviewsCount": 16,
-        "street": "R. Antenor Rocha Alexandre, 250 - loja 03",
-        "city": "Fortaleza",
-        "state": "Ceará",
-        "countryCode": "BR",
-        "website": "https://khlun.com.br/",
-        "categories": [
-            "Loja de moda feminina"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Khlun&query_place_id=ChIJCT72GdtFxwcRo7WUk61G2MY",
-        "categoryName": "Loja de moda feminina"
-    },
-    {
-        "title": "ITACUPA",
-        "totalScore": 4.5,
-        "reviewsCount": 107,
-        "street": "R. Particular 1, Nº 50",
-        "city": "Caucaia",
-        "state": "Ceará",
-        "countryCode": "BR",
-        "website": "https://m.facebook.com/itacupa/?locale2=pt_BR",
-        "phone": "+55 85 99983-6714",
-        "categories": [
-            "Loja de surfe",
-            "Pousada",
-            "Escola de surfe",
-            "Centro de esportes de aventura",
-            "Restaurante vegano",
-            "Loja de windsurfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=ITACUPA&query_place_id=ChIJocgYV5nLwAcRizechchKGDE",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Decathlon Fortaleza",
-        "totalScore": 4.4,
-        "reviewsCount": 323,
-        "street": "R. Des. Lauro Nogueira, N° 1500 - Compl. LOJA 1006 / 1007 / 1008",
-        "city": "Fortaleza",
-        "state": "Ceará",
-        "countryCode": "BR",
-        "website": "https://www.decathlon.com.br/",
-        "phone": "+55 85 2180-9035",
-        "categories": [
-            "Loja de artigos esportivos"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Decathlon%20Fortaleza&query_place_id=ChIJI57NaRhHxwcR4n3S-x_ZYo0",
-        "categoryName": "Loja de artigos esportivos"
-    },
-    {
-        "title": "Gokite Taíba - Escola de kitesurf",
-        "totalScore": 4.9,
-        "reviewsCount": 119,
-        "street": "Rua Beira Mar, 100",
-        "city": "São Gonçalo do Amarante",
-        "state": "Ceará",
-        "countryCode": "BR",
-        "phone": "+55 85 98128-1542",
-        "categories": [
-            "Escola de esportes",
-            "Loja"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Gokite%20Ta%C3%ADba%20-%20Escola%20de%20kitesurf&query_place_id=ChIJScfLn4LdwAcRthRAsY7MZHs",
-        "categoryName": "Escola de esportes"
-    },
-    {
-        "title": "Pousada La Bonita",
-        "totalScore": 4.6,
-        "reviewsCount": 388,
-        "street": "pousada la bonita - R. Francisco Fernandes Freire, 361",
-        "city": "Baía Formosa",
-        "state": "Rio Grande do Norte",
-        "countryCode": "BR",
-        "website": "http://www.instagram.com/pousadalabonita",
-        "phone": "+55 84 99172-9029",
-        "categories": [
-            "Hotel",
-            "Cama e café",
-            "Bar",
-            "Restaurante"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Pousada%20La%20Bonita&query_place_id=ChIJi89Gh_ydsgcRjx3EJjzmfHM",
-        "categoryName": "Hotel"
-    },
-    {
-        "title": "Mundaka Surf street",
-        "totalScore": 4.7,
-        "reviewsCount": 23,
-        "street": "Av. Florianópolis, 394 - 04",
-        "city": "Guarulhos",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "http://www.mundaka.com.br/",
-        "phone": "+55 11 2467-0158",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Mundaka%20Surf%20street&query_place_id=ChIJLzZKnzSKzpQRgu9VAMLTZ54",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Loja Billabong Shopping Morumbi",
-        "totalScore": 4.6,
-        "reviewsCount": 181,
-        "street": "MORUMBI SHOPPING - Av. Roque Petroni Júnior, 1089",
-        "city": "São Paulo",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://shop.billabong.com.br/",
-        "phone": "+55 11 5184-2428",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Billabong%20Shopping%20Morumbi&query_place_id=ChIJlUtZlMRQzpQRiBNw3-CGb00",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Surf's Up Club - Aluguel de prancha - Surf's Up House - Juquehy",
-        "totalScore": 5,
-        "reviewsCount": 83,
-        "street": "Av. Monte Alto, 69",
-        "city": "São Sebastião",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://surfsupclub.com/local/surfs-up-house-juquehy",
-        "phone": "+55 12 99674-0403",
-        "categories": [
-            "Escritório da empresa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Surf's%20Up%20Club%20-%20Aluguel%20de%20prancha%20-%20Surf's%20Up%20House%20-%20Juquehy&query_place_id=ChIJd_2jq0WHzZQR6ZEsehN0dGY",
-        "categoryName": "Escritório da empresa"
-    },
-    {
-        "title": "CavePool São Paulo Skateboards",
-        "totalScore": 4.7,
-        "reviewsCount": 1134,
-        "street": "Av. Eliseu de Almeida, 984",
-        "city": "São Paulo",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://www.cavepoolskate.com.br/",
-        "phone": "+55 11 3722-4669",
-        "categories": [
-            "Pista de skate",
-            "Ateliê de arte",
-            "Bar",
-            "Centro cultural",
-            "Agência de Marketing",
-            "Pizzaria",
-            "Estúdio de gravação",
-            "Bar esportivo",
-            "Estúdio de tatuagem"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=CavePool%20S%C3%A3o%20Paulo%20Skateboards&query_place_id=ChIJh2cqlvdWzpQRv2wod7ahbvU",
-        "categoryName": "Pista de skate"
-    },
-    {
-        "title": "Loja Quiksilver Mooca Plaza Shopping",
-        "totalScore": 4.5,
-        "reviewsCount": 113,
-        "street": "R. Cap. Pacheco e Chaves, 313 - 1113",
-        "city": "São Paulo",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://www.quiksilver.com.br/",
-        "phone": "+55 11 97526-6824",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Quiksilver%20Mooca%20Plaza%20Shopping&query_place_id=ChIJ0TubYPhbzpQRzSylDTF214E",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Rip Curl - Boiçucanga",
-        "totalScore": 4.2,
-        "reviewsCount": 6,
-        "street": "Av. Walkir Vergani, 614 - Loja 14",
-        "city": "São Sebastião",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "http://www.ripcurl.com.br/",
-        "phone": "+55 12 3865-2227",
-        "categories": [
-            "Loja de roupas esportivas"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Rip%20Curl%20-%20Boi%C3%A7ucanga&query_place_id=ChIJZaalH6N_0pQRIY26JUpZFgo",
-        "categoryName": "Loja de roupas esportivas"
-    },
-    {
-        "title": "Projeto Soul Surf",
-        "totalScore": 5,
-        "reviewsCount": 13,
-        "street": "Av. Dr. Edson Batista de Andrade, 571",
-        "city": "Itanhaém",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://projetosoulsurf.org/",
-        "phone": "+55 11 93000-3945",
-        "categories": [
-            "Escola de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Projeto%20Soul%20Surf&query_place_id=ChIJR7jQ9JjV0ZQRFPseaJYr0G0",
-        "categoryName": "Escola de surfe"
-    },
-    {
-        "title": "Loja Favela Surf",
-        "totalScore": 4.9,
-        "reviewsCount": 38,
-        "street": "R. Carlos Alberto Ferragut",
-        "city": "Vinhedo",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "phone": "+55 19 98149-4276",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Favela%20Surf&query_place_id=ChIJeT03Dlszz5QRmq-BvJrjrHY",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Loja Quiksilver Ipanema",
-        "totalScore": 4.6,
-        "reviewsCount": 64,
-        "street": "R. Visc. de Pirajá, 287",
-        "city": "Rio de Janeiro",
-        "state": "Rio de Janeiro",
-        "countryCode": "BR",
-        "website": "http://www.quiksilver.com.br/",
-        "phone": "+55 21 97402-8634",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Quiksilver%20Ipanema&query_place_id=ChIJ57C-tRrVmwARc5NtyJkdAMY",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Surf Hoe",
-        "totalScore": 4.8,
-        "reviewsCount": 11,
-        "street": "Estr. Francisco da Cruz Nunes, 155",
-        "city": "Niterói",
-        "state": "Rio de Janeiro",
-        "countryCode": "BR",
-        "phone": "+55 21 98458-4893",
-        "categories": [
-            "Clube"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Surf%20Hoe&query_place_id=ChIJ_3JGBDOHmQARSi4lHLUngvs",
-        "categoryName": "Clube"
-    },
-    {
-        "title": "Quebrada surf",
-        "totalScore": 4.9,
-        "reviewsCount": 7,
-        "street": "Av. Rúbens Rúbio da Rosa, 565",
-        "city": "Botucatu",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://instagram.com/quebrada__surf?igshid=MjEwN2IyYWYwYw==",
-        "phone": "+55 14 99902-1208",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Quebrada%20surf&query_place_id=ChIJ59jf7mbfxpQRRyq9N1kxrWI",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Sunsdoor",
-        "totalScore": 5,
-        "reviewsCount": 5,
-        "street": "R. João Caetano, 188",
-        "city": "Santos",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "phone": "+55 13 97403-3442",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Sunsdoor&query_place_id=ChIJuTDFoBYdzpQRwwg5Ui7L_qA",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "Rip Curl Guarujá",
-        "totalScore": 4.6,
-        "reviewsCount": 13,
-        "street": "Av. Marjory da Silva Prado, 1100",
-        "city": "Guarujá",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "phone": "+55 13 3329-3833",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Rip%20Curl%20Guaruj%C3%A1&query_place_id=ChIJ3X4LKEoB0pQRtH4op5VdNqs",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Rip Curl",
-        "totalScore": 4,
-        "reviewsCount": 9,
-        "street": "Av. da Riviera, 1256",
-        "city": "Bertioga",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://m.ripcurl.com.br/",
-        "phone": "+55 13 3396-4545",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Rip%20Curl&query_place_id=ChIJ4eyP3nbxzZQReU98hYxZsf0",
-        "categoryName": "Loja de Roupa"
-    },
-    {
-        "title": "Dk Surf Wear- Perequê",
-        "totalScore": 4.7,
-        "reviewsCount": 7,
-        "street": "Av. Rio Amazonas, 522",
-        "city": "Guarujá",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "https://www.instagram.com/dkpereque/",
-        "phone": "+55 13 99730-6540",
-        "categories": [
-            "Loja"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Dk%20Surf%20Wear-%20Perequ%C3%AA&query_place_id=ChIJJy-LG_P_zZQRmDR7NEB15HA",
-        "categoryName": "Loja"
-    },
-    {
-        "title": "Star Point",
-        "reviewsCount": null,
-        "street": "R. Turiassu, 2100",
-        "city": "São Paulo",
-        "state": "São Paulo",
-        "countryCode": "BR",
-        "website": "http://www.starpoint.com.br/",
-        "phone": "+55 11 3892-9315",
-        "categories": [
-            "Loja de surfe"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=Star%20Point&query_place_id=ChIJxzNMWVZXzpQRpxElR6FmHYI",
-        "categoryName": "Loja de surfe"
-    },
-    {
-        "title": "TS3 Surf Skate - Centro",
-        "totalScore": 4.1,
-        "reviewsCount": 89,
-        "street": "R. Cel. Córdova, 287",
-        "city": "Lages",
-        "state": "Santa Catarina",
-        "countryCode": "BR",
-        "website": "https://instagram.com/ts3_surf_skate",
-        "phone": "+55 49 3222-7990",
-        "categories": [
-            "Loja de Roupa"
-        ],
-        "url": "https://www.google.com/maps/search/?api=1&query=TS3%20Surf%20Skate%20-%20Centro&query_place_id=ChIJFW-jcbAf4JQRbsr3yZqNDaE",
-        "categoryName": "Loja de Roupa"
-    }
+  {
+    "title": "Marina do Fedoca",
+    "totalScore": 4.7,
+    "reviewsCount": 42,
+    "street": null,
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "categories": [
+      "Marina"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Marina%20do%20Fedoca&query_place_id=ChIJp8p2qWA-J5URiCERPCJTPnE",
+    "categoryName": "Marina"
+  },
+  {
+    "title": "Meu Negócio Mais",
+    "totalScore": 5,
+    "reviewsCount": 17,
+    "street": "Av. Trompowsky, 354",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://meunegociomais.com.br/",
+    "phone": "+55 48 3034-6471",
+    "categories": [
+      "Agência de marketing digital",
+      "Agência de Marketing",
+      "Consultoria em Marketing"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Meu%20Neg%C3%B3cio%20Mais&query_place_id=ChIJman3t9ZJJ5URGk5xxaVOAQ4",
+    "categoryName": "Agência de marketing digital"
+  },
+  {
+    "title": "Baía Funda - Lagoa da Conceição - Florianópolis",
+    "totalScore": 5,
+    "reviewsCount": 10,
+    "street": null,
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "categories": [
+      "Escritório da empresa"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Ba%C3%ADa%20Funda%20-%20Lagoa%20da%20Concei%C3%A7%C3%A3o%20-%20Florian%C3%B3polis&query_place_id=ChIJ2c6jDIg-J5URETlinYN6EM4",
+    "categoryName": "Escritório da empresa"
+  },
+  {
+    "title": "Centro Espanhol de Negócios",
+    "totalScore": 5,
+    "reviewsCount": 1,
+    "street": "Av. Rio Branco, 387",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://centroespanholdenegocios.com.br/",
+    "phone": "+55 48 3224-1919",
+    "categories": [
+      "Centro comercial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Centro%20Espanhol%20de%20Neg%C3%B3cios&query_place_id=ChIJU7ZdWh84J5UR9Tynto1vO3U",
+    "categoryName": "Centro comercial"
+  },
+  {
+    "title": "Quadro Consultoria em Turismo, Alimentação e Marketing Turistico",
+    "totalScore": 5,
+    "reviewsCount": 10,
+    "street": "Rod. Amaro Antônio Viêira, 2797",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.quadroconsultoria.com.br/",
+    "phone": "+55 48 99119-2727",
+    "categories": [
+      "Consultoria empresarial",
+      "Consultoria"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Quadro%20Consultoria%20em%20Turismo%2C%20Alimenta%C3%A7%C3%A3o%20e%20Marketing%20Turistico&query_place_id=ChIJU4EF81c4J5URSQbno5QxDV4",
+    "categoryName": "Consultoria empresarial"
+  },
+  {
+    "title": "Hospedar Floripa",
+    "totalScore": 5,
+    "reviewsCount": 5,
+    "street": "R. Laurindo Januário da Silveira, 1233",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.hospedarfloripa.com.br/",
+    "phone": "+55 48 99651-7000",
+    "categories": [
+      "Imobiliária de aluguéis por temporada"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Hospedar%20Floripa&query_place_id=ChIJWUIuVEo5J5URyf5KweCuyQ4",
+    "categoryName": "Imobiliária de aluguéis por temporada"
+  },
+  {
+    "title": "La Bella Floripa -- Apartamentos",
+    "totalScore": 4.8,
+    "reviewsCount": 129,
+    "street": "R. Altamiro Barcelos Dutra, 480",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3200-0000",
+    "categories": [
+      "Edifício de apartamentos mobiliados"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=La%20Bella%20Floripa%20--%20Apartamentos&query_place_id=ChIJewOIeVk-J5URvxyZKMvTf2o",
+    "categoryName": "Edifício de apartamentos mobiliados"
+  },
+  {
+    "title": "Casas Silvano",
+    "totalScore": 5,
+    "reviewsCount": 21,
+    "street": "Tv. Maria Eduvirges da Conceição, 63",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.aluguepousadas.com.br/hotel/casas-silvano-duarte",
+    "phone": "+55 48 99166-3470",
+    "categories": [
+      "Empresa de hospedagem na Web"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Casas%20Silvano&query_place_id=ChIJgXn16OU_J5UR6XGnAOX6yvc",
+    "categoryName": "Empresa de hospedagem na Web"
+  },
+  {
+    "title": "Square SC",
+    "totalScore": 4.5,
+    "reviewsCount": 2475,
+    "street": "Square SC - Rod. José Carlos Daux, 5500",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.squaresc.com.br/",
+    "phone": "+55 48 4042-1909",
+    "categories": [
+      "Centro comercial",
+      "Médico",
+      "Restaurante",
+      "Shopping center"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Square%20SC&query_place_id=ChIJa4Kveg1HJ5URiKHQvehyNU0",
+    "categoryName": "Centro comercial"
+  },
+  {
+    "title": "Fort Atacadista",
+    "totalScore": 4.2,
+    "reviewsCount": 10688,
+    "street": "Santo Antônio de Lisboa - Rod. José Carlos Daux, 9580",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.fortatacadista.com.br/",
+    "phone": "+55 48 3321-0723",
+    "categories": [
+      "Atacadista",
+      "Atacadista pague e leve",
+      "Açougue",
+      "Loja de bebidas",
+      "Supermercado"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Fort%20Atacadista&query_place_id=ChIJVVOzfAFHJ5UR-AOmmkW9tVs",
+    "categoryName": "Atacadista"
+  },
+  {
+    "title": "Apto Próx. à Praia e ao Floripa Shopping [EAZ305]",
+    "reviewsCount": null,
+    "street": null,
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.booking.com/hotel/br/apto-prox-a-praia-e-ao-floripa-shopping-eaz305.en.html?aid=2068758;label=seogooglelocal-link-imagesaow-hotel-11712686_grp-2_gendate-20240917;utm_source=seogooglelocal;utm_medium=description;utm_term=hotel-11712686;utm_campaign=en",
+    "categories": [
+      "Apartamento",
+      "Locação de férias"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Apto%20Pr%C3%B3x.%20%C3%A0%20Praia%20e%20ao%20Floripa%20Shopping%20%5BEAZ305%5D&query_place_id=ChIJfRQH-oA4J5UR0LAuBsq02mI",
+    "categoryName": "Apartamento"
+  },
+  {
+    "title": "Comercial São Francisco",
+    "totalScore": 4.5,
+    "reviewsCount": 327,
+    "street": "R. Lauro Linhares, 2010",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "categories": [
+      "Escritório da empresa"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Comercial%20S%C3%A3o%20Francisco&query_place_id=ChIJk42urNk5J5UR4rhVM4y-Vzg",
+    "categoryName": "Escritório da empresa"
+  },
+  {
+    "title": "Portobello Shop Florianópolis",
+    "totalScore": 4.3,
+    "reviewsCount": 207,
+    "street": "Av. Me. Benvenuta, 690",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://portobello.com.br/",
+    "phone": "+55 48 3031-6400",
+    "categories": [
+      "Loja de pisos",
+      "Loja de materiais de construção",
+      "Fornecedor de revestimento"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Portobello%20Shop%20Florian%C3%B3polis&query_place_id=ChIJ-3AbRfk4J5UR7iJZqLs_-Dc",
+    "categoryName": "Loja de pisos"
+  },
+  {
+    "title": "Coisas da Cris Aviamentos",
+    "totalScore": 4.6,
+    "reviewsCount": 368,
+    "street": "R. Sérgio Lopes Falcão, 27 - Salas 02 e 03",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.coisasdacris.com.br/",
+    "phone": "+55 48 3238-3487",
+    "categories": [
+      "Loja de aviamentos",
+      "Loja de materiais para artesanato",
+      "Loja de acessórios de moda",
+      "Armarinho"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Coisas%20da%20Cris%20Aviamentos&query_place_id=ChIJ0Qz-dlc4J5URNdoOQSerC60",
+    "categoryName": "Loja de aviamentos"
+  },
+  {
+    "title": "ACIUM",
+    "totalScore": 4.4,
+    "reviewsCount": 58,
+    "street": "SC-401, 3116 - 126",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.instagram.com/floripashopping_acium/",
+    "phone": "+55 48 99820-9272",
+    "categories": [
+      "Loja"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=ACIUM&query_place_id=ChIJ7YKFGKA4J5URIc39guJaq2g",
+    "categoryName": "Loja"
+  },
+  {
+    "title": "Supermercados Imperatriz - Floripa Shopping",
+    "totalScore": 4.3,
+    "reviewsCount": 4588,
+    "street": "Floripa Shopping - SC-401, 3116",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.supermercadosimperatriz.com.br/",
+    "phone": "+55 48 3279-4123",
+    "categories": [
+      "Supermercado",
+      "Loja de eletrodomésticos",
+      "Padaria",
+      "Cafeteria",
+      "Restaurante de sushi"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Supermercados%20Imperatriz%20-%20Floripa%20Shopping&query_place_id=ChIJ_4uTI6A4J5URaMa9crhKROY",
+    "categoryName": "Supermercado"
+  },
+  {
+    "title": "Milium tem de tudo Marginal SC 401, Florianópolis - 81",
+    "totalScore": 4.6,
+    "reviewsCount": 251,
+    "street": "Rod. SC 401, 3600, Marginal SC, 401",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.milium.com.br/",
+    "phone": "+55 48 2108-5113",
+    "categories": [
+      "Loja de departamento"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Milium%20tem%20de%20tudo%20Marginal%20SC%20401%2C%20Florian%C3%B3polis%20-%2081&query_place_id=ChIJ7WZsTU9HJ5UR4IeHjBNJEJY",
+    "categoryName": "Loja de departamento"
+  },
+  {
+    "title": "RT Cópias & Serviços",
+    "totalScore": 3.5,
+    "reviewsCount": 21,
+    "street": "R. Dep. Antônio Edu Vieira, 1890",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 99901-9715",
+    "categories": [
+      "Copiadora"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=RT%20C%C3%B3pias%20%26%20Servi%C3%A7os&query_place_id=ChIJGSPYpKU5J5URhN9qTRjZx0k",
+    "categoryName": "Copiadora"
+  },
+  {
+    "title": "SENAI Florianópolis (CTAI)",
+    "totalScore": 4.6,
+    "reviewsCount": 175,
+    "street": "SC-401, 3730",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.sc.senai.br/",
+    "phone": "+55 48 3239-5801",
+    "categories": [
+      "Escola técnica",
+      "Escola"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=SENAI%20Florian%C3%B3polis%20(CTAI)&query_place_id=ChIJ7--oAV5HJ5UR7IOEq60TD1s",
+    "categoryName": "Escola técnica"
+  },
+  {
+    "title": "MSL - Maximus Serviços Linguísticos/Traduções",
+    "reviewsCount": null,
+    "street": "R. Europa, 106",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://msltraducoes.com/",
+    "phone": "+55 48 99623-6587",
+    "categories": [
+      "Serviço de tradução"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=MSL%20-%20Maximus%20Servi%C3%A7os%20Lingu%C3%ADsticos%2FTradu%C3%A7%C3%B5es&query_place_id=ChIJl2qZVlw4J5URscQKAo28mfI",
+    "categoryName": "Serviço de tradução"
+  },
+  {
+    "title": "Capela Vaticano - Florianópolis",
+    "totalScore": 4.8,
+    "reviewsCount": 197,
+    "street": "R. Pastor William Richard Schisler Filho, 452",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.portalvaticano.com.br/",
+    "phone": "+55 48 3236-3006",
+    "categories": [
+      "Crematório",
+      "Casa funerária"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Capela%20Vaticano%20-%20Florian%C3%B3polis&query_place_id=ChIJb15SLI04J5URz1CbA30A1-Q",
+    "categoryName": "Crematório"
+  },
+  {
+    "title": "Clínica Gástrica Usuy Florianópolis Endoscopia e Colonoscopia",
+    "totalScore": 4.8,
+    "reviewsCount": 3983,
+    "street": "R. Sebastião L. da Silva, 126",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.gastrica.com.br/",
+    "phone": "+55 48 3953-6700",
+    "categories": [
+      "Endoscopista",
+      "Cirurgião bariátrico",
+      "Gastroenterologista",
+      "Cirurgião gastrointestinal",
+      "Clínico geral",
+      "Hepatologista",
+      "Centro médico",
+      "Oncologista",
+      "Proctologista",
+      "Cirurgião"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Cl%C3%ADnica%20G%C3%A1strica%20Usuy%20Florian%C3%B3polis%20Endoscopia%20e%20Colonoscopia&query_place_id=ChIJTa3yGho5J5URRc-9CRB-YSI",
+    "categoryName": "Endoscopista"
+  },
+  {
+    "title": "Robert Half® Consultoria de Recrutamento, Florianópolis",
+    "reviewsCount": null,
+    "street": "Rod. Admar Gonzaga, 440 - 5º andar",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.roberthalf.com/br/pt/localizacoes/florianopolis/rod-admar-gonzaga?utm_source=gmb_listing&utm_medium=organic&utm_campaign=local_listing",
+    "phone": "+55 48 3036-1176",
+    "categories": [
+      "Agência de empregos temporários",
+      "Recrutamento"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Robert%20Half%C2%AE%20Consultoria%20de%20Recrutamento%2C%20Florian%C3%B3polis&query_place_id=ChIJt_c4WCA5J5URgc4ai_djeLU",
+    "categoryName": "Agência de empregos temporários"
+  },
+  {
+    "title": "Vilaj Coworking | Florianópolis",
+    "totalScore": 4.7,
+    "reviewsCount": 76,
+    "street": "R. Lauro Linhares, 1281 - 4",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://vilaj.com.br/",
+    "phone": "+55 48 3039-4889",
+    "categories": [
+      "Espaço de coworking",
+      "Serviço de planejamento de reuniões",
+      "Locação de escritório virtual"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Vilaj%20Coworking%20%7C%20Florian%C3%B3polis&query_place_id=ChIJ_5Ho11k4J5URoeflqCsZBg4",
+    "categoryName": "Espaço de coworking"
+  },
+  {
+    "title": "Mecânica Em Florianópolis - Fábio Auto Center",
+    "totalScore": 4.7,
+    "reviewsCount": 475,
+    "street": "R. Antônio Carlos Ferreira, 92",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3333-1472",
+    "categories": [
+      "Mecânica para carros",
+      "Oficina mecânica",
+      "Mecânico"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Mec%C3%A2nica%20Em%20Florian%C3%B3polis%20-%20F%C3%A1bio%20Auto%20Center&query_place_id=ChIJIQVaZmU4J5URE9AACZqdRt4",
+    "categoryName": "Mecânica para carros"
+  },
+  {
+    "title": "Lavanderia Lavação Florianópolis",
+    "totalScore": 4.9,
+    "reviewsCount": 397,
+    "street": "R. Des. Vítor Lima, 260",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 99121-5501",
+    "categories": [
+      "Lavanderia"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Lavanderia%20Lava%C3%A7%C3%A3o%20Florian%C3%B3polis&query_place_id=ChIJB6qvfsvtnpQRSVa4tSHacQI",
+    "categoryName": "Lavanderia"
+  },
+  {
+    "title": "MobFloripa ::: Portal de Mobilidade Urbana de Florianópolis",
+    "totalScore": 4,
+    "reviewsCount": 10,
+    "street": "Tv. dos Flamboyants, 117",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3233-6415",
+    "categories": [
+      "Agência de viagens de ônibus",
+      "Fretamento de ônibus"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=MobFloripa%20%3A%3A%3A%20Portal%20de%20Mobilidade%20Urbana%20de%20Florian%C3%B3polis&query_place_id=ChIJ61tA2q05J5UR5bz0-BhaODU",
+    "categoryName": "Agência de viagens de ônibus"
+  },
+  {
+    "title": "Gi Personal Chef | Florianópolis e Região",
+    "totalScore": 5,
+    "reviewsCount": 64,
+    "street": "Servidão Altíno Manoel Claudino, 10",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.gipersonalchef.com.br/",
+    "phone": "+55 48 99605-3617",
+    "categories": [
+      "Serviço de personal chef"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Gi%20Personal%20Chef%20%7C%20Florian%C3%B3polis%20e%20Regi%C3%A3o&query_place_id=ChIJ5fPpYcdBJ5URlJjpsGAjNCg",
+    "categoryName": "Serviço de personal chef"
+  },
+  {
+    "title": "OMV Servicos Internacionais | Assessoria em Vistos e Viagens",
+    "totalScore": 5,
+    "reviewsCount": 3,
+    "street": "R. Cônego Bernardo, 101 - Andar 4, Sala 402",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://ohmyvisa.com.br/",
+    "phone": "+55 48 99155-2729",
+    "categories": [
+      "Centro de informação ao turista"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=OMV%20Servicos%20Internacionais%20%7C%20Assessoria%20em%20Vistos%20e%20Viagens&query_place_id=ChIJEb0NIIY5J5URR4dq23gVVus",
+    "categoryName": "Centro de informação ao turista"
+  },
+  {
+    "title": "Cuide Homecare Florianópolis",
+    "totalScore": 5,
+    "reviewsCount": 6,
+    "street": "Rua Lauro Linhares, 2055 Ed. Max & Flora. Torre Flora, sala 608",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "https://homecareflorianopolis.com.br/",
+    "phone": "+55 48 98474-3694",
+    "categories": [
+      "Serviço de assistência médica domiciliar",
+      "Serviços de cuidados para idosos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Cuide%20Homecare%20Florian%C3%B3polis&query_place_id=ChIJJURkprA5J5URHvMXOqbn7aM",
+    "categoryName": "Serviço de assistência médica domiciliar"
+  },
+  {
+    "title": "Oficina beira mar. Trabalhamos com socorro mecânico automotivo",
+    "totalScore": 4.7,
+    "reviewsCount": 35,
+    "street": "R. Trajano Margarida, 295",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://wa.me/5548996391250",
+    "phone": "+55 48 99639-1250",
+    "categories": [
+      "Oficina mecânica",
+      "Mecânica para carros",
+      "Eletricista"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Oficina%20beira%20mar.%20Trabalhamos%20com%20socorro%20mec%C3%A2nico%20automotivo&query_place_id=ChIJYT20IvY5J5URCDqvBI5_MAQ",
+    "categoryName": "Oficina mecânica"
+  },
+  {
+    "title": "Opus SST - Saúde e Segurança do Trabalho",
+    "totalScore": 5,
+    "reviewsCount": 49,
+    "street": "Rod. José Carlos Daux, 5025 - 2° ANDAR SALA 10 - Saco Grande, Florianópolis - SC, 88032-005",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "https://opussst.com/",
+    "phone": "+55 48 3050-5910",
+    "categories": [
+      "Consultório médico",
+      "Serviço de exame de sangue",
+      "Serviço de saúde ocupacional",
+      "Saúde e segurança ocupacional"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Opus%20SST%20-%20Sa%C3%BAde%20e%20Seguran%C3%A7a%20do%20Trabalho&query_place_id=ChIJk1KoTBtHJ5URlhgUPVp4ckQ",
+    "categoryName": "Consultório médico"
+  },
+  {
+    "title": "Valor e Foco | Inteligência de Negócios",
+    "totalScore": 3.7,
+    "reviewsCount": 3,
+    "street": "Parque Tecnológico Alfa, Edifício Celta - SC-401, km 01 - 600",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.valorefoco.com.br/",
+    "phone": "+55 48 3234-0087",
+    "categories": [
+      "Serviço de desenvolvimento empresarial",
+      "Consultoria empresarial",
+      "Consultoria em engenharia",
+      "Consultor industrial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Valor%20e%20Foco%20%7C%20Intelig%C3%AAncia%20de%20Neg%C3%B3cios&query_place_id=ChIJqfFE-404J5URDHuIxmzqCcw",
+    "categoryName": "Serviço de desenvolvimento empresarial"
+  },
+  {
+    "title": "Informática SuperFast - Loja de PC Gamer e Workstation na Trindade",
+    "totalScore": 4.9,
+    "reviewsCount": 152,
+    "street": "R. Lauro Linhares, 2010 - Sala 207 - Torre A",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://superfastcomputadores.com.br/",
+    "phone": "+55 48 99133-0523",
+    "categories": [
+      "Loja de Informática",
+      "Consultoria de informática",
+      "Assistência Técnica de Informática",
+      "Serviço de informática",
+      "Suporte e serviços para computadores",
+      "Loja de computadores usados"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Inform%C3%A1tica%20SuperFast%20-%20Loja%20de%20PC%20Gamer%20e%20Workstation%20na%20Trindade&query_place_id=ChIJU9zjZC3f_EsRZzDSxh4gHFI",
+    "categoryName": "Loja de Informática"
+  },
+  {
+    "title": "Lavanderia Self Service - Aquamagic Carvoeira Florianópolis",
+    "totalScore": 5,
+    "reviewsCount": 6,
+    "street": "R. Cap. Romualdo de Barros, 781 - Loja 03",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://ilhadamagia.aquamagiclavanderias.com.br/",
+    "phone": "+55 48 99225-2288",
+    "categories": [
+      "Lavanderia automática",
+      "Lavanderia",
+      "Serviço de lavanderia"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Lavanderia%20Self%20Service%20-%20Aquamagic%20Carvoeira%20Florian%C3%B3polis&query_place_id=ChIJIdD_E9w5J5URybVlC84naf8",
+    "categoryName": "Lavanderia automática"
+  },
+  {
+    "title": "SmartTech Floripa Shopping | Assistência Técnica",
+    "totalScore": 4.8,
+    "reviewsCount": 539,
+    "street": "SC-401, 3116 Floripa Shopping, Piso, L2",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "https://www.smarttechfloripa.com.br/",
+    "phone": "+55 48 3234-9000",
+    "categories": [
+      "Loja de Informática",
+      "Loja de celulares"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=SmartTech%20Floripa%20Shopping%20%7C%20Assist%C3%AAncia%20T%C3%A9cnica&query_place_id=ChIJ-bNagDk5J5URBGTGHt_AbdU",
+    "categoryName": "Loja de Informática"
+  },
+  {
+    "title": "CCG Floripa",
+    "totalScore": 4.8,
+    "reviewsCount": 179,
+    "street": "R. Lauro Linhares, 245",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "categories": [
+      "Loja de cards colecionáveis",
+      "Clube de jogos de tabuleiro",
+      "Clube de xadrez e carteado",
+      "Bar",
+      "Loja de jogos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=CCG%20Floripa&query_place_id=ChIJawIVeV0JM0oR5BtnD_poQeA",
+    "categoryName": "Loja de cards colecionáveis"
+  },
+  {
+    "title": "Balaroti Florianópolis",
+    "totalScore": 4.1,
+    "reviewsCount": 1638,
+    "street": "Rod. José Carlos Daux, 2684",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.balaroti.com.br/",
+    "phone": "+55 48 3035-9150",
+    "categories": [
+      "Loja de materiais de construção"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Balaroti%20Florian%C3%B3polis&query_place_id=ChIJqR9U4544J5URYEcdGq_WsA0",
+    "categoryName": "Loja de materiais de construção"
+  },
+  {
+    "title": "Stecanela Materiais Elétricos, Hidráulicos & Iluminação Florianópolis",
+    "totalScore": 4.4,
+    "reviewsCount": 733,
+    "street": "R. Lauro Linhares, 356",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.stecanela.com.br/",
+    "phone": "+55 48 3333-3003",
+    "categories": [
+      "Loja de materiais elétricos",
+      "Loja de Material Hidráulico",
+      "Loja de Iluminação"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Stecanela%20Materiais%20El%C3%A9tricos%2C%20Hidr%C3%A1ulicos%20%26%20Ilumina%C3%A7%C3%A3o%20Florian%C3%B3polis&query_place_id=ChIJe7JamV04J5UR5xhCXOZMv4I",
+    "categoryName": "Loja de materiais elétricos"
+  },
+  {
+    "title": "Angeloni Santa Mônica (Florianópolis) - Supermercado",
+    "totalScore": 4.1,
+    "reviewsCount": 3693,
+    "street": "R. Nirberto Haase, 75",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.angeloni.com.br/lojas/index",
+    "phone": "+55 48 3215-6200",
+    "categories": [
+      "Supermercado",
+      "Loja de eletrodomésticos",
+      "Caixa eletrônico",
+      "Loja de eletrônicos",
+      "Loja de bebidas"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Angeloni%20Santa%20M%C3%B4nica%20(Florian%C3%B3polis)%20-%20Supermercado&query_place_id=ChIJkYTPWfk4J5URYhQ6wKgunFs",
+    "categoryName": "Supermercado"
+  },
+  {
+    "title": "Impacto Prime Florianópolis - Pneus, Oficina e Troca de Óleo",
+    "totalScore": 4.3,
+    "reviewsCount": 3906,
+    "street": "Rod. José Carlos Daux, 4529",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://florianopolis.impactoprime.com.br/",
+    "phone": "+55 800 100 7575",
+    "categories": [
+      "Comércio de Pneu",
+      "Oficina mecânica"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Impacto%20Prime%20Florian%C3%B3polis%20-%20Pneus%2C%20Oficina%20e%20Troca%20de%20%C3%93leo&query_place_id=ChIJmeQhue1HJ5UR0A2EfB3TDNQ",
+    "categoryName": "Comércio de Pneu"
+  },
+  {
+    "title": "Colchões Ortobom Floripa Shopping",
+    "totalScore": 4.2,
+    "reviewsCount": 262,
+    "street": "Loja de Shopping - Rod. José Carlos Daux, 3116 - Loja 110",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.ortobom.com.br/loja/floripashopping",
+    "phone": "+55 48 3238-2090",
+    "categories": [
+      "Loja de colchões",
+      "Loja de camas"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Colch%C3%B5es%20Ortobom%20Floripa%20Shopping&query_place_id=ChIJq6qqqqY4J5URs8SGOWE_XJY",
+    "categoryName": "Loja de colchões"
+  },
+  {
+    "title": "Cobasi Florianópolis",
+    "totalScore": 4.6,
+    "reviewsCount": 842,
+    "street": "Rod. José Carlos Daux, 4360",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.cobasi.com.br/",
+    "phone": "+55 48 3380-9919",
+    "categories": [
+      "Loja de suprimentos para animais de estimação"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Cobasi%20Florian%C3%B3polis&query_place_id=ChIJ4QjdppVHJ5UR4RWJBSDlK5s",
+    "categoryName": "Loja de suprimentos para animais de estimação"
+  },
+  {
+    "title": "Angeloni - SC 401 (Florianópolis) - Supermercado",
+    "totalScore": 4.5,
+    "reviewsCount": 1347,
+    "street": "SC-401, 1484",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.angeloni.com.br/super",
+    "phone": "+55 48 3771-0000",
+    "categories": [
+      "Supermercado"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Angeloni%20-%20SC%20401%20(Florian%C3%B3polis)%20-%20Supermercado&query_place_id=ChIJkeZNc505J5UR09lvcoPuB-8",
+    "categoryName": "Supermercado"
+  },
+  {
+    "title": "Kopenhagen Floripa Shopping Florianópolis",
+    "totalScore": 4.9,
+    "reviewsCount": 119,
+    "street": "SC-401 - Rod. José Carlos Daux, 3116 - Piso L2, quiosque 211",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.instagram.com/kopenhagen_floripashopping/",
+    "phone": "+55 48 99123-9823",
+    "categories": [
+      "Organização de eventos e cerimonial",
+      "Chocolateria",
+      "Loja de chocolates",
+      "Buffet de doces e sobremesas",
+      "Doceria",
+      "Local para eventos",
+      "Sorveteria",
+      "Sorveteria especializada em sundaes",
+      "Assessoria e cerimonial de casamentos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Kopenhagen%20Floripa%20Shopping%20Florian%C3%B3polis&query_place_id=ChIJQTNaI5E5J5UR5oINaUxmkGc",
+    "categoryName": "Organização de eventos e cerimonial"
+  },
+  {
+    "title": "Tea Shop Villa Romana - Florianópolis",
+    "totalScore": 4.5,
+    "reviewsCount": 1912,
+    "street": "Av. Me. Benvenuta, 687 - Piso L2",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.teashop.com.br/",
+    "phone": "+55 48 98808-9847",
+    "categories": [
+      "Loja de chás",
+      "Shopping center"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Tea%20Shop%20Villa%20Romana%20-%20Florian%C3%B3polis&query_place_id=ChIJAUpLuvk4J5URoMiz1CPEUUI",
+    "categoryName": "Loja de chás"
+  },
+  {
+    "title": "NDE - Núcleo de Desenvolvimento Empresarial | Eventos Empresariais em Florianópolis",
+    "totalScore": 5,
+    "reviewsCount": 10,
+    "street": "Square SC - Corporate - Rod. José Carlos Daux, 5500",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.instagram.com/ndempresarial/",
+    "phone": "+55 48 99673-7816",
+    "categories": [
+      "Local para eventos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=NDE%20-%20N%C3%BAcleo%20de%20Desenvolvimento%20Empresarial%20%7C%20Eventos%20Empresariais%20em%20Florian%C3%B3polis&query_place_id=ChIJaRFQ8RlHJ5URfcexF8CC9dA",
+    "categoryName": "Local para eventos"
+  },
+  {
+    "title": "Business Decor",
+    "totalScore": 4.4,
+    "reviewsCount": 460,
+    "street": "Rod. José Carlos Daux, 5025B",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "categories": [
+      "Centro comercial",
+      "Bistrô",
+      "Parque tecnológico"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Business%20Decor&query_place_id=ChIJca7ed21HJ5URO1XZ7O19L9U",
+    "categoryName": "Centro comercial"
+  },
+  {
+    "title": "GD Negócios",
+    "reviewsCount": null,
+    "street": "R. Santa Luzia, 100 - sala 1020",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://gdinvestimento.gr8.com/",
+    "phone": "+55 48 99633-5291",
+    "categories": [
+      "Serviços de investimentos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=GD%20Neg%C3%B3cios&query_place_id=ChIJT38eacM5J5URofCCKPOl-Pg",
+    "categoryName": "Serviços de investimentos"
+  },
+  {
+    "title": "LION CENTRO DE NEGÓCIOS",
+    "reviewsCount": null,
+    "street": "R. Ogê Fortkamp, 227",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3037-4444",
+    "categories": [
+      "Empresa de relações empresariais",
+      "Serviço de desenvolvimento empresarial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=LION%20CENTRO%20DE%20NEG%C3%93CIOS&query_place_id=ChIJw9C6olY4J5URxBKZTiDqDM8",
+    "categoryName": "Empresa de relações empresariais"
+  },
+  {
+    "title": "Espaço Growth - Ambiente de Negócios",
+    "totalScore": 4.7,
+    "reviewsCount": 40,
+    "street": "Parque Tecnológico Alfa - módulo 10, SC-401",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.espacogrowth.com.br/",
+    "phone": "+55 48 99116-2066",
+    "categories": [
+      "Espaço de coworking"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Espa%C3%A7o%20Growth%20-%20Ambiente%20de%20Neg%C3%B3cios&query_place_id=ChIJCRWgeo44J5URzbcLpjvWNK8",
+    "categoryName": "Espaço de coworking"
+  },
+  {
+    "title": "High Tech Business Center",
+    "totalScore": 4.8,
+    "reviewsCount": 48,
+    "street": "SC-401, 4190",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.hightechfloripa.com.br/",
+    "phone": "+55 47 98851-9984",
+    "categories": [
+      "Construtora de casas personalizadas"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=High%20Tech%20Business%20Center&query_place_id=ChIJmw5lLZ1HJ5URSNl-FhHxCHk",
+    "categoryName": "Construtora de casas personalizadas"
+  },
+  {
+    "title": "Centro Empresarial Office Park",
+    "totalScore": 4.5,
+    "reviewsCount": 312,
+    "street": "SC-401, 4756",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3233-3865",
+    "categories": [
+      "Área de escritórios"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Centro%20Empresarial%20Office%20Park&query_place_id=ChIJ_-C8U544J5UR6AHHb5NPrK4",
+    "categoryName": "Área de escritórios"
+  },
+  {
+    "title": "D.O.S.E. NEGÓCIOS INTELIGENTES",
+    "totalScore": 4,
+    "reviewsCount": 1,
+    "street": "R. Nirberto Haase, 100",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "(689) 288-5428",
+    "categories": [
+      "Imobiliária"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=D.O.S.E.%20NEG%C3%93CIOS%20INTELIGENTES&query_place_id=ChIJV3lUltNJJ5URcnyfnJf0VPU",
+    "categoryName": "Imobiliária"
+  },
+  {
+    "title": "JCK Business Hall",
+    "totalScore": 4.8,
+    "reviewsCount": 124,
+    "street": "Rod. José Carlos Daux, 4633",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://jckbusinesshall.com.br/",
+    "categories": [
+      "Centro comercial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=JCK%20Business%20Hall&query_place_id=ChIJQ3U3wG5HJ5URuX35bYRAIOs",
+    "categoryName": "Centro comercial"
+  },
+  {
+    "title": "Madison Center",
+    "totalScore": 4.5,
+    "reviewsCount": 260,
+    "street": "R. Des. Vítor Lima, 260",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3028-3380",
+    "categories": [
+      "Shopping center",
+      "Loja de celulares",
+      "Assistência Técnica de Informática",
+      "Escritório da empresa",
+      "Loja"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Madison%20Center&query_place_id=ChIJ0Yz5QlQ4J5UR7o0rjzk_OLc",
+    "categoryName": "Shopping center"
+  },
+  {
+    "title": "DC Negócios Digitais",
+    "reviewsCount": null,
+    "street": "R. Protenor Vidal",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 54 99177-3584",
+    "categories": [
+      "Agência de marketing digital"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=DC%20Neg%C3%B3cios%20Digitais&query_place_id=ChIJB9hwBis5J5URlPK3J_btcAE",
+    "categoryName": "Agência de marketing digital"
+  },
+  {
+    "title": "Regus Floripa Shopping",
+    "totalScore": 5,
+    "reviewsCount": 14,
+    "street": "Rod. Virgílio Várzea",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.regus.com/pt-br/brazil/florianopolis/floripa-shopping-8538?utm_source=google_uberall&utm_medium=places&utm_campaign=uberall&utm_content=uberall",
+    "phone": "+55 800 047 5002",
+    "categories": [
+      "Agência de locação de escritórios",
+      "Centro comercial",
+      "Espaço de coworking",
+      "Locação de escritório virtual"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Regus%20Floripa%20Shopping&query_place_id=ChIJhyEdIDc5J5URZS81MpYGocE",
+    "categoryName": "Agência de locação de escritórios"
+  },
+  {
+    "title": "Sebrae - Sede Administrativa",
+    "totalScore": 4.7,
+    "reviewsCount": 571,
+    "street": "Rod. José Carlos Daux, 600 - Lote 2",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.sebrae-sc.com.br/",
+    "phone": "+55 800 570 0800",
+    "categories": [
+      "Consultoria empresarial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Sebrae%20-%20Sede%20Administrativa&query_place_id=ChIJdfS6m444J5URm-gDlGv-TG8",
+    "categoryName": "Consultoria empresarial"
+  },
+  {
+    "title": "Grupo Villela Florianópolis",
+    "totalScore": 4.6,
+    "reviewsCount": 36,
+    "street": "Rod. José Carlos Daux, 4633 - Saco Grande, Florianópolis - SC, 88032-005",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "phone": "+55 48 3054-4884",
+    "categories": [
+      "Consultoria empresarial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Grupo%20Villela%20Florian%C3%B3polis&query_place_id=ChIJAYRE_mY3J5UR3467e3a5diE",
+    "categoryName": "Consultoria empresarial"
+  },
+  {
+    "title": "Avatim Florianópolis Villa Romana Shopping",
+    "totalScore": 4.6,
+    "reviewsCount": 116,
+    "street": "Villa Romana Shopping - 1º andar - Lj 251",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://linktr.ee/LojaAvatimSC",
+    "phone": "+55 48 3028-4740",
+    "categories": [
+      "Perfumaria",
+      "Loja de artigos de aromaterapia",
+      "Fornecedor de produtos de beleza",
+      "Fornecedor de fragrâncias e aromas"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Avatim%20Florian%C3%B3polis%20Villa%20Romana%20Shopping&query_place_id=ChIJxVguofk4J5URnDSwCw9ZxLs",
+    "categoryName": "Perfumaria"
+  },
+  {
+    "title": "Sierra Móveis Florianópolis",
+    "totalScore": 4.5,
+    "reviewsCount": 52,
+    "street": "SQUARE CORPORATE - Rod. José Carlos Daux, 5500 - Loja 05B",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.sierra.com.br/lojas-sierra/sierra-florian%C3%B3polis/brasil",
+    "phone": "+55 48 99221-4437",
+    "categories": [
+      "Loja de móveis"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Sierra%20M%C3%B3veis%20Florian%C3%B3polis&query_place_id=ChIJLbG6wJ44J5URwCj-Tv1m0A0",
+    "categoryName": "Loja de móveis"
+  },
+  {
+    "title": "Nespresso - Boutique Florianópolis",
+    "totalScore": 4.5,
+    "reviewsCount": 117,
+    "street": "Av. Madre Benvenuta, 687 PISO L3 - Loja QL304A",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.nespresso.com/br/pt",
+    "phone": "+55 800 777 7737",
+    "categories": [
+      "Loja de café",
+      "Cafeteria",
+      "Loja"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Nespresso%20-%20Boutique%20Florian%C3%B3polis&query_place_id=ChIJfZYxv1Y5J5URc5Hn7oImFXE",
+    "categoryName": "Loja de café"
+  },
+  {
+    "title": "Loja TIM Floripa Shopping",
+    "totalScore": 3.5,
+    "reviewsCount": 479,
+    "street": "PISO TÉRREO - Floripa Shopping - Rod. Virgílio Várzea, 587 - 145 L1",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.tim.com.br/",
+    "phone": "+55 800 884 0041",
+    "categories": [
+      "Empresa de telecomunicação"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Loja%20TIM%20Floripa%20Shopping&query_place_id=ChIJ7YKFGKA4J5URP3Nifcam6Sc",
+    "categoryName": "Empresa de telecomunicação"
+  },
+  {
+    "title": "Petz Florianópolis",
+    "totalScore": 4.4,
+    "reviewsCount": 4817,
+    "street": "Square SC - Rod. José Carlos Daux, 5500",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.petz.com.br/loja/petz-florianopolis",
+    "phone": "+55 48 3181-0700",
+    "categories": [
+      "Pet Shop",
+      "Banho e tosa",
+      "Loja de suprimentos para animais de estimação"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Petz%20Florian%C3%B3polis&query_place_id=ChIJg8Mw-YNHJ5URkIWKWzWlWCc",
+    "categoryName": "Pet Shop"
+  },
+  {
+    "title": "Havaianas Villa Romana Shopping - Florianópolis",
+    "totalScore": 4.4,
+    "reviewsCount": 255,
+    "street": "Av. Me. Benvenuta, 687 - Piso L2 Loja 325",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://havaianas.com.br/",
+    "phone": "+55 48 3307-3791",
+    "categories": [
+      "Loja de calçado",
+      "Loja de acessórios de moda",
+      "Loja de moda masculina",
+      "Loja de moda feminina"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Havaianas%20Villa%20Romana%20Shopping%20-%20Florian%C3%B3polis&query_place_id=ChIJZY6cRPk4J5URXWsLd0hMVzQ",
+    "categoryName": "Loja de calçado"
+  },
+  {
+    "title": "RI HAPPY VILLA ROMANA FLORIANÓPOLIS",
+    "totalScore": 4.3,
+    "reviewsCount": 652,
+    "street": "Av. Me. Benvenuta, 687 - lojas 115,116 e 117",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.rihappy.com.br/",
+    "phone": "+55 48 3204-5156",
+    "categories": [
+      "Loja de Brinquedos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=RI%20HAPPY%20VILLA%20ROMANA%20FLORIAN%C3%93POLIS&query_place_id=ChIJJaCUaPk4J5URCKlEkz0JK9k",
+    "categoryName": "Loja de Brinquedos"
+  },
+  {
+    "title": "Milium tem de tudo Santo Antônio de Lisboa, Florianópolis - 45",
+    "totalScore": 4.1,
+    "reviewsCount": 178,
+    "street": "Rodovia José Carlos Daux, SC-401, 9580",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.milium.com.br/",
+    "phone": "+55 48 3236-0900",
+    "categories": [
+      "Loja de departamento"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Milium%20tem%20de%20tudo%20Santo%20Ant%C3%B4nio%20de%20Lisboa%2C%20Florian%C3%B3polis%20-%2045&query_place_id=ChIJTVxU2PJGJ5URyxAf4gskEjA",
+    "categoryName": "Loja de departamento"
+  },
+  {
+    "title": "União Hortifruti - Frutas, Verduras Frescas Florianópolis",
+    "totalScore": 4.7,
+    "reviewsCount": 334,
+    "street": "R. Lauro Linhares, 345",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://abre.ai/uniaohortifruti",
+    "phone": "+55 48 99919-6239",
+    "categories": [
+      "Loja de produtos naturais",
+      "Sacolão",
+      "Verdureiro",
+      "Mercado",
+      "Loja de produtos orgânicos",
+      "Atacadista"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Uni%C3%A3o%20Hortifruti%20-%20Frutas%2C%20Verduras%20Frescas%20Florian%C3%B3polis&query_place_id=ChIJu76Nglk4J5UR3X2-PyBZ_Lg",
+    "categoryName": "Loja de produtos naturais"
+  },
+  {
+    "title": "Vitorino Colchões - Florianópolis - SC",
+    "totalScore": 4.9,
+    "reviewsCount": 455,
+    "street": "SC-401 - Rod. José Carlos Daux, 697",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.vitorinocolchoes.com.br/",
+    "phone": "+55 48 98488-4310",
+    "categories": [
+      "Loja de colchões",
+      "Loja de camas",
+      "Loja de roupas de cama",
+      "Loja de móveis"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Vitorino%20Colch%C3%B5es%20-%20Florian%C3%B3polis%20-%20SC&query_place_id=ChIJ-cHK3I44J5URgLqEjQOOBrI",
+    "categoryName": "Loja de colchões"
+  },
+  {
+    "title": "Anjos Colchões & Sofás - Santa Mônica - A Melhor de Florianópolis - Estacionamento em Frente a Loja",
+    "totalScore": 5,
+    "reviewsCount": 331,
+    "street": "Av. Me. Benvenuta, 1332",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://colchoes.anjossantamonica.com/",
+    "phone": "+55 48 3067-5666",
+    "categories": [
+      "Loja de colchões",
+      "Loja de camas",
+      "Loja de roupas de cama",
+      "Loja de tapetes",
+      "Loja de móveis",
+      "Loja de artigos para cama, mesa e banho",
+      "Loja de sofás"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Anjos%20Colch%C3%B5es%20%26%20Sof%C3%A1s%20-%20Santa%20M%C3%B4nica%20-%20A%20Melhor%20de%20Florian%C3%B3polis%20-%20Estacionamento%20em%20Frente%20a%20Loja&query_place_id=ChIJlQLmHhk5J5URfWA_5ynfxis",
+    "categoryName": "Loja de colchões"
+  },
+  {
+    "title": "Constance Calçados",
+    "totalScore": 4.3,
+    "reviewsCount": 103,
+    "street": "Floripa Shopping - SC-401, 3116 - Loja 137 Piso L1",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.constance.com.br/",
+    "phone": "+55 48 3365-2382",
+    "categories": [
+      "Loja de calçado",
+      "Loja de acessórios de moda"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Constance%20Cal%C3%A7ados&query_place_id=ChIJh25OTqA4J5URcfuR18BcRWw",
+    "categoryName": "Loja de calçado"
+  },
+  {
+    "title": "ProFatto Floripa",
+    "totalScore": 4.5,
+    "reviewsCount": 109,
+    "street": "R. Antônio Carlos Ferreira, 219",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.profatto.com.br/",
+    "phone": "+55 48 3207-2222",
+    "categories": [
+      "Loja de materiais de construção",
+      "Loja de eletrodomésticos",
+      "Loja de acessórios para banheiros",
+      "Loja de pisos",
+      "Loja de banheiras de hidromassagem"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=ProFatto%20Floripa&query_place_id=ChIJjTTogG84J5URGtB6lxS-zPU",
+    "categoryName": "Loja de materiais de construção"
+  },
+  {
+    "title": "Unidade de Negócio Ademicon / Florianópolis",
+    "totalScore": 4.2,
+    "reviewsCount": 24,
+    "street": "R. Cel. Maurício Spalding de Souza, 1212 - Loja 01",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.ademicon.com.br/",
+    "phone": "+55 48 3030-1414",
+    "categories": [
+      "Serviços de investimentos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Unidade%20de%20Neg%C3%B3cio%20Ademicon%20%2F%20Florian%C3%B3polis&query_place_id=ChIJXTTKteQ4J5URFDlSVutL24U",
+    "categoryName": "Serviços de investimentos"
+  },
+  {
+    "title": "B1 Agência - Marketing Imobiliário",
+    "totalScore": 5,
+    "reviewsCount": 22,
+    "street": "R. Santa Luzia, 100 - Sala 1019",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.b1agencia.com.br/",
+    "phone": "+55 48 98862-2198",
+    "categories": [
+      "Agência de marketing digital"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=B1%20Ag%C3%AAncia%20-%20Marketing%20Imobili%C3%A1rio&query_place_id=ChIJZ77L3eQ5J5URkO1JngnF2Cs",
+    "categoryName": "Agência de marketing digital"
+  },
+  {
+    "title": "8R Negócios",
+    "reviewsCount": null,
+    "street": "Rod. José Carlos Daux",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://8rnegocios.com.br/",
+    "phone": "+55 48 99183-3888",
+    "categories": [
+      "Consultoria empresarial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=8R%20Neg%C3%B3cios&query_place_id=ChIJqdIIjzNHJ5URYW2eYV2yXkM",
+    "categoryName": "Consultoria empresarial"
+  },
+  {
+    "title": "S7 Santa Mônica",
+    "totalScore": 4.7,
+    "reviewsCount": 77,
+    "street": "R. Nirberto Haase, 100 Ático",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.s7coworking.co/",
+    "phone": "+55 48 3204-6403",
+    "categories": [
+      "Espaço de coworking"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=S7%20Santa%20M%C3%B4nica&query_place_id=ChIJ94RZEks5J5URD0NVP5HE7GA",
+    "categoryName": "Espaço de coworking"
+  },
+  {
+    "title": "Trend Office - Salas Comercias e Andares Corporativos",
+    "totalScore": 5,
+    "reviewsCount": 1,
+    "street": "R. João de Deus Machado, 101",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.gpinheiro.com.br/",
+    "phone": "+55 48 99911-5254",
+    "categories": [
+      "Escritório da empresa",
+      "Apartamentos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Trend%20Office%20-%20Salas%20Comercias%20e%20Andares%20Corporativos&query_place_id=ChIJ_QmbE1Y4J5URRqQkMKgZ_Xk",
+    "categoryName": "Escritório da empresa"
+  },
+  {
+    "title": "Taller Negócios Digitais",
+    "reviewsCount": null,
+    "street": "R. Lauro Linhares, 1281 - sala 4",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://taller.net.br/",
+    "phone": "+55 48 99823-0107",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Taller%20Neg%C3%B3cios%20Digitais&query_place_id=ChIJ4yg96Qg5J5UR--CyxGR505Q",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "Stock & Info Ltda.",
+    "totalScore": 4.4,
+    "reviewsCount": 14,
+    "street": "R. Cônego Bernardo, 57 - 2º Andar Sala 201",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3233-7139",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Stock%20%26%20Info%20Ltda.&query_place_id=ChIJzxUB8yI4J5URykxsY-GRkAU",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "Consultoria Pequenos Negócios",
+    "reviewsCount": null,
+    "street": "R. Ibatingui, 41",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 99919-9313",
+    "categories": [
+      "Consultoria empresarial"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Consultoria%20Pequenos%20Neg%C3%B3cios&query_place_id=ChIJDydjQn85J5URIdlYy6gjO-Q",
+    "categoryName": "Consultoria empresarial"
+  },
+  {
+    "title": "Paradigma Business Solutions",
+    "totalScore": 4.8,
+    "reviewsCount": 30,
+    "street": "SC-401, 8600",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.paradigmabs.com.br/",
+    "phone": "+55 48 2106-7800",
+    "categories": [
+      "Serviço de comércio eletrônico",
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Paradigma%20Business%20Solutions&query_place_id=ChIJUejQyJNGJ5URLEysXzpWqtI",
+    "categoryName": "Serviço de comércio eletrônico"
+  },
+  {
+    "title": "Divid",
+    "totalScore": 4.2,
+    "reviewsCount": 198,
+    "street": "SC-401, 4100 - Km4",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.divid.com.br/",
+    "phone": "+55 48 99162-3948",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Divid&query_place_id=ChIJMcs1wUpHJ5URmPf_rKLMn5I",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "Índice Negócios - Fpolis / SC",
+    "reviewsCount": null,
+    "street": "R. João Carlos de Souza, 209",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://www.indicenegocios.com.br/",
+    "phone": "+55 48 99965-1499",
+    "categories": [
+      "Instituição financeira",
+      "Consultor financeiro"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=%C3%8Dndice%20Neg%C3%B3cios%20-%20Fpolis%20%2F%20SC&query_place_id=ChIJB2q0xiM4J5UR-jBpjhPsH_4",
+    "categoryName": "Instituição financeira"
+  },
+  {
+    "title": "AJEX",
+    "reviewsCount": null,
+    "street": "Edifício America Officenter - Rod. Admar Gonzaga, 440 - 502A",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://ajex.com.br/",
+    "phone": "+55 48 3371-8070",
+    "categories": [
+      "Consultor de comércio internacional"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=AJEX&query_place_id=ChIJB2yd4_I4J5URiACPEo_Fe7E",
+    "categoryName": "Consultor de comércio internacional"
+  },
+  {
+    "title": "Virtual Office Comércio e Representação",
+    "reviewsCount": null,
+    "street": "R. Lauro Linhares, 589",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "phone": "+55 48 3025-5780",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Virtual%20Office%20Com%C3%A9rcio%20e%20Representa%C3%A7%C3%A3o&query_place_id=ChIJ-4HZOVw4J5URlE9hEXR_TjI",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "MK Soluções Empresariais",
+    "totalScore": 4.6,
+    "reviewsCount": 5,
+    "street": "SC-401, 600 -Parqtec Alfa, Edifício Celta, Bairro:",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.mkcontabilidade.com.br/",
+    "phone": "+55 48 3236-0240",
+    "categories": [
+      "Assessoria contábil",
+      "Consultor financeiro",
+      "Assessoria de recursos humanos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=MK%20Solu%C3%A7%C3%B5es%20Empresariais&query_place_id=ChIJs2hb4404J5UR1zIZwD5x9c0",
+    "categoryName": "Assessoria contábil"
+  },
+  {
+    "title": "RB SITES - Criação de Sites",
+    "totalScore": 4.6,
+    "reviewsCount": 21,
+    "street": "Max e Flora Center - Torre Max, R. Lauro Linhares, 2055 - Sala 704",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.rbsites.com.br/",
+    "phone": "+55 48 99607-2258",
+    "categories": [
+      "Agência de marketing digital"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=RB%20SITES%20-%20Cria%C3%A7%C3%A3o%20de%20Sites&query_place_id=ChIJz4LbQCRIJ5UR2nS-fV3rfpA",
+    "categoryName": "Agência de marketing digital"
+  },
+  {
+    "title": "Loja Bibi Florianópolis",
+    "totalScore": 4.3,
+    "reviewsCount": 85,
+    "street": "Av. Me. Benvenuta, 687",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.bibi.com/",
+    "phone": "+55 48 3207-7090",
+    "categories": [
+      "Loja de calçado"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Loja%20Bibi%20Florian%C3%B3polis&query_place_id=ChIJ080vpPk4J5URcRf14MGL29k",
+    "categoryName": "Loja de calçado"
+  },
+  {
+    "title": "Samsung Experience Store Floripa Shopping",
+    "totalScore": 4.1,
+    "reviewsCount": 62,
+    "street": "Rod. José Carlos Daux, 587 - 1º Piso, Quiosque Qc",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.samsung.com/br/campaign/storecontacts/",
+    "phone": "+55 48 3304-2227",
+    "categories": [
+      "Loja de eletrônicos",
+      "Loja de celulares"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Samsung%20Experience%20Store%20Floripa%20Shopping&query_place_id=ChIJr2qvJIo5J5URvQduic9b9YE",
+    "categoryName": "Loja de eletrônicos"
+  },
+  {
+    "title": "Hope Floripa Shopping",
+    "totalScore": 4.1,
+    "reviewsCount": 14,
+    "street": "Rod. José Carlos Daux",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "categories": [
+      "Loja de Roupa"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Hope%20Floripa%20Shopping&query_place_id=ChIJiWk_IcU5J5URvvv5mG_wo04",
+    "categoryName": "Loja de Roupa"
+  },
+  {
+    "title": "Motostore Shopping Floripa",
+    "totalScore": 4.5,
+    "reviewsCount": 57,
+    "street": "Qsq T110, Rod. Virgílio Várzea, 587",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "https://motostore.motorola.com.br/motostore-floripa-shopping-saco-grande-florianopolis-sc-50879",
+    "phone": "+55 48 99661-8996",
+    "categories": [
+      "Loja de celulares"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Motostore%20Shopping%20Floripa&query_place_id=ChIJuQv51dA5J5URtQto4vnqGoQ",
+    "categoryName": "Loja de celulares"
+  },
+  {
+    "title": "Moldura Minuto Florianópolis",
+    "totalScore": 4.6,
+    "reviewsCount": 78,
+    "street": "Av. Me. Benvenuta, 967",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.molduraminuto.com.br/nossas-lojas/florianopolis",
+    "phone": "+55 48 3364-5633",
+    "categories": [
+      "Loja de molduras",
+      "Loja de pôsteres e gravuras"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Moldura%20Minuto%20Florian%C3%B3polis&query_place_id=ChIJydxpj_s4J5URxqgYo5pvGRA",
+    "categoryName": "Loja de molduras"
+  },
+  {
+    "title": "Nkey Digital",
+    "totalScore": 5,
+    "reviewsCount": 15,
+    "street": "America Officenter, Rod. Admar Gonzaga, 440 - 6º andar - Lemonadde, sala 21",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "https://www.nkey.com.br/",
+    "phone": "+55 48 3036-0929",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Nkey%20Digital&query_place_id=ChIJPR_50_I4J5URYNX7GTeDk2E",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "Banheiros de Luxo Oficial",
+    "totalScore": 5,
+    "reviewsCount": 55,
+    "street": "R. Delminda Silveira, 535 - 201 a",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.banheirodeluxo.com.br/",
+    "phone": "+55 48 98803-9797",
+    "categories": [
+      "Empresa de organização de eventos"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Banheiros%20de%20Luxo%20Oficial&query_place_id=ChIJN1aIXcBjPg0R8TyvrjdtqFE",
+    "categoryName": "Empresa de organização de eventos"
+  },
+  {
+    "title": "SERPRO Florianópolis",
+    "totalScore": 4.4,
+    "reviewsCount": 133,
+    "street": "Rodovia Virgílio Várzea, 587 Floripa Shopping, Piso L2",
+    "city": "Florianópolis",
+    "state": "SC",
+    "countryCode": "BR",
+    "website": "http://www.serpro.gov.br/",
+    "phone": "+55 48 3231-8900",
+    "categories": [
+      "Empresa de Software",
+      "Consultoria de informática"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=SERPRO%20Florian%C3%B3polis&query_place_id=ChIJdUv8-5E4J5UR72MMjE6bw_s",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "Zucchetti Software - Florianópolis",
+    "totalScore": 4.2,
+    "reviewsCount": 5,
+    "street": "SC-401, 4150 - Primavera Office, 1° Andar, Salas 104 e 105",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.compufour.com.br/",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Zucchetti%20Software%20-%20Florian%C3%B3polis&query_place_id=ChIJvRUfY2RHJ5URRDynpRMlvpY",
+    "categoryName": "Empresa de Software"
+  },
+  {
+    "title": "42 Soluções Digitais LTDA.",
+    "reviewsCount": null,
+    "street": "Rod. José Carlos Daux, 4150 - Salas 1 e 2",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://42digital.com.br/",
+    "categories": [
+      "Escritório da empresa"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=42%20Solu%C3%A7%C3%B5es%20Digitais%20LTDA.&query_place_id=ChIJwZTPx2dHJ5URKKSjgpE88wA",
+    "categoryName": "Escritório da empresa"
+  },
+  {
+    "title": "Casa Açoriana Artes & Tramoias",
+    "totalScore": 4.6,
+    "reviewsCount": 587,
+    "street": "R. Cônego Serpa, 30",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "https://www.instagram.com/casaacorianaartes/",
+    "categories": [
+      "Galeria de Arte",
+      "Atração turística"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Casa%20A%C3%A7oriana%20Artes%20%26%20Tramoias&query_place_id=ChIJJxKMD19GJ5URBZ2Vw5lLaZ4",
+    "categoryName": "Galeria de Arte"
+  },
+  {
+    "title": "Tino Empresarial - Jogos de Empresas",
+    "reviewsCount": null,
+    "street": "Rua Orlando Phillippi, 100",
+    "city": "Florianópolis",
+    "state": "Santa Catarina",
+    "countryCode": "BR",
+    "website": "http://tinoempresarial.com.br/",
+    "phone": "+55 48 3364-9600",
+    "categories": [
+      "Empresa de Software"
+    ],
+    "url": "https://www.google.com/maps/search/?api=1&query=Tino%20Empresarial%20-%20Jogos%20de%20Empresas&query_place_id=ChIJZ7MyZHJHJ5UROwBnSh_WS7k",
+    "categoryName": "Empresa de Software"
+  }
 ]
