@@ -280,24 +280,25 @@ export async function POST(req: Request) {
             let leadContext = '';
 
             if (lead) {
-                if (lead.status === 'contacted') {
+                // 🔄 ATUALIZAÇÃO FSM: Reconhece o novo status do Lobo ('waiting_reply')
+                if (lead.status === 'contacted' || lead.status === 'waiting_reply') {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
-Atenção: Você está falando com ${lead.name || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca perguntando se eles usam IA no atendimento. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
-Empresa/Nicho: ${lead.niche || 'Não informada'}.
-Dor Principal: ${lead.main_pain || 'Não informada'}.`;
+            Atenção: Você está falando com ${lead.name || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca de prospecção. O lead acabou de responder a essa primeira abordagem. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
+            Empresa/Nicho: ${lead.niche || 'Não informada'}.
+            Dor Principal: ${lead.main_pain || 'Não informada'}.`;
 
+                    // Transita o estado oficialmente para a fila da Eliza
                     await supabaseAdmin
                         .from('leads_lobo')
-                        .update({ status: 'talking' })
+                        .update({ status: 'lead_replied' })
                         .eq('phone', clientNumber);
-                    console.log(`🔄 Status do lead atualizado para 'talking'`);
+                    console.log(`🔄 [FSM] Status de ${clientNumber} atualizado para 'lead_replied'`);
                 } else {
                     leadContext = `\n\n[CONTEXTO DO LEAD]:
-Você está falando com ${lead.name || 'o cliente'}.
-O status atual dele na base é: ${lead.status}.
-Empresa/Nicho: ${lead.niche || 'Não informada'}.
-Dor Principal: ${lead.main_pain || 'Não informada'}.
-${lead.status === 'pending' ? 'Este lead veio de uma prospecção ativa via Lobo. Use isso a seu favor.' : ''}`;
+            Você está falando com ${lead.name || 'o cliente'}.
+            O status atual dele na base é: ${lead.status}.
+            Empresa/Nicho: ${lead.niche || 'Não informada'}.
+            Dor Principal: ${lead.main_pain || 'Não informada'}.`;
                 }
             }
 

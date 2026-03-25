@@ -118,15 +118,20 @@ export async function POST(req: Request) {
             }
         }
 
-        // 6. Lead Fetching
-        const HUNT_LIMIT = 5;
-        const { data: leads, error: leadsError } = await supabaseAdmin
-            .from('leads_lobo')
-            .select('*')
-            .eq('status', 'pending')
-            .neq('name', 'Lead Teste')
-            .neq('name', 'Sem Nome')
-            .limit(HUNT_LIMIT);
+        // 6. Lead Fetching (Fila Transacional)
+        // O RPC 'get_next_outreach_lead' localiza o próximo 'cold_lead', altera o status para 
+        // 'outreach_processing' (bloqueando a Eliza e outros crons) e retorna o dado.
+        const { data: leads, error: leadsError } = await supabaseAdmin.rpc('get_next_outreach_lead');
+
+        // Filtro local para pular nomes inválidos (opcional, já que o DB deve estar limpo)
+        if (leads && leads.length > 0) {
+            const invalidNames = ['Lead Teste', 'Sem Nome'];
+            if (invalidNames.includes(leads[0].name)) {
+                await supabaseAdmin.from('leads_lobo').update({ status: 'invalid' }).eq('id', leads[0].id);
+                console.log(`🗑️ [${cronId}] Nome inválido descartado.`);
+                return NextResponse.json({ status: 'invalid_name_skipped' }, { status: 200 });
+            }
+        }
 
         if (leadsError || !leads || leads.length === 0) {
             console.log(`💤 [${cronId}] Nenhum lead pendente encontrado.`);
@@ -219,9 +224,10 @@ export async function POST(req: Request) {
 
                 // 8. Post-Kill Actions (Inside the Loop)
                 if (lead.id) {
+                    // Libera o lead. A Eliza não atuará até que o Webhook mude isso para 'lead_replied'.
                     await supabaseAdmin
                         .from('leads_lobo')
-                        .update({ status: 'contacted' })
+                        .update({ status: 'waiting_reply' })
                         .eq('id', lead.id);
                 }
 

@@ -292,18 +292,30 @@ async function handler(req: Request) {
 
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
-        // 0. Global Kill Switch Check (Eliza specific)
-        // 🛡️ DOUBLE CHECK: Verifica se o Denis assumiu o controle enquanto a msg estava na fila do QStash
+        // 0. Global Kill Switch & STATE SHIELD (The Challenger Fix)
         const { data: leadCheck } = await supabaseAdmin
             .from('leads_lobo')
-            .select('ai_paused')
+            .select('ai_paused, status')
             .eq('phone', clientNumber)
             .single();
 
         if (leadCheck && leadCheck.ai_paused === true) {
-            console.log(`🛑 [WORKER ABORT] Denis assumiu o chat ou IA está pausada para ${clientNumber}. Cancelando execução enfileirada.`);
+            console.log(`🛑 [WORKER ABORT] Denis assumiu o chat ou IA pausada. Cancelando.`);
             return NextResponse.json({ status: 'aborted', reason: 'human_takeover_during_queue' }, { status: 200 });
         }
+
+        // 🛡️ A TRAVA DE ESTADOS (FSM): Impede a Eliza de reagir a webhooks vazados ou leads imaturos
+        const forbiddenStates = ['cold_lead', 'pending', 'outreach_processing', 'lobo_sending'];
+        if (leadCheck && forbiddenStates.includes(leadCheck.status)) {
+            console.log(`🛑 [STATE SHIELD] Lead ${clientNumber} no estado '${leadCheck.status}'. Eliza ignorando para não atropelar o Lobo.`);
+            return NextResponse.json({ status: 'ignored', reason: 'lead_belongs_to_lobo' }, { status: 200 });
+        }
+
+        // 🔒 LOCK TRANSACTION: Avisa o banco que a Eliza assumiu o controle da conversa
+        await supabaseAdmin
+            .from('leads_lobo')
+            .update({ status: 'eliza_processing' })
+            .eq('phone', clientNumber);
 
         // 0. IDEMPOTENCY CHECK
         if (incomingMessageId) {
@@ -599,12 +611,42 @@ ${businessContext}
         const dbSaveMs = Math.max(0, t4 - t3).toFixed(0);
         const totalMs = Math.max(0, t4 - t0).toFixed(0);
 
+        // 🔓 RELEASE THE LOCK: Devolve o lead para aguardar nova resposta do humano
+        const { data: finalCheck } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('status')
+            .eq('phone', clientNumber)
+            .single();
+
+        // Só altera se o status ainda for 'eliza_processing' (evita sobrescrever 'hot_lead' ou 'paid')
+        if (finalCheck && finalCheck.status === 'eliza_processing') {
+            await supabaseAdmin
+                .from('leads_lobo')
+                .update({ status: 'waiting_reply' })
+                .eq('phone', clientNumber);
+        }
+
         console.log(`📊 [PROFILER] Total: ${totalMs}ms | DB Fetch: ${dbFetchMs}ms | Gemini LLM: ${llmMs}ms | WA Send: ${waApiMs}ms | DB Save: ${dbSaveMs}ms`);
 
         // Free up QStash connection immediately!
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('❌ Erro Crítico no Worker:', error);
+
+        // Tenta extrair o telefone do body para destravar o lead em caso de crash
+        try {
+            const body = await req.clone().json();
+            if (body && body.clientNumber) {
+                await supabaseAdmin
+                    .from('leads_lobo')
+                    .update({ status: 'waiting_reply' })
+                    .eq('phone', body.clientNumber)
+                    .eq('status', 'eliza_processing'); // Destrava apenas se estiver preso
+            }
+        } catch (unlockErr) {
+            console.error('❌ Falha ao tentar destravar lead após crash crítico.');
+        }
+
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
