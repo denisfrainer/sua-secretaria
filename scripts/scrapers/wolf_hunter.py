@@ -81,7 +81,7 @@ def run_hunter():
     # PROMPT REDUZIDO PARA 3 LEADS (TESTE DE FOGO)
 # Mude o prompt para algo assim:
     prompt = (
-        f"Search for {15} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
+        f"Search for {20} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
         "CRITICAL: You must provide a valid phone number for every business. "
         "If the phone is not on the main page, check their Instagram or contact page. "
         "Return a JSON array: [{'name': '...', 'website': '...', 'phone': '...', 'rating': ...}]"
