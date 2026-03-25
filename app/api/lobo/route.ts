@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
+import { checkWhatsAppNumber } from '../../../lib/whatsapp/sender';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import { normalizePhone } from '../../../lib/utils/phone';
 
@@ -147,6 +148,30 @@ export async function POST(req: Request) {
             if (!lead.phone || !lead.name) continue;
 
             const safePhone = normalizePhone(lead.phone);
+
+            // 2. Verificação Silenciosa (Number Check)
+            // Você precisará criar esta função no seu arquivo sender.ts
+            const hasWhatsApp = await checkWhatsAppNumber(safePhone);
+
+            if (!hasWhatsApp) {
+                console.log(`🚫 [${cronId}] O número ${safePhone} não possui WhatsApp ativo. Descartado preventivamente.`);
+
+                if (lead.id) {
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'invalid' }).eq('id', lead.id);
+                }
+
+                // Consome a cota diária e agenda o próximo tiro para manter o comportamento orgânico
+                await supabaseAdmin.rpc('increment_lobo_sent_count', { today_date: getBrazilDateString(), increment_by: 1 });
+                const nextHuntMinutes = Math.floor(Math.random() * (45 - 25 + 1)) + 25;
+                const futureDate = new Date(Date.now() + nextHuntMinutes * 60 * 1000).toISOString();
+
+                await supabaseAdmin.from('system_settings').upsert({
+                    key: 'next_hunt_at', value: { timestamp: futureDate, scheduled_by: cronId }, updated_at: new Date().toISOString()
+                }, { onConflict: 'key' });
+
+                break; // Encerra o turno do Cron
+            }
+
             const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
             const hasSite = lead.website && lead.website.trim() !== '' &&
                 lead.website.toLowerCase() !== 'null' &&

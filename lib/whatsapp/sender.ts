@@ -9,7 +9,7 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
         const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
 
         // Calcula o tempo de digitação: 50ms por letra. Min: 2s, Max: 5s.
-        const typingTime = delayMs ?? Math.min(Math.max(text.length * 50, 2000), 5000); 
+        const typingTime = delayMs ?? Math.min(Math.max(text.length * 50, 2000), 5000);
 
         // O Padrão Evolution V2+
         const payload = {
@@ -44,6 +44,48 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
 
         return data;
     });
+}
+
+// --- 🆕 ADICIONE ESTA FUNÇÃO AQUI EMBAIXO ---
+
+/**
+ * Verifica se um número possui conta no WhatsApp (Check Number)
+ * Essencial para evitar erros de "exists:false" que queimam o chip.
+ */
+export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
+
+    // Limpa o número para garantir que não vá caracteres especiais
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    const url = `${baseUrl}/chat/whatsappNumbers/${instanceName}`;
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': apikey as string
+            },
+            body: JSON.stringify({
+                numbers: [cleanPhone]
+            })
+        });
+
+        const data = await res.json().catch(() => ([]));
+
+        // A Evolution retorna um array. Verificamos o primeiro item.
+        if (Array.isArray(data) && data.length > 0) {
+            return data[0].exists === true;
+        }
+
+        return false;
+    } catch (error) {
+        console.error(`❌ Erro técnico ao checar WhatsApp de ${phone}:`, error);
+        return false;
+    }
 }
 
 export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available') {
