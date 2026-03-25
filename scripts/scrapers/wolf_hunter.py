@@ -116,8 +116,6 @@ def run_hunter():
         if not response.text:
             print("⚠️ O Gemini retornou uma resposta vazia. Verifique o Safety Filter ou Rate Limit.")
             return # Sai da função para não quebrar no json.loads
-            
-        print(f"DEBUG RAW RESPONSE: {response.text[:100]}...") # Vê o início da resposta
 
 # Extração de dados robusta com sanitização
         leads_data = []
