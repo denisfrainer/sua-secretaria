@@ -290,6 +290,23 @@ async function handler(req: Request) {
         const body = await req.json();
         const { clientNumber, clientMessage, incomingMessageId, leadContext } = body;
 
+        // 🛡️ [ANTI-METRALHADORA] Recency Check
+        // Verifica se esta mensagem ainda é a última que o cliente mandou.
+        // Se houver uma mensagem mais nova no banco, este worker morre silenciosamente.
+        const { data: latestUserMsg } = await supabaseAdmin
+            .from('messages')
+            .select('message_id')
+            .eq('lead_phone', clientNumber)
+            .eq('role', 'user')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (latestUserMsg && latestUserMsg.message_id !== incomingMessageId) {
+            console.log(`🔫 [ANTI-METRALHADORA] Abortando Worker da mensagem ${incomingMessageId}. Uma mais nova chegou: ${latestUserMsg.message_id}`);
+            return NextResponse.json({ status: 'ignored', reason: 'newer_message_exists' }, { status: 200 });
+        }
+
         console.log(`🤖 [ELIZA WORKER] Processando mensagem de ${clientNumber}...`);
 
         // 0. Global Kill Switch & STATE SHIELD (The Challenger Fix)
@@ -576,30 +593,24 @@ ${businessContext}
 
         console.log(`🗣️ RESPOSTA FINAL: "${finalText}"`);
 
-        // 17. Envia a mensagem de volta para o cliente no WhatsApp
-        console.log(`🚀 [ELIZA WORKER] Iniciando envio IMEDIATO para ${clientNumber}`);
+        // 17. O NOVO ENVIO ASSÍNCRONO (Silicon Tweak / Netlify Fix)
+        console.log(`🚀 [ELIZA WORKER] Preparando o envio assíncrono via Evolution API...`);
 
-        // Velocidade média de digitação humana: ~15 caracteres por segundo
         const CHARS_PER_SECOND = 15;
+        let accumulatedDelayMs = 0;
 
         for (const textChunk of chunks) {
             try {
-                // 1. Aciona o status "Digitando..." no topo da interface do lead
-                await sendWhatsAppPresence(clientNumber, 'composing');
+                const bubbleTypingTimeMs = Math.max(2000, Math.min((textChunk.length / CHARS_PER_SECOND) * 1000, 12000));
+                accumulatedDelayMs += bubbleTypingTimeMs;
 
-                // 2. Calcula o tempo de digitação (Limites: 2s a 12s por bolha para não estourar os 60s da Vercel)
-                const typingTimeMs = Math.max(2000, Math.min((textChunk.length / CHARS_PER_SECOND) * 1000, 12000));
-                console.log(`⌨️ [TYPING DELAY] Simulando digitação por ${Math.round(typingTimeMs / 1000)}s para: "${textChunk.substring(0, 20)}..."`);
+                console.log(`⌨️ [DELEGATION] Evoluton vai digitar e enviar em ${Math.round(accumulatedDelayMs / 1000)}s: "${textChunk.substring(0, 20)}..."`);
 
-                await new Promise(resolve => setTimeout(resolve, typingTimeMs));
+                await sendWhatsAppMessage(clientNumber, textChunk, accumulatedDelayMs);
 
-                // 3. Dispara a bolha de texto
-                await sendWhatsAppMessage(clientNumber, textChunk);
-
-                // 4. Pausa respiratória entre envios simulando a transição de ideias (1.5s a 3s)
                 if (chunks.length > 1) {
                     const pauseBetweenBubbles = Math.floor(Math.random() * (3000 - 1500 + 1)) + 1500;
-                    await new Promise(resolve => setTimeout(resolve, pauseBetweenBubbles));
+                    accumulatedDelayMs += pauseBetweenBubbles;
                 }
 
             } catch (err) {
