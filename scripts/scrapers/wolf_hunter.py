@@ -161,6 +161,9 @@ def run_hunter():
             print(f"❌ Falha ao processar JSON: {json_err}")
             with open("error_log.txt", "a", encoding="utf-8") as f:
                 f.write(f"\n--- ERRO ({timestamp}) ---\n{response.text}\n")
+            print("--- INÍCIO DA RESPOSTA BRUTA ---")
+            print(response.text) # Use a variável correta que armazena a string do Gemini
+            print("--- FIM DA RESPOSTA BRUTA ---")
 
         if leads_data:
             print(f"✅ SUCESSO! O Lobo encontrou {len(leads_data)} empresas reais:")
