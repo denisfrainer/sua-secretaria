@@ -105,6 +105,7 @@ def run_hunter():
         "You must extract the phone number from the Google Search results. If a business does not have a valid, visible phone number, DO NOT include it in the final JSON array under any circumstances. Strictly return only businesses that possess a valid phone number."
         "Return a JSON array: [{'name': '...', 'website': '...', 'phone': '...', 'rating': ...}]"
         "CRITICAL RULE: STOP GENERATION AT EXACTLY 50 LEADS. You must return a maximum of 50 valid items in the JSON array. Do not include a 51st item under any circumstances. Prioritize quality over quantity."
+        "CRITICAL RULE: Return ONLY the raw JSON array. DO NOT include greetings, apologies, explanations, or any conversational text before or after the JSON code block. Output nothing else."
     )   
 
     try:
