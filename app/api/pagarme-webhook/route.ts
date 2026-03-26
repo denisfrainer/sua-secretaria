@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
         // 5. Notificar o Cliente via WhatsApp
         const firstName = lead.name ? lead.name.split(' ')[0] : 'Cliente';
-        const clientMessage = `🎉 *Pagamento Confirmado!* \n\nRecebemos o seu PIX, ${firstName}! Muito obrigado pela confiança na Wolf Agent.\n\nO Denis já foi notificado, nossa IA foi pausada neste chat, e ele vai assumir o atendimento em instantes para darmos o pontapé inicial no projeto. 🐺🚀`;
+        const clientMessage = `🎉 *Pagamento Confirmado!* \n\nRecebemos o seu PIX, ${firstName}! Muito obrigado pela confiança na meatende.ai.\n\nO Denis já foi notificado, nossa IA foi pausada neste chat, e ele vai assumir o atendimento em instantes para darmos o pontapé inicial no projeto. 🐺🚀`;
 
         await sendWhatsAppMessage(lead.phone, clientMessage);
         console.log(`✅ Mensagem de sucesso enviada para o cliente: ${lead.phone}`);

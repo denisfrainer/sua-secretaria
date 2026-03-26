@@ -1,37 +1,40 @@
 @import "tailwindcss";
 
 /*
-  globals.css — Design System
-  Monochromatic palette with accent color for CTAs
+  globals.css — Enterprise Clean Tech Design System
+  Light-mode Stripe aesthetic with colorful gradient accents
 */
 
+@theme {
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
 :root {
-  /* Base Colors */
-  --background: #000000;
-  --foreground: #ededed;
+  /* Base */
+  --background: #f8fafc;
+  --foreground: #0f172a;
 
-  /* Depth Hierarchy */
-  --primary: #1E1E1E;
-  --secondary: #2C2C2C;
-  --gray-medium: #3a3a3a;
-  --gray-light: #6b7280;
-  --gray-lighter: #9ca3af;
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
 
-  /* Accent Color (Matrix Green) */
-  --accent-green: #00FF41;
-  --accent-green-hover: #00D135;
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
 
-  /* Success */
-  --success-green: #22c55e;
-
-  /* Fonts */
-  --font-heading: var(--font-space-grotesk);
-  --font-body: var(--font-source-sans);
+  /* Accent gradient palette */
+  --accent-start: #6366f1;
+  --accent-mid: #8b5cf6;
+  --accent-end: #ec4899;
 }
 
 body {
   color: var(--foreground);
-  font-family: var(--font-source-sans), system-ui, -apple-system, sans-serif;
+  background: var(--background);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -40,75 +43,98 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Headings — Space Grotesk */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-space-grotesk), sans-serif;
-  font-weight: 700;
+/* ==========================================
+   HERO GRADIENT ANIMATION
+   ========================================== */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
-/* Minimal scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--gray-dark);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--gray-medium);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gray-light);
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #f093fb 50%,
+    #4facfe 75%,
+    #667eea 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
 }
 
 /* ==========================================
-   ANIMAÇÃO DO TERMINAL (TYPEWRITER)
+   MARQUEE ANIMATION
    ========================================== */
-.animate-typewriter-blink {
-  animation: typewriter 3.5s steps(22) forwards, blink 1s step-end infinite;
-}
-
-@keyframes typewriter {
-  to {
-    width: 100%;
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
 
-/* Animations — Transform + Opacity (zero PageSpeed cost) */
-@keyframes fadeInUp {
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+/* ==========================================
+   PHONE MOCKUP ANIMATIONS
+   ========================================== */
+@keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(2rem);
+    transform: translateY(12px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* ==========================================
-   MARQUEE ANIMATION (LOGOS CAROUSEL)
-   ========================================== */
-.animate-marquee {
-  animation: marquee 25s linear infinite;
+@keyframes typing-dots {
+  0%, 60%, 100% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 1;
+  }
 }
 
-@keyframes marquee {
-  0% {
-    transform: translateX(0%);
-  }
+.msg-appear {
+  animation: fade-in-up 0.4s ease-out forwards;
+  opacity: 0;
+}
 
-  100% {
-    transform: translateX(-50%);
+.typing-dot {
+  animation: typing-dots 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ==========================================
+   SUBTLE FADE IN
+   ========================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -116,27 +142,27 @@ h6 {
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
 }
 
 /* ==========================================
-   CURSOR DE TERMINAL BLOCO (BLOCK BLINK)
+   MINIMAL SCROLLBAR (LIGHT)
    ========================================== */
-.animate-blink-block {
-  animation: blink-block 1s step-end infinite;
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-@keyframes blink-block {
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
 
-  0%,
-  100% {
-    opacity: 1;
-  }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
 
-  50% {
-    opacity: 0;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

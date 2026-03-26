@@ -1,34 +1,27 @@
 /*
   app/layout.tsx
-  Root layout — provides <html> and <body> for ALL routes.
+  Root layout — Inter font, light-mode foundation
 */
 
 import type { Metadata } from "next";
-import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
+import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const inter = Inter({
     subsets: ["latin"],
-    weight: ["700"],
-    variable: "--font-space-grotesk",
-    display: 'block',
-});
-
-const sourceSans = Source_Sans_3({
-    subsets: ["latin"],
-    weight: ["400", "700"],
-    variable: "--font-source-sans",
-    display: 'block',
+    weight: ["400", "500", "600", "700"],
+    variable: "--font-inter",
+    display: 'swap',
 });
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://wolfagent.netlify.app'),
-    title: "Wolf Agents",
-    description: "Automação de vendas com agentes de IA e Landing Pages ultravelozes. Transformamos sua operação digital em uma máquina de gerar leads qualificados 24/7.",
+    title: "meatende.ai — Seu Funcionário de IA no WhatsApp",
+    description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões automaticamente. 24 horas por dia, 7 dias por semana.",
     openGraph: {
-        title: "Wolf Agents",
-        description: "Automação de vendas com agentes de IA e Landing Pages ultravelozes. Transformamos sua operação digital em uma máquina de gerar leads qualificados 24/7.",
+        title: "meatende.ai — Seu Funcionário de IA no WhatsApp",
+        description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões automaticamente. 24 horas por dia, 7 dias por semana.",
         locale: 'pt_BR',
         type: 'website',
         images: [
@@ -36,7 +29,7 @@ export const metadata: Metadata = {
                 url: 'https://wolfagent.netlify.app/og-image.jpg',
                 width: 1200,
                 height: 630,
-                alt: 'Wolf Agency',
+                alt: 'meatende.ai',
             },
         ],
     },
@@ -51,9 +44,8 @@ export default function RootLayout({
         <html lang="pt">
             <body
                 className={cn(
-                    "font-sans antialiased bg-black text-white",
-                    spaceGrotesk.variable,
-                    sourceSans.variable
+                    "font-sans antialiased bg-slate-50 text-slate-900",
+                    inter.variable
                 )}
             >
                 {children}

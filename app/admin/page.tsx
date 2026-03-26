@@ -239,7 +239,7 @@ export default function AdminDashboard() {
         return (
             <div className={`h-screen bg-black flex items-center justify-center ${sourceSans3.className}`}>
                 <div className="text-center space-y-5">
-                    <Image src="/assets/logo.png" width={48} height={48} alt="Wolf Agents" className="mx-auto opacity-40" />
+                    <Image src="/assets/logo.png" width={48} height={48} alt="meatende.ai" className="mx-auto opacity-40" />
                     <h1 className="text-xl font-medium text-white/80 tracking-tight">Access Denied</h1>
                     <p className="text-sm text-white/30">Valid credentials required.</p>
                 </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
         return (
             <div className={`h-screen bg-black flex items-center justify-center ${sourceSans3.className}`}>
                 <div className="text-center space-y-5">
-                    <Image src="/assets/logo.png" width={40} height={40} alt="Wolf Agents" className="mx-auto animate-pulse opacity-30" />
+                    <Image src="/assets/logo.png" width={40} height={40} alt="meatende.ai" className="mx-auto animate-pulse opacity-30" />
                     <p className="text-sm text-white/30 tracking-widest uppercase">Loading...</p>
                 </div>
             </div>
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
                 <header className="h-16 border-b border-white/[0.05] bg-[#0A0A0A]/80 backdrop-blur-md flex items-center justify-between px-8 z-10 shrink-0">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">
-                            <h1 className="text-[14px] font-bold text-white tracking-widest uppercase">Wolf Agents</h1>
+                            <h1 className="text-[14px] font-bold text-white tracking-widest uppercase">meatende.ai</h1>
                             <span className="text-white/10">/</span>
                             <span className="text-[13px] text-white/40 font-medium">Command Center</span>
                         </div>

@@ -1,7 +1,6 @@
 /*
   LanguageSwitcher.tsx
-  Dropdown de troca de idioma otimizado para PageSpeed 99+
-  Exibe apenas idioma ativo, dropdown mostra idiomas inativos
+  Stripe-style language switcher — light mode
 */
 
 'use client';
@@ -11,7 +10,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Globe } from 'lucide-react';
 
-// Mapeamento de idiomas para exibição
 const localeLabels = {
   pt: 'PT',
   en: 'EN',
@@ -26,7 +24,6 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Limpa timeout ao desmontar
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -39,13 +36,11 @@ export function LanguageSwitcher() {
   };
 
   const handleMouseLeave = () => {
-    // Pequeno delay para evitar flickering ao mover o mouse entre trigger e dropdown
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false);
     }, 150);
   };
 
-  // Detecta o idioma atual pelo pathname
   const getCurrentLocale = (): Locale => {
     if (pathname.startsWith('/en')) return 'en';
     if (pathname.startsWith('/es')) return 'es';
@@ -53,11 +48,7 @@ export function LanguageSwitcher() {
   };
 
   const currentLocale = getCurrentLocale();
-
-  // Remove o locale do pathname para construir os links
   const pathnameWithoutLocale = pathname.replace(/^\/(pt|en|es)/, '') || '/';
-
-  // Filtra apenas os idiomas inativos
   const inactiveLocales = locales.filter((locale) => locale !== currentLocale);
 
   return (
@@ -66,53 +57,40 @@ export function LanguageSwitcher() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Trigger - Idioma Ativo */}
+      {/* Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/20"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200"
         aria-label="Selecionar idioma"
       >
-        <Globe className="w-4 h-4 text-gray-400" />
-        <span className="text-base font-medium text-gray-300">
+        <Globe className="w-4 h-4 text-slate-500" />
+        <span className="text-sm font-medium text-slate-600">
           {localeLabels[currentLocale]}
         </span>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''
-            }`}
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
-      {/* Dropdown - Idiomas Inativos */}
+      {/* Dropdown */}
       {isOpen && (
         <>
-          {/* Overlay invisível para fechar o dropdown ao clicar fora */}
           <div
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-
-          {/* Ponte invisível — cobre o gap entre o botão e o dropdown */}
           <div className="absolute right-0 h-2 w-full z-50" />
-
-          {/* Menu Dropdown */}
-          <div
-            className="absolute right-0 mt-2 w-20 bg-black/80 backdrop-blur-md border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden"
-          >
+          <div className="absolute right-0 mt-2 w-20 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
             {inactiveLocales.map((locale) => (
               <Link
                 key={locale}
                 href={`/${locale}${pathnameWithoutLocale}`}
-                className="block px-4 py-2 text-base text-gray-300 hover:bg-white/10 transition-colors text-center"
+                className="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors text-center"
                 onClick={() => setIsOpen(false)}
               >
                 {localeLabels[locale]}

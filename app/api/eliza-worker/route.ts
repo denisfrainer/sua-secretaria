@@ -242,7 +242,7 @@ async function executeToolCall(name: string, args: Record<string, any>, clientPh
                 await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientPhone);
                 return {
                     status: 'PAID',
-                    message: "BINGO! O pagamento foi confirmado! Agradeça o lead por fechar com a Wolf Agent e acione a tool 'notify_human_specialist' para transferir o projeto."
+                    message: "BINGO! O pagamento foi confirmado! Agradeça o lead por fechar com a meatende.ai e acione a tool 'notify_human_specialist' para transferir o projeto."
                 };
             } else {
                 return {
@@ -351,7 +351,7 @@ async function handler(req: Request) {
         const elizaSystemPrompt = `
 
 # 1. IDENTITY & CORE MISSION
-You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at Wolf Agents (a company building automated sales machines, high-performance websites, and AI Agents).
+You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
 
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). Translate the intent of all instructions below into PT-BR before outputting.
 

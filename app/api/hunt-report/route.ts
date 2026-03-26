@@ -132,7 +132,7 @@ export async function POST(req: Request) {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                from: 'Wolf Agent <onboarding@resend.dev>',
+                from: 'meatende.ai <onboarding@resend.dev>',
                 to: [adminEmail],
                 subject: `🐺 Hunt Report - ${dateHeader}`,
                 html: htmlBody
