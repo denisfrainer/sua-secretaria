@@ -189,6 +189,7 @@ def run_hunter():
                 data = {
                     "name": name,
                     "niche": keyword.capitalize(),
+                    "city": city,
                     "website": lead.get('website') or "None",
                     "phone": clean_phone,
                     "maps_rating": float(lead.get('rating') or 0.0),
