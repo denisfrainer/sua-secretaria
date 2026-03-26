@@ -1,6 +1,6 @@
 // app/api/eliza-worker/route.ts
 import { NextResponse } from 'next/server';
-import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
+import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import path from 'path';
@@ -579,13 +579,29 @@ ${businessContext}
         // 17. Envia a mensagem de volta para o cliente no WhatsApp
         console.log(`🚀 [ELIZA WORKER] Iniciando envio IMEDIATO para ${clientNumber}`);
 
-        // Zero-Sleep Dispatch Loop
-        // Evolution API deals with the message queue and typing delays natively
+        // Velocidade média de digitação humana: ~15 caracteres por segundo
+        const CHARS_PER_SECOND = 15;
+
         for (const textChunk of chunks) {
             try {
-                // By omitting the 3rd argument, sendWhatsAppMessage uses its built-in formula
-                // AND it already inherently wraps within 'withWhatsAppLock'.
+                // 1. Aciona o status "Digitando..." no topo da interface do lead
+                await sendWhatsAppPresence(clientNumber, 'composing');
+
+                // 2. Calcula o tempo de digitação (Limites: 2s a 12s por bolha para não estourar os 60s da Vercel)
+                const typingTimeMs = Math.max(2000, Math.min((textChunk.length / CHARS_PER_SECOND) * 1000, 12000));
+                console.log(`⌨️ [TYPING DELAY] Simulando digitação por ${Math.round(typingTimeMs / 1000)}s para: "${textChunk.substring(0, 20)}..."`);
+
+                await new Promise(resolve => setTimeout(resolve, typingTimeMs));
+
+                // 3. Dispara a bolha de texto
                 await sendWhatsAppMessage(clientNumber, textChunk);
+
+                // 4. Pausa respiratória entre envios simulando a transição de ideias (1.5s a 3s)
+                if (chunks.length > 1) {
+                    const pauseBetweenBubbles = Math.floor(Math.random() * (3000 - 1500 + 1)) + 1500;
+                    await new Promise(resolve => setTimeout(resolve, pauseBetweenBubbles));
+                }
+
             } catch (err) {
                 console.error(`❌ Erro ao enviar bolha:`, err);
             }

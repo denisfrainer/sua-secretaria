@@ -351,17 +351,18 @@ export async function POST(req: Request) {
             // --- QSTASH ASYNC QUEUEING (TWO-TIER HUMAN DELAY) ---
             console.log(`🚀 [QSTASH] Enfileirando mensagem de ${clientNumber} para processamento assíncrono...`);
 
-            // 1. Cálculo Dinâmico de Delay
-            let delaySeconds = 10; // Delay padrão para conversas ativas (talking)
+            // 1. Cálculo Dinâmico de Delay Híbrido
+            let delaySeconds = 10;
             const isFirstReply = lead?.status === 'contacted' || lead?.status === 'waiting_reply' || lead?.status === 'lead_replied';
 
             if (isFirstReply) {
-                // Randomiza entre 30 e 60 minutos (1800 a 3600 segundos) para simular o Denis ocupado
+                // Mantém o atraso de 30 a 60 minutos para o PRIMEIRO CONTATO
                 delaySeconds = Math.floor(Math.random() * (3600 - 1800 + 1)) + 1800;
                 console.log(`⏳ [STEALTH DELAY] Primeira resposta detectada. A IA responderá em ${Math.floor(delaySeconds / 60)} minutos.`);
             } else {
-                // Só ativa o "typing..." imediatamente se a conversa já estiver fluindo
-                await sendWhatsAppPresence(clientNumber, 'composing');
+                // Read Delay para o SEGUNDO CONTATO EM DIANTE (Atraso de leitura: 5 a 15 segundos)
+                delaySeconds = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
+                console.log(`⏳ [READ DELAY] Conversa ativa. Worker acionado em ${delaySeconds} segundos.`);
             }
 
             const { Client } = await import('@upstash/qstash');
