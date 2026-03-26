@@ -164,6 +164,7 @@ def run_hunter():
             print("--- INÍCIO DA RESPOSTA BRUTA ---")
             print(response.text) # Use a variável correta que armazena a string do Gemini
             print("--- FIM DA RESPOSTA BRUTA ---")
+            sys.stdout.flush()
 
         if leads_data:
             print(f"✅ SUCESSO! O Lobo encontrou {len(leads_data)} empresas reais:")
