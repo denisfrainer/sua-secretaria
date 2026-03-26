@@ -68,20 +68,38 @@ def run_hunter():
     sys.stdout.flush()
 
 # Automated niche selection
-    nichos = [
-        "restaurantes", "pousadas", "clinicas", "imobiliarias", 
-        "academias", "passeios", "estetica", "energia solar", 
-        "experiências", "escritórios", "pet shops", "hospedagens",
+    niches = [
+        # Turismo e Hospitalidade
+        "restaurantes", "gastronomia", "pousadas", "hotéis", "hostels", 
+        "escolas de surf", "agências de turismo", "passeios de barco",
+        "eventos", "bares", "agências de marketing", "lojas de roupa",
+
+        # Saúde e Estética (High Ticket)
+        "clínicas de estética", "clínicas odontológicas", "consultórios médicos",
+        "clínicas veterinárias", "academias",
+
+        # Serviços e B2B (High Ticket)
+        "imobiliarias", "construtoras", "energia solar",
+        "escritórios de advocacia", "escritórios de arquitetura", 
+        
+        # Varejo Premium
+        "móveis planejados", "estética automotiva", "design de interiores",
     ]
-    keyword = random.choice(nichos)
-    query = f"{keyword} em Florianópolis, SC"
-    
-    print(f"🎯 Target Niche: {keyword.upper()}")
-    
-    # PROMPT REDUZIDO PARA 3 LEADS (TESTE DE FOGO)
-# Mude o prompt para algo assim:
+
+    city = [
+        "Florianópolis, SC",
+        "Porto Alegre, RS",
+        "Curitiba, PR"
+    ]
+
+    keyword = random.choice(niches)
+    city = random.choice(city)
+
+    print(f"🎯 Target Niche: {keyword.upper()} | 📍 City: {city}")
+    sys.stdout.flush()
+
     prompt = (
-        f"Search for {50} real and active businesses in the '{keyword}' niche in Florianópolis, SC. "
+        f"Search for {50} real and active businesses in the '{keyword}' niche in {city}. "
         "CRITICAL: You must provide a valid phone number for every business. "
         "If the phone is not on the main page, check their Instagram or contact page. "
         "You must extract the phone number from the Google Search results. If a business does not have a valid, visible phone number, DO NOT include it in the final JSON array under any circumstances. Strictly return only businesses that possess a valid phone number."
@@ -103,6 +121,12 @@ def run_hunter():
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.1,
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                ],
                 # Sintaxe oficial: GoogleSearch() sem o "Retrieval"
                 tools=[types.Tool(google_search=types.GoogleSearch())]
             )
@@ -118,20 +142,25 @@ def run_hunter():
             return # Sai da função para não quebrar no json.loads
 
 # Extração de dados robusta com sanitização
+        # Extração de dados robusta (Sniper Extraction)
         leads_data = []
         try:
-            match = re.search(r'```json\s*(.*?)\s*```', response.text, re.DOTALL | re.IGNORECASE)
-            json_str = match.group(1) if match else response.text.strip()
+            raw_text = response.text
             
-            if json_str:
-                # Remove caracteres de controle invisíveis que quebram a leitura
+            start_idx = raw_text.find('[')
+            end_idx = raw_text.rfind(']')
+            
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                json_str = raw_text[start_idx:end_idx+1]
                 json_str_clean = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', json_str)
                 leads_data = json.loads(json_str_clean, strict=False)
+            else:
+                raise ValueError("Array JSON não delimitado na resposta.")
                 
         except Exception as json_err:
             print(f"❌ Falha ao processar JSON: {json_err}")
             with open("error_log.txt", "a", encoding="utf-8") as f:
-                f.write(f"\n--- ERRO ---\n{response.text}\n")
+                f.write(f"\n--- ERRO ({timestamp}) ---\n{response.text}\n")
 
         if leads_data:
             print(f"✅ SUCESSO! O Lobo encontrou {len(leads_data)} empresas reais:")

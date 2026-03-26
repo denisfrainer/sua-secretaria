@@ -1,13 +1,20 @@
-from google import genai
 import os
+from google import genai
 from dotenv import load_dotenv
 
+# Carrega as variáveis do seu arquivo .env
 load_dotenv()
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# Teste seco, sem Grounding
-response = client.models.generate_content(
-    model="gemini-3.1-flash-lite-preview", 
-    contents="Diga 'Lobo ativo'"
-)
-print(response.text)
+try:
+    # A nova SDK busca automaticamente a variável GEMINI_API_KEY do ambiente
+    client = genai.Client()
+    
+    print("🔍 Buscando modelos disponíveis para a sua chave de API...\n")
+    
+    # Lista os modelos disponíveis
+    models = client.models.list()
+    for model in models:
+        print(model.name)
+        
+except Exception as e:
+    print(f"❌ Erro ao listar modelos: {e}")
