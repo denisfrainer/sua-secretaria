@@ -71,8 +71,8 @@ def run_hunter():
     niches = [
         # Turismo e Hospitalidade
         "restaurantes", "gastronomia", "pousadas", "hotéis", "hostels", 
-        "escolas de surf", "agências de turismo", "passeios de barco",
-        "eventos", "bares", "agências de marketing", "lojas de roupa",
+        "agências de turismo", "passeios de barco", "lojas de roupa",
+        "eventos", "bares", "agências de marketing", "agências de web design",
 
         # Saúde e Estética (High Ticket)
         "clínicas de estética", "clínicas odontológicas", "consultórios médicos",

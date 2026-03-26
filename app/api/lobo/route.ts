@@ -206,23 +206,23 @@ export async function POST(req: Request) {
             const variationsComSite = [
                 {
                     part1: `${saudacao}, tudo bem? Me chamo Denis sou desenvolvedor aqui de Floripa.`,
-                    part2: `Dei uma navegada no site de vocês e achei o projeto bem massa. por acaso vocês costumam acompanhar como tá a performance dele lá no Google pra atrair cliente novo hoje em dia?`
+                    part2: `Dei uma navegada no site de vocês e achei o projeto bem massa. Vocês estão satisfeitos com os resultados do site?`
                 },
                 {
-                    part1: `{opa|fala|oi|olá}, ${saudacao}! Sou desenvolvedor web aqui de Floripa.`,
-                    part2: `Achei o ${nichoFormatado} de vocês no Maps e acessei o site. o trampo é muito bom! hoje o site funciona mais como uma vitrine institucional pra vocês ou ele traz bastante orçamento recorrente?`
+                    part1: `{Opa|Fala|Oi|Olá}, ${saudacao}! Sou desenvolvedor web aqui da Lagoa da Conceição.`,
+                    part2: `Achei o ${nichoFormatado} de vocês no Maps e acessei o site. O trampo é muito bom! Hoje o site funciona mais como uma vitrine institucional pra vocês ou ele traz bastante clientes?`
                 },
                 {
                     part1: `${saudacao} pessoal, tudo bem?`,
-                    part2: `Vi que a operação de vocês já tá com um site no ar, muito bacana. vocês tão conseguindo captar clientes e gerar resultado com ele atualmente?`
+                    part2: `Vi que a operação de vocês já tá com um site no ar, muito bacana. Vocês tão conseguindo captar clientes e gerar resultado com ele atualmente?`
                 },
                 {
-                    part1: `{opa|fala|oi|olá}, ${saudacao}! tudo certo?`,
-                    part2: `Passei pelo site de vocês agora pelo celular. o serviço é top, mas notei um detalhezinho técnico na velocidade de carregamento da página. vocês têm alguém de tecnologia que cuida dessa parte de otimização hoje?`
+                    part1: `{Opa|Fala|Oi|Olá}, ${saudacao}! tudo certo?`,
+                    part2: `Tava olhando o site de vocês pelo celular e achei a estrutura bem bacana. Hoje vocês usam o site mais pra fechar serviço direto ou o objetivo principal é direcionar o pessoal pro WhatsApp?`
                 },
                 {
-                    part1: `{fala|opa|oi|olá}, ${saudacao}! tranquilo?`,
-                    part2: `Esbarrei no site de vocês pesquisando aqui e curti demais o ${nichoFormatado}. a galera costuma chamar mais direto pelo botão do WhatsApp lá do site ou vocês rodam algum tráfego pago pra ele?`
+                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! tranquilo?`,
+                    part2: `Pesquisando sobre ${nichoFormatado} acabei caindo no site de vocês. Muito legal o trabalho. O site atende bem a demanda de vocês hoje ou vocês sentem que precisariam de algo mais focado em conversão?`
                 }
             ];
 
