@@ -8,18 +8,16 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
         const apikey = process.env.EVOLUTION_API_KEY;
         const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
 
-        // Calcula o tempo de digitação: 50ms por letra. Min: 2s, Max: 5s.
-        const typingTime = delayMs ?? Math.min(Math.max(text.length * 50, 2000), 5000);
+        // Força a tipagem explícita para número inteiro. A Evolution API rejeita floats ou strings disfarçadas.
+        const finalDelay = Math.round(delayMs || 2000);
 
-        // O Padrão Evolution V2+
+        // O payload da Evolution V2+
         const payload = {
             number: phone,
-            text: text, // 🎯 A MUDANÇA DE OURO ESTÁ AQUI (na raiz do objeto)
-            delay: typingTime,
-            presence: "composing",
+            text: text,
+            delay: finalDelay, // Injeção na raiz do objeto (Garante o enfileiramento nativo)
+            presence: "composing", // Aciona o status "Digitando..."
             options: {
-                delay: typingTime,
-                presence: "composing",
                 linkPreview: false
             }
         };
@@ -38,7 +36,6 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-            // We use JSON.stringify to reveal the hidden '[Object]' error details
             throw new Error(`Evolution API Error ${res.status}: ${JSON.stringify(data.message || data)}`);
         }
 
