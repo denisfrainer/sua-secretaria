@@ -3,7 +3,7 @@ name: Wolf Hunter (Mineração)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/15 * * * *'
 
 jobs:
   run_hunter:
