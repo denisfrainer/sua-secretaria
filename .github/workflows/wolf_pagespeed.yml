@@ -21,8 +21,10 @@ jobs:
           python-version: '3.13'
           cache: 'pip'
           
-      - run: |
+      - name: Instalar dependências
+        run: |
           python -m pip install --upgrade pip
           pip install supabase requests python-dotenv
           
-      - run: python -u scripts/scrapers/wolf_pagespeed.py
+      - name: Executar Lobo PageSpeed
+        run: python -u scripts/scrapers/wolf_pagespeed.py
