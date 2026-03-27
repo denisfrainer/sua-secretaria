@@ -67,6 +67,7 @@ export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
 
     const url = `${baseUrl}/chat/whatsappNumbers/${instanceName}`;
 
+    console.log(`🔗 [DEBUG SENDER] Tentando conectar em: ${url}`);
     try {
         const res = await fetch(url, {
             method: 'POST',
