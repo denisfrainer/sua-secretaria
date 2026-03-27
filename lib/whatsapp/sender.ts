@@ -24,14 +24,22 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
 
         const url = `${baseUrl}/message/sendText/${instanceName}`;
 
+        // 1. Cria o controlador de timeout (30 segundos)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
         const res = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'apikey': apikey as string
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: controller.signal // 2. Injeta o sinal de aborto no fetch
         });
+
+        // 3. Limpa o timeout se a requisição for bem-sucedida antes dos 30s
+        clearTimeout(timeoutId);
 
         const data = await res.json().catch(() => ({}));
 
