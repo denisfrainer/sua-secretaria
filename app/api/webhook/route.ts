@@ -216,7 +216,7 @@ export async function POST(req: Request) {
             // 🛡️ [SHIELD] Step 1: Speed Trap (reply arrived too fast = auto-reply)
             if (lead?.updated_at) {
                 const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
-                if (timeSinceContact < 15000) {
+                if (timeSinceContact < 2000) {
                     console.log(`🛡️ [SHIELD] Auto-reply detected (Too fast: ${Math.round(timeSinceContact)}ms < 15s) from ${clientNumber}. Ignoring.`);
                     return NextResponse.json({ status: 'ignored', reason: 'auto_reply_speed_trap', delta_ms: timeSinceContact }, { status: 200 });
                 }
