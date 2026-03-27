@@ -107,14 +107,26 @@ export async function sendWhatsAppPresence(phone: string, presence: 'composing' 
         presence: presence
     };
 
+    // 1. Crie o controlador
+    const controller = new AbortController();
+
+    // 2. (Opcional mas recomendado) Defina um timeout de 30 segundos para não travar o Railway
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const res = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'apikey': apikey as string
+            'apikey': apikey as string,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...',
+            'Connection': 'keep-alive'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal // Agora o 'controller' existe!
     });
+
+    // 3. Limpe o timeout se a requisição terminar a tempo
+    clearTimeout(timeoutId);
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
