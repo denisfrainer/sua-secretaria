@@ -1,11 +1,11 @@
 [phases.setup]
-nixPkgs = ["python3", "python3Packages.pip", "gcc"]
+nixPkgs = ["python3", "python3Packages.pip", "gcc", "nodejs_20", "npm"]
 
 [phases.install]
-cmds = []
+cmds = ["python3 -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt", "npm install"]
 
 [phases.build]
-cmds = ["python3 -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt"]
+cmds = ["npm run build"]
 
 [start]
 cmd = "/opt/venv/bin/python3 -u $EXEC_SCRIPT"
