@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "eliza": "ts-node scripts/agents/eliza-worker.ts"
+    "eliza:start": "ts-node scripts/agents/eliza-worker.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
