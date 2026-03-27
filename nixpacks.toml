@@ -1,13 +1,11 @@
 [phases.setup]
 nixPkgs = ["python3", "python3Packages.pip", "gcc"]
 
-# Isso aqui mata o "npm ci" automático
 [phases.install]
 cmds = []
 
-# Movemos a instalação do Python para a fase de build
 [phases.build]
 cmds = ["python3 -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt"]
 
 [start]
-cmd = "/opt/venv/bin/python3 scripts/scrapers/wolf_hunter.py"
+cmd = "/opt/venv/bin/python3 -u $EXEC_SCRIPT"

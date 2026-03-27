@@ -72,7 +72,7 @@ def run_hunter():
         # Turismo e Hospitalidade
         "restaurantes", "gastronomia", "pousadas", "hotéis", "hostels", 
         "agências de turismo", "passeios de barco", "lojas de roupa",
-        "eventos", "bares", "agências de marketing", "agências de web design",
+        "eventos", "bares", "agências de marketing",
 
         # Saúde e Estética (High Ticket)
         "clínicas de estética", "clínicas odontológicas", "consultórios médicos",
@@ -206,10 +206,11 @@ def run_hunter():
                     print(f"   💾 [DB] {name} salvo com sucesso.")
                     existing_names.add(name) # Evita duplicados na mesma rodada
                 except Exception as e:
-                    print(f"   ❌ [DB ERROR] Falha ao salvar {name}: {e}")
+                    if "23505" in str(e):
+                        print(f"   ⏭️ [SKIP] Telefone de {name} já existe no banco.")
+                    else:
+                        print(f"   ❌ [DB ERROR] Falha ao salvar {name}: {e}")
                 # ---------------------------------------
-        else:
-            print("⚠️ O modelo respondeu, mas não trouxe leads.")
 
     except Exception as e:
         print(f"❌ ERRO TÉCNICO: {e}")
