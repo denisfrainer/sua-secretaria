@@ -18,6 +18,7 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
             options: { linkPreview: false }
         };
 
+        // Define o controlador dentro da função para ser reconhecido
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 40000);
 

@@ -8,6 +8,7 @@ import http from 'http';
 
 process.env.TZ = 'America/Sao_Paulo';
 
+// 1. Definição das ferramentas (usando strings para evitar erros de enum)
 const functionDeclarations: any[] = [
     {
         name: 'save_lead_data',
@@ -25,6 +26,7 @@ const functionDeclarations: any[] = [
     }
 ];
 
+// 2. Executor de ferramentas
 async function executeToolCall(name: string, args: any, clientPhone: string) {
     if (name === 'save_lead_data') {
         await supabaseAdmin.from('leads_lobo').update({
@@ -37,8 +39,11 @@ async function executeToolCall(name: string, args: any, clientPhone: string) {
     return { status: 'unknown' };
 }
 
+// 3. Função principal de processamento (única)
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
+    console.log(`🧠 [ELIZA] Processando lead: ${clientNumber}`);
+
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
@@ -49,9 +54,12 @@ async function processLead(lead: any) {
             .order('created_at', { ascending: true })
             .limit(20);
 
+        // Inicialização correta para satisfazer o TypeScript
         const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+
+        // Usamos gemini-1.5-flash por ser o mais estável para tools neste SDK
         const model = (genAI as any).getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             tools: [{ functionDeclarations }]
         });
 
@@ -66,6 +74,7 @@ async function processLead(lead: any) {
         const result = await chat.sendMessage(lastMsg);
         let response = result.response;
 
+        // Loop de tools
         let loopCount = 0;
         while (response.functionCalls()?.length && loopCount < 3) {
             loopCount++;
@@ -91,33 +100,44 @@ async function processLead(lead: any) {
         for (const chunk of chunks) {
             accumulatedDelay += 2000;
             await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelay);
+            console.log(`✅ Mensagem enviada para ${clientNumber}`);
         }
 
         await supabaseAdmin.from('messages').insert({ lead_phone: clientNumber, role: 'assistant', content: finalText });
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
 
-    } catch (error) {
-        console.error("❌ Erro Eliza:", error);
+    } catch (error: any) {
+        console.error("❌ Erro Eliza:", error.message);
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
     }
 }
 
+// 4. Loop de Escuta (Polling)
 async function startPolling() {
     console.log('🔄 [WORKER] Escutando eliza_processing...');
     while (true) {
         try {
-            const { data } = await supabaseAdmin.from('leads_lobo').select('*').eq('status', 'eliza_processing').limit(1);
-            if (data && data.length > 0) await processLead(data[0]);
-        } catch (e) { console.error(e); }
+            const { data } = await supabaseAdmin
+                .from('leads_lobo')
+                .select('*')
+                .eq('status', 'eliza_processing')
+                .limit(1);
+
+            if (data && data.length > 0) {
+                await processLead(data[0]);
+            }
+        } catch (e) {
+            console.error("Erro no polling:", e);
+        }
         await new Promise(r => setTimeout(r, 5000));
     }
 }
 
-// Servidor de Healthcheck para o Railway
+// 5. Servidor Dummy para o Railway não travar o deploy
 const PORT = process.env.PORT || 8080;
 http.createServer((req, res) => {
     res.writeHead(200);
-    res.end('Online');
+    res.end('Worker Online');
 }).listen(PORT);
 
 startPolling();
