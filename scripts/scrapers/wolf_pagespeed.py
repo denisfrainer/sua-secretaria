@@ -71,16 +71,14 @@ def run_pagespeed_hunter():
     
     # Busca 10 leads que possuem site, mas ainda não têm nota
     # Busca 10 leads que possuem site, mas ainda não têm nota
-    response = supabase.table("leads_lobo") \
-        .select("id, name, website") \
+    # Mude sua query para isso:
+    query = supabase.table("leads_lobo") \
+        .select("*") \
         .not_.is_("website", "null") \
         .is_("pagespeed_score", "null") \
-        .neq("status", "invalid") \
         .limit(50) \
         .execute()
         
-    leads = response.data
-
     leads = query.data # ou como estiver sua variável de leads
     print(f"DEBUG: Recebi {len(leads)} leads do banco de dados.")
     
