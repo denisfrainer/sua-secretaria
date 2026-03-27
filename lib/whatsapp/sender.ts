@@ -20,7 +20,7 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
 
         // Define o controlador dentro da função para ser reconhecido
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 40000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
         try {
             const res = await axios.post(url, payload, {
