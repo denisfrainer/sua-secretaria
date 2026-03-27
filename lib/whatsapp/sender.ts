@@ -66,3 +66,31 @@ export async function sendWhatsAppPresence(phone: string, presence: 'composing' 
         clearTimeout(timeoutId);
     }
 }
+
+export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const url = `${getBaseUrl()}/chat/whatsappNumbers/${instanceName}`;
+
+    try {
+        const res = await axios.post(url, { numbers: [phone] }, {
+            headers: {
+                'apikey': apikey as string,
+                'Content-Type': 'application/json'
+            },
+            timeout: 30000,
+            proxy: false
+        });
+
+        if (res.data && res.data.length > 0) {
+            // Retorna true se o número existir no WhatsApp
+            return res.data[0].exists || false;
+        }
+
+        return false;
+    } catch (error: any) {
+        console.error(`❌ Erro ao checar número na Evolution: ${error.message}`);
+        // Em caso de erro na API, retorna false para evitar falsos positivos
+        return false;
+    }
+}
