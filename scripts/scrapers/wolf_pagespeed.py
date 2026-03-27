@@ -93,7 +93,7 @@ def run_pagespeed_hunter():
         
         # 🛡️ TWEAK: Filtro de Falsos Nulos e lixo
         if target_url.lower() in ['none', 'null', '', 'n/a', 'nan'] or len(target_url) < 4:
-            print(f"⏩ Pulando lead sem site real ('{target_url}')")
+            print(f"⏩ [LIMPEZA] {lead.get('name')} não possui website válido. Marcando como -1.")
             supabase.table("leads_lobo").update({"pagespeed_score": -1}).eq("id", lead['id']).execute()
             continue
         
