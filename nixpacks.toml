@@ -1,0 +1,10 @@
+providers = ["python"]
+
+[phases.install]
+cmds = ["pip install -r scripts/scripts/requirements.txt"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "python -u scripts/scrapers/wolf_hunter.py"

@@ -18,10 +18,10 @@ const inter = Inter({
 export const metadata: Metadata = {
     metadataBase: new URL('https://wolfagent.netlify.app'),
     title: "meatende.ai",
-    description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões automaticamente. 24 horas por dia, 7 dias por semana.",
+    description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
     openGraph: {
-        title: "meatende.ai",
-        description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões automaticamente. 24 horas por dia, 7 dias por semana.",
+        title: "meatende.ai - Seu funcionário de IA",
+        description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
         locale: 'pt_BR',
         type: 'website',
         images: [
