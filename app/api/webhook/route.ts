@@ -288,53 +288,12 @@ export async function POST(req: Request) {
                     content: clientMessage,
                     message_id: incomingMessageId
                 });
+                console.log(`✅ [WEBHOOK] Mensagem salva em 'messages'.`);
             } catch (insertErr: any) {
-                console.log(`⚠️ [WEBHOOK] Save handled gracefully (possible duplicate): ${insertErr.message}`);
+                console.log(`⚠️ [WEBHOOK] Falha ao salvar mensagem (possível duplicata): ${insertErr.message}`);
             }
 
-            // --- GODSPEED UNIFICATION (Pre-Flight Context) ---
-            let leadContext = '';
-
-            if (lead) {
-                // 🔄 ATUALIZAÇÃO FSM: Reconhece o novo status do Lobo ('waiting_reply')
-                if (lead.status === 'contacted' || lead.status === 'waiting_reply') {
-                    leadContext = `\n\n[CONTEXTO DO LEAD]:
-            Atenção: Você está falando com ${lead.name || 'o cliente'}. Nosso sistema automatizado acabou de enviar uma isca de prospecção. O lead acabou de responder a essa primeira abordagem. Continue a conversa a partir dessa premissa, qualificando a dor deles de forma natural.
-            Empresa/Nicho: ${lead.niche || 'Não informada'}.
-            Dor Principal: ${lead.main_pain || 'Não informada'}.`;
-
-                    // Transita o estado oficialmente para a fila da Eliza
-                    await supabaseAdmin
-                        .from('leads_lobo')
-                        .update({ status: 'lead_replied' })
-                        .eq('phone', clientNumber);
-                    console.log(`🔄 [FSM] Status de ${clientNumber} atualizado para 'lead_replied'`);
-                } else {
-                    leadContext = `\n\n[CONTEXTO DO LEAD]:
-            Você está falando com ${lead.name || 'o cliente'}.
-            O status atual dele na base é: ${lead.status}.
-            Empresa/Nicho: ${lead.niche || 'Não informada'}.
-            Dor Principal: ${lead.main_pain || 'Não informada'}.`;
-                }
-            }
-
-            if (lead?.status === 'organic_inbound') {
-                leadContext = `\n\n[CONTEXTO DO LEAD]: Este é um lead orgânico inbound novo. Ele acabou de mandar mensagem. Colete o Nome, Empresa e Dor para salvar usando a tool.`;
-            }
-
-            // 7. Busca o cérebro do Agente no Banco de Dados
-            const { data: config, error: configError } = await supabaseAdmin
-                .from('agent_configs')
-                .select('*, organizations(name)')
-                .limit(1)
-                .single();
-
-            if (configError || !config) {
-                console.log('🚨 ERRO: Agente não encontrado no banco de dados.');
-                return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
-            }
-
-            // 🛑 FEATURE FLAG: ELIZA KILL SWITCH
+            // 🛑 FEATURE FLAG: ELIZA KILL SWITCH (Mantido por segurança)
             const { data: elizaSwitch } = await supabaseAdmin
                 .from('system_settings')
                 .select('value')
@@ -342,61 +301,33 @@ export async function POST(req: Request) {
                 .single();
 
             if (elizaSwitch && elizaSwitch.value?.enabled === false) {
-                console.log(`🛑 [FEATURE FLAG] Eliza DESLIGADA. Mensagem salva no DB, mas IA não vai responder.`);
-                // Opcional: Atualizar status do lead para needs_human para você ver no painel
+                console.log(`🛑 [FEATURE FLAG] Eliza DESLIGADA. Lead ${clientNumber} setado para needs_human.`);
                 await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                 return NextResponse.json({ status: 'eliza_paused' }, { status: 200 });
             }
 
-            // --- QSTASH ASYNC QUEUEING (TWO-TIER HUMAN DELAY) ---
-            console.log(`🚀 [QSTASH] Enfileirando mensagem de ${clientNumber} para processamento assíncrono...`);
-
-            // 1. Cálculo Dinâmico de Delay Híbrido
-            let delaySeconds = 10;
-            const isFirstReply = lead?.status === 'contacted' || lead?.status === 'waiting_reply' || lead?.status === 'lead_replied';
-
-            if (isFirstReply) {
-                // Mantém o atraso de 30 a 60 minutos para o PRIMEIRO CONTATO
-                delaySeconds = Math.floor(Math.random() * (3600 - 1800 + 1)) + 1800;
-                console.log(`⏳ [STEALTH DELAY] Primeira resposta detectada. A IA responderá em ${Math.floor(delaySeconds / 60)} minutos.`);
-            } else {
-                // Read Delay para o SEGUNDO CONTATO EM DIANTE (Atraso de leitura: 5 a 15 segundos)
-                delaySeconds = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
-                console.log(`⏳ [READ DELAY] Conversa ativa. Worker acionado em ${delaySeconds} segundos.`);
-            }
-
-            const { Client } = await import('@upstash/qstash');
-            const qstash = new Client({
-                token: process.env.QSTASH_TOKEN!,
-                baseUrl: "https://qstash-us-east-1.upstash.io"
-            });
+            // --- 🚀 O GATILHO PARA O WORKER NO RAILWAY ---
+            // O Worker no Railway está vigiando leads com status 'eliza_processing'.
+            // Ao mudar o status aqui, você acorda o Worker de forma assíncrona.
 
             try {
-                await qstash.publishJSON({
-                    url: `${siteBaseUrl}/api/eliza-worker`,
-                    body: {
-                        clientNumber,
-                        clientMessage,
-                        incomingMessageId,
-                        leadContext
-                    },
-                    delay: delaySeconds,
-                    retries: 0 // CRITICAL: Prevents Ghost Retries
-                });
-            } catch (err) {
-                console.error("❌ Erro ao publicar texto para o eliza-worker no QStash:", err);
-                await sendWhatsAppPresence(clientNumber, 'available');
+                await supabaseAdmin
+                    .from('leads_lobo')
+                    .update({ status: 'eliza_processing' })
+                    .eq('phone', clientNumber);
+
+                console.log(`🎯 [WEBHOOK] Status do lead ${clientNumber} alterado para 'eliza_processing'. O Worker no Railway vai assumir agora.`);
+            } catch (updateErr) {
+                console.error(`❌ [WEBHOOK] Erro ao atualizar status para eliza_processing:`, updateErr);
             }
 
-            return NextResponse.json({ status: 'queued_or_failed' }, { status: 200 });
+            // Retorna 200 OK para a Evolution API imediatamente.
+            return NextResponse.json({ status: 'success', handled_by: 'railway_worker' }, { status: 200 });
         }
 
         return NextResponse.json({ status: 'ignored_event' });
     } catch (error) {
         console.error('❌ Erro Crítico no Webhook:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    } finally {
-        // --- CLEANUP ---
-        // Debounce doesn't use locks anymore, so no cleanup is needed here immediately.
     }
 }
