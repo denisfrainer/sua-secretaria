@@ -456,5 +456,18 @@ async function startPolling() {
     }
 }
 
+// ==============================================================
+// 🌐 DUMMY SERVER (RAILWAY HEALTHCHECK FIX)
+// ==============================================================
+import http from 'http';
+const PORT = process.env.PORT || 8080;
+
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Eliza Worker Online\n');
+}).listen(PORT, () => {
+    console.log(`🌐 Servidor fantasma rodando na porta ${PORT} para liberar o deploy do Railway.`);
+});
+
 // Inicia o motor
 startPolling();
