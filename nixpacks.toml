@@ -1,10 +1,8 @@
-providers = ["python"]
+[phases.setup]
+nixPkgs = ["python3", "gcc"]
 
 [phases.install]
-cmds = ["pip install -r scripts/scripts/requirements.txt"]
-
-[phases.build]
-cmds = []
+cmds = ["python3 -m venv /opt/venv && /opt/venv/bin/pip install -r scripts/scripts/requirements.txt"]
 
 [start]
-cmd = "python -u scripts/scrapers/wolf_hunter.py"
+cmd = "/opt/venv/bin/python scripts/scrapers/wolf_hunter.py"
