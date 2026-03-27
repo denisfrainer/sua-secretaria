@@ -36,6 +36,7 @@ def get_pagespeed_data(url: str):
     
     if GOOGLE_PAGESPEED_KEY:
         params['key'] = GOOGLE_PAGESPEED_KEY
+        print(f"✅ Usando chave: {GOOGLE_PAGESPEED_KEY[:5]}...")
 
     try:
         # Aumentamos o timeout porque o Lighthouse roda um Chrome headless na nuvem
@@ -75,7 +76,7 @@ def run_pagespeed_hunter():
         .not_.is_("website", "null") \
         .is_("pagespeed_score", "null") \
         .neq("status", "invalid") \
-        .limit(10) \
+        .limit(50) \
         .execute()
         
     leads = response.data
