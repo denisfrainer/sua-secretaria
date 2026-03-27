@@ -80,6 +80,9 @@ def run_pagespeed_hunter():
         .execute()
         
     leads = response.data
+
+    leads = query.data # ou como estiver sua variável de leads
+    print(f"DEBUG: Recebi {len(leads)} leads do banco de dados.")
     
     if not leads:
         print("💤 Nenhum lead pendente de auditoria com website cadastrado.")
