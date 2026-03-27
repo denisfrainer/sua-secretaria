@@ -75,6 +75,7 @@ def run_pagespeed_hunter():
     query = supabase.table("leads_lobo") \
         .select("*") \
         .not_.is_("website", "null") \
+        .neq("website", "") \
         .is_("pagespeed_score", "null") \
         .limit(50) \
         .execute()

@@ -84,7 +84,7 @@ export async function POST(req: Request) {
         let currentStats = statsData;
 
         if (!currentStats) {
-            const randomDailyLimit = Math.floor(Math.random() * (20 - 15 + 1)) + 15; // 15 to 20
+            const randomDailyLimit = Math.floor(Math.random() * (30 - 25 + 1)) + 25; // 25 to 30
             const { data: newStats, error: insertError } = await supabaseAdmin
                 .from('lobo_daily_stats')
                 .insert([{ date_id: todayStr, sent_count: 0, daily_limit: randomDailyLimit }])
