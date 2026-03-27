@@ -234,7 +234,7 @@ export async function POST(req: Request) {
 
             const variationsPageSpeed = [
                 {
-                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tudo bem? Sou desenvolvedor aqui de Floripa.`,
+                    part1: `${saudacao}, tudo bem? Sou desenvolvedor aqui de Floripa.`,
                     part2: `Tava pesquisando serviços de ${nichoFormatado} e tentei entrar no site de vocês pelo celular, mas a tela ficou carregando por uns ${timeStr} segundos. A maioria do pessoal desiste de esperar e acaba indo pro concorrente. Vocês tão sentindo que o site tá trazendo bons resultados atualmente?`
                 },
                 {
@@ -242,11 +242,11 @@ export async function POST(req: Request) {
                     part2: `Como eu crio sites, tenho mania de testar os links que eu clico. Fui abrir o de vocês agora e demorou quase ${timeStr} segundos pra aparecer alguma coisa. Cliente hoje não tem paciência e fecha a aba na hora. Vocês estão satisfeitos com a conversão atual do site?`
                 },
                 {
-                    part1: `{Opa|Oi|Fala}, pessoal! Tudo bem? Me chamo Denis.`,
+                    part1: `{Opa|Oi|Fala|Olá}, pessoal! Tudo bem? Me chamo Denis.`,
                     part2: `Achei a empresa de vocês aqui no Google, mas quando cliquei no site ele demorou ${timeStr} segundos pra abrir no meu celular. Quase achei que tava fora do ar. Vocês tão usando ele pra captar cliente ativamente ou deixam só como cartão de visitas mesmo?`
                 },
                 {
-                    part1: `{Oi|Opa|Fala}, ${saudacao}! Tranquilo?`,
+                    part1: `{Oi|Opa|Fala|Olá}, ${saudacao}! Sou desenvolvedor web aqui da Lagoa da Conceição.`,
                     part2: `Curti muito o trabalho de vocês de ${nichoFormatado}. Fui dar uma olhada no site pelo 4G e vi que ele tá levando ${timeStr} segundos pra abrir. Essa demora costuma fazer o cliente desistir e ir procurar outra opção. Vocês tão conseguindo captar clientes e vender por lá?`
                 }
             ];
