@@ -305,9 +305,11 @@ ${dynamicInstruction}
         }));
 
         if (contents.length === 0) {
-            console.log(`❄️ [COLD START] Contexto vazio. Abortando.`);
-            await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-            return;
+            console.log(`❄️ [COLD START] Histórico vazio. O Webhook não salvou no banco a tempo ou a tabela está errada. Forçando saudação...`);
+            contents.push({
+                role: 'user',
+                parts: [{ text: 'Olá' }] // Força um "Olá" fantasma para o Gemini ter o que processar
+            });
         }
 
         const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
