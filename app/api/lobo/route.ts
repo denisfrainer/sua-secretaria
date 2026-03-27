@@ -251,14 +251,35 @@ export async function POST(req: Request) {
                 }
             ];
 
+            // --- 🎯 LETHAL STRIKE 4: DEAD SITE HOOK ---
+            const isDeadSite = scoreNum === -1 && hasSite; // Tem link, mas a API do Google não conseguiu abrir
+
+            const variationsDeadSite = [
+                {
+                    part1: `${saudacao}, tudo bem? Sou desenvolvedor web aqui de Florianópolis.`,
+                    part2: `Tava pesquisando sobre ${nichoFormatado} e tentei acessar o site de vocês, mas ele tá dando erro de conexão e não abre de jeito nenhum. Vocês estão cientes que ele caiu?`
+                },
+                {
+                    part1: `${saudacao}, tudo certo? Achei o negócio de vocês muito massa no Maps.`,
+                    part2: `Fui clicar no link do site de vocês pra dar uma olhada no serviço, mas a página tá fora do ar. Vocês desativaram ele de propósito ou o servidor caiu mesmo?`
+                },
+                {
+                    part1: `{Opa|Oi|Fala|Olá}, pessoal! Tudo bem? Me chamo Denis, sou desenvolvedor aqui da Lagoa da Conceição.`,
+                    part2: `Tava tentando entrar no site oficial de vocês agora pelo celular, mas parece que o link tá quebrado ou o servidor caiu. Vocês estão cientes disso?`
+                }
+            ];
+
             // 🎯 ESCOLHENDO A MUNIÇÃO BASEADO NO DIAGNÓSTICO DO ALVO
             let activeVariations;
 
             if (isSlowSite) {
-                console.log(`⏱️ [${cronId}] Alvo Rápido Detectado! Usando Hook de PageSpeed (${scoreNum}/100 | ${timeStr}s).`);
+                console.log(`⏱️ [${cronId}] Site Lento Detectado. Usando Hook de PageSpeed (${scoreNum}/100 | ${timeStr}s).`);
                 activeVariations = variationsPageSpeed;
+            } else if (isDeadSite) {
+                console.log(`💀 [${cronId}] Site Morto Detectado (Nota -1). Usando Hook de Site Fora do Ar.`);
+                activeVariations = variationsDeadSite;
             } else if (hasSite) {
-                console.log(`🌐 [${cronId}] Alvo tem site válido. Usando Hook Institucional.`);
+                console.log(`🌐 [${cronId}] Alvo tem site válido e rápido. Usando Hook Institucional.`);
                 activeVariations = variationsComSite;
             } else {
                 console.log(`📱 [${cronId}] Alvo não possui site. Usando Hook de Rede Social.`);
