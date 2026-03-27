@@ -18,24 +18,31 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
             options: { linkPreview: false }
         };
 
-        // Define o controlador dentro da função para ser reconhecido
+        // CRIANDO UM TIMEOUT DE "GUERRA" (2 minutos)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
 
         try {
+            console.log(`📡 [SENDER] Tentando enviar para Evolution no IP: ${url}`);
+
             const res = await axios.post(url, payload, {
                 headers: {
                     'apikey': apikey as string,
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'
+                    'Content-Type': 'application/json'
                 },
-                signal: controller.signal,
-                proxy: false
+                signal: controller.signal, // Se demorar mais de 2min, aí sim cancela
+                timeout: 110000,           // Timeout interno do Axios (um pouco menor que o controller)
+                proxy: false               // Ignora qualquer proxy do Railway
             });
+
             clearTimeout(timeoutId);
+            console.log(`✅ [SENDER] Resposta da Evolution:`, res.status);
             return res.data;
         } catch (error: any) {
             clearTimeout(timeoutId);
+            if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+                throw new Error("❌ Timeout: A Evolution API no Google Cloud demorou demais para responder (Gargalo de Hardware).");
+            }
             throw new Error(`❌ Erro Evolution API: ${error.message}`);
         }
     });
