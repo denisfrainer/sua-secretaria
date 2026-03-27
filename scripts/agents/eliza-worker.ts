@@ -121,7 +121,7 @@ async function processLeadMessage(lead: any) {
 
     try {
         let response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash', // Use a versão estável que você prefere
+            model: 'gemini-2.5-flash', // Use a versão estável que você prefere
             contents,
             config: {
                 tools: [{ functionDeclarations }],
@@ -145,7 +145,7 @@ async function processLeadMessage(lead: any) {
             });
 
             response = await ai.models.generateContent({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash',
                 contents,
                 config: { tools: [{ functionDeclarations }], systemInstruction: systemPrompt },
             });
