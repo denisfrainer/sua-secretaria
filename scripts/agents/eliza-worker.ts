@@ -372,7 +372,13 @@ ${dynamicInstruction}
         console.log(`📤 Resposta gerada:`, chunks);
 
         let accumulatedDelayMs = 0;
-        await sendWhatsAppPresence(clientNumber, 'composing');
+
+        // Se o "digitando..." falhar por rede, ignora e segue para enviar a mensagem
+        try {
+            await sendWhatsAppPresence(clientNumber, 'composing');
+        } catch (presenceErr: any) {
+            console.log(`⚠️ Falha na rede ao enviar 'digitando...' - ignorando. Erro: ${presenceErr.message}`);
+        }
 
         for (const textChunk of chunks) {
             const bubbleTypingTimeMs = Math.max(2000, Math.min((textChunk.length / 15) * 1000, 10000));
