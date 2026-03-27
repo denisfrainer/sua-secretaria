@@ -20,9 +20,10 @@ jobs:
           python-version: '3.11' # Pode ajustar para a sua versão se preferir
 
       - name: Instalar dependências
+        working-directory: scripts/scrapers
         run: |
           python -m pip install --upgrade pip
-          pip install -r scripts/scrapers/requirements.txt
+          pip install -r requirements.txt
 
       - name: Executar Lobo PageSpeed
         env:
