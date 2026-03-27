@@ -1,4 +1,3 @@
-// scripts/agents/eliza-worker.ts
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
@@ -6,13 +5,20 @@ import fs from 'fs';
 import path from 'path';
 import http from 'http';
 
+/**
+ * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
+ * Target Model: gemini-2.5-flash
+ */
+
 process.env.TZ = 'America/Sao_Paulo';
 
-// 1. Definição das ferramentas (usando strings para evitar erros de enum)
+// ==============================================================
+// 🔧 FUNCTION DECLARATIONS (Tools)
+// ==============================================================
 const functionDeclarations: any[] = [
     {
         name: 'save_lead_data',
-        description: 'Salva nome, empresa e dor do lead.',
+        description: 'Saves lead info (name, company, pain point) to the database.',
         parameters: {
             type: 'OBJECT',
             properties: {
@@ -23,11 +29,23 @@ const functionDeclarations: any[] = [
             },
             required: ['phone'],
         },
+    },
+    {
+        name: 'notify_human_specialist',
+        description: 'Alerts Denis when the lead is ready to buy or needs technical help.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                urgency_level: { type: 'STRING' },
+                summary: { type: 'STRING' },
+            },
+            required: ['urgency_level', 'summary'],
+        },
     }
 ];
 
-// 2. Executor de ferramentas
-async function executeToolCall(name: string, args: any, clientPhone: string) {
+async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
+    console.log(`🔧 [TOOL EXECUTION]: ${name}`);
     if (name === 'save_lead_data') {
         await supabaseAdmin.from('leads_lobo').update({
             name: args.name,
@@ -36,16 +54,28 @@ async function executeToolCall(name: string, args: any, clientPhone: string) {
         }).eq('phone', clientPhone);
         return { status: 'success' };
     }
-    return { status: 'unknown' };
+    if (name === 'notify_human_specialist') {
+        await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
+        return { status: 'success', notification: 'Denis has been alerted.' };
+    }
+    return { status: 'error', message: 'Tool not found' };
 }
 
-// 3. Função principal de processamento (única)
+// ==============================================================
+// 🧠 LEAD PROCESSING LOGIC
+// ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
-    console.log(`🧠 [ELIZA] Processando lead: ${clientNumber}`);
+    console.log(`\n===========================================`);
+    console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber}`);
 
     try {
+        // 1. Lock lead status
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
+
+        // 2. Load context and history
+        const contextPath = path.join(process.cwd(), 'business_context.json');
+        const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
 
         const { data: history } = await supabaseAdmin
             .from('messages')
@@ -54,45 +84,49 @@ async function processLead(lead: any) {
             .order('created_at', { ascending: true })
             .limit(20);
 
-        // Inicialização correta para satisfazer o TypeScript
-        const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+        // 3. Initialize New Google GenAI SDK
+        const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
 
-        // Usamos gemini-1.5-flash por ser o mais estável para tools neste SDK
-        const model = (genAI as any).getGenerativeModel({
-            model: "gemini-1.5-flash",
-            tools: [{ functionDeclarations }]
-        });
+        const systemInstruction = `You are Eliza, SDR at meatende.ai. Responses must be in Natural PT-BR. Use '||' to split messages. Context: ${businessContext}`;
 
-        const chat = model.startChat({
+        // 4. Create Chat Session
+        const chat = ai.chats.create({
+            model: "gemini-2.5-flash",
+            config: {
+                systemInstruction: systemInstruction,
+                tools: [{ functionDeclarations }] as any,
+            },
             history: (history || []).map((msg: any) => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }],
-            }))
+            })),
         });
 
-        const lastMsg = history && history.length > 0 ? history[history.length - 1].content : "Olá";
-        const result = await chat.sendMessage(lastMsg);
-        let response = result.response;
+        const lastMsg = (history && history.length > 0) ? history[history.length - 1].content : "Olá";
 
-        // Loop de tools
+        console.log('⏳ Calling Gemini API...');
+        let result = await chat.sendMessage({ message: lastMsg });
+
+        // 5. Tool Loop (Function Calling)
         let loopCount = 0;
-        while (response.functionCalls()?.length && loopCount < 3) {
+        while (result.functionCalls && result.functionCalls.length > 0 && loopCount < 3) {
             loopCount++;
             const toolResults = [];
-            for (const call of response.functionCalls()!) {
-                const output = await executeToolCall(call.name, call.args, clientNumber);
+            for (const call of result.functionCalls) {
+                const output = await executeToolCall(call.name || '', call.args, clientNumber);
                 toolResults.push({ functionResponse: { name: call.name, response: output } });
             }
-            const next = await chat.sendMessage(toolResults as any);
-            response = next.response;
+            result = await chat.sendMessage({ functionResponse: toolResults } as any);
         }
 
-        const finalText = response.text();
+        const responseText = result.text || '';
 
-        // CORREÇÃO DO "C" MALDITO: Tipagem explícita no filter também
-        const chunks = finalText.split('||')
+        // 6. Split into bubbles with explicit typing
+        const chunks = responseText.split('||')
             .map((c: string) => c.trim())
-            .filter((c: string) => c !== '');
+            .filter((c: string) => c.length > 0);
+
+        console.log('📤 Sending chunks to WhatsApp:', chunks);
 
         await sendWhatsAppPresence(clientNumber, 'composing');
 
@@ -100,44 +134,55 @@ async function processLead(lead: any) {
         for (const chunk of chunks) {
             accumulatedDelay += 2000;
             await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelay);
-            console.log(`✅ Mensagem enviada para ${clientNumber}`);
         }
 
-        await supabaseAdmin.from('messages').insert({ lead_phone: clientNumber, role: 'assistant', content: finalText });
+        // 7. Save and Release
+        await supabaseAdmin.from('messages').insert({
+            lead_phone: clientNumber,
+            role: 'assistant',
+            content: responseText
+        });
+
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
+        console.log(`✅ [ELIZA] Success for ${clientNumber}`);
 
     } catch (error: any) {
-        console.error("❌ Erro Eliza:", error.message);
+        console.error("❌ [ELIZA ERROR]:", error.message);
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
     }
 }
 
-// 4. Loop de Escuta (Polling)
+// ==============================================================
+// 🔄 POLLING ENGINE
+// ==============================================================
 async function startPolling() {
-    console.log('🔄 [WORKER] Escutando eliza_processing...');
+    console.log('🔄 [WORKER] Listening for eliza_processing leads...');
     while (true) {
         try {
-            const { data } = await supabaseAdmin
+            const { data: leads } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
                 .eq('status', 'eliza_processing')
+                .eq('ai_paused', false)
                 .limit(1);
 
-            if (data && data.length > 0) {
-                await processLead(data[0]);
+            if (leads && leads.length > 0) {
+                await processLead(leads[0]);
             }
         } catch (e) {
-            console.error("Erro no polling:", e);
+            console.error("Polling error:", e);
         }
         await new Promise(r => setTimeout(r, 5000));
     }
 }
 
-// 5. Servidor Dummy para o Railway não travar o deploy
+// ==============================================================
+// 🌐 RAILWAY HEALTHCHECK SERVER
+// ==============================================================
 const PORT = process.env.PORT || 8080;
 http.createServer((req, res) => {
     res.writeHead(200);
-    res.end('Worker Online');
-}).listen(PORT);
+    res.end('Eliza Worker Online');
+}).listen(PORT, () => console.log(`🌐 Healthcheck running on port ${PORT}`));
 
 startPolling();
