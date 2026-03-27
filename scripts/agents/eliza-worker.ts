@@ -368,27 +368,28 @@ ${dynamicInstruction}
         }
 
         // 7. Envio via WhatsApp
-        let chunks = String(finalText).split('||').map((c: string) => c.trim()).filter((c: string) => c !== '').slice(0, 3);
+        let chunks = finalText.split('||').map((c: string) => c.trim()).filter((c: string) => c !== '').slice(0, 3);
         console.log(`📤 Resposta gerada:`, chunks);
 
         let accumulatedDelayMs = 0;
 
-        // Se o "digitando..." falhar por rede, ignora e segue para enviar a mensagem
         try {
             await sendWhatsAppPresence(clientNumber, 'composing');
-        } catch (presenceErr: any) {
-            console.log(`⚠️ Falha na rede ao enviar 'digitando...' - ignorando. Erro: ${presenceErr.message}`);
-        }
+        } catch (e) { console.log("⚠️ Presence falhou"); }
 
-        for (const textChunk of chunks) {
-            const bubbleTypingTimeMs = Math.max(2000, Math.min((textChunk.length / 15) * 1000, 10000));
-            accumulatedDelayMs += bubbleTypingTimeMs;
+        // ENVOLVA O LOOP TODO AQUI:
+        try {
+            for (const textChunk of chunks) {
+                const bubbleTypingTimeMs = Math.max(2000, Math.min((textChunk.length / 15) * 1000, 10000));
+                accumulatedDelayMs += bubbleTypingTimeMs;
 
-            await sendWhatsAppMessage(clientNumber, textChunk, accumulatedDelayMs);
-
-            if (chunks.length > 1) {
-                accumulatedDelayMs += Math.floor(Math.random() * 1500) + 1500;
+                await sendWhatsAppMessage(clientNumber, textChunk, accumulatedDelayMs);
+                console.log(`✅ Bolha enviada: ${textChunk.substring(0, 15)}...`);
             }
+        } catch (sendErr: any) {
+            console.error(`❌ Erro real ao enviar para Evolution API:`, sendErr.message);
+            // Se falhou o envio, joga o erro para o catch principal para destravar o lead
+            throw sendErr;
         }
 
         // 8. Salvar no Banco
