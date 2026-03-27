@@ -392,7 +392,7 @@ ${dynamicInstruction}
             throw sendErr;
         }
 
-        // 8. Salvar no Banco
+        // 8. Salvar no Banco'
         await supabaseAdmin.from('messages').insert({
             lead_phone: clientNumber,
             role: 'assistant',

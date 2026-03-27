@@ -1,95 +1,54 @@
-// lib/whatsapp/sender.ts
-
+import axios from 'axios';
 import { withWhatsAppLock } from '../utils/whatsapp-lock';
+
+// Função auxiliar para limpar a URL e evitar erros de "//"
+const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
 export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number) {
     return withWhatsAppLock(async () => {
         const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
         const apikey = process.env.EVOLUTION_API_KEY;
-        const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
+        const url = `${getBaseUrl()}/message/sendText/${instanceName}`;
 
-        // Força a tipagem explícita para número inteiro. A Evolution API rejeita floats ou strings disfarçadas.
-        const finalDelay = Math.round(delayMs || 2000);
-
-        // O payload da Evolution V2+
         const payload = {
             number: phone,
             text: text,
-            delay: finalDelay, // Injeção na raiz do objeto (Garante o enfileiramento nativo)
-            presence: "composing", // Aciona o status "Digitando..."
-            options: {
-                linkPreview: false
-            }
+            delay: Math.round(delayMs || 2000),
+            presence: "composing",
+            options: { linkPreview: false }
         };
 
-        const url = `${baseUrl}/message/sendText/${instanceName}`;
-
-        // 1. Cria o controlador de timeout (30 segundos)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': apikey as string
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal // 2. Injeta o sinal de aborto no fetch
-        });
-
-        // 3. Limpa o timeout se a requisição for bem-sucedida antes dos 30s
-        clearTimeout(timeoutId);
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-            throw new Error(`Evolution API Error ${res.status}: ${JSON.stringify(data.message || data)}`);
+        try {
+            const res = await axios.post(url, payload, {
+                headers: {
+                    'apikey': apikey as string,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'
+                },
+                timeout: 40000, // 40 segundos de espera
+                proxy: false
+            });
+            return res.data;
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message;
+            throw new Error(`❌ Erro Evolution API: ${msg}`);
         }
-
-        return data;
     });
 }
 
-// --- 🆕 ADICIONE ESTA FUNÇÃO AQUI EMBAIXO ---
-
-/**
- * Verifica se um número possui conta no WhatsApp (Check Number)
- * Essencial para evitar erros de "exists:false" que queimam o chip.
- */
 export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
     const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
-    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
-
-    // Limpa o número para garantir que não vá caracteres especiais
+    const url = `${getBaseUrl()}/chat/whatsappNumbers/${instanceName}`;
     const cleanPhone = phone.replace(/\D/g, '');
 
-    const url = `${baseUrl}/chat/whatsappNumbers/${instanceName}`;
-
-    console.log(`🔗 [DEBUG SENDER] Tentando conectar em: ${url}`);
     try {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': apikey as string
-            },
-            body: JSON.stringify({
-                numbers: [cleanPhone]
-            })
+        const res = await axios.post(url, { numbers: [cleanPhone] }, {
+            headers: { 'apikey': apikey as string },
+            timeout: 15000
         });
-
-        const data = await res.json().catch(() => ([]));
-
-        // A Evolution retorna um array. Verificamos o primeiro item.
-        if (Array.isArray(data) && data.length > 0) {
-            return data[0].exists === true;
-        }
-
-        return false;
+        return res.data?.[0]?.exists === true;
     } catch (error) {
-        console.error(`❌ Erro técnico ao checar WhatsApp de ${phone}:`, error);
         return false;
     }
 }
@@ -97,75 +56,31 @@ export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
 export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available') {
     const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
-    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
+    const url = `${getBaseUrl()}/chat/sendPresence/${instanceName}`;
 
-    const url = `${baseUrl}/chat/sendPresence/${instanceName}`;
-
-    const payload = {
-        number: phone,
-        delay: 15000,
-        presence: presence
-    };
-
-    // 1. Crie o controlador
-    const controller = new AbortController();
-
-    // 2. (Opcional mas recomendado) Defina um timeout de 30 segundos para não travar o Railway
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': apikey as string,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...',
-            'Connection': 'keep-alive'
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal // Agora o 'controller' existe!
-    });
-
-    // 3. Limpe o timeout se a requisição terminar a tempo
-    clearTimeout(timeoutId);
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-        console.error(`Evolution API Presence Error ${res.status}: ${JSON.stringify(data.message || data)}`);
+    try {
+        await axios.post(url, { number: phone, presence, delay: 15000 }, {
+            headers: { 'apikey': apikey as string },
+            timeout: 10000
+        });
+    } catch (e) {
+        // Ignora erro de presence para não travar o envio da mensagem principal
     }
-
-    return data;
 }
 
 export async function markWhatsAppRead(phone: string, messageId: string) {
     const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
-    const baseUrl = process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL;
+    const url = `${getBaseUrl()}/chat/markMessageAsRead/${instanceName}`;
 
-    const url = `${baseUrl}/chat/markMessageAsRead/${instanceName}`;
-
-    const payload = {
-        readMessages: [
-            {
-                remoteJid: phone,
-                fromMe: false,
-                id: messageId
-            }
-        ]
-    };
-
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': apikey as string
-        },
-        body: JSON.stringify(payload)
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-        console.error(`Evolution API MarkRead Error ${res.status}: ${JSON.stringify(data.message || data)}`);
+    try {
+        await axios.post(url, {
+            readMessages: [{ remoteJid: phone, fromMe: false, id: messageId }]
+        }, {
+            headers: { 'apikey': apikey as string },
+            timeout: 10000
+        });
+    } catch (e) {
+        console.error("⚠️ Erro ao marcar como lida");
     }
-
-    return data;
 }

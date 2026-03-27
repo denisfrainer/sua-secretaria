@@ -16,6 +16,7 @@
     "@supabase/supabase-js": "^2.99.2",
     "@upstash/qstash": "^2.10.1",
     "ai": "^6.0.116",
+    "axios": "^1.14.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "googleapis": "^171.4.0",
