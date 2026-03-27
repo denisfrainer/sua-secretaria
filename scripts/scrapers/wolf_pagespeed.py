@@ -10,7 +10,7 @@ load_dotenv()
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 # IMPORTANTE: Use a SERVICE_ROLE key aqui para ignorar o RLS, não a anon key.
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") 
-GOOGLE_API_KEY = os.environ.get("GOOGLE_PAGESPEED_KEY")
+GOOGLE_PAGESPEED_KEY = os.environ.get("GOOGLE_PAGESPEED_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌ ERRO: Credenciais do Supabase ausentes.")
@@ -34,8 +34,8 @@ def get_pagespeed_data(url: str):
         'category': 'performance'
     }
     
-    if GOOGLE_API_KEY:
-        params['key'] = GOOGLE_API_KEY
+    if GOOGLE_PAGESPEED_KEY:
+        params['key'] = GOOGLE_PAGESPEED_KEY
 
     try:
         # Aumentamos o timeout porque o Lighthouse roda um Chrome headless na nuvem
