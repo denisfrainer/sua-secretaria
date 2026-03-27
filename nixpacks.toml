@@ -1,11 +1,17 @@
 [phases.setup]
-nixPkgs = ["python3", "python3Packages.pip", "gcc", "nodejs_20", "npm"]
+nixPkgs = ["python3", "python3Packages.pip", "gcc", "nodejs_20"]
 
 [phases.install]
-cmds = ["python3 -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt", "npm install"]
+# Instalamos as dependências de Python e Node
+cmds = [
+  "python3 -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt",
+  "npm install"
+]
 
 [phases.build]
+# Build do TypeScript da Eliza
 cmds = ["npm run build"]
 
 [start]
+# Comando flexível para os outros scripts (Hunter/PageSpeed)
 cmd = "/opt/venv/bin/python3 -u $EXEC_SCRIPT"
