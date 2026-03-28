@@ -108,6 +108,21 @@ const functionDeclarations: any[] = [
             },
             required: ['order_id'],
         },
+    },
+    {
+        name: 'schedule_and_charge_deposit',
+        description: 'Agenda a reunião no Google Calendar e imediatamente gera um PIX de 50% de depósito do serviço (Tier 2 ou Tier 3) para confirmar a reserva.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
+                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
+                client_name: { type: 'STRING', description: 'Nome do lead' },
+                client_email: { type: 'STRING', description: 'E-mail do lead' },
+                service_tier: { type: 'STRING', description: 'O tipo de serviço', enum: ['TIER_2', 'TIER_3'] }
+            },
+            required: ['date', 'time', 'client_name', 'client_email', 'service_tier'],
+        },
     }
 ];
 
@@ -125,6 +140,110 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
         return { status: 'success', notification: 'Denis has been alerted.' };
     }
+    if (name === 'schedule_and_charge_deposit') {
+        console.log(`💸 [PIX/CALENDAR] Iniciando schedule_and_charge_deposit para ${args.client_name}`);
+        try {
+            // 1. Calcular o valor do depósito (50%)
+            const amountCents = args.service_tier === 'TIER_3' ? 150000 : 50000;
+
+            // 2. Gerar PIX no Pagar.me
+            const pagarmePayload = {
+                items: [{ amount: amountCents, description: `Depósito Inicial - ${args.service_tier}`, quantity: 1 }],
+                customer: { name: args.client_name, email: args.client_email, type: 'individual', document: '00000000000' },
+                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
+            };
+            
+            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
+                },
+                body: JSON.stringify(pagarmePayload)
+            });
+            const pagarmeData = await pagarmeRes.json();
+            
+            if (!pagarmeRes.ok) {
+                console.error("❌ [PAGARME] Erro ao gerar PIX:", pagarmeData);
+                return { status: "error", message: "Falha ao gerar o PIX. Avise que ocorreu um erro." };
+            }
+            
+            const pixData = pagarmeData.charges?.[0]?.last_transaction?.qr_code;
+            const orderId = pagarmeData.id;
+
+            // 3. Agendar no Google Calendar
+            const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
+            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora
+            
+            await calendar.events.insert({
+                calendarId: 'primary',
+                requestBody: {
+                    summary: `[PENDING PIX] Escopo ${args.client_name}`,
+                    description: `Tier: ${args.service_tier}\nEmail: ${args.client_email}\nOrderID: ${orderId}\nTelefone: ${clientPhone}`,
+                    start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
+                    end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
+                }
+            });
+            
+            console.log(`✅ [PIX/CALENDAR] Sucesso! Evento criado e PIX ${orderId} gerado.`);
+            return {
+                status: 'success',
+                message: 'Horário reservado com sucesso e PIX gerado.',
+                pix_qr_code: pixData,
+                order_id: orderId,
+                instructions: 'Apresente a chave PIX Copia e Cola ao lead e reforce que a reunião E a reserva de agenda só estão 100% garantidas após o pagamento.'
+            };
+        } catch (err: any) {
+            console.error("❌ [PIX/CALENDAR] Exceção:", err.message);
+            return { status: "error", message: err.message };
+        }
+    }
+
+    if (name === 'verifyPagarmeOrder') {
+        console.log(`🔍 [PAGARME] Verificando pedido ${args.order_id}`);
+        try {
+            const pagarmeRes = await fetch(`https://api.pagar.me/core/v5/orders/${args.order_id}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}` }
+            });
+            const pagarmeData = await pagarmeRes.json();
+            
+            if (pagarmeData.status === 'paid') {
+                 console.log(`✅ [PAGARME] Pedido ${args.order_id} PAGO! Removendo tag do calendário...`);
+                 try {
+                     const eventsRes = await calendar.events.list({
+                         calendarId: 'primary',
+                         q: args.order_id,
+                         timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                     });
+                     if (eventsRes.data.items && eventsRes.data.items.length > 0) {
+                         const event = eventsRes.data.items[0];
+                         if (event.summary && event.summary.includes('[PENDING PIX]')) {
+                             const newSummary = event.summary.replace('[PENDING PIX]', '[CONFIRMADO]');
+                             await calendar.events.patch({
+                                 calendarId: 'primary',
+                                 eventId: event.id!,
+                                 requestBody: { summary: newSummary }
+                             });
+                             console.log(`✅ [CALENDAR] Tag [PENDING PIX] removida do evento ${event.id}`);
+                         }
+                     }
+                 } catch (calErr) {
+                     console.error("❌ [CALENDAR] Erro ao atualizar remoção da tag:", calErr);
+                 }
+
+                 await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
+                 return { status: 'success', payment_status: 'paid', message: 'Pagamento confirmado! Reserva garantida na agenda.' };
+            } else {
+                 console.log(`⏳ [PAGARME] Pedido pendente (${pagarmeData.status}).`);
+                 return { status: 'pending', payment_status: pagarmeData.status, message: 'O pagamento ainda não foi identificado. Peça para o cliente avisar quando pagar.' };
+            }
+        } catch(err: any) {
+            console.error("❌ [PAGARME] Erro na verificação:", err.message);
+            return { status: 'error', message: err.message };
+        }
+    }
+
     return { status: 'error', message: 'Tool not found' };
 }
 
@@ -164,7 +283,15 @@ async function processLead(lead: any) {
         // 3. Initialize New Google GenAI SDK
         const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
 
-        const systemInstruction = `You are Eliza, SDR at meatende.ai. Responses must be in Natural PT-BR. Use '||' to split messages. Context: ${businessContext}`;
+        const systemInstruction = `You are Eliza, SDR at meatende.ai. Responses must be in Natural PT-BR. Use '||' to split messages.
+
+### THE CALENDAR HAND-OFF
+Quando o lead aceitar agendar a reunião de escopo (obrigatório para Tier 2 e Tier 3), você DEVE obrigatoriamente:
+1. Pedir o **e-mail** do lead imediatamente.
+2. Assim que receber o e-mail, invoque a ferramenta 'schedule_and_charge_deposit'.
+3. Avise o lead que o horário foi pré-reservado, apresente o PIX e deixe claro que a reunião SÓ está garantida após o pagamento deste depósito.
+
+Context: ${businessContext}`;
 
         // 4. Create Chat Session (Apenas com o PASSADO)
         const chat = ai.chats.create({
