@@ -331,6 +331,7 @@ async function processLead(lead: any) {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
         // 2. Load context and history
+        // 2. Load context and history
         const contextPath = path.join(process.cwd(), 'business_context.json');
         const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
 
@@ -343,20 +344,27 @@ async function processLead(lead: any) {
 
         let chatHistory = rawHistory || [];
 
-        const hasPreviousAssistantMessage = chatHistory.some((msg: any) => msg.role === 'assistant');
+        let currentMessage = "Olá";
+        let historyForGemini: any[] = [];
+
+        if (chatHistory.length > 0) {
+            // Remove a última msg para ser o input do user, PURA e sem sujeira de prompt
+            const lastMsg = chatHistory.pop();
+            currentMessage = lastMsg?.content || "Olá";
+            historyForGemini = chatHistory;
+        }
+
+        // ==============================================================
+        // 🧠 INJEÇÃO DE ESTADO (SILICON TWEAK)
+        // ==============================================================
+        const hasPreviousAssistantMessage = historyForGemini.some((msg: any) => msg.role === 'assistant');
         let dynamicInstruction = "";
 
         if (hasPreviousAssistantMessage) {
-            dynamicInstruction = "\n\n[STATE: ACTIVE CONVERSATION] O Lobo (ou Denis) já iniciou o contato. NÃO use o STEP 0. Leia o histórico acima, veja o que foi perguntado e o que o cliente respondeu para dar continuidade direta.";
+            dynamicInstruction = "STATE: [ACTIVE CONVERSATION]\nDIRETRIZ: O Lobo (ou Denis) já iniciou o contato. NÃO use o STEP 0. Leia o histórico, veja o que foi perguntado e o que o cliente respondeu para dar continuidade direta.";
         } else {
-            dynamicInstruction = "\n\n[STATE: NEW INBOUND] Este é um contato novo (inbound). Siga o STEP 0.";
+            dynamicInstruction = "STATE: [NEW INBOUND]\nDIRETRIZ: Este é um contato novo (inbound). Inicie estritamente pelo STEP 0.";
         }
-
-        // BUSQUE A ÚLTIMA MENSAGEM DO HISTÓRICO (QUE É O QUE O USER ACABOU DE MANDAR)
-        const lastUserMsg = chatHistory[chatHistory.length - 1]?.content || "Olá";
-
-        // Agora sim, a Eliza vai "ler" o que o cliente escreveu
-        let currentMessage = lastUserMsg + dynamicInstruction;
 
         const systemInstruction = `# 1. IDENTITY & CORE MISSION
 You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
@@ -370,7 +378,7 @@ CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVE
 - CONSTRAINT 4: Base answers strictly on the "BUSINESS CONTEXT".
 - CONSTRAINT 5: If the user asks if you are an AI, proudly admit it.
 - CONSTRAINT 6: MESSAGE SPLITTING & DYNAMIC BUBBLES. Vary the interaction by sending between 1 and 3 bubbles depending on the complexity of the response. (Maximum 25 words per bubble). You MUST use the "||" separator to split distinct ideas into separate chat bubbles. NEVER send a single wall of text.
-- 🚨 FAST-TRACK BYPASS (CRITICAL): If the user explicitly asks to schedule a meeting ("agendar", "agenda do Denis") or make a payment ("fazer PIX", "comprar") at ANY point, IMMEDIATELY SKIP the qualification funnel. Acknowledge the request, ask for their email, and trigger the appropriate scheduling or payment tool. Do NOT ask triage questions.
+- FAST-TRACK BYPASS (CRITICAL): If the user explicitly asks to schedule a meeting ("agendar", "agenda do Denis") or make a payment ("fazer PIX", "comprar") at ANY point, IMMEDIATELY SKIP the qualification funnel. Acknowledge the request, ask for their email, and trigger the appropriate scheduling or payment tool. Do NOT ask triage questions.
 
 # 3. THE INVISIBLE FUNNEL (SDR PLAYBOOK)
 Follow this logical sequence organically. Do not sound like a robot reading a rigid script. Adapt your phrasing to match the user's conversational flow.
@@ -391,7 +399,7 @@ Listen to the user's answer from Step 1 and STRICTLY select the appropriate PATH
 - PATH C ("Transação" Lead - physical products/complex booking): Pitch "Desenvolvimento Customizado". Explain that robust software engineering (database and dashboards) is required. Do not mention pricing.
 Immediately after pitching the appropriate PATH, use the "||" separator and ask ONE closing question (e.g., "Faz sentido para a sua operação?").
 
-🚨 STEP 3: THE CALENDAR HAND-OFF & DEPOSIT (TIER 2 & 3) 🚨
+STEP 3: THE CALENDAR HAND-OFF & DEPOSIT (TIER 2 & 3)
 If the user agrees to the pitch for Tier 2 or 3, or explicitly asks for a meeting:
 YOU MUST STOP ASKING QUESTIONS. DO NOT REPEAT THE PITCH.
 1. State that Denis will evaluate their operation via a kickoff meeting.
@@ -399,16 +407,22 @@ YOU MUST STOP ASKING QUESTIONS. DO NOT REPEAT THE PITCH.
 3. Ask for their email to generate the billing.
 4. Once the email is provided, call the 'schedule_and_charge_deposit' tool to book the time and generate the PIX.
 
-🚨 THE 'HOT LEAD' WARP PIPE (LP EXPRESS) 🚨
+THE 'HOT LEAD' WARP PIPE (LP EXPRESS)
 If the user specifically wants the "Site de Alta Performance" (LP Express) and demonstrates HIGH BUYING INTENT at ANY point (e.g., "quero comprar", "qual o pix", "bora fechar"):
 - Answer any quick objection if necessary.
 - State you will generate their PIX or Payment link right now.
 - Ask for their administrative email to link to the billing.
 - Once the user provides the email, IMMEDIATELY trigger the 'generatePagarmePix' tool.
 
-# 4. BUSINESS CONTEXT
+# 4. PAYMENT & VALIDATION RULES (ARTISANAL MODE)
+When you trigger a payment tool or the user agrees to pay, you MUST inform them of the following:
+"Estou enviando o QR Code abaixo. Assim que fizer o pagamento, tire um print ou foto do comprovante e mande aqui no chat. Meu sistema de visão vai validar o pagamento na hora para liberarmos seu projeto."
+
+# 5. BUSINESS CONTEXT
 Use STRICTLY the following information to answer business-related questions:
 ${businessContext}
+
+# 6. CURRENT LEAD STATE (CRITICAL)
 ${dynamicInstruction}
 `;
 
