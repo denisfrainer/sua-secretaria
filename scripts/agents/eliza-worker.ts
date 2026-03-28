@@ -4,112 +4,143 @@ import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/se
 import { normalizePhone } from '../../lib/utils/phone';
 import http from 'http';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+// Inicialização correta para o SDK Unificado
+const ai = new GoogleGenAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
+});
 
-// 🧠 LÓGICA MVP: ROTEADOR DE INTENÇÃO
+const MODEL_NAME = "gemini-3.1-flash-preview";
+
+// ==============================================================
+// 🧠 LEAD PROCESSING LOGIC (LOBO MVP - FIXED SCOPE)
+// ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
+    console.log(`\n===========================================`);
+    console.log(`🚀 [ELIZA LOBO] Fissurada no Fechamento: ${clientNumber}`);
+
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // Busca apenas as últimas 3 mensagens para evitar loops de contexto
-        const { data: history } = await supabaseAdmin.from('messages')
-            .select('role, content').eq('lead_phone', clientNumber)
-            .order('created_at', { ascending: false }).limit(3);
+        // Busca histórico curto para evitar loops de memória
+        const { data: rawHistory } = await supabaseAdmin
+            .from('messages')
+            .select('role, content')
+            .eq('lead_phone', clientNumber)
+            .order('created_at', { ascending: false })
+            .limit(5);
 
-        const lastMsg = history?.[0]?.content || "Oi";
-        const transcript = (history || []).reverse().map(m => `${m.role}: ${m.content}`).join('\n');
+        const chatHistory = rawHistory ? rawHistory.reverse() : [];
+        const transcript = chatHistory.map(m => `${m.role === 'assistant' ? 'Eliza' : 'Client'}: ${m.content}`).join('\n');
 
-        const systemPrompt = `Você é um robô de vendas binário. Analise o histórico e a última mensagem.
-Sua única missão é vender a LP Express por R$ 499.
+        const systemPrompt = `# IDENTITY
+You are Eliza, a results-obsessed Sales Assistant for Denis at meatende.ai.
+Your energy is like the Wolf of Wall Street: extremely polite, professional, but RELENTLESS in helping the client get results NOW.
 
-REGRAS:
-1. Se o cliente quer comprar (disse "sim", "quero", "pix", "valor"): responda 'BUY'.
-2. Se o cliente mandou comprovante ou disse que pagou: responda 'PAID'.
-3. Caso contrário: responda 'GREET'.
+# MISSION
+Your ONLY goal is to close the sale of the "LP Express" for R$ 499 or the AI Agent Setup for R$ 500.
+Review the <transcript> and determine the next action.
 
-HISTÓRICO:
+# STATE MACHINE (STRICT)
+- GREET: If the client just said "hi" or hasn't committed yet. Output an energetic pitch.
+- BUY: If the client said "yes", "sim", "quero", "pix", or showed intent. Output intent:BUY + the PIX key (02959474031) and instructions for the receipt.
+- PAID: If the client sent an image or says they paid. Output intent:PAID.
+
+# OUTPUT RULES
+You MUST output a valid JSON ONLY:
+{
+  "intent": "GREET" | "BUY" | "PAID",
+  "reply": "Your energetic, professional response in PT-BR (use '||' for bubbles)"
+}
+
+<transcript>
 ${transcript}
+</transcript>`;
 
-Responda APENAS a palavra da intenção (BUY, PAID ou GREET).`;
+        console.log(`⏳ Chamando Gemini 3.1 Flash Preview...`);
 
-        const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+        // No SDK unificado, o acesso é via ai.models.generateContent
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+            config: { responseMimeType: "application/json" }
         });
 
-        const intent = (result.text || "GREET").trim().toUpperCase();
-        let reply = "";
-        let sendPixImage = false;
+        const resultData = JSON.parse(response.text || "{}");
+        const elizaReply = resultData.reply || "Vamos fechar essa LP?";
+        const intent = resultData.intent || "GREET";
 
-        if (intent.includes("BUY")) {
-            reply = "🚀 Excelente escolha! Vamos alavancar seu negócio agora. O valor é R$ 499,00.\n\nChave PIX (celular): 02959474031\n\nEstou enviando o QR Code abaixo. Mande o comprovante aqui para Denis começar seu projeto!";
-            sendPixImage = true;
-        } else if (intent.includes("PAID")) {
-            reply = "Recebido! Meu sistema de visão está validando o comprovante agora mesmo. 🐺";
-        } else {
-            reply = "Olá! Sou a Eliza da meatende.ai. Vi que você quer atrair mais clientes. Nossa LP Express custa R$ 499 e fica pronta rápido. Vamos fechar?";
-        }
+        console.log(`🎯 Intent Detectada: ${intent}`);
 
-        // Envio do QR Code estático
-        if (sendPixImage) {
+        // --- GATILHO DE MÍDIA (PIX ARTESANAL) ---
+        if (intent === "BUY") {
+            console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
-                headers: { 'apikey': process.env.EVOLUTION_API_KEY!, 'Content-Type': 'application/json' },
+                headers: {
+                    'apikey': process.env.EVOLUTION_API_KEY!,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     number: clientNumber,
-                    mediaMessage: { mediatype: "image", caption: "QR Code PIX 🐺", media: "https://i.imgur.com/ihpJUn7.jpeg" }
+                    mediaMessage: {
+                        mediatype: "image",
+                        caption: "Aqui está o QR Code! Denis e eu estamos prontos para começar. 🐺🚀",
+                        media: "https://i.imgur.com/ihpJUn7.jpeg"
+                    }
                 })
             });
         }
 
+        // --- ENVIO WHATSAPP DIRETO ---
         await sendWhatsAppPresence(clientNumber, 'composing');
-        await sendWhatsAppMessage(clientNumber, reply, 1000);
+        await sendWhatsAppMessage(clientNumber, elizaReply, 1500);
 
+        // Salva memória e encerra
         await supabaseAdmin.from('messages').insert({
-            lead_phone: clientNumber, role: 'assistant', content: reply, message_id: `eliza_${Date.now()}`
+            lead_phone: clientNumber,
+            role: 'assistant',
+            content: elizaReply,
+            message_id: `eliza_${Date.now()}`
         });
 
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-    } catch (error) {
-        console.error("❌ ERRO:", error);
+        console.log(`✅ [SUCCESS] Ciclo completo para ${clientNumber}`);
+
+    } catch (error: any) {
+        console.error("❌ [ELIZA ERROR]:", error.message);
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
     }
 }
 
-// 🔄 POLLING SIMPLIFICADO
+// ==============================================================
+// 🔄 POLLING & SERVER (MANTENHA O RESTANTE IGUAL)
+// ==============================================================
 async function startPolling() {
-    console.log('🔄 Eliza Ativa...');
+    console.log(`🔄 [${MODEL_NAME}] Eliza Ativa...`);
     while (true) {
-        const { data: leads } = await supabaseAdmin.from('leads_lobo')
-            .select('*').eq('status', 'eliza_processing').eq('ai_paused', false).limit(1);
-        if (leads && leads.length > 0) await processLead(leads[0]);
+        try {
+            const { data: leads } = await supabaseAdmin
+                .from('leads_lobo')
+                .select('*')
+                .eq('status', 'eliza_processing')
+                .eq('ai_paused', false)
+                .limit(1);
+
+            if (leads && leads.length > 0) {
+                await processLead(leads[0]);
+            }
+        } catch (e) {
+            console.error("Polling error:", e);
+        }
         await new Promise(r => setTimeout(r, 4000));
     }
 }
 
-// 🌐 WEBHOOK MINIMALISTA
+const PORT = process.env.PORT || 8080;
 http.createServer((req, res) => {
-    if (req.method === 'POST' && req.url === '/webhook') {
-        let body = '';
-        req.on('data', c => body += c);
-        req.on('end', async () => {
-            res.writeHead(200); res.end();
-            const payload = JSON.parse(body);
-            const data = payload.data?.[0] || payload.data;
-            if (!data?.key || data.key.fromMe) return;
-
-            const phone = normalizePhone(data.key.remoteJid);
-            const msg = data.message?.conversation || data.message?.extendedTextMessage?.text || "";
-
-            if (msg) {
-                await supabaseAdmin.from('messages').insert({ lead_phone: phone, role: 'user', content: msg, message_id: data.key.id });
-                await supabaseAdmin.from('leads_lobo').upsert({ phone, status: 'eliza_processing' });
-            }
-        });
-    } else {
-        res.writeHead(200); res.end('Online');
-    }
-}).listen(process.env.PORT || 8080);
+    res.writeHead(200);
+    res.end('Eliza Worker Online');
+}).listen(PORT);
 
 startPolling();
