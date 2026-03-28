@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai'; // Se estiver usando o SDK unificado
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
@@ -11,6 +11,11 @@ import http from 'http';
  * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
  * Target Model: gemini-2.5-flash
  */
+
+// Troque a sua linha 15 por esta:
+const ai = new GoogleGenAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
+});
 
 process.env.TZ = 'America/Sao_Paulo';
 
@@ -96,8 +101,10 @@ const functionDeclarations: any[] = [
                 lead_name: { type: 'STRING', description: 'O nome do lead' }
             },
             required: ['product_id', 'lead_email', 'lead_name'],
+
         },
     },
+
     {
         name: 'verifyPagarmeOrder',
         description: 'Verifica se o lead já pagou o PIX gerado.',
@@ -199,6 +206,43 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         }
     }
 
+    if (name === 'generatePagarmePix') {
+        console.log(`💸 [PAGARME] Gerando PIX integral para Tier 1 (LP Express): ${args.lead_name}`);
+        try {
+            // Valor fixo para LP Express (ex: R$ 500,00 = 50000 cents)
+            const amountCents = 50000;
+
+            const pagarmePayload = {
+                items: [{ amount: amountCents, description: `LP Express - ${args.lead_name}`, quantity: 1 }],
+                customer: { name: args.lead_name, email: args.lead_email, type: 'individual', document: '00000000000' },
+                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
+            };
+
+            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
+                },
+                body: JSON.stringify(pagarmePayload)
+            });
+
+            const pagarmeData = await pagarmeRes.json();
+
+            if (!pagarmeRes.ok) throw new Error("Erro Pagar.me: " + JSON.stringify(pagarmeData));
+
+            return {
+                status: 'success',
+                pix_qr_code: pagarmeData.charges?.[0]?.last_transaction?.qr_code,
+                order_id: pagarmeData.id,
+                instructions: "Mande o PIX Copia e Cola para o cliente e diga que o desenvolvimento começa assim que o pagamento for confirmado."
+            };
+        } catch (err: any) {
+            console.error("❌ [PAGARME ERROR]:", err.message);
+            return { status: "error", message: err.message };
+        }
+    }
+
     if (name === 'verifyPagarmeOrder') {
         console.log(`🔍 [PAGARME] Verificando pedido ${args.order_id}`);
         try {
@@ -247,6 +291,34 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
     return { status: 'error', message: 'Tool not found' };
 }
 
+async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
+    console.log(`📸 [VISION] Analisando comprovante de ${clientPhone}...`);
+
+    try {
+        // No SDK novo, usamos ai.models.generateContent diretamente
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: "Analise este comprovante PIX. Retorne ESTRITAMENTE um JSON: { \"is_valid_pix\": boolean, \"amount\": number, \"receiver\": \"string\" }." },
+                    { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
+                ]
+            }]
+        });
+
+        // No @google/genai, .text é uma PROPRIEDADE, não uma função
+        const responseText = result.text || "";
+
+        const cleanedJson = responseText.replace(/```json|```/g, "").trim();
+        return JSON.parse(cleanedJson);
+
+    } catch (error) {
+        console.error("❌ [VISION ERROR]:", error);
+        return { is_valid_pix: false, error: "Falha no processamento da imagem" };
+    }
+} // <--- A função deve fechar APENAS aqui
+
 // ==============================================================
 // 🧠 LEAD PROCESSING LOGIC
 // ==============================================================
@@ -285,8 +357,9 @@ async function processLead(lead: any) {
 
         currentMessage += dynamicInstruction;
 
-        // 3. Initialize New Google GenAI SDK
-        const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+        const ai = new GoogleGenAI({
+            apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
+        });
 
         const systemInstruction = `# 1. IDENTITY & CORE MISSION
 You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
@@ -344,6 +417,7 @@ ${dynamicInstruction}
 
 
         // 4. Create Chat Session (Apenas com o PASSADO)
+        // Use a 'ai' global que criamos no topo
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: {
@@ -493,49 +567,45 @@ http.createServer((req, res) => {
                 let clientMessage = '';
 
                 if (messageObj) {
-                    // --- LÓGICA DE ÁUDIO ---
-                    if (messageObj.audioMessage) {
-                        if (isFromMe) return;
+                    // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
+                    if (messageObj.imageMessage) {
+                        console.log("📸 [WEBHOOK] Imagem recebida. Iniciando fluxo de validação artesanal...");
 
-                        const { data: lead } = await supabaseAdmin
-                            .from('leads_lobo')
-                            .select('ai_paused, needs_human')
-                            .eq('phone', clientNumber)
-                            .maybeSingle();
+                        // 1. Pega o Base64 da imagem via Evolution API
+                        // Nota: Você vai precisar da URL da sua instância e da API Key da Evolution no .env
+                        const instance = body.instance;
+                        const msgId = dataObj.key.id;
 
-                        if (lead && (lead.ai_paused === true || lead.needs_human === true)) {
-                            console.log(`🛑 [SILICON TWEAK] Eliza silenciada para áudio de ${clientNumber}.`);
-                            return;
-                        }
-
-                        console.log("🎙️ [WEBHOOK] Audio detectado. Acionando Background via QStash.");
-                        await sendWhatsAppPresence(clientNumber, 'recording' as any);
-
-                        const { Client } = await import('@upstash/qstash');
-                        const qstash = new Client({
-                            token: process.env.QSTASH_TOKEN!,
-                            baseUrl: "https://qstash-us-east-1.upstash.io"
+                        const evoRes = await fetch(`${process.env.EVOLUTION_URL}/chat/getBase64/` + instance, {
+                            method: 'POST',
+                            headers: { 'apikey': process.env.EVOLUTION_API_KEY!, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ messageId: msgId })
                         });
 
-                        const rawSiteUrl = process.env.WOLF_SITE_URL || 'wolfagent.netlify.app';
-                        const siteBaseUrl = rawSiteUrl.startsWith('http') ? rawSiteUrl.replace(/\/$/, '') : `https://${rawSiteUrl.replace(/\/$/, '')}`;
+                        const { base64 } = await evoRes.json();
 
-                        try {
-                            await qstash.publishJSON({
-                                url: `${siteBaseUrl}/api/webhook-audio-background`,
-                                body: body,
-                                delay: "4s"
-                            });
-                        } catch (err) {
-                            console.error("❌ Erro no QStash:", err);
-                            await sendWhatsAppPresence(clientNumber, 'available');
+                        if (base64) {
+                            const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
+
+                            if (analysis.is_valid_pix && analysis.confidence_score > 0.8) {
+                                console.log(`✅ [OCR SUCCESS] Comprovante de R$${analysis.amount} validado para ${clientNumber}`);
+
+                                // Atualiza no banco e avisa o humano
+                                await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
+                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. || Em breve ele entrará em contato! 🚀");
+
+                                // Opcional: Notifica você no seu WhatsApp pessoal
+                                // await sendWhatsAppMessage('SEU_NUMERO', `🔥 LEAD PAGO! ${clientNumber} enviou um PIX de R$${analysis.amount}`);
+                            } else {
+                                await sendWhatsAppMessage(clientNumber, "Puxa, não consegui validar esse comprovante automaticamente. 🧐 || Poderia enviar uma foto mais clara ou o PDF do comprovante? Se preferir, aguarde um instante que o Denis já vai conferir manualmente.");
+                            }
                         }
-                        return;
+                        return; // Interrompe o fluxo para não tratar a imagem como texto
                     }
 
-                    if (!messageObj.conversation && !messageObj.extendedTextMessage) {
-                        return; // Ignora outras mídias
-                    }
+                    // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
+                    if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
+                    if (!messageObj.conversation && !messageObj.extendedTextMessage) return;
                     clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
                 }
 
