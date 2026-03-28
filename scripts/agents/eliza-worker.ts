@@ -177,12 +177,71 @@ async function startPolling() {
 }
 
 // ==============================================================
-// 🌐 RAILWAY HEALTHCHECK SERVER
+// 🌐 RAILWAY HEALTHCHECK & WEBHOOK SERVER
 // ==============================================================
 const PORT = process.env.PORT || 8080;
-http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end('Eliza Worker Online');
-}).listen(PORT, () => console.log(`🌐 Healthcheck running on port ${PORT}`));
 
-startPolling();
+http.createServer((req, res) => {
+    // 1. Rota de Healthcheck (Mantida para o Railway)
+    if (req.method === 'GET' && req.url === '/') {
+        res.writeHead(200);
+        res.end('Eliza Worker Online');
+        return;
+    }
+
+    // 2. Rota do Webhook da Evolution API
+    if (req.method === 'POST' && req.url === '/webhook') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body);
+
+                // Responder à Evolution imediatamente para não gerar timeout nela
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'received' }));
+
+                // Ignorar mensagens enviadas por você mesmo (fromMe)
+                if (payload.event === 'messages.upsert' && payload.data) {
+                    const msg = payload.data.message;
+                    if (msg.key.fromMe) return;
+
+                    // Extrair número e texto (adaptar conforme a estrutura exata do webhook da sua Evolution)
+                    const remoteJid = msg.key.remoteJid;
+                    const phone = remoteJid.replace('@s.whatsapp.net', '');
+                    const textContent = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+
+                    if (!textContent) return;
+
+                    console.log(`📥 [WEBHOOK] Mensagem recebida de ${phone}: ${textContent}`);
+
+                    // Aqui entra a lógica para inserir no Supabase
+                    // Exemplo: Salvar na tabela 'messages' e garantir que o lead existe na 'leads_lobo' com status 'eliza_processing'
+
+
+                    await supabaseAdmin.from('messages').insert({
+                        lead_phone: phone,
+                        role: 'user',
+                        content: textContent
+                    });
+
+                    await supabaseAdmin.from('leads_lobo').upsert({
+                        phone: phone,
+                        status: 'eliza_processing'
+                    }, { onConflict: 'phone' });
+
+                }
+            } catch (error) {
+                console.error('❌ Erro ao processar webhook:', error);
+            }
+        });
+        return;
+    }
+
+    // Rota não encontrada
+    res.writeHead(404);
+    res.end();
+}).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
