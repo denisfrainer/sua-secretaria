@@ -329,46 +329,70 @@ async function processLead(lead: any) {
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // 1. Puxar apenas as últimas 6 mensagens para evitar poluição de contexto
+        // 1. Extração do histórico
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
             .eq('lead_phone', clientNumber)
             .order('created_at', { ascending: false })
-            .limit(6);
+            .limit(4);
 
-        // Reverter para ordem cronológica
-        let chatHistory = rawHistory ? rawHistory.reverse() : [];
-        const transcript = chatHistory.map(msg => `${msg.role === 'assistant' ? 'Eliza' : 'Client'}: ${msg.content}`).join('\n');
+        const chatHistory = rawHistory ? rawHistory.reverse() : [];
 
-        const systemPrompt = `You are a binary sales closer. Your only goal is to sell the LP Express for R$ 499.
-Evaluate the following conversation transcript. Focus strictly on the Client's LAST message.
+        // 2. Converte o histórico para uma string JSON estrita
+        const jsonHistory = JSON.stringify(chatHistory);
 
-If the Client shows ANY agreement, positive confirmation, or buying intent (e.g., "yes", "I want it", "pix", "buy", "let's do it"), output exactly and only this text in PT-BR:
-"Perfeito! O valor da LP Express é R$ 499,00. A chave PIX celular é 02959474031. Mande o comprovante aqui para iniciarmos o projeto! 🚀🐺"
+        const systemPrompt = `You are a binary sales decision engine.
+Analyze the following JSON array representing the conversation history.
+Focus strictly on the "content" of the LAST message where "role" is "user".
 
-If the Client is just greeting ("hi", "hello") and has not agreed to buy yet, output exactly and only this text in PT-BR:
-"Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express (Site de Alta Performance) custa R$ 499 em taxa única. Quer fechar agora?"
+Rule 1: If the last user message indicates agreement, desire to buy, or asks for payment (e.g., "sim", "quero", "pix", "comprar"), the intent is "buy".
+Rule 2: If the last user message indicates a payment was made or a receipt was sent, the intent is "paid".
+Rule 3: Otherwise, the intent is "greet".
 
-If the Client sent a receipt, image, or says they paid, output exactly and only this text in PT-BR:
-"Aguarde um momento. Meu sistema de visão está validando o comprovante."
+You MUST output a valid JSON object strictly matching this structure:
+{
+  "intent": "greet" | "buy" | "paid",
+  "reply": "exact string based on intent"
+}
 
-TRANSCRIPT:
-${transcript}`;
+Exact replies to use based on intent:
+- For "greet": "Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express (Site de Alta Performance) custa R$ 499 em taxa única. Quer fechar agora?"
+- For "buy": "Perfeito! O valor da LP Express é R$ 499,00. A chave PIX celular é 02959474031. Mande o comprovante aqui para iniciarmos o projeto! 🚀🐺"
+- For "paid": "Aguarde um momento. Meu sistema de visão está validando o comprovante."
 
-        console.log(`⏳ Calling Gemini API (Absolute MVP Mode)`);
+Conversation History:
+${jsonHistory}`;
 
+        console.log(`⏳ Calling Gemini API (JSON Router Mode)`);
+
+        // 3. Força o retorno em JSON nativo
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [
                 { role: 'user', parts: [{ text: systemPrompt }] }
-            ]
+            ],
+            config: {
+                responseMimeType: "application/json",
+            }
         });
 
-        const responseText = response.text || '';
+        const responseText = response.text || "{}";
+        let elizaReply = "Olá! Tive um problema de conexão. Pode repetir?";
+        let elizaIntent = "error";
+
+        try {
+            const parsed = JSON.parse(responseText);
+            elizaReply = parsed.reply || elizaReply;
+            elizaIntent = parsed.intent || elizaIntent;
+        } catch (e) {
+            console.error("❌ Failed to parse Gemini JSON:", responseText);
+        }
+
+        console.log(`🎯 Intent detectada: ${elizaIntent}`);
 
         // --- GATILHO DE MÍDIA ARTESANAL ---
-        if (responseText.includes("02959474031")) {
+        if (elizaIntent === "buy") {
             console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
@@ -387,15 +411,15 @@ ${transcript}`;
             });
         }
 
-        // --- ENVIO WHATSAPP DIRETO (SEM CHUNKS) ---
+        // --- ENVIO WHATSAPP DIRETO ---
         await sendWhatsAppPresence(clientNumber, 'composing');
-        await sendWhatsAppMessage(clientNumber, responseText, 2000);
+        await sendWhatsAppMessage(clientNumber, elizaReply, 2000); // Tempo estático de 2s
 
         const fakeMessageId = `eliza_${Date.now()}`;
         const { error: insertError } = await supabaseAdmin.from('messages').insert({
             lead_phone: clientNumber,
             role: 'assistant',
-            content: responseText,
+            content: elizaReply,
             message_id: fakeMessageId
         });
 
