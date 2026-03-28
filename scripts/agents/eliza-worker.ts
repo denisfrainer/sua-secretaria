@@ -1,14 +1,11 @@
-import { GoogleGenAI } from '@google/genai'; // Se estiver usando o SDK unificado
+import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
-import { google } from 'googleapis';
-import fs from 'fs';
-import path from 'path';
 import http from 'http';
 
 /**
- * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
+ * ELIZA WORKER - STATELESS INTENT CLOSER MVP
  * Target Model: gemini-2.5-flash
  */
 
@@ -19,383 +16,144 @@ const ai = new GoogleGenAI({
 process.env.TZ = 'America/Sao_Paulo';
 
 // ==============================================================
-// 📅 GOOGLE CALENDAR SETUP
-// ==============================================================
-let calendarAuth: any;
-try {
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
-    calendarAuth = new google.auth.JWT({
-        email: credentials.client_email,
-        key: credentials.private_key,
-        scopes: ['https://www.googleapis.com/auth/calendar']
-    });
-} catch (error) {
-    console.error("⚠️ [CALENDAR] Aviso: GOOGLE_CREDENTIALS não configurado ou inválido no .env");
-}
-const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
-
-// ==============================================================
-// 🔧 FUNCTION DECLARATIONS (Tools)
-// ==============================================================
-const functionDeclarations: any[] = [
-    {
-        name: 'save_lead_data',
-        description: 'Saves lead info (name, company, pain point) to the database.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                phone: { type: 'STRING' },
-                name: { type: 'STRING' },
-                company: { type: 'STRING' },
-                pain_point: { type: 'STRING' },
-            },
-            required: ['phone'],
-        },
-    },
-    {
-        name: 'notify_human_specialist',
-        description: 'Alerts Denis when the lead is ready to buy or needs technical help.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                urgency_level: { type: 'STRING' },
-                summary: { type: 'STRING' },
-            },
-            required: ['urgency_level', 'summary'],
-        },
-    },
-    {
-        name: 'check_calendar_availability',
-        description: 'Verifica os horários ocupados na agenda para uma data específica.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
-            },
-            required: ['date'],
-        },
-    },
-    {
-        name: 'schedule_appointment',
-        description: 'Agenda um compromisso na agenda do cliente.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
-                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
-                client_name: { type: 'STRING', description: 'Nome do lead' },
-                summary: { type: 'STRING', description: 'Assunto ou tipo de serviço' }
-            },
-            required: ['date', 'time', 'client_name'],
-        },
-    },
-    {
-        name: 'generatePagarmePix',
-        description: 'Usa esta função quando o lead decidir comprar o produto Tier 1 (LP Express). Gera o PIX Copia e Cola.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                product_id: { type: 'STRING', description: "Sempre 'LP_EXPRESS'" },
-                lead_email: { type: 'STRING', description: 'O e-mail do lead' },
-                lead_name: { type: 'STRING', description: 'O nome do lead' }
-            },
-            required: ['product_id', 'lead_email', 'lead_name'],
-
-        },
-    },
-
-    {
-        name: 'verifyPagarmeOrder',
-        description: 'Verifica se o lead já pagou o PIX gerado.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                order_id: { type: 'STRING', description: 'O ID do pedido gerado (ex: or_1234)' }
-            },
-            required: ['order_id'],
-        },
-    },
-    {
-        name: 'schedule_and_charge_deposit',
-        description: 'Agenda a reunião no Google Calendar e imediatamente gera um PIX de 50% de depósito do serviço (Tier 2 ou Tier 3) para confirmar a reserva.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
-                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
-                client_name: { type: 'STRING', description: 'Nome do lead' },
-                client_email: { type: 'STRING', description: 'E-mail do lead' },
-                service_tier: { type: 'STRING', description: 'O tipo de serviço', enum: ['TIER_2', 'TIER_3'] }
-            },
-            required: ['date', 'time', 'client_name', 'client_email', 'service_tier'],
-        },
-    }
-];
-
-async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
-    console.log(`🔧 [TOOL EXECUTION]: ${name}`);
-    if (name === 'save_lead_data') {
-        await supabaseAdmin.from('leads_lobo').update({
-            name: args.name,
-            niche: args.company,
-            main_pain: args.pain_point
-        }).eq('phone', clientPhone);
-        return { status: 'success' };
-    }
-    if (name === 'notify_human_specialist') {
-        await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
-        return { status: 'success', notification: 'Denis has been alerted.' };
-    }
-    if (name === 'schedule_and_charge_deposit') {
-        console.log(`💸 [PIX/CALENDAR] Iniciando schedule_and_charge_deposit para ${args.client_name}`);
-        try {
-            // 1. Calcular o valor do depósito (50%)
-            const amountCents = args.service_tier === 'TIER_3' ? 150000 : 50000;
-
-            // 2. Gerar PIX no Pagar.me
-            const pagarmePayload = {
-                items: [{ amount: amountCents, description: `Depósito Inicial - ${args.service_tier}`, quantity: 1 }],
-                customer: { name: args.client_name, email: args.client_email, type: 'individual', document: '00000000000' },
-                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
-            };
-
-            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
-                },
-                body: JSON.stringify(pagarmePayload)
-            });
-            const pagarmeData = await pagarmeRes.json();
-
-            if (!pagarmeRes.ok) {
-                console.error("❌ [PAGARME] Erro ao gerar PIX:", pagarmeData);
-                return { status: "error", message: "Falha ao gerar o PIX. Avise que ocorreu um erro." };
-            }
-
-            const pixData = pagarmeData.charges?.[0]?.last_transaction?.qr_code;
-            const orderId = pagarmeData.id;
-
-            // 3. Agendar no Google Calendar
-            const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
-            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora
-
-            await calendar.events.insert({
-                calendarId: 'primary',
-                requestBody: {
-                    summary: `[PENDING PIX] Escopo ${args.client_name}`,
-                    description: `Tier: ${args.service_tier}\nEmail: ${args.client_email}\nOrderID: ${orderId}\nTelefone: ${clientPhone}`,
-                    start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
-                    end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
-                }
-            });
-
-            console.log(`✅ [PIX/CALENDAR] Sucesso! Evento criado e PIX ${orderId} gerado.`);
-            return {
-                status: 'success',
-                message: 'Horário reservado com sucesso e PIX gerado.',
-                pix_qr_code: pixData,
-                order_id: orderId,
-                instructions: 'Apresente a chave PIX Copia e Cola ao lead e reforce que a reunião E a reserva de agenda só estão 100% garantidas após o pagamento.'
-            };
-        } catch (err: any) {
-            console.error("❌ [PIX/CALENDAR] Exceção:", err.message);
-            return { status: "error", message: err.message };
-        }
-    }
-
-    if (name === 'generatePagarmePix') {
-        console.log(`💸 [PAGARME] Gerando PIX integral para Tier 1 (LP Express): ${args.lead_name}`);
-        try {
-            // Valor fixo para LP Express (ex: R$ 500,00 = 50000 cents)
-            const amountCents = 50000;
-
-            const pagarmePayload = {
-                items: [{ amount: amountCents, description: `LP Express - ${args.lead_name}`, quantity: 1 }],
-                customer: { name: args.lead_name, email: args.lead_email, type: 'individual', document: '00000000000' },
-                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
-            };
-
-            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
-                },
-                body: JSON.stringify(pagarmePayload)
-            });
-
-            const pagarmeData = await pagarmeRes.json();
-
-            if (!pagarmeRes.ok) throw new Error("Erro Pagar.me: " + JSON.stringify(pagarmeData));
-
-            return {
-                status: 'success',
-                pix_qr_code: pagarmeData.charges?.[0]?.last_transaction?.qr_code,
-                order_id: pagarmeData.id,
-                instructions: "Mande o PIX Copia e Cola para o cliente e diga que o desenvolvimento começa assim que o pagamento for confirmado."
-            };
-        } catch (err: any) {
-            console.error("❌ [PAGARME ERROR]:", err.message);
-            return { status: "error", message: err.message };
-        }
-    }
-
-    if (name === 'verifyPagarmeOrder') {
-        console.log(`🔍 [PAGARME] Verificando pedido ${args.order_id}`);
-        try {
-            const pagarmeRes = await fetch(`https://api.pagar.me/core/v5/orders/${args.order_id}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}` }
-            });
-            const pagarmeData = await pagarmeRes.json();
-
-            if (pagarmeData.status === 'paid') {
-                console.log(`✅ [PAGARME] Pedido ${args.order_id} PAGO! Removendo tag do calendário...`);
-                try {
-                    const eventsRes = await calendar.events.list({
-                        calendarId: 'primary',
-                        q: args.order_id,
-                        timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-                    });
-                    if (eventsRes.data.items && eventsRes.data.items.length > 0) {
-                        const event = eventsRes.data.items[0];
-                        if (event.summary && event.summary.includes('[PENDING PIX]')) {
-                            const newSummary = event.summary.replace('[PENDING PIX]', '[CONFIRMADO]');
-                            await calendar.events.patch({
-                                calendarId: 'primary',
-                                eventId: event.id!,
-                                requestBody: { summary: newSummary }
-                            });
-                            console.log(`✅ [CALENDAR] Tag [PENDING PIX] removida do evento ${event.id}`);
-                        }
-                    }
-                } catch (calErr) {
-                    console.error("❌ [CALENDAR] Erro ao atualizar remoção da tag:", calErr);
-                }
-
-                await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
-                return { status: 'success', payment_status: 'paid', message: 'Pagamento confirmado! Reserva garantida na agenda.' };
-            } else {
-                console.log(`⏳ [PAGARME] Pedido pendente (${pagarmeData.status}).`);
-                return { status: 'pending', payment_status: pagarmeData.status, message: 'O pagamento ainda não foi identificado. Peça para o cliente avisar quando pagar.' };
-            }
-        } catch (err: any) {
-            console.error("❌ [PAGARME] Erro na verificação:", err.message);
-            return { status: 'error', message: err.message };
-        }
-    }
-
-    return { status: 'error', message: 'Tool not found' };
-}
-
-async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
-    console.log(`📸 [VISION] Analisando comprovante de ${clientPhone}...`);
-
-    try {
-        // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
-        const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [{
-                role: 'user',
-                parts: [
-                    { text: "Analise este comprovante PIX. Retorne ESTRITAMENTE um JSON: { \"is_valid_pix\": boolean, \"amount\": number, \"receiver\": \"string\" }." },
-                    { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
-                ]
-            }]
-        });
-
-        // No SDK @google/genai, .text é uma propriedade
-        const responseText = result.text || "";
-
-        const cleanedJson = responseText.replace(/```json|```/g, "").trim();
-        return JSON.parse(cleanedJson);
-
-    } catch (error) {
-        console.error("❌ [VISION ERROR]:", error);
-        return { is_valid_pix: false, error: "Falha no processamento da imagem" };
-    }
-} // <--- A função deve fechar APENAS aqui
-
-// ==============================================================
-// 🧠 LEAD PROCESSING LOGIC (ABSOLUTE MVP - CLASSIFIER MODE)
+// 🧠 LEAD PROCESSING LOGIC (STATELESS WOLF CLOSER)
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
     console.log(`\n===========================================`);
-    console.log(`🧠 [ELIZA MVP] Processing Lead: ${clientNumber}`);
+    console.log(`🧠 [ELIZA WOLF] Processing Lead: ${clientNumber}`);
 
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // Puxa apenas a ÚLTIMA mensagem do usuário
+        // Fetch last 3 messages from user/assistant
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
             .eq('lead_phone', clientNumber)
-            .eq('role', 'user')
             .order('created_at', { ascending: false })
-            .limit(1);
+            .limit(3);
 
-        const lastUserMessage = rawHistory && rawHistory.length > 0 ? rawHistory[0].content : "Oi";
+        let transcript = "";
+        if (rawHistory && rawHistory.length > 0) {
+            // Reverse to get chronological order (oldest first)
+            const chronological = rawHistory.reverse();
+            transcript = chronological.map(msg => `${msg.role === 'user' ? 'Client' : 'Eliza'}: ${msg.content}`).join('\n');
+        } else {
+            transcript = "Client: Oi";
+        }
 
-        const systemPrompt = `You are an intent classifier. Analyze the user's message and return EXACTLY ONE of the following three words based on their intent. DO NOT output any other text, characters, or markdown.
+        const systemPrompt = `# ROLE
+You are Eliza, a relentless, high-energy, and results-obsessed Sales Closer for Denis at meatende.ai. Your personality is inspired by the "Wolf of Wall Street": extremely professional, polite, but with an infinite drive to help clients reach their goals by closing deals immediately. You do not waste time; you solve problems by facilitating the purchase.
 
-                    GREET: The user is saying hello, starting a conversation, or asking generic questions.
-                    BUY: The user is agreeing to buy, saying "yes", "I want it", "pix", "comprar", or showing clear purchase intent.
-                    PAID: The user is indicating they have made the payment, sent a receipt, or attached an image.
+# OBJECTIVE
+Your only goal is to classify the client's intent and generate a high-conversion response in Brazilian Portuguese (PT-BR).
 
-                    User Message: ${lastUserMessage}`;
+# BUSINESS CONTEXT
+- **Product 1: LP Express** (High-Performance Landing Page). Price: R$ 499 (One-time fee).
+- **Product 2: AI Agent** (SDR Automation). Price: R$ 500 (Setup fee with R$ 1,000 discount applied) + R$ 299/month.
+- **Payment Method:** PIX Key (Cell phone): 02959474031.
 
-        console.log(`⏳ Calling Gemini API (Classifier Mode) for message: "${lastUserMessage}"`);
+# INTENT CLASSIFICATION RULES
+1. **GREET**: Use this if the client is saying hello, asking general questions, or hasn't committed yet.
+   - *Action*: Give an energetic pitch about the LP Express and ask if they want to scale their business now.
+2. **BUY**: Use this if the client says "yes", "sim", "quero", "manda o pix", "qual o valor", or shows any clear intent to move forward with the payment.
+   - *Action*: Confirm the choice with extreme excitement, provide the PIX key (02959474031), and instruct them to send the receipt.
+3. **PAID**: Use this if the client claims to have paid, sent a receipt, or attached an image.
+   - *Action*: Tell them to wait a second while our system auto-validates the proof of payment.
+
+# RESPONSE GUIDELINES
+- **Language**: Natural Brazilian Portuguese (PT-BR).
+- **Formatting**: Use "||" to separate distinct ideas into different message bubbles.
+- **Tone**: Energetic, polite, and focused on results. No investigative questions if the intent is BUY.
+
+# OUTPUT FORMAT
+You must output ONLY a valid JSON object. Do not include markdown blocks or extra text.
+{
+  "intent": "GREET" | "BUY" | "PAID",
+  "reply": "Your response here following the rules above"
+}
+
+# CONVERSATION LOG
+${transcript}
+`;
+
+        console.log(`⏳ Calling Gemini API (Wolf Closer Mode)`);
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+            contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+            config: {
+                responseMimeType: "application/json",
+            }
         });
 
-        const intent = (response.text || "").trim().toUpperCase();
-        console.log(`🎯 Intent Detectada: ${intent}`);
+        const responseText = response.text || "{}";
+        let parsedResult: any = { intent: "GREET", reply: "Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express custa apenas R$ 499 em taxa única. Quer fechar agora?" };
 
-        let elizaReply = "";
-        let triggerImage = false;
-
-        // Roteamento Hardcoded
-        if (intent.includes("BUY")) {
-            elizaReply = "Perfeito! O valor da LP Express é R$ 499,00.\n\nA chave PIX celular é: 02959474031\n\nEstou enviando o QR Code abaixo. Mande o comprovante aqui para iniciarmos o projeto! 🚀🐺";
-            triggerImage = true;
-        } else if (intent.includes("PAID")) {
-            elizaReply = "Aguarde um momento. Meu sistema de visão está validando o comprovante.";
-        } else {
-            // Fallback padrão (GREET ou qualquer outra coisa)
-            elizaReply = "Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express (Site de Alta Performance) custa R$ 499 em taxa única. Quer fechar agora?";
+        try {
+            parsedResult = JSON.parse(responseText.replace(/```json|```/g, "").trim());
+        } catch (e) {
+            console.error("❌ Erro no parse do JSON (Gemini):", e);
         }
 
-        // --- GATILHO DE MÍDIA ARTESANAL ---
-        if (triggerImage) {
-            console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
-            await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
-                method: 'POST',
-                headers: {
-                    'apikey': process.env.EVOLUTION_API_KEY!,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    number: clientNumber,
-                    mediaMessage: {
-                        mediatype: "image",
-                        caption: "Aqui está o QR Code para o pagamento. 🚀🐺",
-                        media: "https://i.imgur.com/ihpJUn7.jpeg"
-                    }
-                })
-            });
+        const intent = (parsedResult.intent || "GREET").toUpperCase();
+        const elizaReply = parsedResult.reply || "Bora fechar hoje! Qual o seu gargalo principal?";
+        
+        console.log(`🎯 Intent: ${intent} | Reply: "${elizaReply.substring(0, 50)}..."`);
+
+        // --- GATILHO DE MÍDIA PIX (Evolution API) ---
+        if (intent === "BUY") {
+            const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
+            const evKey = process.env.EVOLUTION_API_KEY || "";
+            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "";
+
+            if (evUrl && evKey && evInstance) {
+                console.log(`🖼️ [MEDIA] Enviando QR Code via Evolution API para ${clientNumber}`);
+                try {
+                    await fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': evKey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            number: clientNumber,
+                            mediaMessage: {
+                                mediatype: "image",
+                                caption: "QR Code - meatende.ai 🚀🐺",
+                                media: "https://i.imgur.com/ihpJUn7.jpeg" // Hosted QR Code
+                            }
+                        })
+                    });
+                } catch (mediaErr) {
+                    console.error("❌ Erro ao enviar QR Code:", mediaErr);
+                }
+            }
         }
 
-        // --- ENVIO WHATSAPP DIRETO ---
+        // --- DIVISÃO EM BOLHAS DE MENSAGEM ---
+        const chunks = elizaReply.split('||').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+        
+        console.log('📤 Enviando bolhas via WhatsApp:', chunks);
         await sendWhatsAppPresence(clientNumber, 'composing');
-        await sendWhatsAppMessage(clientNumber, elizaReply, 2000);
 
+        const CHARS_PER_SECOND = 15;
+        let accumulatedDelayMs = 0;
+
+        for (const chunk of chunks) {
+            const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 8000));
+            accumulatedDelayMs += bubbleTypingTimeMs;
+
+            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
+
+            if (chunks.length > 1) {
+                const pauseBetweenBubbles = Math.floor(Math.random() * 1000) + 1000;
+                accumulatedDelayMs += pauseBetweenBubbles;
+            }
+        }
+
+        // --- SALVAR MENSAGEM ---
         const fakeMessageId = `eliza_${Date.now()}`;
         const { error: insertError } = await supabaseAdmin.from('messages').insert({
             lead_phone: clientNumber,
@@ -404,12 +162,10 @@ async function processLead(lead: any) {
             message_id: fakeMessageId
         });
 
-        if (insertError) {
-            console.error("❌ [SUPABASE ERROR]:", insertError);
-        }
+        if (insertError) console.error("❌ [SUPABASE ERROR]:", insertError);
 
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-        console.log(`✅ [ELIZA MVP] Success for ${clientNumber}`);
+        console.log(`✅ [ELIZA WOLF] Success for ${clientNumber}`);
     } catch (error: any) {
         console.error("❌ [ELIZA ERROR]:", error.message);
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
@@ -441,7 +197,7 @@ async function startPolling() {
 }
 
 // ==============================================================
-// 🌐 RAILWAY HEALTHCHECK & WEBHOOK SERVER (FULL LOGIC)
+// 🌐 RAILWAY HEALTHCHECK & WEBHOOK SERVER (STABLE)
 // ==============================================================
 const PORT = process.env.PORT || 8080;
 
@@ -458,7 +214,7 @@ http.createServer((req, res) => {
 
         req.on('end', async () => {
             try {
-                // 1. Libera a Evolution API na hora (Fim do Timeout)
+                // 1. Acknowledge the webhook IMMEDIATELY
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'received' }));
 
@@ -472,7 +228,7 @@ http.createServer((req, res) => {
 
                 const remoteJid = dataObj.key?.remoteJid || '';
                 if (remoteJid.endsWith('@g.us')) {
-                    console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
+                    console.log('🔇 [WEBHOOK] Group message ignored:', remoteJid);
                     return;
                 }
 
@@ -490,50 +246,48 @@ http.createServer((req, res) => {
                 let clientMessage = '';
 
                 if (messageObj) {
-                    // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
-                    if (messageObj.imageMessage) {
-                        console.log("📸 [WEBHOOK] Imagem recebida. Iniciando fluxo de validação artesanal...");
+                    // --- 🎙️ AUDIO MESSAGE (Trigger QStash background job) ---
+                    if (messageObj.audioMessage) {
+                        if (isFromMe) return;
 
-                        // 1. Pega o Base64 da imagem via Evolution API
-                        // Nota: Você vai precisar da URL da sua instância e da API Key da Evolution no .env
-                        const instance = body.instance;
-                        const msgId = dataObj.key.id;
+                        const { data: lead } = await supabaseAdmin
+                            .from('leads_lobo')
+                            .select('ai_paused, needs_human')
+                            .eq('phone', clientNumber)
+                            .maybeSingle();
 
-                        const evoRes = await fetch(`${process.env.EVOLUTION_URL}/chat/getBase64/` + instance, {
-                            method: 'POST',
-                            headers: { 'apikey': process.env.EVOLUTION_API_KEY!, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ messageId: msgId })
+                        if (lead && (lead.ai_paused === true || lead.needs_human === true)) return;
+
+                        console.log("🎙️ [WEBHOOK] Audio detected. Triggering background QStash.");
+                        await sendWhatsAppPresence(clientNumber, 'recording' as any);
+
+                        const { Client } = await import('@upstash/qstash');
+                        const qstash = new Client({
+                            token: process.env.QSTASH_TOKEN!,
+                            baseUrl: "https://qstash-us-east-1.upstash.io"
                         });
 
-                        const { base64 } = await evoRes.json();
+                        const rawSiteUrl = process.env.WOLF_SITE_URL || 'wolfagent.netlify.app';
+                        const siteBaseUrl = rawSiteUrl.startsWith('http') ? rawSiteUrl.replace(/\/$/, '') : `https://${rawSiteUrl.replace(/\/$/, '')}`;
 
-                        if (base64) {
-                            const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
-
-                            if (analysis.is_valid_pix && analysis.confidence_score > 0.8) {
-                                console.log(`✅ [OCR SUCCESS] Comprovante de R$${analysis.amount} validado para ${clientNumber}`);
-
-                                // Atualiza no banco e avisa o humano
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
-                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. || Em breve ele entrará em contato! 🚀");
-
-                                // Opcional: Notifica você no seu WhatsApp pessoal
-                                // await sendWhatsAppMessage('SEU_NUMERO', `🔥 LEAD PAGO! ${clientNumber} enviou um PIX de R$${analysis.amount}`);
-                            } else {
-                                await sendWhatsAppMessage(clientNumber, "Puxa, não consegui validar esse comprovante automaticamente. 🧐 || Poderia enviar uma foto mais clara ou o PDF do comprovante? Se preferir, aguarde um instante que o Denis já vai conferir manualmente.");
-                            }
+                        try {
+                            await qstash.publishJSON({
+                                url: `${siteBaseUrl}/api/webhook-audio-background`,
+                                body: body,
+                                delay: "4s"
+                            });
+                        } catch (err) {
+                            console.error("❌ QStash Error:", err);
                         }
-                        return; // Interrompe o fluxo para não tratar a imagem como texto
+                        return; // Terminate webhook processing since QStash handles it
                     }
 
-                    // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
-                    if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
                     if (!messageObj.conversation && !messageObj.extendedTextMessage) return;
                     clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
                 }
 
                 if (clientMessage && clientMessage.trim().length > 0) {
-                    // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
+                    // --- ADMIN COMMANDS & HANDOFF ---
                     if (isFromMe) {
                         const cmd = clientMessage.trim();
                         if (cmd === '/pausar') {
@@ -545,24 +299,19 @@ http.createServer((req, res) => {
                         }
 
                         const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
-                        if (isAPI) {
-                            return; // Ignora mensagens enviadas pela própria Eliza
-                        } else {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
-                            return;
-                        }
-                    }
+                        if (isAPI) return; // Ignore messages from Eliza herself
 
-                    console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
-
-                    // --- BLINDAGENS DE SEGURANÇA ---
-                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
-                    const msgLower = clientMessage.toLowerCase();
-                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
-                        console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                        console.log(`👤 [SILENT HANDOFF] Denis resumed chat manually. AI paused for ${clientNumber}.`);
                         return;
                     }
+
+                    console.log(`📥 NEW MESSAGE from ${clientNumber}: "${clientMessage}"`);
+
+                    // --- SHIELDS ---
+                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
+                    const msgLower = clientMessage.toLowerCase();
+                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) return;
 
                     let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
 
@@ -571,22 +320,16 @@ http.createServer((req, res) => {
 
                         if (lead.updated_at) {
                             const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
-                            if (timeSinceContact < 2000) {
-                                console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
-                                return;
-                            }
+                            if (timeSinceContact < 2000) return; // Spamm protection
                         }
 
                         if ((lead.reply_count || 0) >= 10) {
-                            console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
+                            console.log(`🚨 [CIRCUIT BREAKER] Loop Break for ${clientNumber}.`);
                             await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
                             return;
                         }
 
-                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
-                            console.log(`🔒 Lead travado ou com humano. Ignorando.`);
-                            return;
-                        }
+                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) return;
                     }
 
                     if (!lead) {
@@ -596,7 +339,7 @@ http.createServer((req, res) => {
                         lead = newLead;
                     }
 
-                    // --- SALVAMENTO E GATILHO ---
+                    // --- SAVE USER MESSAGE ---
                     await supabaseAdmin.from('messages').insert({
                         lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
                     });
@@ -608,7 +351,7 @@ http.createServer((req, res) => {
                     }
 
                     await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
-                    console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
+                    console.log(`🎯 [WEBHOOK] Status of ${clientNumber} -> 'eliza_processing'. Worker taking over.`);
                 }
             } catch (error) {
                 console.error('❌ [WEBHOOK CRASH]:', error);
