@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
+import { normalizePhone } from '../../lib/utils/phone';
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
@@ -177,62 +178,178 @@ async function startPolling() {
 }
 
 // ==============================================================
-// 🌐 RAILWAY HEALTHCHECK & WEBHOOK SERVER
+// 🌐 RAILWAY HEALTHCHECK & WEBHOOK SERVER (FULL LOGIC)
 // ==============================================================
 const PORT = process.env.PORT || 8080;
 
 http.createServer((req, res) => {
-    // 1. Rota de Healthcheck (Mantida para o Railway)
     if (req.method === 'GET' && req.url === '/') {
         res.writeHead(200);
         res.end('Eliza Worker Online');
         return;
     }
 
-    // 2. Rota do Webhook da Evolution API
     if (req.method === 'POST' && req.url === '/webhook') {
-        let body = '';
-        req.on('data', chunk => {
-            body += chunk.toString();
-        });
+        let bodyStr = '';
+        req.on('data', chunk => { bodyStr += chunk.toString(); });
 
         req.on('end', async () => {
             try {
-                // Responder imediatamente com 200 OK
+                // 1. Libera a Evolution API na hora (Fim do Timeout)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'received' }));
 
-                const payload = JSON.parse(body);
+                const body = JSON.parse(bodyStr);
+                const isEvolution = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
 
-                if (payload.event === 'messages.upsert') {
+                if (!isEvolution) return;
 
-                    const data = payload.data;
-                    if (!data) return;
+                let dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
+                if (!dataObj) return;
 
-                    // Na Evolution, 'key' fica dentro de 'data', assim como 'message'
-                    if (data.key?.fromMe) return;
+                const remoteJid = dataObj.key?.remoteJid || '';
+                if (remoteJid.endsWith('@g.us')) {
+                    console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
+                    return;
+                }
 
-                    const remoteJid = data.key?.remoteJid || '';
-                    const phone = remoteJid.replace('@s.whatsapp.net', '');
+                if (!dataObj.key) return;
 
-                    const textContent = data.message?.conversation || data.message?.extendedTextMessage?.text || '';
+                const isFromMe = dataObj.key.fromMe === true;
+                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
+                    ? String(dataObj.key.remoteJidAlt)
+                    : String(dataObj.key.remoteJid);
 
-                    if (!textContent || !phone) return;
+                const clientNumber = normalizePhone(rawJid);
+                const incomingMessageId = dataObj.key.id;
+                const messageObj = dataObj.message;
 
-                    console.log(`\n📥 [WEBHOOK] Lead ${phone} enviou: "${textContent}"`);
+                let clientMessage = '';
 
+                if (messageObj) {
+                    // --- LÓGICA DE ÁUDIO ---
+                    if (messageObj.audioMessage) {
+                        if (isFromMe) return;
+
+                        const { data: lead } = await supabaseAdmin
+                            .from('leads_lobo')
+                            .select('ai_paused, needs_human')
+                            .eq('phone', clientNumber)
+                            .maybeSingle();
+
+                        if (lead && (lead.ai_paused === true || lead.needs_human === true)) {
+                            console.log(`🛑 [SILICON TWEAK] Eliza silenciada para áudio de ${clientNumber}.`);
+                            return;
+                        }
+
+                        console.log("🎙️ [WEBHOOK] Audio detectado. Acionando Background via QStash.");
+                        await sendWhatsAppPresence(clientNumber, 'recording' as any);
+
+                        const { Client } = await import('@upstash/qstash');
+                        const qstash = new Client({
+                            token: process.env.QSTASH_TOKEN!,
+                            baseUrl: "https://qstash-us-east-1.upstash.io"
+                        });
+
+                        const rawSiteUrl = process.env.WOLF_SITE_URL || 'wolfagent.netlify.app';
+                        const siteBaseUrl = rawSiteUrl.startsWith('http') ? rawSiteUrl.replace(/\/$/, '') : `https://${rawSiteUrl.replace(/\/$/, '')}`;
+
+                        try {
+                            await qstash.publishJSON({
+                                url: `${siteBaseUrl}/api/webhook-audio-background`,
+                                body: body,
+                                delay: "4s"
+                            });
+                        } catch (err) {
+                            console.error("❌ Erro no QStash:", err);
+                            await sendWhatsAppPresence(clientNumber, 'available');
+                        }
+                        return;
+                    }
+
+                    if (!messageObj.conversation && !messageObj.extendedTextMessage) {
+                        return; // Ignora outras mídias
+                    }
+                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
+                }
+
+                if (clientMessage && clientMessage.trim().length > 0) {
+                    // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
+                    if (isFromMe) {
+                        const cmd = clientMessage.trim();
+                        if (cmd === '/pausar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                            return;
+                        } else if (cmd === '/retomar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
+                            return;
+                        }
+
+                        const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+                        if (isAPI) {
+                            return; // Ignora mensagens enviadas pela própria Eliza
+                        } else {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
+                            return;
+                        }
+                    }
+
+                    console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
+
+                    // --- BLINDAGENS DE SEGURANÇA ---
+                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
+                    const msgLower = clientMessage.toLowerCase();
+                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                        console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
+                        return;
+                    }
+
+                    let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
+
+                    if (lead) {
+                        await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+
+                        if (lead.updated_at) {
+                            const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
+                            if (timeSinceContact < 2000) {
+                                console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
+                                return;
+                            }
+                        }
+
+                        if ((lead.reply_count || 0) >= 10) {
+                            console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
+                            await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            return;
+                        }
+
+                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
+                            console.log(`🔒 Lead travado ou com humano. Ignorando.`);
+                            return;
+                        }
+                    }
+
+                    if (!lead) {
+                        const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                            phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
+                        }).select().single();
+                        lead = newLead;
+                    }
+
+                    // --- SALVAMENTO E GATILHO ---
                     await supabaseAdmin.from('messages').insert({
-                        lead_phone: phone,
-                        role: 'user',
-                        content: textContent
+                        lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
                     });
 
-                    await supabaseAdmin.from('leads_lobo').upsert({
-                        phone: phone,
-                        status: 'eliza_processing'
-                    }, { onConflict: 'phone' });
+                    const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                    if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                        await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                        return;
+                    }
 
-                    console.log(`✅ [WEBHOOK] Salvo no banco! Lead ${phone} pronto para a Eliza.`);
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
+                    console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
                 }
             } catch (error) {
                 console.error('❌ [WEBHOOK CRASH]:', error);
@@ -241,7 +358,8 @@ http.createServer((req, res) => {
         return;
     }
 
-    // Rota não encontrada
     res.writeHead(404);
     res.end();
 }).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
+
+startPolling();
