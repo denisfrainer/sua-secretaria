@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
+import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
@@ -12,6 +13,22 @@ import http from 'http';
  */
 
 process.env.TZ = 'America/Sao_Paulo';
+
+// ==============================================================
+// 📅 GOOGLE CALENDAR SETUP
+// ==============================================================
+let calendarAuth: any;
+try {
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+    calendarAuth = new google.auth.JWT({
+        email: credentials.client_email,
+        key: credentials.private_key,
+        scopes: ['https://www.googleapis.com/auth/calendar']
+    });
+} catch (error) {
+    console.error("⚠️ [CALENDAR] Aviso: GOOGLE_CREDENTIALS não configurado ou inválido no .env");
+}
+const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
 // ==============================================================
 // 🔧 FUNCTION DECLARATIONS (Tools)
@@ -42,7 +59,32 @@ const functionDeclarations: any[] = [
             },
             required: ['urgency_level', 'summary'],
         },
-    }
+    },
+    {
+        name: 'check_calendar_availability',
+        description: 'Verifica os horários ocupados na agenda para uma data específica.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
+            },
+            required: ['date'],
+        },
+    },
+    {
+        name: 'schedule_appointment',
+        description: 'Agenda um compromisso na agenda do cliente.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
+                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
+                client_name: { type: 'STRING', description: 'Nome do lead' },
+                summary: { type: 'STRING', description: 'Assunto ou tipo de serviço' }
+            },
+            required: ['date', 'time', 'client_name'],
+        },
+    },
 ];
 
 async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
