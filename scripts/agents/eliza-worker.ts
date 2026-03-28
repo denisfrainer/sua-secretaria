@@ -367,7 +367,7 @@ async function processLead(lead: any) {
         }
 
         const systemInstruction = `# 1. IDENTITY & CORE MISSION
-You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
+You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building AI Agents, automated sales machines and lightning speed websites.).
 
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). Translate the intent of all instructions below into PT-BR before outputting.
 
@@ -514,11 +514,18 @@ ${dynamicInstruction}
         }
 
         // 7. Save and Release
-        await supabaseAdmin.from('messages').insert({
+        const fakeMessageId = `eliza_${Date.now()}`; // Cria um ID único para a mensagem da IA
+
+        const { error: insertError } = await supabaseAdmin.from('messages').insert({
             lead_phone: clientNumber,
             role: 'assistant',
-            content: responseText
+            content: responseText,
+            message_id: fakeMessageId // <--- O SEGREDO ESTÁ AQUI
         });
+
+        if (insertError) {
+            console.error("❌ [SUPABASE ERROR] Falha ao salvar memória da Eliza:", insertError);
+        }
 
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
         console.log(`✅ [ELIZA] Success for ${clientNumber}`);
