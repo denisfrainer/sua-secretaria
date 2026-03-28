@@ -78,35 +78,43 @@ async function processLead(lead: any) {
         const contextPath = path.join(process.cwd(), 'business_context.json');
         const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
 
-        const { data: history } = await supabaseAdmin
+        const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
             .eq('lead_phone', clientNumber)
             .order('created_at', { ascending: true })
             .limit(20);
 
+        let chatHistory = rawHistory || [];
+        let currentMessage = "Olá";
+
+        // CORREÇÃO DA AMNÉSIA: Remove a última mensagem do array de histórico
+        // e a define como a mensagem atual que será enviada para a IA responder.
+        if (chatHistory.length > 0) {
+            const lastRecord = chatHistory.pop();
+            if (lastRecord) currentMessage = lastRecord.content;
+        }
+
         // 3. Initialize New Google GenAI SDK
         const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
 
         const systemInstruction = `You are Eliza, SDR at meatende.ai. Responses must be in Natural PT-BR. Use '||' to split messages. Context: ${businessContext}`;
 
-        // 4. Create Chat Session
+        // 4. Create Chat Session (Apenas com o PASSADO)
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: {
                 systemInstruction: systemInstruction,
                 tools: [{ functionDeclarations }] as any,
             },
-            history: (history || []).map((msg: any) => ({
+            history: chatHistory.map((msg: any) => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }],
             })),
         });
 
-        const lastMsg = (history && history.length > 0) ? history[history.length - 1].content : "Olá";
-
-        console.log('⏳ Calling Gemini API...');
-        let result = await chat.sendMessage({ message: lastMsg });
+        console.log(`⏳ Calling Gemini API com a mensagem: "${currentMessage}"`);
+        let result = await chat.sendMessage({ message: currentMessage });
 
         // 5. Tool Loop (Function Calling)
         let loopCount = 0;
