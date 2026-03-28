@@ -77,16 +77,16 @@ async function processLead(lead: any) {
             transcript = "Client: Oi";
         }
 
-        const systemPrompt = `You are a binary Sales Engine. 
+        const systemPrompt = `You are a binary Sales Engine.
 Last User Message: ${lastMsg}
-Context: ${transcript}
 
 RULES:
-- User wants to buy/price/pix? Intent: BUY. Reply: 'Excelente! O PIX é 02959474031 (celular). Manda o comprovante!'
-- User said 'Oi' or general talk? Intent: GREET. Reply: 'Olá! LP Express por R$ 499. Vamos fechar?'
+1. User says they paid ('paguei', 'tá na mão', 'está aí', 'comprovante'): Intent = PAID. Reply = 'Pagamento em validação! Denis já vai conferir e iniciar seu projeto. 🚀🐺'
+2. User wants to buy, asks for PIX or price: Intent = BUY. Reply = 'Excelente! O PIX é 02959474031 (celular). Manda o comprovante de R$ 0,01!'
+3. User says hello or general talk: Intent = GREET. Reply = 'Olá! LP Express por R$ 499. Vamos fechar?'
 
-OUTPUT ONLY JSON:
-{ "intent": "...", "reply": "..." }`;
+OUTPUT ONLY A VALID JSON:
+{ "intent": "GREET" | "BUY" | "PAID", "reply": "..." }`;
 
         console.log(`⏳ Calling Gemini API (Wolf Closer Mode)`);
 
@@ -114,12 +114,11 @@ OUTPUT ONLY JSON:
 
         // --- HANDOFF DE PAGAMENTO (TEXT INTENT) ---
         if (intent === "PAID") {
-            const finalReply = "Pagamento identificado! O Denis já foi avisado e entrará em contato em instantes para iniciarmos o projeto. 🚀🐺";
             await sendWhatsAppPresence(clientNumber, 'composing');
-            await sendWhatsAppMessage(clientNumber, finalReply, 2500);
+            await sendWhatsAppMessage(clientNumber, elizaReply, 2500);
             
             await supabaseAdmin.from('messages').insert({
-                lead_phone: clientNumber, role: 'assistant', content: finalReply, message_id: `eliza_${Date.now()}`
+                lead_phone: clientNumber, role: 'assistant', content: elizaReply, message_id: `eliza_${Date.now()}`
             });
 
             await supabaseAdmin.from('leads_lobo').update({ status: 'paid', ai_paused: true, needs_human: true }).eq('id', lead.id);
@@ -280,10 +279,14 @@ http.createServer((req, res) => {
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                            const evoRes = await fetch(`${baseUrl}/chat/getBase64/${instanceName}`, {
+                            const evoRes = await fetch(`${baseUrl}/chat/getBase64FromMessages/${instanceName}`, {
                                 method: 'POST',
                                 headers: { 'apikey': apikey, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ messageId: msgId }),
+                                body: JSON.stringify({ 
+                                    message: { 
+                                        key: { id: msgId } 
+                                    } 
+                                }),
                                 signal: controller.signal
                             });
                             clearTimeout(timeoutId);
