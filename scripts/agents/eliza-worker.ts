@@ -5,7 +5,7 @@ import { normalizePhone } from '../../lib/utils/phone';
 import http from 'http';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
-const MODEL_NAME = "gemini-1.5-flash"; // Use 1.5-flash para estabilidade ou o 3.1 se já tiver acesso liberado
+const MODEL_NAME = "gemini-2.5-flash"; // Use 1.5-flash para estabilidade ou o 3.1 se já tiver acesso liberado
 
 // ==============================================================
 // 🧠 LÓGICA DE PROCESSAMENTO (CLASSIFICADOR LOBO)
