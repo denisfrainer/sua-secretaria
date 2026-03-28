@@ -319,21 +319,15 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
 } // <--- A função deve fechar APENAS aqui
 
 // ==============================================================
-// 🧠 LEAD PROCESSING LOGIC
+// 🧠 LEAD PROCESSING LOGIC (MVP ARTESANAL)
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
     console.log(`\n===========================================`);
-    console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber}`);
+    console.log(`🧠 [ELIZA MVP] Processing Lead: ${clientNumber}`);
 
     try {
-        // 1. Lock lead status
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
-
-        // 2. Load context and history
-        // 2. Load context and history
-        const contextPath = path.join(process.cwd(), 'business_context.json');
-        const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
 
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
@@ -343,7 +337,6 @@ async function processLead(lead: any) {
             .limit(20);
 
         let chatHistory = rawHistory || [];
-
         let currentMessage = "Olá";
         let historyForGemini: any[] = [];
 
@@ -353,34 +346,28 @@ async function processLead(lead: any) {
             historyForGemini = chatHistory;
         }
 
-        // MVP Prompt: Removemos as variáveis de estado complexas
-        const systemInstruction = `# 1. IDENTIDADE E MISSÃO (MVP)
-Você é a Eliza, assistente de vendas do Denis na meatende.ai.
-Sua ÚNICA missão é fechar a venda da "LP Express" (Site de Alta Performance) por R$ 500 e enviar o PIX.
-Responda SEMPRE em português do Brasil (PT-BR), de forma curta, natural e direta.
+        const systemInstruction = `# IDENTIDADE E MISSÃO
+Você é a Eliza, assistente de vendas da meatende.ai. Sua única missão é vender o site "LP Express" por R$ 500 e enviar a chave PIX. Responda em PT-BR, de forma curta e direta. Use "||" para separar ideias em balões.
 
-# 2. FLUXO DE ATENDIMENTO (OBRIGATÓRIO)
-Siga estas etapas rigorosamente:
-- PASSO 1 (SAUDAÇÃO): Se for o primeiro contato ("Oi", "Olá"), cumprimente e pergunte diretamente se ele tem interesse em desenvolver a LP Express para a operação dele.
-- PASSO 2 (INTENÇÃO DE COMPRA): Se o usuário disser "quero", "sim", "pix", "comprar" ou "fechar", não faça mais perguntas. Vá imediatamente para o PASSO 3.
-- PASSO 3 (PAGAMENTO): Confirme o valor de R$ 500 e envie a chave PIX: 02959474031.
-- PASSO 4 (INSTRUÇÃO DE VALIDAÇÃO): Junto com a chave PIX, envie OBRIGATORIAMENTE esta instrução: "Estou enviando o QR Code abaixo. || Assim que fizer a transferência, mande a foto ou print do comprovante aqui no chat. || Meu sistema de visão vai validar automaticamente para iniciarmos seu projeto."
+# REGRAS DE ESTADO (LEIA O HISTÓRICO PARA SABER ONDE VOCÊ ESTÁ):
+ESTADO 1 - SAUDAÇÃO: Se o usuário disser "oi", "olá" ou pedir informações iniciais, diga: "Olá! Sou a Eliza, da meatende.ai. || Você tem interesse em desenvolver a LP Express (Site de Alta Performance) para a sua operação por R$ 500?"
+ESTADO 2 - FECHAMENTO (O GATILHO): Se o usuário responder "sim", "quero", "comprar", "passa o pix" para a pergunta acima, VOCÊ É OBRIGADA a enviar a chave PIX e a instrução de comprovante. NUNCA faça outra pergunta aqui.
+Mande EXATAMENTE isso:
+"Perfeito! O valor é R$ 500,00. || A chave PIX (celular) é: 02959474031 || Estou enviando o QR Code abaixo. Assim que fizer a transferência, mande a foto do comprovante aqui no chat. || Meu sistema de visão vai validar automaticamente para iniciarmos seu projeto."
+ESTADO 3 - PÓS-VENDA: Se o usuário disser que pagou ou enviar uma imagem, responda apenas: "Aguarde um momento enquanto o sistema valida o seu comprovante."
 
-# 3. REGRAS RESTRITAS
-- Nunca ofereça outros serviços, planos ou tiers.
-- Nunca faça perguntas investigativas sobre o negócio do cliente.
-- Nunca faça uma pergunta após enviar a chave PIX. Encerre a mensagem aguardando o comprovante.
-- Use "||" para separar as ideias em balões diferentes.`;
+# RESTRIÇÕES
+- NUNCA repita a pergunta do ESTADO 1 se o usuário já disse "sim" ou demonstrou intenção de compra.
+- NUNCA ofereça outros serviços.
+- NUNCA invente informações.`;
 
-        // 4. Create Chat Session (Apenas com o PASSADO)
-        // Use a 'ai' global que criamos no topo
+        // IA instanciada PURA, sem as tools que estavam travando a transição
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: {
                 systemInstruction: systemInstruction,
-                tools: [{ functionDeclarations }] as any,
             },
-            history: chatHistory.map((msg: any) => ({
+            history: historyForGemini.map((msg: any) => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }],
             })),
@@ -389,28 +376,13 @@ Siga estas etapas rigorosamente:
         console.log(`⏳ Calling Gemini API com a mensagem: "${currentMessage}"`);
         let result = await chat.sendMessage({ message: currentMessage });
 
-        // 5. Tool Loop (Function Calling)
-        let loopCount = 0;
-        while (result.functionCalls && result.functionCalls.length > 0 && loopCount < 3) {
-            loopCount++;
-            const toolResults = [];
-            for (const call of result.functionCalls) {
-                const output = await executeToolCall(call.name || '', call.args, clientNumber);
-                toolResults.push({ functionResponse: { name: call.name, response: output } });
-            }
-            result = await chat.sendMessage({ functionResponse: toolResults } as any);
-        }
-
         const responseText = result.text || '';
 
-        // --- GATILHO DE ENVIO DE QR CODE (ARTESANAL) ---
-        // Se a Eliza falou em PIX ou pagamento, a Evolution manda a foto
-        if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
+        // Gatilho de Imagem Artesanal
+        if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento") || responseText.toLowerCase().includes("02959474031")) {
             console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
-
             const urlSuaFotoQrCode = "https://i.imgur.com/ihpJUn7.jpeg";
 
-            // Chamada direta para a Evolution API (não passa pelo fluxo de texto comum)
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
                 headers: {
@@ -428,44 +400,31 @@ Siga estas etapas rigorosamente:
             });
         }
 
-        // 6. Split into bubbles with explicit typing
         const chunks = responseText.split('||')
             .map((c: string) => c.trim())
             .filter((c: string) => c.length > 0);
 
-        console.log('📤 Sending chunks to WhatsApp:', chunks);
-
-        await sendWhatsAppPresence(clientNumber, 'composing');
-
-        console.log('📤 Sending chunks to WhatsApp:', chunks);
         await sendWhatsAppPresence(clientNumber, 'composing');
 
         const CHARS_PER_SECOND = 15;
         let accumulatedDelayMs = 0;
 
         for (const chunk of chunks) {
-            // Calcula o tempo de "digitação" baseado no tamanho da bolha (mínimo 2s, máximo 12s)
             const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
             accumulatedDelayMs += bubbleTypingTimeMs;
-
-            console.log(`⌨️ [TYPING] Bolha enviada em ${Math.round(accumulatedDelayMs / 1000)}s: "${chunk.substring(0, 30)}..."`);
             await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
 
-            // Adiciona uma pausa humana de respiração/leitura entre bolhas múltiplas
             if (chunks.length > 1) {
-                const pauseBetweenBubbles = Math.floor(Math.random() * (2500 - 1000 + 1)) + 1000;
-                accumulatedDelayMs += pauseBetweenBubbles;
+                accumulatedDelayMs += Math.floor(Math.random() * (2500 - 1000 + 1)) + 1000;
             }
         }
 
-        // 7. Save and Release
-        const fakeMessageId = `eliza_${Date.now()}`; // Cria um ID único para a mensagem da IA
-
+        const fakeMessageId = `eliza_${Date.now()}`;
         const { error: insertError } = await supabaseAdmin.from('messages').insert({
             lead_phone: clientNumber,
             role: 'assistant',
             content: responseText,
-            message_id: fakeMessageId // <--- O SEGREDO ESTÁ AQUI
+            message_id: fakeMessageId
         });
 
         if (insertError) {
@@ -473,7 +432,7 @@ Siga estas etapas rigorosamente:
         }
 
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-        console.log(`✅ [ELIZA] Success for ${clientNumber}`);
+        console.log(`✅ [ELIZA MVP] Success for ${clientNumber}`);
 
     } catch (error: any) {
         console.error("❌ [ELIZA ERROR]:", error.message);
