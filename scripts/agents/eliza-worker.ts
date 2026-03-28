@@ -152,7 +152,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
                 customer: { name: args.client_name, email: args.client_email, type: 'individual', document: '00000000000' },
                 payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
             };
-            
+
             const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
                 method: 'POST',
                 headers: {
@@ -162,19 +162,19 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
                 body: JSON.stringify(pagarmePayload)
             });
             const pagarmeData = await pagarmeRes.json();
-            
+
             if (!pagarmeRes.ok) {
                 console.error("❌ [PAGARME] Erro ao gerar PIX:", pagarmeData);
                 return { status: "error", message: "Falha ao gerar o PIX. Avise que ocorreu um erro." };
             }
-            
+
             const pixData = pagarmeData.charges?.[0]?.last_transaction?.qr_code;
             const orderId = pagarmeData.id;
 
             // 3. Agendar no Google Calendar
             const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
             const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora
-            
+
             await calendar.events.insert({
                 calendarId: 'primary',
                 requestBody: {
@@ -184,7 +184,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
                     end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                 }
             });
-            
+
             console.log(`✅ [PIX/CALENDAR] Sucesso! Evento criado e PIX ${orderId} gerado.`);
             return {
                 status: 'success',
@@ -207,38 +207,38 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
                 headers: { 'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}` }
             });
             const pagarmeData = await pagarmeRes.json();
-            
-            if (pagarmeData.status === 'paid') {
-                 console.log(`✅ [PAGARME] Pedido ${args.order_id} PAGO! Removendo tag do calendário...`);
-                 try {
-                     const eventsRes = await calendar.events.list({
-                         calendarId: 'primary',
-                         q: args.order_id,
-                         timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-                     });
-                     if (eventsRes.data.items && eventsRes.data.items.length > 0) {
-                         const event = eventsRes.data.items[0];
-                         if (event.summary && event.summary.includes('[PENDING PIX]')) {
-                             const newSummary = event.summary.replace('[PENDING PIX]', '[CONFIRMADO]');
-                             await calendar.events.patch({
-                                 calendarId: 'primary',
-                                 eventId: event.id!,
-                                 requestBody: { summary: newSummary }
-                             });
-                             console.log(`✅ [CALENDAR] Tag [PENDING PIX] removida do evento ${event.id}`);
-                         }
-                     }
-                 } catch (calErr) {
-                     console.error("❌ [CALENDAR] Erro ao atualizar remoção da tag:", calErr);
-                 }
 
-                 await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
-                 return { status: 'success', payment_status: 'paid', message: 'Pagamento confirmado! Reserva garantida na agenda.' };
+            if (pagarmeData.status === 'paid') {
+                console.log(`✅ [PAGARME] Pedido ${args.order_id} PAGO! Removendo tag do calendário...`);
+                try {
+                    const eventsRes = await calendar.events.list({
+                        calendarId: 'primary',
+                        q: args.order_id,
+                        timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                    });
+                    if (eventsRes.data.items && eventsRes.data.items.length > 0) {
+                        const event = eventsRes.data.items[0];
+                        if (event.summary && event.summary.includes('[PENDING PIX]')) {
+                            const newSummary = event.summary.replace('[PENDING PIX]', '[CONFIRMADO]');
+                            await calendar.events.patch({
+                                calendarId: 'primary',
+                                eventId: event.id!,
+                                requestBody: { summary: newSummary }
+                            });
+                            console.log(`✅ [CALENDAR] Tag [PENDING PIX] removida do evento ${event.id}`);
+                        }
+                    }
+                } catch (calErr) {
+                    console.error("❌ [CALENDAR] Erro ao atualizar remoção da tag:", calErr);
+                }
+
+                await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
+                return { status: 'success', payment_status: 'paid', message: 'Pagamento confirmado! Reserva garantida na agenda.' };
             } else {
-                 console.log(`⏳ [PAGARME] Pedido pendente (${pagarmeData.status}).`);
-                 return { status: 'pending', payment_status: pagarmeData.status, message: 'O pagamento ainda não foi identificado. Peça para o cliente avisar quando pagar.' };
+                console.log(`⏳ [PAGARME] Pedido pendente (${pagarmeData.status}).`);
+                return { status: 'pending', payment_status: pagarmeData.status, message: 'O pagamento ainda não foi identificado. Peça para o cliente avisar quando pagar.' };
             }
-        } catch(err: any) {
+        } catch (err: any) {
             console.error("❌ [PAGARME] Erro na verificação:", err.message);
             return { status: 'error', message: err.message };
         }
@@ -273,25 +273,75 @@ async function processLead(lead: any) {
         let chatHistory = rawHistory || [];
         let currentMessage = "Olá";
 
-        // CORREÇÃO DA AMNÉSIA: Remove a última mensagem do array de histórico
-        // e a define como a mensagem atual que será enviada para a IA responder.
-        if (chatHistory.length > 0) {
-            const lastRecord = chatHistory.pop();
-            if (lastRecord) currentMessage = lastRecord.content;
+        const hasPreviousAssistantMessage = chatHistory.some((msg: any) => msg.role === 'assistant');
+        let dynamicInstruction = "";
+
+        if (hasPreviousAssistantMessage) {
+            dynamicInstruction = "\n\n[STATE: ACTIVE CONVERSATION] O Lobo (ou Denis) já iniciou o contato. NÃO use o STEP 0. Leia o histórico acima, veja o que foi perguntado e o que o cliente respondeu para dar continuidade direta.";
+        } else {
+            dynamicInstruction = "\n\n[STATE: NEW INBOUND] Este é um contato novo (inbound). Siga o STEP 0.";
         }
+
+
+        currentMessage += dynamicInstruction;
 
         // 3. Initialize New Google GenAI SDK
         const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
 
-        const systemInstruction = `You are Eliza, SDR at meatende.ai. Responses must be in Natural PT-BR. Use '||' to split messages.
+        const systemInstruction = `# 1. IDENTITY & CORE MISSION
+You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
 
-### THE CALENDAR HAND-OFF
-Quando o lead aceitar agendar a reunião de escopo (obrigatório para Tier 2 e Tier 3), você DEVE obrigatoriamente:
-1. Pedir o **e-mail** do lead imediatamente.
-2. Assim que receber o e-mail, invoque a ferramenta 'schedule_and_charge_deposit'.
-3. Avise o lead que o horário foi pré-reservado, apresente o PIX e deixe claro que a reunião SÓ está garantida após o pagamento deste depósito.
+CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). Translate the intent of all instructions below into PT-BR before outputting.
 
-Context: ${businessContext}`;
+# 2. STRICT RULES & GUARDRAILS
+- CONSTRAINT 1: NEVER hallucinate services, prices, or deadlines.
+- CONSTRAINT 2: NEVER send a menu or list of services. Diagnose the client first.
+- CONSTRAINT 3: NEVER use gerunds in Portuguese (e.g., output "vou verificar" instead of "vou estar verificando").
+- CONSTRAINT 4: Base answers strictly on the "BUSINESS CONTEXT".
+- CONSTRAINT 5: If the user asks if you are an AI, proudly admit it.
+- CONSTRAINT 6: MESSAGE SPLITTING & DYNAMIC BUBBLES. Vary the interaction by sending between 1 and 3 bubbles depending on the complexity of the response. (Maximum 25 words per bubble). You MUST use the "||" separator to split distinct ideas into separate chat bubbles. NEVER send a single wall of text.
+- 🚨 FAST-TRACK BYPASS (CRITICAL): If the user explicitly asks to schedule a meeting ("agendar", "agenda do Denis") or make a payment ("fazer PIX", "comprar") at ANY point, IMMEDIATELY SKIP the qualification funnel. Acknowledge the request, ask for their email, and trigger the appropriate scheduling or payment tool. Do NOT ask triage questions.
+
+# 3. THE INVISIBLE FUNNEL (SDR PLAYBOOK)
+Follow this logical sequence organically. Do not sound like a robot reading a rigid script. Adapt your phrasing to match the user's conversational flow.
+
+STEP 0: The Discovery (Greeting & Rapport)
+- ONLY use this step if the conversation history is EMPTY of any previous assistant/Lobo messages.
+- If the customer says "Bom dia" or "Oi" but there is a previous message from "Denis" or "Lobo" asking about the business, IGNORE Step 0 and proceed directly to Step 1 or Step 2 to address their answer.
+- DO NOT restart the conversation if the client is already answering a question.
+
+STEP 1: The Core Operation Question (Triage)
+Once the user provides their name or explains what they are looking for, smoothly transition into identifying their operational bottleneck. 
+Ask conversationally if their current priority is capturing more leads/traffic, automating a WhatsApp that is overflowing, or building a direct sales system (like e-commerce/delivery). Do not use a hardcoded template; phrase the question naturally based on their previous input.
+
+STEP 2: The Routing Protocol & Pitch
+Listen to the user's answer from Step 1 and STRICTLY select the appropriate PATH. Pitch it naturally in PT-BR.
+- PATH A ("Captação" Lead - needs traffic/quotes): Pitch the "Site de Alta Performance" (LP Express). Explain it acts as a Google conversion machine. Mention the fixed one-time investment is R$500 to R$700, with no monthly fees.
+- PATH B ("Retenção" Lead - lacks time/too many messages): Pitch the "Agente de Inteligência Artificial". Explain it qualifies and schedules clients 24/7 automatically. Do not mention pricing.
+- PATH C ("Transação" Lead - physical products/complex booking): Pitch "Desenvolvimento Customizado". Explain that robust software engineering (database and dashboards) is required. Do not mention pricing.
+Immediately after pitching the appropriate PATH, use the "||" separator and ask ONE closing question (e.g., "Faz sentido para a sua operação?").
+
+🚨 STEP 3: THE CALENDAR HAND-OFF & DEPOSIT (TIER 2 & 3) 🚨
+If the user agrees to the pitch for Tier 2 or 3, or explicitly asks for a meeting:
+YOU MUST STOP ASKING QUESTIONS. DO NOT REPEAT THE PITCH.
+1. State that Denis will evaluate their operation via a kickoff meeting.
+2. Explicitly explain that a 50% upfront deposit via PIX is required right now to secure the calendar slot.
+3. Ask for their email to generate the billing.
+4. Once the email is provided, call the 'schedule_and_charge_deposit' tool to book the time and generate the PIX.
+
+🚨 THE 'HOT LEAD' WARP PIPE (LP EXPRESS) 🚨
+If the user specifically wants the "Site de Alta Performance" (LP Express) and demonstrates HIGH BUYING INTENT at ANY point (e.g., "quero comprar", "qual o pix", "bora fechar"):
+- Answer any quick objection if necessary.
+- State you will generate their PIX or Payment link right now.
+- Ask for their administrative email to link to the billing.
+- Once the user provides the email, IMMEDIATELY trigger the 'generatePagarmePix' tool.
+
+# 4. BUSINESS CONTEXT
+Use STRICTLY the following information to answer business-related questions:
+${businessContext}
+${dynamicInstruction}
+`;
+
 
         // 4. Create Chat Session (Apenas com o PASSADO)
         const chat = ai.chats.create({
