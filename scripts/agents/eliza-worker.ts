@@ -329,6 +329,7 @@ async function processLead(lead: any) {
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
+        // 1. Puxar histórico
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
@@ -338,60 +339,60 @@ async function processLead(lead: any) {
 
         let chatHistory = rawHistory || [];
 
-        // Silicon Tweak: Formatação absoluta da conversa
+        // 2. Transformar histórico em texto plano (O Padrão do Silício)
         const transcript = chatHistory.map(msg => `${msg.role === 'assistant' ? 'Eliza' : 'Client'}: ${msg.content}`).join('\n');
 
-        const systemInstruction = `# 1. IDENTITY & ENERGETIC CORE MISSION
-You are Eliza, a results-obsessed Tech Assistant to Denis at meatende.ai. Your core drive is an infinite, polite will to help people reach their goals, attract clients, and get massive results NOW through software engineering.
-You have the energy and closing intent of the Wolf of Wall Street, but you are strictly polite, educated, and respectful. You never waffle. You facilitate transactions.
+        // 3. Prompt estrito e totalmente em inglês
+        const systemPrompt = `
+# 1. IDENTITY & CORE MISSION
+You are Eliza, a relentless, highly energetic, and polite Sales Assistant for Denis at meatende.ai.
+Your ONLY goal is to close the sale for the "LP Express" (High Performance Website) for R$ 499 or the AI Agent Setup for R$ 500.
+You must analyze the conversation transcript and output your next response EXACTLY according to the state machine below.
+CRITICAL: Your output MUST be entirely in natural Brazilian Portuguese (PT-BR). Split distinct ideas using "||".
 
-# 2. CONVERSATION TRANSCRIPT (CRITICAL CONTEXT)
+# 2. STRICT STATE MACHINE
+Analyze the <transcript>. Determine the current state and reply accordingly.
+
+STATE A (GREETING):
+Condition: The transcript is empty OR the client only said "hello/hi" with no buying intent.
+Action: Greet them with high energy and immediately offer the LP Express.
+Output Translation Intent: "Hello! I am Eliza from meatende.ai. I am thrilled to help you get results today! Do you want to build our LP Express to scale your business for R$ 499?"
+
+STATE B (THE WOLF CLOSE - PIX TRIGGER):
+Condition: The client replied with "yes", "I want it", "buy", "pix", or ANY form of agreement to STATE A.
+Action: STOP ASKING QUESTIONS. Immediately provide the PIX key and ask for the receipt.
+Output Translation Intent: "Perfect! Let's get you results right now. The investment is R$ 499.00. || The PIX key (cellular) is: 02959474031. || I am sending the QR Code below. Please send the transfer receipt here in the chat. || My vision system will validate it instantly so Denis can start your project! 🚀🐺"
+
+STATE C (POST-SALE WAITING):
+Condition: You already sent the PIX key in the transcript and the client replied.
+Action: Acknowledge and wait.
+Output Translation Intent: "Please wait a moment while my vision system validates your receipt."
+
+# 3. ABSOLUTE RESTRICTIONS
+- NEVER execute STATE A if the client has already shown buying intent.
+- NEVER offer services not listed above.
+- NEVER ask a question if you are executing STATE B.
+
 <transcript>
 ${transcript}
 </transcript>
+        `;
 
-# 3. MANDATORY CLOSING DIRECTIVE (THE 'NO-WAFFLE' WARP PIPE)
-Your main purpose is to close the deal on the LP Express (High Performance Site) for R$ 500.
-REVIEW THE TRANSCRIPT above. If the Client has shown ANY signal of buying intent (e.g., "sim", "quero", "comprar", "pix", "fechar", "vamos nessa") in previous messages, YOU MUST BYPASS ALL GREETINGS and immediately execute STATE B (THE CLOSE).
-Politeness is key, but closure is priority. Helping them start the project is helping them get results.
+        console.log(`⏳ Calling Gemini API (Stateless Detox Mode)`);
 
-# 4. STRICT STATE MACHINE
-Output EXACTLY the response for the determined state in Portuguese (PT-BR).
-
-- STATE A (GREETING & PITCH): Use ONLY if transcript is empty or Client just said "hi"/"hello" WITHOUT intent.
-"Olá! Sou a Eliza, da meatende.ai. É um prazer enorme falar com você! || Nossa missão aqui é ajudar você a atingir seus objetivos e atrair clientes agora. Você tem interesse em desenvolver a nossa LP Express (Site de Alta Performance) para alavancar sua operação por R$ 500?"
-
-- STATE B (THE CLOSE): Use immediately if intent is detected in transcript (as per directive 3).
-"Perfeito! Fico extremamente feliz em te ajudar a ter resultado! Vamos fechar isso agora. || O investimento é R$ 500,00. || A chave PIX (celular) é: 02959474031 || Estou enviando o QR Code abaixo. Assim que fizer a transferência, mande a foto do comprovante aqui no chat. || Meu sistema de visão vai validar automaticamente para Denis já dar andamento no seu projeto!🚀🐺"
-
-- STATE C (WAITING): If PIX was sent and client replies.
-"Aguarde um momento enquanto o sistema de visão valida o seu comprovante."
-
-# 5. RESTRICTIONS
-- Do NOT repeat STATE A if the client has already agreed.
-- Be polite but incredibly energetic ("fissurada").
-- Translate instructions to natural PT-BR. Use "||" for split bubbles.`;
-
-        // IA instanciada PURA, sem as tools
-        const chat = ai.chats.create({
+        // 4. Chamada Stateless: Sem tools, sem histórico do SDK, apenas a injeção bruta.
+        const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            config: {
-                systemInstruction: systemInstruction,
-            }
+            contents: [
+                { role: 'user', parts: [{ text: systemPrompt }] }
+            ]
         });
 
-        const currentMessage = "Review the transcript above and generate the appropriate next response based on the strict state machine and closing directives. Translate to polite, results-obsessed Portuguese.";
+        const responseText = response.text || '';
 
-        console.log(`⏳ Calling Gemini API (Fissurada Mode - Transcript Injection)`);
-        let result = await chat.sendMessage({ message: currentMessage });
-
-        const responseText = result.text || '';
-
-        // Gatilho de Imagem Artesanal (02959474031 é a chave fixa)
-        if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento") || responseText.toLowerCase().includes("02959474031")) {
+        // --- GATILHO DE MÍDIA ARTESANAL ---
+        if (responseText.toLowerCase().includes("02959474031") || responseText.toLowerCase().includes("qr code")) {
             console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
-            const urlSuaFotoQrCode = "https://i.imgur.com/ihpJUn7.jpeg";
-
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
                 headers: {
@@ -403,16 +404,14 @@ Output EXACTLY the response for the determined state in Portuguese (PT-BR).
                     mediaMessage: {
                         mediatype: "image",
                         caption: "Aqui está o QR Code para o pagamento. Denis e eu estamos empolgados para começar!🚀🐺",
-                        media: urlSuaFotoQrCode
+                        media: "https://i.imgur.com/ihpJUn7.jpeg"
                     }
                 })
             });
         }
 
-        const chunks = responseText.split('||')
-            .map((c: string) => c.trim())
-            .filter((c: string) => c.length > 0);
-
+        // --- ENVIO WHATSAPP E SALVAMENTO BUBBLES ---
+        const chunks = responseText.split('||').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
         await sendWhatsAppPresence(clientNumber, 'composing');
 
         const CHARS_PER_SECOND = 15;
@@ -422,7 +421,6 @@ Output EXACTLY the response for the determined state in Portuguese (PT-BR).
             const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
             accumulatedDelayMs += bubbleTypingTimeMs;
             await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
-
             if (chunks.length > 1) {
                 accumulatedDelayMs += Math.floor(Math.random() * (2500 - 1000 + 1)) + 1000;
             }
@@ -437,11 +435,8 @@ Output EXACTLY the response for the determined state in Portuguese (PT-BR).
         });
 
         if (insertError) {
-            console.error("❌ [SUPABASE ERROR] Falha ao salvar memória da Eliza:", insertError);
+            console.error("❌ [SUPABASE ERROR]:", insertError);
         }
-
-        await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-        console.log(`✅ [ELIZA MVP - FISSURADA] Success for ${clientNumber}`);
 
     } catch (error: any) {
         console.error("❌ [ELIZA ERROR]:", error.message);
