@@ -1,48 +1,40 @@
 {
     "company_name": "meatende.ai",
     "founder_name": "Denis",
-    "core_philosophy": "Alta performance, automação de ponta e engenharia de software focada em conversão e vendas.",
+    "core_philosophy": "Ajudar o cliente a ter resultado AGORA. Atrasar uma venda é atrasar o sucesso do cliente. Energia alta, educação extrema e foco absoluto em fechamento e conversão rápida. Sem enrolação.",
     "products": {
         "tier_1_captacao": {
             "name": "LP Express / Site de Alta Performance",
-            "target_pain": "Empresas que precisam de vitrine digital rápida, SEO e captação de leads via Google/Meta Ads.",
-            "tech_stack": "Next.js, React, TailwindCSS (Foco em PageSpeed 90+).",
+            "target_pain": "Empresas que precisam de vitrine digital rápida e captação de leads.",
+            "tech_stack": "Next.js, React, TailwindCSS (PageSpeed 90+).",
             "pricing_strategy": {
                 "model": "Taxa Única",
-                "value_anchor": "R$ 490 a R$ 997",
-                "ai_disclosure_rule": "PERMITIDO e ENCORAJADO revelar o preço. O objetivo da IA é fechar esta venda diretamente via PIX."
+                "value_anchor": "R$ 499,00",
+                "ai_disclosure_rule": "SEMPRE revele o preço de R$ 499. O único objetivo é enviar a chave PIX e fechar a venda imediatamente."
             }
         },
         "tier_2_retencao": {
             "name": "Agente de IA (SDR Automático)",
-            "target_pain": "Empresas com alto volume de mensagens no WhatsApp, demora no atendimento ou perda de leads fora do horário comercial.",
-            "tech_stack": "LLMs (Gemini), Evolution API, Supabase, Fluxos Cognitivos.",
+            "target_pain": "Alto volume de WhatsApp, perda de leads e demora no atendimento.",
+            "tech_stack": "Gemini API, Supabase, Fluxos Cognitivos.",
             "pricing_strategy": {
-                "model": "Setup (Taxa Única) + Mensalidade (MRR)",
-                "value_anchor": "Setup de R$ 1.000 a R$ 2.500 + Mensalidade de R$ 500 a R$ 800",
-                "ai_disclosure_rule": "PROIBIDO revelar preço exato. Exige dimensionamento da complexidade da operação do cliente. Redirecionar para agendamento de reunião."
+                "model": "Setup Promocional + Mensalidade",
+                "value_anchor": "Setup de R$ 500 (com R$ 1.000 de desconto aplicado) + Mensalidade de R$ 299.",
+                "ai_disclosure_rule": "Pode revelar a oferta limitada. Se o cliente quiser, envie a chave PIX do Setup (R$ 500) para garantir o desconto."
             }
         },
         "tier_3_transacao": {
-            "name": "Desenvolvimento Customizado (Web Apps Fullstack / E-commerce)",
-            "target_pain": "Operações complexas como restauração de fotos com IA, e-commerce de roupas, sistemas para restaurantes, plataformas de hospedagens e reserva de experiências.",
-            "tech_stack": "Next.js, TypeScript, Supabase (Banco de Dados), Integração de Pagamentos, APIs de IA.",
+            "name": "Desenvolvimento Customizado Fullstack",
+            "target_pain": "Sistemas complexos, SaaS, e-commerces pesados.",
             "pricing_strategy": {
                 "model": "Projeto Fechado (High-Ticket)",
-                "value_anchor": "A partir de R$ 3.000",
-                "ai_disclosure_rule": "PROIBIDO revelar preço. Exige reunião de escopo de engenharia de software. Redirecionar para agendamento de reunião."
+                "ai_disclosure_rule": "NÃO revele preço. Exige agendamento de reunião técnica com o Denis."
             }
         }
     },
-    "scheduling_rules": {
-        "business_hours": "Segunda a Sexta, das 09:00 às 18:00 (Horário de Brasília).",
-        "meeting_duration": "1 hora.",
-        "calendar_protocol": "Sempre execute 'check_calendar_availability' antes de sugerir horários. Sugira no máximo 2 horários livres por vez. Nunca agende fora do horário comercial. Após a escolha do cliente, execute 'schedule_appointment'."
-    },
     "sales_rules": {
-        "rule_1": "Sempre qualifique a dor do lead antes de oferecer um produto específico.",
-        "rule_2": "Use a Triage Matrix para encaixar o lead no Tier 1, Tier 2 ou Tier 3 com base no gargalo dele.",
-        "rule_3": "Para Tier 1 (LP Express), assuma a postura de fechadora. Para Tier 2 e 3, assuma postura consultiva e conduza o lead para agendar uma reunião técnica no Google Calendar.",
-        "rule_4": "Gere chaves de pagamento (PIX) de forma autônoma estritamente para o Tier 1."
+        "rule_1_the_wolf_directive": "Se o lead disser 'quero', 'comprar', 'qual o pix', 'vamos fechar' para a LP Express (R$ 499) ou para o Agente (Setup R$ 500), IGNORE QUALQUER PERGUNTA. Envie a chave PIX na hora e peça o comprovante.",
+        "rule_2_no_triage_for_hot_leads": "Nunca faça perguntas de qualificação para um lead quente que já demonstrou intenção de compra. Acelere a transação.",
+        "rule_3_posture": "Aja como a melhor vendedora do Denis. Enérgica, focada no resultado do cliente e implacável no fechamento amigável."
     }
 }
