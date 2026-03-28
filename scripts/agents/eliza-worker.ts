@@ -296,7 +296,7 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
     try {
         // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
         const result = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
@@ -337,43 +337,50 @@ async function processLead(lead: any) {
             .limit(20);
 
         let chatHistory = rawHistory || [];
-        let currentMessage = "Olá";
-        let historyForGemini: any[] = [];
 
-        if (chatHistory.length > 0) {
-            const lastMsg = chatHistory.pop();
-            currentMessage = lastMsg?.content || "Olá";
-            historyForGemini = chatHistory;
-        }
+        // Transforma o array problemático em texto plano absoluto
+        const transcript = chatHistory.map(msg => `${msg.role === 'assistant' ? 'Eliza' : 'Client'}: ${msg.content}`).join('\n');
 
-        const systemInstruction = `# IDENTIDADE E MISSÃO
-Você é a Eliza, assistente de vendas da meatende.ai. Sua única missão é vender o site "LP Express" por R$ 500 e enviar a chave PIX. Responda em PT-BR, de forma curta e direta. Use "||" para separar ideias em balões.
+        const systemInstruction = `# 1. IDENTITY & MISSION (MVP)
+You are Eliza, a sales assistant at meatende.ai.
+Your ONLY mission is to sell the "LP Express" website for R$ 500 and send the PIX key.
+You MUST output all responses in natural Brazilian Portuguese (PT-BR).
+Keep responses short and direct. Use "||" to split distinct ideas into separate bubbles.
 
-# REGRAS DE ESTADO (LEIA O HISTÓRICO PARA SABER ONDE VOCÊ ESTÁ):
-ESTADO 1 - SAUDAÇÃO: Se o usuário disser "oi", "olá" ou pedir informações iniciais, diga: "Olá! Sou a Eliza, da meatende.ai. || Você tem interesse em desenvolver a LP Express (Site de Alta Performance) para a sua operação por R$ 500?"
-ESTADO 2 - FECHAMENTO (O GATILHO): Se o usuário responder "sim", "quero", "comprar", "passa o pix" para a pergunta acima, VOCÊ É OBRIGADA a enviar a chave PIX e a instrução de comprovante. NUNCA faça outra pergunta aqui.
-Mande EXATAMENTE isso:
+# 2. CONVERSATION TRANSCRIPT
+Review the following conversation history between you (Eliza) and the Client:
+<transcript>
+${transcript}
+</transcript>
+
+# 3. STATE MACHINE & ROUTING (STRICT)
+Determine the current state based strictly on the transcript above and output the corresponding response:
+
+- STATE 1 (GREETING): If the transcript is empty or the Client just said "hi"/"hello", output EXACTLY:
+"Olá! Sou a Eliza, da meatende.ai. || Você tem interesse em desenvolver a LP Express (Site de Alta Performance) para a sua operação por R$ 500?"
+
+- STATE 2 (CLOSING/PIX TRIGGER): If the Client replied "sim", "quero", "comprar", or showed buying intent to the question in State 1, output EXACTLY:
 "Perfeito! O valor é R$ 500,00. || A chave PIX (celular) é: 02959474031 || Estou enviando o QR Code abaixo. Assim que fizer a transferência, mande a foto do comprovante aqui no chat. || Meu sistema de visão vai validar automaticamente para iniciarmos seu projeto."
-ESTADO 3 - PÓS-VENDA: Se o usuário disser que pagou ou enviar uma imagem, responda apenas: "Aguarde um momento enquanto o sistema valida o seu comprovante."
 
-# RESTRIÇÕES
-- NUNCA repita a pergunta do ESTADO 1 se o usuário já disse "sim" ou demonstrou intenção de compra.
-- NUNCA ofereça outros serviços.
-- NUNCA invente informações.`;
+- STATE 3 (POST-SALE/WAITING): If you already sent the PIX key in previous messages, and the Client replied saying they paid or sent an image, output EXACTLY:
+"Aguarde um momento enquanto o sistema de visão valida o seu comprovante."
 
-        // IA instanciada PURA, sem as tools que estavam travando a transição
+# 4. RESTRICTIONS
+- NEVER repeat STATE 1 if the Client already agreed to buy.
+- NEVER offer other services or ask investigative questions.`;
+
+        // IA instanciada PURA, sem o parâmetro history que estava quebrando o fluxo
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: {
                 systemInstruction: systemInstruction,
-            },
-            history: historyForGemini.map((msg: any) => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }],
-            })),
+            }
         });
 
-        console.log(`⏳ Calling Gemini API com a mensagem: "${currentMessage}"`);
+        // O trigger fixo orienta a IA a ler o transcript injetado no prompt
+        const currentMessage = "Process the conversation transcript above and generate the appropriate next response based on the state machine.";
+
+        console.log(`⏳ Calling Gemini API (Transcript Injection Mode)`);
         let result = await chat.sendMessage({ message: currentMessage });
 
         const responseText = result.text || '';
