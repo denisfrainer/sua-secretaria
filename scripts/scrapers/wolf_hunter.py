@@ -142,18 +142,28 @@ def run_hunter():
             print("⚠️ O Gemini retornou uma resposta vazia. Verifique o Safety Filter ou Rate Limit.")
             return # Sai da função para não quebrar no json.loads
 
-# Extração de dados robusta com sanitização
-        # Extração de dados robusta (Sniper Extraction)
+# Extração de dados robusta (Sniper Extraction com Sanitização)
         leads_data = []
         try:
             raw_text = response.text
             
-            start_idx = raw_text.find('[')
-            end_idx = raw_text.rfind(']')
+            # 1. Limpeza de Markdown (Remove ```json e ``` de qualquer parte do texto)
+            clean_text = re.sub(r"```[a-zA-Z]*", "", raw_text)
+            
+            # 2. Corrige a alucinação de arrays divididos (ex: "]\n[" ou "][" vira ",")
+            clean_text = re.sub(r"\]\s*\[", ",", clean_text)
+            
+            # 3. Busca os limites reais do array após a limpeza
+            start_idx = clean_text.find('[')
+            end_idx = clean_text.rfind(']')
             
             if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_str = raw_text[start_idx:end_idx+1]
+                json_str = clean_text[start_idx:end_idx+1]
+                
+                # 4. Remove caracteres de controle invisíveis
                 json_str_clean = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', json_str)
+                
+                # 5. Parse final
                 leads_data = json.loads(json_str_clean, strict=False)
             else:
                 raise ValueError("Array JSON não delimitado na resposta.")
@@ -163,8 +173,9 @@ def run_hunter():
             with open("error_log.txt", "a", encoding="utf-8") as f:
                 f.write(f"\n--- ERRO ({timestamp}) ---\n{response.text}\n")
             print("--- INÍCIO DA RESPOSTA BRUTA ---")
-            print(response.text) # Use a variável correta que armazena a string do Gemini
+            print(response.text) 
             print("--- FIM DA RESPOSTA BRUTA ---")
+            import sys
             sys.stdout.flush()
 
         if leads_data:

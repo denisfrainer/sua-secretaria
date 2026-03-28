@@ -10,611 +10,449 @@ key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 # Dados brutos extraídos do seu log (apenas os válidos)
-leads_recuperados = leads = [
+leads_recuperados = leads = leads_data = leads_data = leads_data = [
   {
-    "name": "Margille Pizzaria",
-    "website": "https://www.margille.com.br/",
-    "phone": "(51) 3221-4004",
-    "rating": None
-  },
-  {
-    "name": "Padaria Gaby",
+    "name": "Marketing+ Organização de Eventos",
     "website": None,
-    "phone": "(51) 3257-5833",
+    "phone": "(48) 99138-0505",
     "rating": None
   },
   {
-    "name": "Pão da Nona",
-    "website": None,
-    "phone": "(51) 3233-3599",
-    "rating": None
-  },
-  {
-    "name": "Renan Santos Oliveira",
-    "website": None,
-    "phone": "(51) 9170-2404",
-    "rating": None
-  },
-  {
-    "name": "Panificadora J R",
-    "website": None,
-    "phone": "(51) 3318-3730",
-    "rating": None
-  },
-  {
-    "name": "Confeitaria Armelin",
-    "website": None,
-    "phone": "(51) 3233-7909",
-    "rating": None
-  },
-  {
-    "name": "Delf Distribuidora de Alimentos",
-    "website": None,
-    "phone": "(51) 3351-7374",
-    "rating": None
-  },
-  {
-    "name": "Panificadora Porto Belo",
-    "website": None,
-    "phone": "(51) 3015-4560",
-    "rating": None
-  },
-  {
-    "name": "Padaria e Confeitaria Nutripão",
-    "website": None,
-    "phone": "(51) 3249-6296",
-    "rating": None
-  },
-  {
-    "name": "Padaria Bela União",
+    "name": "Santo Evento",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Donna Laura",
-    "website": None,
-    "phone": "(51) 3519-3571",
-    "rating": None
-  },
-  {
-    "name": "Espaço Veganista",
-    "website": None,
-    "phone": "(51) 99325-1983",
-    "rating": None
-  },
-  {
-    "name": "Espaço Not Meat",
+    "name": "Dj Peter Sonorização Iluminação para festa e eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Bagatela Lanches",
+    "name": "Alonso Fotografia Estúdio",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Atelier de Massas",
-    "website": "www.atelierdemassas.com.br",
-    "phone": "(51) 3225 1125",
-    "rating": None
-  },
-  {
-    "name": "Sette Pasta",
-    "website": None,
-    "phone": "(51) 3012-2926",
-    "rating": None
-  },
-  {
-    "name": "Aora Cucina",
-    "website": None,
-    "phone": "(51) 99119-9387",
-    "rating": None
-  },
-  {
-    "name": "Mandarinier Gastronomia",
-    "website": None,
-    "phone": "(51) 3517 7703",
-    "rating": None
-  },
-  {
-    "name": "Marcianos Burguer",
-    "website": None,
-    "phone": "(51) 99523-9876",
-    "rating": None
-  },
-  {
-    "name": "Confeitaria Zona Sul",
-    "website": "www.confeitariazonasul.com.br",
-    "phone": "(51) 3249-5000",
-    "rating": None
-  },
-  {
-    "name": "J3 Burguer",
-    "website": None,
-    "phone": "(51) 99561-7805",
-    "rating": None
-  },
-  {
-    "name": "Gianluca Zaffari",
-    "website": None,
-    "phone": "(51) 3311-7207",
-    "rating": None
-  },
-  {
-    "name": "Bellona",
-    "website": None,
-    "phone": "(51) 98525-5585",
-    "rating": None
-  },
-  {
-    "name": "Freddo",
-    "website": None,
-    "phone": "(51) 3328-3680",
-    "rating": None
-  },
-  {
-    "name": "Miski",
-    "website": None,
-    "phone": "(51) 3372-7176",
-    "rating": None
-  },
-  {
-    "name": "Banca 40",
-    "website": None,
-    "phone": "(51) 3226-3533",
-    "rating": None
-  },
-  {
-    "name": "Di Argento",
+    "name": "Vanessa Silva / Fotografia de eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Sollo Pizza",
-    "website": None,
-    "phone": "51 3218.2222",
-    "rating": None
-  },
-  {
-    "name": "Café do Bem",
-    "website": None,
-    "phone": "(51) 98561-8642",
-    "rating": None
-  },
-  {
-    "name": "Altis Centro",
-    "website": None,
-    "phone": "(51) 3028-6960",
-    "rating": None
-  },
-  {
-    "name": "Altis Mont'Serrat",
-    "website": None,
-    "phone": "(51) 3084-4444",
-    "rating": None
-  },
-  {
-    "name": "Mark Hamburgueria - Vila Roubadinhas",
-    "website": None,
-    "phone": "512314-2500",
-    "rating": None
-  },
-  {
-    "name": "Mark Hamburgueria - Zona Sul",
-    "website": None,
-    "phone": "514066-6888",
-    "rating": None
-  },
-  {
-    "name": "Mark Hamburgueria - Bom Fim",
-    "website": None,
-    "phone": "513110-6039",
-    "rating": None
-  },
-  {
-    "name": "Mark Hamburgueria - Auxiliadora",
-    "website": None,
-    "phone": "513519-6638",
-    "rating": None
-  },
-  {
-    "name": "Mark Hamburgueria - Cidade Baixa",
-    "website": None,
-    "phone": "513030-0062",
-    "rating": None
-  },
-  {
-    "name": "Chez Philippe",
-    "website": None,
-    "phone": "(51) 3312-5333",
-    "rating": None
-  },
-  {
-    "name": "Stella Alpina Sorveteria e Café",
-    "website": None,
-    "phone": "(51) 3338-1515",
-    "rating": None
-  },
-  {
-    "name": "Stella Alpina Gelados e Alimentos Ltda Epp",
-    "website": "stellaalpina.com.br",
-    "phone": "(51) 3336-3633",
-    "rating": None
-  },
-  {
-    "name": "Confeitaria Maranghello",
-    "website": None,
-    "phone": "(51) 3235.2511",
-    "rating": None
-  },
-  {
-    "name": "Le Bateau Ivre",
-    "website": None,
-    "phone": "(51) 994536412",
-    "rating": None
-  },
-  {
-    "name": "Agridoce Café",
-    "website": None,
-    "phone": "51 3392 7746",
-    "rating": None
-  },
-  {
-    "name": "Aurora Antiespecista",
+    "name": "Adriana Prado / Fotografia de eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Vê Empório e Restaurante",
+    "name": "LUSCH Agência 360º",
+    "website": None,
+    "phone": "(48) 3030-7322",
+    "rating": None
+  },
+  {
+    "name": "SB+ Eventos",
+    "website": None,
+    "phone": "(48) 3380-2980",
+    "rating": None
+  },
+  {
+    "name": "Lake View",
+    "website": None,
+    "phone": "(48) 9190-8812",
+    "rating": None
+  },
+  {
+    "name": "TIPFLORIPA EVENTOS",
+    "website": None,
+    "phone": "(48) 998461405",
+    "rating": None
+  },
+  {
+    "name": "MC Centro de Eventos",
+    "website": None,
+    "phone": "48 3034-9400",
+    "rating": None
+  },
+  {
+    "name": "Sobrallia Buffet",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Casa Oriental",
+    "name": "Boutique de Eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Govinda",
+    "name": "Diego Dahmer Foto e Filme",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "La Rouge Bistrô",
+    "name": "Juliana Hames - Decoração de Eventos",
+    "website": None,
+    "phone": "(48) 99161-4506",
+    "rating": None
+  },
+  {
+    "name": "Go Promo Eventos",
+    "website": None,
+    "phone": "(48) 99204-9488",
+    "rating": None
+  },
+  {
+    "name": "La Vaca",
+    "website": None,
+    "phone": "(48) 9138-2322",
+    "rating": None
+  },
+  {
+    "name": "PROJESOM – Soluções para Eventos",
+    "website": None,
+    "phone": "(48) 99630-1112",
+    "rating": None
+  },
+  {
+    "name": "Marcello Dornelles",
+    "website": None,
+    "phone": "(48) 99659-7805",
+    "rating": None
+  },
+  {
+    "name": "Banda Rock in Family",
+    "website": None,
+    "phone": "(48) 98414-7172",
+    "rating": None
+  },
+  {
+    "name": "FS Som e Luzes",
+    "website": None,
+    "phone": "(48) 99101-3912",
+    "rating": None
+  },
+  {
+    "name": "PinkBlue Festas e Eventos",
+    "website": None,
+    "phone": "(48) 9674-6318",
+    "rating": None
+  },
+  {
+    "name": "Agapes Buffet E Eventos",
+    "website": None,
+    "phone": "(48) 3369-0064",
+    "rating": None
+  },
+  {
+    "name": "Bambalalão Festas",
+    "website": None,
+    "phone": "(48) 3037-2153",
+    "rating": None
+  },
+  {
+    "name": "Bella Gula Bistro",
+    "website": None,
+    "phone": "(48) 99154-5885",
+    "rating": None
+  },
+  {
+    "name": "Belle Blanc Noivas E Festas",
+    "website": None,
+    "phone": "(48) 3223-2021",
+    "rating": None
+  },
+  {
+    "name": "Bianco De Moura Suna",
+    "website": None,
+    "phone": "(48) 99630-7686",
+    "rating": None
+  },
+  {
+    "name": "Bistro Da Leila",
+    "website": None,
+    "phone": "(48) 3232-5048",
+    "rating": None
+  },
+  {
+    "name": "Black Sheep Sushi Bar",
+    "website": None,
+    "phone": "(48) 3206-4337",
+    "rating": None
+  },
+  {
+    "name": "Brand Buffet",
+    "website": None,
+    "phone": "(48) 3348-6563",
+    "rating": None
+  },
+  {
+    "name": "Buffet Café & Cia",
+    "website": None,
+    "phone": "(48) 3240-5146",
+    "rating": None
+  },
+  {
+    "name": "Buffet Dos Anjos",
+    "website": None,
+    "phone": "(48) 3233-5742",
+    "rating": None
+  },
+  {
+    "name": "Buffet Giovanni Kazuo Culinária Japonesa",
+    "website": None,
+    "phone": "(48) 99135-6800",
+    "rating": None
+  },
+  {
+    "name": "Buffet Pedrinho & Filhos",
+    "website": None,
+    "phone": "(48) 3233-2823",
+    "rating": None
+  },
+  {
+    "name": "Buffet Rio Branco",
+    "website": None,
+    "phone": "(48) 3028-6558",
+    "rating": None
+  },
+  {
+    "name": "Buffet Rio Branco",
+    "website": None,
+    "phone": "(48) 99905-5791",
+    "rating": None
+  },
+  {
+    "name": "Buffet Styllus Festas & Eventos",
+    "website": None,
+    "phone": "(48) 3231-0777",
+    "rating": None
+  },
+  {
+    "name": "Contemporâneo Coquetéis",
+    "website": None,
+    "phone": "(48) 9911-5292",
+    "rating": None
+  },
+  {
+    "name": "DuCrepe Crepes para Eventos",
+    "website": None,
+    "phone": "(48) 3372-7356",
+    "rating": None
+  },
+  {
+    "name": "Pizza do Henry",
+    "website": None,
+    "phone": "(48) 98408-9569",
+    "rating": None
+  },
+  {
+    "name": "Pizza Vip",
+    "website": None,
+    "phone": "(48) 8446-9692",
+    "rating": None
+  },
+  {
+    "name": "Ana Decoradora",
+    "website": None,
+    "phone": "(48) 99974-1802",
+    "rating": None
+  },
+  {
+    "name": "3d Produções De Eventos",
+    "website": None,
+    "phone": "(48) 99957-4070",
+    "rating": None
+  },
+  {
+    "name": "A&b Eventos",
+    "website": None,
+    "phone": "(48) 3028-7478",
+    "rating": None
+  },
+  {
+    "name": "A1 Formaturas",
+    "website": None,
+    "phone": "(48) 3028-3060",
+    "rating": None
+  },
+  {
+    "name": "Açoriana Congressos E Eventos",
+    "website": None,
+    "phone": "(48) 3024-5903",
+    "rating": None
+  },
+  {
+    "name": "Activa Formaturas",
+    "website": None,
+    "phone": "(48) 3234-0200",
+    "rating": None
+  },
+  {
+    "name": "All Entretenimento",
+    "website": None,
+    "phone": "(48) 3028-9400",
+    "rating": None
+  },
+  {
+    "name": "Alpe Eventos",
+    "website": None,
+    "phone": "(48) 3234-5751",
+    "rating": None
+  },
+  {
+    "name": "América Do Sol Turismo E Eventos",
+    "website": None,
+    "phone": "(48) 3224-6957",
+    "rating": None
+  },
+  {
+    "name": "Anna Carolina Fernandes Cassalho",
+    "website": None,
+    "phone": "(48) 3234-6713",
+    "rating": None
+  },
+  {
+    "name": "Apoia-se Prestadora de Serviço",
+    "website": None,
+    "phone": "(48) 3223-3198",
+    "rating": None
+  },
+  {
+    "name": "Art E E L Volpato Júnior Prod Cult",
+    "website": None,
+    "phone": "(48) 3209-6754",
+    "rating": None
+  },
+  {
+    "name": "Art Festas e Decorações",
+    "website": None,
+    "phone": "(48) 3337-6345",
+    "rating": None
+  },
+  {
+    "name": "As9 Entretenimento E Negócios",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Mantra Gastronomia e Arte",
+    "name": "Be Modelos e Eventos",
+    "website": None,
+    "phone": "48 3322-3028",
+    "rating": None
+  },
+  {
+    "name": "Crepe Suzette Band",
+    "website": None,
+    "phone": "(48) 99650-2075",
+    "rating": None
+  },
+  {
+    "name": "Aktoro Professional Interpreting Course for Theatre, TV and Film",
+    "website": None,
+    "phone": "(48) 3333-2434",
+    "rating": None
+  },
+  {
+    "name": "Lindacap Restaurant",
+    "website": None,
+    "phone": "(48) 3222-4002",
+    "rating": None
+  },
+  {
+    "name": "Noly Moreira",
+    "website": None,
+    "phone": "(48) 99975 4867",
+    "rating": None
+  },
+  {
+    "name": "Chef Will Eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Suprem",
+    "name": "MV Buffet Festas e Eventos",
+    "website": None,
+    "phone": "(48) 99216-9524",
+    "rating": None
+  },
+  {
+    "name": "Decorativa Festas",
+    "website": None,
+    "phone": "(48) 99941-9290",
+    "rating": None
+  },
+  {
+    "name": "Vila dos Araçás",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Ocidente",
+    "name": "OnEventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Ojas",
+    "name": "Impacto Multieventos",
+    "website": None,
+    "phone": "(48) 3337-4803",
+    "rating": None
+  },
+  {
+    "name": "Agencia048",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Nataraj",
+    "name": "Floripa Eventos",
+    "website": None,
+    "phone": "(48) 99953-3053",
+    "rating": None
+  },
+  {
+    "name": "Projecta Eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Jean Pierre Pâtisserie et Boulangerie",
+    "name": "Nathan Filmes",
     "website": None,
-    "phone": "(51) 3332-8142",
+    "phone": "(48) 99151-0472",
     "rating": None
   },
   {
-    "name": "Oui Oui Boulangerie",
+    "name": "Casa Múltiplas",
     "website": None,
-    "phone": "(51) 3208-0090",
+    "phone": "48 992120632",
     "rating": None
   },
   {
-    "name": "Vive Le Café",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Oh Brüder Passo d'Areia",
-    "website": None,
-    "phone": "+55 (51) 98323-2290",
-    "rating": None
-  },
-  {
-    "name": "Massa Madre",
+    "name": "Indaiá Eventos",
     "website": None,
     "phone": None,
     "rating": None
   },
   {
-    "name": "Cumbuca Padaria",
+    "name": "Orth Produções",
     "website": None,
-    "phone": "(51) 3212-0292",
+    "phone": "(48) 3333–7510",
     "rating": None
   },
   {
-    "name": "Quero Pão",
-    "website": None,
-    "phone": "(51) 3029-2780",
-    "rating": None
-  },
-  {
-    "name": "Barbarella Bakery",
+    "name": "All Party",
     "website": None,
     "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Priscilla'a Bakery",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Cheiro Verde",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Pizzaria Don Vitto",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Nono Ludovico",
-    "website": None,
-    "phone": "(51) 3333-7050",
-    "rating": None
-  },
-  {
-    "name": "Confeitaria Matheus",
-    "website": None,
-    "phone": "(51) 3224-2179",
-    "rating": None
-  },
-  {
-    "name": "UM Bar&Cozinha",
-    "website": None,
-    "phone": "51.3239.6751",
-    "rating": None
-  },
-  {
-    "name": "Five Points Burger",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Tutano Burger",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Mureta",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Mark Hamburgueria",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Bendizê Hamburgueria",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Confeitaria Paris",
-    "website": None,
-    "phone": "51 99982.2918",
-    "rating": None
-  },
-  {
-    "name": "Padaria e Confeitaria Dalmás",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Porto Cara de Mau",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Don Aurélio Pizzaria",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Altis Gastronomia",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Hard Rock Cafe Porto Alegre",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Quincho Parrilla y Bar",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Lima's Pizzaria",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Rodízio Burguer POA",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Oak Sushi",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Garcias PB",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Oca Pizza",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Nihon Sushi Bar",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Picanhas Grill Veg",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Sui Yuan",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "The Raven Restaurant",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Quiero Café - Centro Histórico",
-    "website": None,
-    "phone": "51 99989-0735",
-    "rating": None
-  },
-  {
-    "name": "Maison Gastronomia",
-    "website": None,
-    "phone": "(51) 98950-4057",
-    "rating": None
-  },
-  {
-    "name": "Prawer",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Gelateria Di Argento",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Gelf's",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Creäm",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Quati Gelateria Artesanal",
-    "website": None,
-    "phone": "+55 51 99479-6408",
-    "rating": None
-  },
-  {
-    "name": "Confeitaria Dona Inês",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Yami Café",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Moa Cafeteria",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Espaço Brasco",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Peppo Cucina",
-    "website": None,
-    "phone": None,
-    "rating": None
-  },
-  {
-    "name": "Panorama Gastronômico",
-    "website": None,
-    "phone": "(51) 3207-8999",
-    "rating": None
-  },
-  {
-    "name": "Shopping das Padarias",
-    "website": "www.shoppingdaspadarias.com.br",
-    "phone": "(51) 3342-5124",
     "rating": None
   }
 ]
