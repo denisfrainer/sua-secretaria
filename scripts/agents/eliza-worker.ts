@@ -198,29 +198,28 @@ http.createServer((req, res) => {
 
         req.on('end', async () => {
             try {
-                const payload = JSON.parse(body);
-
-                // Responder à Evolution imediatamente para não gerar timeout nela
+                // Responder imediatamente com 200 OK
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'received' }));
 
-                // Ignorar mensagens enviadas por você mesmo (fromMe)
-                if (payload.event === 'messages.upsert' && payload.data) {
-                    const msg = payload.data.message;
-                    if (msg.key.fromMe) return;
+                const payload = JSON.parse(body);
 
-                    // Extrair número e texto (adaptar conforme a estrutura exata do webhook da sua Evolution)
-                    const remoteJid = msg.key.remoteJid;
+                if (payload.event === 'messages.upsert') {
+
+                    const data = payload.data;
+                    if (!data) return;
+
+                    // Na Evolution, 'key' fica dentro de 'data', assim como 'message'
+                    if (data.key?.fromMe) return;
+
+                    const remoteJid = data.key?.remoteJid || '';
                     const phone = remoteJid.replace('@s.whatsapp.net', '');
-                    const textContent = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
 
-                    if (!textContent) return;
+                    const textContent = data.message?.conversation || data.message?.extendedTextMessage?.text || '';
 
-                    console.log(`📥 [WEBHOOK] Mensagem recebida de ${phone}: ${textContent}`);
+                    if (!textContent || !phone) return;
 
-                    // Aqui entra a lógica para inserir no Supabase
-                    // Exemplo: Salvar na tabela 'messages' e garantir que o lead existe na 'leads_lobo' com status 'eliza_processing'
-
+                    console.log(`\n📥 [WEBHOOK] Lead ${phone} enviou: "${textContent}"`);
 
                     await supabaseAdmin.from('messages').insert({
                         lead_phone: phone,
@@ -233,9 +232,10 @@ http.createServer((req, res) => {
                         status: 'eliza_processing'
                     }, { onConflict: 'phone' });
 
+                    console.log(`✅ [WEBHOOK] Salvo no banco! Lead ${phone} pronto para a Eliza.`);
                 }
             } catch (error) {
-                console.error('❌ Erro ao processar webhook:', error);
+                console.error('❌ [WEBHOOK CRASH]:', error);
             }
         });
         return;
