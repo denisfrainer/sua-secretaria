@@ -329,58 +329,35 @@ async function processLead(lead: any) {
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // 1. Puxar histórico
+        // 1. Puxar apenas as últimas 6 mensagens para evitar poluição de contexto
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
             .eq('lead_phone', clientNumber)
-            .order('created_at', { ascending: true })
-            .limit(20);
+            .order('created_at', { ascending: false })
+            .limit(6);
 
-        let chatHistory = rawHistory || [];
-
-        // 2. Transformar histórico em texto plano (O Padrão do Silício)
+        // Reverter para ordem cronológica
+        let chatHistory = rawHistory ? rawHistory.reverse() : [];
         const transcript = chatHistory.map(msg => `${msg.role === 'assistant' ? 'Eliza' : 'Client'}: ${msg.content}`).join('\n');
 
-        // 3. Prompt estrito e totalmente em inglês
-        const systemPrompt = `
-# 1. IDENTITY & CORE MISSION
-You are Eliza, a relentless, highly energetic, and polite Sales Assistant for Denis at meatende.ai.
-Your ONLY goal is to close the sale for the "LP Express" (High Performance Website) for R$ 499 or the AI Agent Setup for R$ 500.
-You must analyze the conversation transcript and output your next response EXACTLY according to the state machine below.
-CRITICAL: Your output MUST be entirely in natural Brazilian Portuguese (PT-BR). Split distinct ideas using "||".
+        const systemPrompt = `You are a binary sales closer. Your only goal is to sell the LP Express for R$ 499.
+Evaluate the following conversation transcript. Focus strictly on the Client's LAST message.
 
-# 2. STRICT STATE MACHINE
-Analyze the <transcript>. Determine the current state and reply accordingly.
+If the Client shows ANY agreement, positive confirmation, or buying intent (e.g., "yes", "I want it", "pix", "buy", "let's do it"), output exactly and only this text in PT-BR:
+"Perfeito! O valor da LP Express é R$ 499,00. A chave PIX celular é 02959474031. Mande o comprovante aqui para iniciarmos o projeto! 🚀🐺"
 
-STATE A (GREETING):
-Condition: The transcript is empty OR the client only said "hello/hi" with no buying intent.
-Action: Greet them with high energy and immediately offer the LP Express.
-Output Translation Intent: "Hello! I am Eliza from meatende.ai. I am thrilled to help you get results today! Do you want to build our LP Express to scale your business for R$ 499?"
+If the Client is just greeting ("hi", "hello") and has not agreed to buy yet, output exactly and only this text in PT-BR:
+"Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express (Site de Alta Performance) custa R$ 499 em taxa única. Quer fechar agora?"
 
-STATE B (THE WOLF CLOSE - PIX TRIGGER):
-Condition: The client replied with "yes", "I want it", "buy", "pix", or ANY form of agreement to STATE A.
-Action: STOP ASKING QUESTIONS. Immediately provide the PIX key and ask for the receipt.
-Output Translation Intent: "Perfect! Let's get you results right now. The investment is R$ 499.00. || The PIX key (cellular) is: 02959474031. || I am sending the QR Code below. Please send the transfer receipt here in the chat. || My vision system will validate it instantly so Denis can start your project! 🚀🐺"
+If the Client sent a receipt, image, or says they paid, output exactly and only this text in PT-BR:
+"Aguarde um momento. Meu sistema de visão está validando o comprovante."
 
-STATE C (POST-SALE WAITING):
-Condition: You already sent the PIX key in the transcript and the client replied.
-Action: Acknowledge and wait.
-Output Translation Intent: "Please wait a moment while my vision system validates your receipt."
+TRANSCRIPT:
+${transcript}`;
 
-# 3. ABSOLUTE RESTRICTIONS
-- NEVER execute STATE A if the client has already shown buying intent.
-- NEVER offer services not listed above.
-- NEVER ask a question if you are executing STATE B.
+        console.log(`⏳ Calling Gemini API (Absolute MVP Mode)`);
 
-<transcript>
-${transcript}
-</transcript>
-        `;
-
-        console.log(`⏳ Calling Gemini API (Stateless Detox Mode)`);
-
-        // 4. Chamada Stateless: Sem tools, sem histórico do SDK, apenas a injeção bruta.
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [
@@ -391,7 +368,7 @@ ${transcript}
         const responseText = response.text || '';
 
         // --- GATILHO DE MÍDIA ARTESANAL ---
-        if (responseText.toLowerCase().includes("02959474031") || responseText.toLowerCase().includes("qr code")) {
+        if (responseText.includes("02959474031")) {
             console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
@@ -403,28 +380,16 @@ ${transcript}
                     number: clientNumber,
                     mediaMessage: {
                         mediatype: "image",
-                        caption: "Aqui está o QR Code para o pagamento. Denis e eu estamos empolgados para começar!🚀🐺",
+                        caption: "Aqui está o QR Code para o pagamento. 🚀🐺",
                         media: "https://i.imgur.com/ihpJUn7.jpeg"
                     }
                 })
             });
         }
 
-        // --- ENVIO WHATSAPP E SALVAMENTO BUBBLES ---
-        const chunks = responseText.split('||').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+        // --- ENVIO WHATSAPP DIRETO (SEM CHUNKS) ---
         await sendWhatsAppPresence(clientNumber, 'composing');
-
-        const CHARS_PER_SECOND = 15;
-        let accumulatedDelayMs = 0;
-
-        for (const chunk of chunks) {
-            const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
-            accumulatedDelayMs += bubbleTypingTimeMs;
-            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
-            if (chunks.length > 1) {
-                accumulatedDelayMs += Math.floor(Math.random() * (2500 - 1000 + 1)) + 1000;
-            }
-        }
+        await sendWhatsAppMessage(clientNumber, responseText, 2000);
 
         const fakeMessageId = `eliza_${Date.now()}`;
         const { error: insertError } = await supabaseAdmin.from('messages').insert({
@@ -438,6 +403,8 @@ ${transcript}
             console.error("❌ [SUPABASE ERROR]:", insertError);
         }
 
+        await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
+        console.log(`✅ [ELIZA MVP] Success for ${clientNumber}`);
     } catch (error: any) {
         console.error("❌ [ELIZA ERROR]:", error.message);
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
