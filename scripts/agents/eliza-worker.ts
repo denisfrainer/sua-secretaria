@@ -12,7 +12,6 @@ import http from 'http';
  * Target Model: gemini-2.5-flash
  */
 
-// Troque a sua linha 15 por esta:
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
 });
@@ -295,9 +294,9 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
     console.log(`📸 [VISION] Analisando comprovante de ${clientPhone}...`);
 
     try {
-        // No SDK novo, usamos ai.models.generateContent diretamente
+        // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
         const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.0-flash",
             contents: [{
                 role: 'user',
                 parts: [
@@ -307,7 +306,7 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
             }]
         });
 
-        // No @google/genai, .text é uma PROPRIEDADE, não uma função
+        // No SDK @google/genai, .text é uma propriedade
         const responseText = result.text || "";
 
         const cleanedJson = responseText.replace(/```json|```/g, "").trim();
@@ -354,12 +353,7 @@ async function processLead(lead: any) {
             dynamicInstruction = "\n\n[STATE: NEW INBOUND] Este é um contato novo (inbound). Siga o STEP 0.";
         }
 
-
         currentMessage += dynamicInstruction;
-
-        const ai = new GoogleGenAI({
-            apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
-        });
 
         const systemInstruction = `# 1. IDENTITY & CORE MISSION
 You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
@@ -446,6 +440,31 @@ ${dynamicInstruction}
         }
 
         const responseText = result.text || '';
+
+        // --- GATILHO DE ENVIO DE QR CODE (ARTESANAL) ---
+        // Se a Eliza falou em PIX ou pagamento, a Evolution manda a foto
+        if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
+            console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
+
+            const urlSuaFotoQrCode = "https://i.imgur.com/ihpJUn7.jpeg";
+
+            // Chamada direta para a Evolution API (não passa pelo fluxo de texto comum)
+            await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.EVOLUTION_API_KEY!,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    number: clientNumber,
+                    mediaMessage: {
+                        mediatype: "image",
+                        caption: "Aqui está o QR Code para o pagamento. 🐺",
+                        media: urlSuaFotoQrCode
+                    }
+                })
+            });
+        }
 
         // 6. Split into bubbles with explicit typing
         const chunks = responseText.split('||')
