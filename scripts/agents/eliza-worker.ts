@@ -16,6 +16,33 @@ const ai = new GoogleGenAI({
 process.env.TZ = 'America/Sao_Paulo';
 
 // ==============================================================
+// 📸 VISION OCR (PIX VALIDATION)
+// ==============================================================
+async function analyzeReceipt(base64Data: string, clientPhone: string) {
+    console.log(`📸 [VISION] Analisando comprovante PIX de ${clientPhone}...`);
+    try {
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: "Você é um validador financeiro estrito. Analise a imagem anexada. Verifique se é um comprovante de transferência PIX brasileiro válido. Retorne ESTRITAMENTE um objeto JSON contendo estes dois campos exatos: { \"is_valid\": boolean, \"amount\": number }." },
+                    { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
+                ]
+            }],
+            config: { responseMimeType: "application/json" }
+        });
+
+        const responseText = result.text || "{}";
+        const cleanedJson = responseText.replace(/```json|```/g, "").trim();
+        return JSON.parse(cleanedJson);
+    } catch (error) {
+        console.error("❌ [VISION ERROR]:", error);
+        return { is_valid: false, amount: 0, error: "Falha visual" };
+    }
+}
+
+// ==============================================================
 // 🧠 LEAD PROCESSING LOGIC (STATELESS WOLF CLOSER)
 // ==============================================================
 async function processLead(lead: any) {
@@ -83,6 +110,21 @@ OUTPUT ONLY JSON:
         const elizaReply = parsedResult.reply || "Bora fechar hoje! Qual o seu gargalo principal?";
         
         console.log(`🎯 Intent: ${intent} | Reply: "${elizaReply.substring(0, 50)}..."`);
+
+        // --- HANDOFF DE PAGAMENTO (TEXT INTENT) ---
+        if (intent === "PAID") {
+            const finalReply = "Pagamento identificado! O Denis já foi avisado e entrará em contato em instantes para iniciarmos o projeto. 🚀🐺";
+            await sendWhatsAppPresence(clientNumber, 'composing');
+            await sendWhatsAppMessage(clientNumber, finalReply, 2500);
+            
+            await supabaseAdmin.from('messages').insert({
+                lead_phone: clientNumber, role: 'assistant', content: finalReply, message_id: `eliza_${Date.now()}`
+            });
+
+            await supabaseAdmin.from('leads_lobo').update({ status: 'paid', ai_paused: true, needs_human: true }).eq('id', lead.id);
+            console.log(`✅ [ELIZA WOLF] Lead ${clientNumber} classificado como PAID via texto. Automação finalizada.`);
+            return; // Encerra o processLead permanentemente
+        }
 
         // --- GATILHO DE MÍDIA PIX (Evolution API) ---
         if (intent === "BUY") {
@@ -214,6 +256,57 @@ http.createServer((req, res) => {
                 let clientMessage = '';
 
                 if (messageObj) {
+                    // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
+                    if (messageObj.imageMessage) {
+                        if (isFromMe) return;
+
+                        const { data: lead } = await supabaseAdmin.from('leads_lobo').select('ai_paused, needs_human, id').eq('phone', clientNumber).maybeSingle();
+                        if (lead && (lead.ai_paused === true || lead.needs_human === true)) return;
+
+                        console.log("📸 [WEBHOOK] Imagem recebida. Iniciando validador PIX (Gemini Vision)...");
+
+                        try {
+                            const baseUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
+                            const apikey = process.env.EVOLUTION_API_KEY || "";
+                            const instanceName = body.instance;
+                            const msgId = dataObj.key.id;
+
+                            const evoRes = await fetch(`${baseUrl}/chat/getBase64/${instanceName}`, {
+                                method: 'POST',
+                                headers: { 'apikey': apikey, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ messageId: msgId })
+                            });
+
+                            const data = await evoRes.json();
+                            let base64String = data.base64;
+
+                            if (base64String && base64String.includes('base64,')) {
+                                base64String = base64String.split('base64,')[1];
+                            }
+
+                            if (base64String) {
+                                await sendWhatsAppPresence(clientNumber, 'composing');
+                                const analysis = await analyzeReceipt(base64String, clientNumber);
+
+                                if (analysis.is_valid) {
+                                    console.log(`✅ [OCR SUCCESS] Comprovante de R$${analysis.amount} validado para ${clientNumber}`);
+                                    const finalReply = "Pagamento identificado! O Denis já foi avisado e entrará em contato em instantes para iniciarmos o projeto. 🚀🐺";
+                                    await sendWhatsAppMessage(clientNumber, finalReply);
+                                    
+                                    if (lead) {
+                                        await supabaseAdmin.from('leads_lobo').update({ status: 'paid', ai_paused: true, needs_human: true }).eq('id', lead.id);
+                                    }
+                                } else {
+                                    await sendWhatsAppMessage(clientNumber, "Puxa, não consegui validar esse comprovante automaticamente. 🧐 Poderia enviar uma foto nítida apenas do comprovante ou aguardar um instante para checagem manual?");
+                                    if (lead) await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('id', lead.id);
+                                }
+                            }
+                        } catch (err: any) {
+                            console.error("❌ Erro no fluxo OCR:", err.message);
+                        }
+                        return; // O fluxo morre aqui para a mídia de imagem
+                    }
+
                     // --- 🎙️ AUDIO MESSAGE (Trigger QStash background job) ---
                     if (messageObj.audioMessage) {
                         if (isFromMe) return;
