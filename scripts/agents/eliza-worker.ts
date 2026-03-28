@@ -85,6 +85,30 @@ const functionDeclarations: any[] = [
             required: ['date', 'time', 'client_name'],
         },
     },
+    {
+        name: 'generatePagarmePix',
+        description: 'Usa esta função quando o lead decidir comprar o produto Tier 1 (LP Express). Gera o PIX Copia e Cola.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                product_id: { type: 'STRING', description: "Sempre 'LP_EXPRESS'" },
+                lead_email: { type: 'STRING', description: 'O e-mail do lead' },
+                lead_name: { type: 'STRING', description: 'O nome do lead' }
+            },
+            required: ['product_id', 'lead_email', 'lead_name'],
+        },
+    },
+    {
+        name: 'verifyPagarmeOrder',
+        description: 'Verifica se o lead já pagou o PIX gerado.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                order_id: { type: 'STRING', description: 'O ID do pedido gerado (ex: or_1234)' }
+            },
+            required: ['order_id'],
+        },
+    }
 ];
 
 async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
@@ -181,10 +205,25 @@ async function processLead(lead: any) {
 
         await sendWhatsAppPresence(clientNumber, 'composing');
 
-        let accumulatedDelay = 0;
+        console.log('📤 Sending chunks to WhatsApp:', chunks);
+        await sendWhatsAppPresence(clientNumber, 'composing');
+
+        const CHARS_PER_SECOND = 15;
+        let accumulatedDelayMs = 0;
+
         for (const chunk of chunks) {
-            accumulatedDelay += 2000;
-            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelay);
+            // Calcula o tempo de "digitação" baseado no tamanho da bolha (mínimo 2s, máximo 12s)
+            const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
+            accumulatedDelayMs += bubbleTypingTimeMs;
+
+            console.log(`⌨️ [TYPING] Bolha enviada em ${Math.round(accumulatedDelayMs / 1000)}s: "${chunk.substring(0, 30)}..."`);
+            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
+
+            // Adiciona uma pausa humana de respiração/leitura entre bolhas múltiplas
+            if (chunks.length > 1) {
+                const pauseBetweenBubbles = Math.floor(Math.random() * (2500 - 1000 + 1)) + 1000;
+                accumulatedDelayMs += pauseBetweenBubbles;
+            }
         }
 
         // 7. Save and Release
