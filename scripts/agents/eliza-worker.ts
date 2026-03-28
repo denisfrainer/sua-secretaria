@@ -319,80 +319,61 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
 } // <--- A função deve fechar APENAS aqui
 
 // ==============================================================
-// 🧠 LEAD PROCESSING LOGIC (MVP ARTESANAL)
+// 🧠 LEAD PROCESSING LOGIC (ABSOLUTE MVP - CLASSIFIER MODE)
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
     console.log(`\n===========================================`);
-    console.log(`🧠 [ELIZA MVP - FISSURADA] Processing Lead: ${clientNumber}`);
+    console.log(`🧠 [ELIZA MVP] Processing Lead: ${clientNumber}`);
 
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // 1. Extração do histórico
+        // Puxa apenas a ÚLTIMA mensagem do usuário
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
             .eq('lead_phone', clientNumber)
+            .eq('role', 'user')
             .order('created_at', { ascending: false })
-            .limit(4);
+            .limit(1);
 
-        const chatHistory = rawHistory ? rawHistory.reverse() : [];
+        const lastUserMessage = rawHistory && rawHistory.length > 0 ? rawHistory[0].content : "Oi";
 
-        // 2. Converte o histórico para uma string JSON estrita
-        const jsonHistory = JSON.stringify(chatHistory);
+        const systemPrompt = `You are an intent classifier. Analyze the user's message and return EXACTLY ONE of the following three words based on their intent. DO NOT output any other text, characters, or markdown.
 
-        const systemPrompt = `You are a binary sales decision engine.
-Analyze the following JSON array representing the conversation history.
-Focus strictly on the "content" of the LAST message where "role" is "user".
+                    GREET: The user is saying hello, starting a conversation, or asking generic questions.
+                    BUY: The user is agreeing to buy, saying "yes", "I want it", "pix", "comprar", or showing clear purchase intent.
+                    PAID: The user is indicating they have made the payment, sent a receipt, or attached an image.
 
-Rule 1: If the last user message indicates agreement, desire to buy, or asks for payment (e.g., "sim", "quero", "pix", "comprar"), the intent is "buy".
-Rule 2: If the last user message indicates a payment was made or a receipt was sent, the intent is "paid".
-Rule 3: Otherwise, the intent is "greet".
+                    User Message: ${lastUserMessage}`;
 
-You MUST output a valid JSON object strictly matching this structure:
-{
-  "intent": "greet" | "buy" | "paid",
-  "reply": "exact string based on intent"
-}
+        console.log(`⏳ Calling Gemini API (Classifier Mode) for message: "${lastUserMessage}"`);
 
-Exact replies to use based on intent:
-- For "greet": "Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express (Site de Alta Performance) custa R$ 499 em taxa única. Quer fechar agora?"
-- For "buy": "Perfeito! O valor da LP Express é R$ 499,00. A chave PIX celular é 02959474031. Mande o comprovante aqui para iniciarmos o projeto! 🚀🐺"
-- For "paid": "Aguarde um momento. Meu sistema de visão está validando o comprovante."
-
-Conversation History:
-${jsonHistory}`;
-
-        console.log(`⏳ Calling Gemini API (JSON Router Mode)`);
-
-        // 3. Força o retorno em JSON nativo
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: [
-                { role: 'user', parts: [{ text: systemPrompt }] }
-            ],
-            config: {
-                responseMimeType: "application/json",
-            }
+            contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
         });
 
-        const responseText = response.text || "{}";
-        let elizaReply = "Olá! Tive um problema de conexão. Pode repetir?";
-        let elizaIntent = "error";
+        const intent = (response.text || "").trim().toUpperCase();
+        console.log(`🎯 Intent Detectada: ${intent}`);
 
-        try {
-            const parsed = JSON.parse(responseText);
-            elizaReply = parsed.reply || elizaReply;
-            elizaIntent = parsed.intent || elizaIntent;
-        } catch (e) {
-            console.error("❌ Failed to parse Gemini JSON:", responseText);
+        let elizaReply = "";
+        let triggerImage = false;
+
+        // Roteamento Hardcoded
+        if (intent.includes("BUY")) {
+            elizaReply = "Perfeito! O valor da LP Express é R$ 499,00.\n\nA chave PIX celular é: 02959474031\n\nEstou enviando o QR Code abaixo. Mande o comprovante aqui para iniciarmos o projeto! 🚀🐺";
+            triggerImage = true;
+        } else if (intent.includes("PAID")) {
+            elizaReply = "Aguarde um momento. Meu sistema de visão está validando o comprovante.";
+        } else {
+            // Fallback padrão (GREET ou qualquer outra coisa)
+            elizaReply = "Olá! Sou a Eliza da meatende.ai. Vamos alavancar sua operação? A nossa LP Express (Site de Alta Performance) custa R$ 499 em taxa única. Quer fechar agora?";
         }
 
-        console.log(`🎯 Intent detectada: ${elizaIntent}`);
-
         // --- GATILHO DE MÍDIA ARTESANAL ---
-        if (elizaIntent === "buy") {
+        if (triggerImage) {
             console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
@@ -413,7 +394,7 @@ ${jsonHistory}`;
 
         // --- ENVIO WHATSAPP DIRETO ---
         await sendWhatsAppPresence(clientNumber, 'composing');
-        await sendWhatsAppMessage(clientNumber, elizaReply, 2000); // Tempo estático de 2s
+        await sendWhatsAppMessage(clientNumber, elizaReply, 2000);
 
         const fakeMessageId = `eliza_${Date.now()}`;
         const { error: insertError } = await supabaseAdmin.from('messages').insert({
