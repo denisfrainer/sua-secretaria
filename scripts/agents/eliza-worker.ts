@@ -296,7 +296,7 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
     try {
         // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
         const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash",
             contents: [{
                 role: 'user',
                 parts: [
@@ -351,7 +351,7 @@ async function processLead(lead: any) {
         console.log(`⏳ Calling Gemini API (Classifier Mode) for message: "${lastUserMessage}"`);
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash",
             contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
         });
 
