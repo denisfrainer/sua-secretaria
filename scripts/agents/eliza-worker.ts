@@ -342,7 +342,6 @@ async function processLead(lead: any) {
             .limit(20);
 
         let chatHistory = rawHistory || [];
-        let currentMessage = "Olá";
 
         const hasPreviousAssistantMessage = chatHistory.some((msg: any) => msg.role === 'assistant');
         let dynamicInstruction = "";
@@ -353,7 +352,11 @@ async function processLead(lead: any) {
             dynamicInstruction = "\n\n[STATE: NEW INBOUND] Este é um contato novo (inbound). Siga o STEP 0.";
         }
 
-        currentMessage += dynamicInstruction;
+        // BUSQUE A ÚLTIMA MENSAGEM DO HISTÓRICO (QUE É O QUE O USER ACABOU DE MANDAR)
+        const lastUserMsg = chatHistory[chatHistory.length - 1]?.content || "Olá";
+
+        // Agora sim, a Eliza vai "ler" o que o cliente escreveu
+        let currentMessage = lastUserMsg + dynamicInstruction;
 
         const systemInstruction = `# 1. IDENTITY & CORE MISSION
 You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building automated sales machines, high-performance websites, and AI Agents).
