@@ -4,143 +4,136 @@ import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/se
 import { normalizePhone } from '../../lib/utils/phone';
 import http from 'http';
 
-// Inicialização correta para o SDK Unificado
-const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
-});
-
-const MODEL_NAME = "gemini-3.1-flash-preview";
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+const MODEL_NAME = "gemini-1.5-flash"; // Use 1.5-flash para estabilidade ou o 3.1 se já tiver acesso liberado
 
 // ==============================================================
-// 🧠 LEAD PROCESSING LOGIC (LOBO MVP - FIXED SCOPE)
+// 🧠 LÓGICA DE PROCESSAMENTO (CLASSIFICADOR LOBO)
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
-    console.log(`\n===========================================`);
-    console.log(`🚀 [ELIZA LOBO] Fissurada no Fechamento: ${clientNumber}`);
 
     try {
+        // 1. Marca como analisando para não processar em dobro
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // Busca histórico curto para evitar loops de memória
-        const { data: rawHistory } = await supabaseAdmin
-            .from('messages')
-            .select('role, content')
-            .eq('lead_phone', clientNumber)
-            .order('created_at', { ascending: false })
-            .limit(5);
+        // 2. Busca histórico ultra-curto (Cegueira Seletiva anti-loop)
+        const { data: history } = await supabaseAdmin.from('messages')
+            .select('role, content').eq('lead_phone', clientNumber)
+            .order('created_at', { ascending: false }).limit(3);
 
-        const chatHistory = rawHistory ? rawHistory.reverse() : [];
-        const transcript = chatHistory.map(m => `${m.role === 'assistant' ? 'Eliza' : 'Client'}: ${m.content}`).join('\n');
+        const chatLog = (history || []).reverse().map(m => `${m.role}: ${m.content}`).join('\n');
 
-        const systemPrompt = `# IDENTITY
-You are Eliza, a results-obsessed Sales Assistant for Denis at meatende.ai.
-Your energy is like the Wolf of Wall Street: extremely polite, professional, but RELENTLESS in helping the client get results NOW.
+        const systemPrompt = `Você é um classificador de intenções ultra-rápido.
+Analise o histórico abaixo e decida o próximo passo para vender a LP Express por R$ 499.
 
-# MISSION
-Your ONLY goal is to close the sale of the "LP Express" for R$ 499 or the AI Agent Setup for R$ 500.
-Review the <transcript> and determine the next action.
+REGRAS:
+- Se o cliente quer comprar/pix/valor: responda JSON { "intent": "BUY", "reply": "TEXTO_COM_PIX" }
+- Se o cliente mandou comprovante: responda JSON { "intent": "PAID", "reply": "TEXTO_VALIDANDO" }
+- Caso contrário: responda JSON { "intent": "GREET", "reply": "PITCH_DE_VENDAS" }
 
-# STATE MACHINE (STRICT)
-- GREET: If the client just said "hi" or hasn't committed yet. Output an energetic pitch.
-- BUY: If the client said "yes", "sim", "quero", "pix", or showed intent. Output intent:BUY + the PIX key (02959474031) and instructions for the receipt.
-- PAID: If the client sent an image or says they paid. Output intent:PAID.
+HISTÓRICO:
+${chatLog}
 
-# OUTPUT RULES
-You MUST output a valid JSON ONLY:
-{
-  "intent": "GREET" | "BUY" | "PAID",
-  "reply": "Your energetic, professional response in PT-BR (use '||' for bubbles)"
-}
+Responda APENAS o JSON.`;
 
-<transcript>
-${transcript}
-</transcript>`;
-
-        console.log(`⏳ Chamando Gemini 3.1 Flash Preview...`);
-
-        // No SDK unificado, o acesso é via ai.models.generateContent
-        const response = await ai.models.generateContent({
+        const result = await ai.models.generateContent({
             model: MODEL_NAME,
             contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
             config: { responseMimeType: "application/json" }
         });
 
-        const resultData = JSON.parse(response.text || "{}");
-        const elizaReply = resultData.reply || "Vamos fechar essa LP?";
-        const intent = resultData.intent || "GREET";
+        const { intent, reply } = JSON.parse(result.text || "{}");
 
-        console.log(`🎯 Intent Detectada: ${intent}`);
-
-        // --- GATILHO DE MÍDIA (PIX ARTESANAL) ---
+        // 3. Execução do Fechamento
         if (intent === "BUY") {
-            console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
+            // Manda o texto do PIX
+            await sendWhatsAppMessage(clientNumber, reply + " || Chave: 02959474031", 1000);
+
+            // Manda a Imagem do QR Code (Ajuste a URL se necessário)
             await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
                 method: 'POST',
-                headers: {
-                    'apikey': process.env.EVOLUTION_API_KEY!,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'apikey': process.env.EVOLUTION_API_KEY!, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     number: clientNumber,
                     mediaMessage: {
                         mediatype: "image",
-                        caption: "Aqui está o QR Code! Denis e eu estamos prontos para começar. 🐺🚀",
+                        caption: "QR Code para seu pagamento! 🐺🚀",
                         media: "https://i.imgur.com/ihpJUn7.jpeg"
                     }
                 })
             });
+        } else {
+            await sendWhatsAppMessage(clientNumber, reply, 1000);
         }
 
-        // --- ENVIO WHATSAPP DIRETO ---
-        await sendWhatsAppPresence(clientNumber, 'composing');
-        await sendWhatsAppMessage(clientNumber, elizaReply, 1500);
-
-        // Salva memória e encerra
+        // 4. Salva memória e finaliza ciclo
         await supabaseAdmin.from('messages').insert({
-            lead_phone: clientNumber,
-            role: 'assistant',
-            content: elizaReply,
-            message_id: `eliza_${Date.now()}`
+            lead_phone: clientNumber, role: 'assistant', content: reply, message_id: `eliza_${Date.now()}`
         });
 
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-        console.log(`✅ [SUCCESS] Ciclo completo para ${clientNumber}`);
 
-    } catch (error: any) {
-        console.error("❌ [ELIZA ERROR]:", error.message);
+    } catch (error) {
+        console.error("❌ Erro no ProcessLead:", error);
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
     }
 }
 
 // ==============================================================
-// 🔄 POLLING & SERVER (MANTENHA O RESTANTE IGUAL)
+// 👂 WEBHOOK ROBUSTO (O GATILHO)
+// ==============================================================
+const server = http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/webhook') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', async () => {
+            res.writeHead(200); res.end();
+            try {
+                const payload = JSON.parse(body);
+                // Captura mensagens tanto de upsert quanto de events
+                const data = payload.data?.[0] || payload.data;
+                if (!data?.key || data.key.fromMe) return;
+
+                const rawJid = data.key.remoteJid;
+                const phone = normalizePhone(rawJid);
+                const msg = data.message?.conversation || data.message?.extendedTextMessage?.text || "";
+
+                if (msg) {
+                    console.log(`📥 [MSG] ${phone}: ${msg}`);
+                    // Salva a mensagem do usuário
+                    await supabaseAdmin.from('messages').insert({
+                        lead_phone: phone, role: 'user', content: msg, message_id: data.key.id
+                    });
+                    // Ativa o processamento pelo Worker
+                    await supabaseAdmin.from('leads_lobo').upsert({
+                        phone, status: 'eliza_processing', ai_paused: false
+                    });
+                }
+            } catch (e) { console.error("Erro Webhook:", e); }
+        });
+    } else {
+        res.writeHead(200); res.end('Eliza Online');
+    }
+});
+
+// ==============================================================
+// 🔄 MOTOR DE POLLING
 // ==============================================================
 async function startPolling() {
-    console.log(`🔄 [${MODEL_NAME}] Eliza Ativa...`);
+    console.log('🔄 Eliza Ativa e Monitorando...');
     while (true) {
         try {
-            const { data: leads } = await supabaseAdmin
-                .from('leads_lobo')
-                .select('*')
-                .eq('status', 'eliza_processing')
-                .eq('ai_paused', false)
-                .limit(1);
+            const { data: leads } = await supabaseAdmin.from('leads_lobo')
+                .select('*').eq('status', 'eliza_processing').eq('ai_paused', false).limit(1);
 
             if (leads && leads.length > 0) {
                 await processLead(leads[0]);
             }
-        } catch (e) {
-            console.error("Polling error:", e);
-        }
+        } catch (e) { console.error("Erro Polling:", e); }
         await new Promise(r => setTimeout(r, 4000));
     }
 }
 
-const PORT = process.env.PORT || 8080;
-http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end('Eliza Worker Online');
-}).listen(PORT);
-
+server.listen(process.env.PORT || 8080);
 startPolling();
