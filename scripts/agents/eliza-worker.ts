@@ -26,57 +26,39 @@ async function processLead(lead: any) {
     try {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // Fetch last 3 messages from user/assistant
+        // Fetch last 5 messages from user/assistant to prevent "Cegueira Seletiva" (Anti-Loop)
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
             .select('role, content')
             .eq('lead_phone', clientNumber)
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(5);
 
         let transcript = "";
+        let lastMsg = "Oi";
+        
         if (rawHistory && rawHistory.length > 0) {
             // Reverse to get chronological order (oldest first)
             const chronological = rawHistory.reverse();
             transcript = chronological.map(msg => `${msg.role === 'user' ? 'Client' : 'Eliza'}: ${msg.content}`).join('\n');
+            const userMsgs = chronological.filter(m => m.role === 'user');
+            if (userMsgs.length > 0) {
+                lastMsg = userMsgs[userMsgs.length - 1].content;
+            }
         } else {
             transcript = "Client: Oi";
         }
 
-        const systemPrompt = `# ROLE
-You are Eliza, a relentless, high-energy, and results-obsessed Sales Closer for Denis at meatende.ai. Your personality is inspired by the "Wolf of Wall Street": extremely professional, polite, but with an infinite drive to help clients reach their goals by closing deals immediately. You do not waste time; you solve problems by facilitating the purchase.
+        const systemPrompt = `You are a binary Sales Engine. 
+Last User Message: ${lastMsg}
+Context: ${transcript}
 
-# OBJECTIVE
-Your only goal is to classify the client's intent and generate a high-conversion response in Brazilian Portuguese (PT-BR).
+RULES:
+- User wants to buy/price/pix? Intent: BUY. Reply: 'Excelente! O PIX é 02959474031 (celular). Manda o comprovante!'
+- User said 'Oi' or general talk? Intent: GREET. Reply: 'Olá! LP Express por R$ 499. Vamos fechar?'
 
-# BUSINESS CONTEXT
-- **Product 1: LP Express** (High-Performance Landing Page). Price: R$ 499 (One-time fee).
-- **Product 2: AI Agent** (SDR Automation). Price: R$ 500 (Setup fee with R$ 1,000 discount applied) + R$ 299/month.
-- **Payment Method:** PIX Key (Cell phone): 02959474031.
-
-# INTENT CLASSIFICATION RULES
-1. **GREET**: Use this if the client is saying hello, asking general questions, or hasn't committed yet.
-   - *Action*: Give an energetic pitch about the LP Express and ask if they want to scale their business now.
-2. **BUY**: Use this if the client says "yes", "sim", "quero", "manda o pix", "qual o valor", or shows any clear intent to move forward with the payment.
-   - *Action*: Confirm the choice with extreme excitement, provide the PIX key (02959474031), and instruct them to send the receipt.
-3. **PAID**: Use this if the client claims to have paid, sent a receipt, or attached an image.
-   - *Action*: Tell them to wait a second while our system auto-validates the proof of payment.
-
-# RESPONSE GUIDELINES
-- **Language**: Natural Brazilian Portuguese (PT-BR).
-- **Formatting**: Use "||" to separate distinct ideas into different message bubbles.
-- **Tone**: Energetic, polite, and focused on results. No investigative questions if the intent is BUY.
-
-# OUTPUT FORMAT
-You must output ONLY a valid JSON object. Do not include markdown blocks or extra text.
-{
-  "intent": "GREET" | "BUY" | "PAID",
-  "reply": "Your response here following the rules above"
-}
-
-# CONVERSATION LOG
-${transcript}
-`;
+OUTPUT ONLY JSON:
+{ "intent": "...", "reply": "..." }`;
 
         console.log(`⏳ Calling Gemini API (Wolf Closer Mode)`);
 
@@ -132,26 +114,12 @@ ${transcript}
             }
         }
 
-        // --- DIVISÃO EM BOLHAS DE MENSAGEM ---
-        const chunks = elizaReply.split('||').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+        // --- ENVIO SIMPLIFICADO DE MENSAGENS (PREVENÇÃO DE SPAM) ---
+        // O modelo já vem com a regra de enviar frases curtas.
+        console.log(`📤 Enviando resposta para ${clientNumber}: "${elizaReply}"`);
         
-        console.log('📤 Enviando bolhas via WhatsApp:', chunks);
         await sendWhatsAppPresence(clientNumber, 'composing');
-
-        const CHARS_PER_SECOND = 15;
-        let accumulatedDelayMs = 0;
-
-        for (const chunk of chunks) {
-            const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 8000));
-            accumulatedDelayMs += bubbleTypingTimeMs;
-
-            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
-
-            if (chunks.length > 1) {
-                const pauseBetweenBubbles = Math.floor(Math.random() * 1000) + 1000;
-                accumulatedDelayMs += pauseBetweenBubbles;
-            }
-        }
+        await sendWhatsAppMessage(clientNumber, elizaReply, 2500); // Fixo de 2.5s para humanização básica
 
         // --- SALVAR MENSAGEM ---
         const fakeMessageId = `eliza_${Date.now()}`;
