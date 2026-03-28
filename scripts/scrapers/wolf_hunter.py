@@ -1,3 +1,4 @@
+import sys
 import socket
 import os
 import json
@@ -175,7 +176,6 @@ def run_hunter():
             print("--- INÍCIO DA RESPOSTA BRUTA ---")
             print(response.text) 
             print("--- FIM DA RESPOSTA BRUTA ---")
-            import sys
             sys.stdout.flush()
 
         if leads_data:
