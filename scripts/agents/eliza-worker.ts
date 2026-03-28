@@ -18,15 +18,16 @@ process.env.TZ = 'America/Sao_Paulo';
 // ==============================================================
 // 📸 VISION OCR (PIX VALIDATION)
 // ==============================================================
-async function analyzeReceipt(base64Data: string, clientPhone: string) {
+async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
     console.log(`📸 [VISION] Analisando comprovante PIX de ${clientPhone}...`);
     try {
-        const result = await ai.models.generateContent({
+        const visionAi = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+        const result = await visionAi.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
-                    { text: "Você é um validador financeiro estrito. Analise a imagem anexada. Verifique se é um comprovante de transferência PIX brasileiro válido. Retorne ESTRITAMENTE um objeto JSON contendo estes dois campos exatos: { \"is_valid\": boolean, \"amount\": number }." },
+                    { text: "Analise este comprovante PIX. Retorne ESTRITAMENTE um JSON no formato: { \"is_valid_pix\": boolean, \"amount\": number }. Para ser válido (is_valid_pix: true), o valor pago (amount) DEVE ser exatamente 0.01. Caso contrário, retorne false." },
                     { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
                 ]
             }],
@@ -38,7 +39,7 @@ async function analyzeReceipt(base64Data: string, clientPhone: string) {
         return JSON.parse(cleanedJson);
     } catch (error) {
         console.error("❌ [VISION ERROR]:", error);
-        return { is_valid: false, amount: 0, error: "Falha visual" };
+        return { is_valid_pix: false, amount: 0, error: "Falha visual" };
     }
 }
 
@@ -268,14 +269,26 @@ http.createServer((req, res) => {
                         try {
                             const baseUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
                             const apikey = process.env.EVOLUTION_API_KEY || "";
-                            const instanceName = body.instance;
+                            // Extração segura da instância
+                            const instanceName = body.instance || process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "";
+                            
+                            if (!instanceName) throw new Error("Instance name missing in webhook payload.");
+                            
                             const msgId = dataObj.key.id;
+
+                            // Tratamento do Infinite Hang (Timeout de 10s)
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
                             const evoRes = await fetch(`${baseUrl}/chat/getBase64/${instanceName}`, {
                                 method: 'POST',
                                 headers: { 'apikey': apikey, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ messageId: msgId })
+                                body: JSON.stringify({ messageId: msgId }),
+                                signal: controller.signal
                             });
+                            clearTimeout(timeoutId);
+
+                            if (!evoRes.ok) throw new Error(`Evolution API Error: ${evoRes.status} ${evoRes.statusText}`);
 
                             const data = await evoRes.json();
                             let base64String = data.base64;
@@ -286,23 +299,26 @@ http.createServer((req, res) => {
 
                             if (base64String) {
                                 await sendWhatsAppPresence(clientNumber, 'composing');
-                                const analysis = await analyzeReceipt(base64String, clientNumber);
+                                const analysis = await analyzeReceiptWithGemini(base64String, clientNumber);
 
-                                if (analysis.is_valid) {
-                                    console.log(`✅ [OCR SUCCESS] Comprovante de R$${analysis.amount} validado para ${clientNumber}`);
-                                    const finalReply = "Pagamento identificado! O Denis já foi avisado e entrará em contato em instantes para iniciarmos o projeto. 🚀🐺";
+                                if (analysis.is_valid_pix && analysis.amount === 0.01) {
+                                    console.log(`✅ [OCR SUCCESS] Comprovante BETA de R$${analysis.amount} validado para ${clientNumber}`);
+                                    const finalReply = "Pagamento de R$ 0,01 identificado! O Denis já foi avisado e entrará em contato em instantes para iniciarmos o projeto. 🚀🐺";
                                     await sendWhatsAppMessage(clientNumber, finalReply);
                                     
                                     if (lead) {
                                         await supabaseAdmin.from('leads_lobo').update({ status: 'paid', ai_paused: true, needs_human: true }).eq('id', lead.id);
                                     }
                                 } else {
-                                    await sendWhatsAppMessage(clientNumber, "Puxa, não consegui validar esse comprovante automaticamente. 🧐 Poderia enviar uma foto nítida apenas do comprovante ou aguardar um instante para checagem manual?");
+                                    console.log(`❌ [OCR REJEITADO] Retornou: ${analysis.amount} | Validade: ${analysis.is_valid_pix}`);
+                                    await sendWhatsAppMessage(clientNumber, "Puxa, não consegui validar esse comprovante. Para o teste beta, certifique-se de enviar EXATAMENTE R$ 0,01. 🧐 Aguarde um instante para checagem manual.");
                                     if (lead) await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('id', lead.id);
                                 }
+                            } else {
+                                throw new Error("Base64 string nula ou inválida.");
                             }
                         } catch (err: any) {
-                            console.error("❌ Erro no fluxo OCR:", err.message);
+                            console.error("❌ Erro no fluxo de OCR da Imagem:", err.name === 'AbortError' ? 'Timeout ao tentar capturar imagem (Infinite Hang)' : err.message);
                         }
                         return; // O fluxo morre aqui para a mídia de imagem
                     }
