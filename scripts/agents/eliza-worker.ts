@@ -440,6 +440,52 @@ http.createServer((req, res) => {
         return;
     }
 
+    if (req.method === 'POST' && req.url === '/webhook-kiwify') {
+        let bodyStr = '';
+        req.on('data', chunk => { bodyStr += chunk.toString(); });
+
+        req.on('end', async () => {
+            // 5. RESPONSE: Always return 200 OK immediately Kiwify timeout prevents retry
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'received' }));
+
+            try {
+                const body = JSON.parse(bodyStr);
+
+                // 2. PAYLOAD PARSING
+                const orderStatus = body.order_status;
+                const customerMobile = body.Customer?.mobile;
+
+                if (orderStatus === 'approved' && customerMobile) {
+                    const clientNumber = normalizePhone(String(customerMobile));
+                    
+                    console.log(`💰 [KIWIFY WEBHOOK] Pagamento aprovado para ${clientNumber}`);
+                    
+                    // 3. SUPABASE UPDATE
+                    const { error: updateError } = await supabaseAdmin
+                        .from('leads_lobo')
+                        .update({ status: 'paid', ai_paused: true, needs_human: true })
+                        .eq('phone', clientNumber);
+
+                    if (updateError) {
+                        console.error('❌ [KIWIFY WEBHOOK] Erro ao atualizar Supabase:', updateError);
+                    } else {
+                        // 4. TRIGGER WHATSAPP MESSAGE
+                        const message = "Pagamento confirmado pelo sistema! O seu projeto foi ativado e o Denis já está assumindo o chat para iniciarmos o setup. 🐺🚀";
+                        await sendWhatsAppPresence(clientNumber, 'composing');
+                        await sendWhatsAppMessage(clientNumber, message, 2500);
+                        console.log(`✅ [KIWIFY WEBHOOK] Mensagem de onboarding enviada para ${clientNumber}`);
+                    }
+                } else {
+                    console.log(`ℹ️ [KIWIFY WEBHOOK] Evento ignorado: status=${orderStatus}, has_mobile=${!!customerMobile}`);
+                }
+            } catch (error) {
+                console.error('❌ [KIWIFY WEBHOOK CRASH]:', error);
+            }
+        });
+        return;
+    }
+
     res.writeHead(404);
     res.end();
 }).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
