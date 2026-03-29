@@ -246,7 +246,7 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
     try {
         // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
         const result = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
@@ -583,50 +583,14 @@ http.createServer((req, res) => {
                 if (messageObj) {
                     // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
                     if (messageObj.imageMessage) {
-                        console.log("📸 [WEBHOOK] Imagem recebida. Iniciando fluxo de validação artesanal...");
+                        console.log("📸 [WEBHOOK] Imagem recebida. Executando Webhook Hacker (Base64 Nativo)...");
 
-                        // 1. Safe extraction of Evolution Credentials with fallbacks
-                        const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
-                        const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
-                        // Instance can be pulled from the context of the incoming message object
-                        const evInstance = body.instance || process.env.EVOLUTION_INSTANCE_NAME || "agente-lobo";
+                        // Evolution API injects the base64 string directly into the message object when the 'base64' webhook flag is true.
+                        // We check the most common locations in the payload structure.
+                        const base64 = messageObj.base64 || dataObj.base64 || body.base64;
 
-                        const msgId = dataObj.key.id;
-
-                        if (!evUrl || !evKey) {
-                            console.error("❌ [WEBHOOK ERROR] Missing Evolution API credentials for Base64 fetch.");
-                            return;
-                        }
-
-                        console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64FromMediaMessage/${evInstance}`);
-
-                        try {
-                            // Extract the correct message object payload
-                            // In Evolution API webhooks, the media message structure is usually under data.message
-                            const payload = dataObj.message || messageObj;
-
-                            const evoRes = await fetch(`${evUrl}/chat/getBase64FromMediaMessage/${evInstance}`, {
-                                method: 'POST',
-                                headers: {
-                                    'apikey': evKey,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    message: payload
-                                })
-                            });
-
-                            if (!evoRes.ok) {
-                                // Diagnostic fallback to catch specific error messages
-                                const errBody = await evoRes.text();
-                                throw new Error(`Status ${evoRes.status}. Details: ${errBody}`);
-                            }
-
-                            const data = await evoRes.json();
-                            const base64 = data.base64 || data;
-
-                            if (base64 && typeof base64 === 'string') {
-                                console.log(`✅ [OCR START] Base64 captured (Length: ${base64.length}). Sending to Gemini...`);
+                        if (base64 && typeof base64 === 'string') {
+                            console.log(`✅ [OCR START] Base64 nativo capturado com sucesso (Tamanho: ${base64.length}). Enviando para a visão do Gemini...`);
                                 const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
 
                                 console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
@@ -646,11 +610,9 @@ http.createServer((req, res) => {
                                     await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
                                 }
                             } else {
-                                console.error("❌ [OCR ERROR] Failed to retrieve Base64 data from Evolution API response.");
+                                console.error("❌ [OCR ERROR] Base64 string not found in the webhook payload.");
+                                console.log("🚨 [DIAGNOSTIC] Please verify that 'base64: true' is enabled in the Evolution API Webhook settings.");
                             }
-                        } catch (fetchError: any) {
-                            console.error("❌ [WEBHOOK FETCH CRASH]:", fetchError.message);
-                        }
 
                         return; // Interrompe o fluxo para não tratar a imagem como texto
                     }
