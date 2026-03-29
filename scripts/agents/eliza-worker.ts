@@ -598,11 +598,11 @@ http.createServer((req, res) => {
                             return;
                         }
 
-                        console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64FromMessage/${evInstance}`);
+                        console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64FromMediaMessage/${evInstance}`);
 
                         try {
-                            // 2. Pega o Base64 da imagem via Evolution API
-                            const evoRes = await fetch(`${evUrl}/chat/getBase64FromMessage/${evInstance}`, {
+                            // CRITICAL FIX: The correct endpoint name is getBase64FromMediaMessage
+                            const evoRes = await fetch(`${evUrl}/chat/getBase64FromMediaMessage/${evInstance}`, {
                                 method: 'POST',
                                 headers: {
                                     'apikey': evKey,
@@ -612,14 +612,14 @@ http.createServer((req, res) => {
                             });
 
                             if (!evoRes.ok) {
-                                throw new Error(`Evolution API responded with status ${evoRes.status}`);
+                                throw new Error(`Evolution API HTTP Status: ${evoRes.status} (Endpoint might still be incorrect for this specific API version)`);
                             }
 
                             const data = await evoRes.json();
                             const base64 = data.base64 || data;
 
                             if (base64 && typeof base64 === 'string') {
-                                console.log(`✅ [OCR START] Base64 captured for ${clientNumber}, ready for Gemini analysis.`);
+                                console.log(`✅ [OCR START] Base64 captured (Length: ${base64.length}). Sending to Gemini...`);
                                 const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
 
                                 console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
