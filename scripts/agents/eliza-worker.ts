@@ -446,7 +446,7 @@ ${dynamicInstruction}
                     number: clientNumber,
                     mediatype: "image",
                     mimetype: "image/jpeg",
-                    caption: "Aqui está o QR Code! 🐺 Se preferir, o código Copia e Cola está logo abaixo:",
+                    caption: `Aqui está o QR Code! 🐺 Se preferir, pode usar o Copia e Cola automático abaixo:\n\n${pixCopiaECola}`,
                     media: urlSuaFotoQrCode
                 })
             })
@@ -457,9 +457,6 @@ ${dynamicInstruction}
                 .catch(err => {
                     console.error("❌ [MEDIA FETCH ERROR]:", err);
                 });
-
-            // 2. Injeta o PIX Copia e Cola como uma bolha de texto isolada
-            chunks.push(pixCopiaECola);
         }
 
         console.log('📤 Sending chunks to WhatsApp:', chunks);
