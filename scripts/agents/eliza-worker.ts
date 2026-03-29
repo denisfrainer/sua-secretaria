@@ -81,8 +81,8 @@ async function processLead(lead: any) {
 Last User Message: ${lastMsg}
 
 RULES:
-1. User says they paid ('paguei', 'tá na mão', 'está aí', 'comprovante'): Intent = PAID. Reply = 'Pagamento em validação! Denis já vai conferir e iniciar seu projeto. 🚀🐺'
-2. User wants to buy, asks for PIX or price: Intent = BUY. Reply = 'Excelente! O PIX é 02959474031 (celular). Manda o comprovante de R$ 0,01!'
+1. User says they paid ('paguei', 'tá na mão', 'está aí', 'comprovante'): Intent = PAID. Reply = 'Payment is being validated by the system! Denis will be notified in seconds to start your project. 🚀'
+2. User wants to buy, asks for PIX or price: Intent = BUY. Reply = 'Excellent! You can secure your LP Express (High-Performance Site) through our secure Kiwify checkout here: https://pay.kiwify.com.br/C4hT4th \\n\\nLet me know once you have completed the payment! 🚀🐺'
 3. User says hello or general talk: Intent = GREET. Reply = 'Olá! LP Express por R$ 499. Vamos fechar?'
 
 OUTPUT ONLY A VALID JSON:
@@ -127,34 +127,7 @@ OUTPUT ONLY A VALID JSON:
         }
 
         // --- GATILHO DE MÍDIA PIX (Evolution API) ---
-        if (intent === "BUY") {
-            const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
-            const evKey = process.env.EVOLUTION_API_KEY || "";
-            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "";
-
-            if (evUrl && evKey && evInstance) {
-                console.log(`🖼️ [MEDIA] Enviando QR Code via Evolution API para ${clientNumber}`);
-                try {
-                    await fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
-                        method: 'POST',
-                        headers: {
-                            'apikey': evKey,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            number: clientNumber,
-                            mediaMessage: {
-                                mediatype: "image",
-                                caption: "QR Code - meatende.ai 🚀🐺",
-                                media: "https://i.imgur.com/ihpJUn7.jpeg" // Hosted QR Code
-                            }
-                        })
-                    });
-                } catch (mediaErr) {
-                    console.error("❌ Erro ao enviar QR Code:", mediaErr);
-                }
-            }
-        }
+        // (Desativado: O link de pagamento agora é enviado apenas por texto via Kiwify)
 
         // --- ENVIO SIMPLIFICADO DE MENSAGENS (PREVENÇÃO DE SPAM) ---
         // O modelo já vem com a regra de enviar frases curtas.
@@ -262,7 +235,7 @@ http.createServer((req, res) => {
 
                     console.log(`💰 [KIWIFY] Processando pagamento para o número limpo: ${clientNumber}`);
 
-                    // 2. Atualiza Supabase (leads_lobo)
+                    // 2. Atualiza Supabase (leads_lobo e leads)
                     // Usamos o número limpo aqui também para bater com o banco
                     await supabaseAdmin.from('leads_lobo').update({
                         status: 'paid',
@@ -270,8 +243,14 @@ http.createServer((req, res) => {
                         needs_human: true
                     }).eq('phone', clientNumber);
 
+                    await supabaseAdmin.from('leads').update({
+                        status: 'paid',
+                        ai_paused: true,
+                        needs_human: true
+                    }).eq('phone', clientNumber);
+
                     // 3. Envio para Evolution
-                    const message = "Pagamento confirmado pelo sistema! O Denis já foi avisado e já vai assumir o chat para iniciarmos o seu onboarding! 🐺🚀";
+                    const message = "Obrigado pela compra! Estou notificando o Denis imediatamente... 🐺🚀";
 
                     try {
                         // Forçamos o envio apenas com os dígitos, sem o sufixo @s.whatsapp.net
