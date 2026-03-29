@@ -256,23 +256,32 @@ http.createServer((req, res) => {
                 const customerMobile = body.Customer?.mobile;
 
                 if ((orderStatus === 'approved' || orderStatus === 'paid') && customerMobile) {
-                    const clientNumber = normalizePhone(String(customerMobile));
+                    // 1. Limpeza agressiva: mantém APENAS números
+                    // Kiwify pode mandar +55 11 99999-9999 -> vira 5511999999999
+                    const clientNumber = String(customerMobile).replace(/\D/g, '');
 
-                    // Atualiza tabelas no Supabase
-                    await supabaseAdmin.from('leads').update({ status: 'paid' }).eq('phone', clientNumber);
+                    console.log(`💰 [KIWIFY] Processando pagamento para o número limpo: ${clientNumber}`);
+
+                    // 2. Atualiza Supabase (leads_lobo)
+                    // Usamos o número limpo aqui também para bater com o banco
                     await supabaseAdmin.from('leads_lobo').update({
                         status: 'paid',
                         ai_paused: true,
                         needs_human: true
                     }).eq('phone', clientNumber);
 
-                    const message = "Pagamento confirmado! O Denis já foi avisado e assume o chat em instantes. 🐺🚀";
-                    await sendWhatsAppMessage(clientNumber, message, 2500);
-                    console.log(`✅ [KIWIFY] Lead ${clientNumber} atualizado para PAID.`);
+                    // 3. Envio para Evolution
+                    const message = "Pagamento confirmado pelo sistema! O Denis já foi avisado e já vai assumir o chat para iniciarmos o seu onboarding! 🐺🚀";
+
+                    try {
+                        // Forçamos o envio apenas com os dígitos, sem o sufixo @s.whatsapp.net
+                        await sendWhatsAppMessage(clientNumber, message, 2500);
+                        console.log(`✅ [KIWIFY] Mensagem enviada com sucesso para ${clientNumber}`);
+                    } catch (sendError) {
+                        console.error(`❌ [KIWIFY] Erro ao disparar WhatsApp:`, sendError);
+                    }
                 }
-            } catch (error) {
-                console.error('❌ [KIWIFY ERROR]:', error);
-            }
+            } catch (e) { console.error("Erro Webhook Kiwify:", e); }
         });
         return;
     }
