@@ -444,16 +444,19 @@ ${dynamicInstruction}
                 },
                 body: JSON.stringify({
                     number: clientNumber,
-                    mediaMessage: {
-                        mediatype: "image",
-                        caption: "Aqui está o QR Code! 🐺 Se preferir, o código Copia e Cola está logo abaixo:",
-                        media: urlSuaFotoQrCode
-                    }
+                    mediatype: "image",
+                    mimetype: "image/jpeg",
+                    caption: "Aqui está o QR Code! 🐺 Se preferir, o código Copia e Cola está logo abaixo:",
+                    media: urlSuaFotoQrCode
                 })
             })
             .then(res => res.json())
-            .then(data => console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data)))
-            .catch(err => console.error("❌ [MEDIA FETCH ERROR]:", err));
+            .then(data => {
+                console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data));
+            })
+            .catch(err => {
+                console.error("❌ [MEDIA FETCH ERROR]:", err);
+            });
 
             // 2. Injeta o PIX Copia e Cola como uma bolha de texto isolada
             chunks.push(pixCopiaECola);
