@@ -424,7 +424,7 @@ ${dynamicInstruction}
             
             console.log(`🔄 [TOOL] Returning tool response array to Gemini...`);
             // Pass the array of Parts directly
-            result = await chat.sendMessage(parts);
+            result = await chat.sendMessage({ message: parts } as any);
         }
 
         const responseText = result.text || '';
