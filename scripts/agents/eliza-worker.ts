@@ -429,7 +429,7 @@ ${dynamicInstruction}
             console.log(`💸 [ZERO FRICTION] Disparando Combo (QR Code + Texto) para ${clientNumber}`);
 
             const urlSuaFotoQrCode = "https://eykfioezqcliwvbhckli.supabase.co/storage/v1/object/public/PIX/qrcode.jpeg";
-            const pixCopiaECola = "0002012636br.gov.bcb.pix0114+5548980977545204000053039865802BR5913Denis Frainer6013Florianopolis62070503***6304XXXX";
+            const pixCopiaECola = "00020101021126330014br.gov.bcb.pix0111029594740315204000053039865406499.005802BR5913DENIS F LOPES6012PORTO ALEGRE62070503***6304F302"; 
 
             // 1. Dispara a Imagem via Evolution API (Fire and Forget com Log de Diagnóstico)
             const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
@@ -588,39 +588,65 @@ http.createServer((req, res) => {
                     if (messageObj.imageMessage) {
                         console.log("📸 [WEBHOOK] Imagem recebida. Iniciando fluxo de validação artesanal...");
 
-                        // 1. Pega o Base64 da imagem via Evolution API
-                        // Nota: Você vai precisar da URL da sua instância e da API Key da Evolution no .env
-                        const instance = body.instance;
+                        // 1. Safe extraction of Evolution Credentials with fallbacks
+                        const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
+                        const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
+                        // Instance can be pulled from the context of the incoming message object
+                        const evInstance = body.instance || process.env.EVOLUTION_INSTANCE_NAME || "agente-lobo";
+                        
                         const msgId = dataObj.key.id;
 
-                        const evoRes = await fetch(`${process.env.EVOLUTION_URL}/chat/getBase64/` + instance, {
-                            method: 'POST',
-                            headers: { 'apikey': process.env.EVOLUTION_API_KEY!, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ messageId: msgId })
-                        });
-
-                        const { base64 } = await evoRes.json();
-
-                        if (base64) {
-                            const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
-                            
-                            console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
-
-                            // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
-                            const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
-                            const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
-
-                            if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
-                                console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
-
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
-                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
-                            } else {
-                                console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
-                                await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
-                                await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
-                            }
+                        if (!evUrl || !evKey) {
+                            console.error("❌ [WEBHOOK ERROR] Missing Evolution API credentials for Base64 fetch.");
+                            return;
                         }
+
+                        console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64/${evInstance}`);
+
+                        try {
+                            // 2. Pega o Base64 da imagem via Evolution API
+                            const evoRes = await fetch(`${evUrl}/chat/getBase64/${evInstance}`, {
+                                method: 'POST',
+                                headers: { 
+                                    'apikey': evKey, 
+                                    'Content-Type': 'application/json' 
+                                },
+                                body: JSON.stringify({ messageId: msgId })
+                            });
+
+                            if (!evoRes.ok) {
+                                throw new Error(`Evolution API responded with status ${evoRes.status}`);
+                            }
+
+                            const { base64 } = await evoRes.json();
+
+                            if (base64) {
+                                console.log(`✅ [OCR START] Base64 captured for ${clientNumber}, ready for Gemini analysis.`);
+                                const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
+                                
+                                console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
+
+                                // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
+                                const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
+                                const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
+
+                                if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
+                                    console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
+
+                                    await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
+                                    await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
+                                } else {
+                                    console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
+                                    await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
+                                    await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
+                                }
+                            } else {
+                                console.error("❌ [OCR ERROR] Failed to retrieve Base64 data from Evolution API response.");
+                            }
+                        } catch (fetchError: any) {
+                            console.error("❌ [WEBHOOK FETCH CRASH]:", fetchError.message);
+                        }
+
                         return; // Interrompe o fluxo para não tratar a imagem como texto
                     }
 
