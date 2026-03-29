@@ -1,7 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
-import { normalizePhone } from '../../lib/utils/phone';
 import http from 'http';
 
 /**
@@ -14,34 +13,6 @@ const ai = new GoogleGenAI({
 });
 
 process.env.TZ = 'America/Sao_Paulo';
-
-// ==============================================================
-// 📸 VISION OCR (PIX VALIDATION)
-// ==============================================================
-async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
-    console.log(`📸 [VISION] Analisando comprovante PIX de ${clientPhone}...`);
-    try {
-        const visionAi = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
-        const result = await visionAi.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [{
-                role: 'user',
-                parts: [
-                    { text: "Analise este comprovante PIX. Retorne ESTRITAMENTE um JSON no formato: { \"is_valid_pix\": boolean, \"amount\": number }. Para ser válido (is_valid_pix: true), o valor pago (amount) DEVE ser exatamente 0.01. Caso contrário, retorne false." },
-                    { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
-                ]
-            }],
-            config: { responseMimeType: "application/json" }
-        });
-
-        const responseText = result.text || "{}";
-        const cleanedJson = responseText.replace(/```json|```/g, "").trim();
-        return JSON.parse(cleanedJson);
-    } catch (error) {
-        console.error("❌ [VISION ERROR]:", error);
-        return { is_valid_pix: false, amount: 0, error: "Falha visual" };
-    }
-}
 
 // ==============================================================
 // 🧠 LEAD PROCESSING LOGIC (STATELESS WOLF CLOSER)
@@ -81,8 +52,8 @@ async function processLead(lead: any) {
 Last User Message: ${lastMsg}
 
 RULES:
-1. User says they paid ('paguei', 'tá na mão', 'está aí', 'comprovante'): Intent = PAID. Reply = 'Payment is being validated by the system! Denis will be notified in seconds to start your project. 🚀'
-2. User wants to buy, asks for PIX or price: Intent = BUY. Reply = 'Excellent! You can secure your LP Express (High-Performance Site) through our secure Kiwify checkout here: https://pay.kiwify.com.br/C4hT4th \\n\\nLet me know once you have completed the payment! 🚀🐺'
+1. User says they paid ('paguei', 'tá na mão', 'está aí', 'comprovante'): Intent = PAID. Reply = 'Pagamento em validação! Denis já vai conferir e iniciar seu projeto. 🚀🐺'
+2. User wants to buy, asks for PIX or price: Intent = BUY. Reply = 'Excelente! Garanta a sua LP Express pelo nosso checkout seguro da Kiwify: https://pay.kiwify.com.br/C4hT4th \\n\\nMe avise assim que concluir o pagamento! 🚀🐺'
 3. User says hello or general talk: Intent = GREET. Reply = 'Olá! LP Express por R$ 499. Vamos fechar?'
 
 OUTPUT ONLY A VALID JSON:
@@ -125,9 +96,6 @@ OUTPUT ONLY A VALID JSON:
             console.log(`✅ [ELIZA WOLF] Lead ${clientNumber} classificado como PAID via texto. Automação finalizada.`);
             return; // Encerra o processLead permanentemente
         }
-
-        // --- GATILHO DE MÍDIA PIX (Evolution API) ---
-        // (Desativado: O link de pagamento agora é enviado apenas por texto via Kiwify)
 
         // --- ENVIO SIMPLIFICADO DE MENSAGENS (PREVENÇÃO DE SPAM) ---
         // O modelo já vem com a regra de enviar frases curtas.
