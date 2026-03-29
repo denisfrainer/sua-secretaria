@@ -446,29 +446,39 @@ http.createServer((req, res) => {
 
         req.on('end', async () => {
             // 5. RESPONSE: Always return 200 OK immediately Kiwify timeout prevents retry
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'received' }));
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('OK');
 
             try {
                 const body = JSON.parse(bodyStr);
+
+                // 3. LOGIC IMPLEMENTATION - Log the incoming data for Railway monitoring
+                console.log(`📥 [KIWIFY RAW PAYLOAD]:\n`, JSON.stringify(body, null, 2));
 
                 // 2. PAYLOAD PARSING
                 const orderStatus = body.order_status;
                 const customerMobile = body.Customer?.mobile;
 
-                if (orderStatus === 'approved' && customerMobile) {
+                if ((orderStatus === 'approved' || orderStatus === 'paid') && customerMobile) {
                     const clientNumber = normalizePhone(String(customerMobile));
                     
-                    console.log(`💰 [KIWIFY WEBHOOK] Pagamento aprovado para ${clientNumber}`);
+                    console.log(`💰 [KIWIFY WEBHOOK] Pagamento ${orderStatus} detectado para ${clientNumber}`);
                     
                     // 3. SUPABASE UPDATE
+                    // Updating 'leads' as explicitly requested
                     const { error: updateError } = await supabaseAdmin
+                        .from('leads')
+                        .update({ status: 'paid' })
+                        .eq('phone', clientNumber);
+
+                    // Concurrently also update 'leads_lobo' so Eliza AI engine stops acting on this lead
+                    await supabaseAdmin
                         .from('leads_lobo')
                         .update({ status: 'paid', ai_paused: true, needs_human: true })
                         .eq('phone', clientNumber);
 
                     if (updateError) {
-                        console.error('❌ [KIWIFY WEBHOOK] Erro ao atualizar Supabase:', updateError);
+                        console.error('❌ [KIWIFY WEBHOOK] Erro ao atualizar Supabase (leads):', updateError);
                     } else {
                         // 4. TRIGGER WHATSAPP MESSAGE
                         const message = "Pagamento confirmado pelo sistema! O seu projeto foi ativado e o Denis já está assumindo o chat para iniciarmos o setup. 🐺🚀";
