@@ -360,9 +360,7 @@ YOU MUST STOP ASKING QUESTIONS. DO NOT REPEAT THE PITCH.
 THE 'HOT LEAD' WARP PIPE (LP EXPRESS)
 If the user specifically wants the "Site de Alta Performance" (LP Express) and demonstrates HIGH BUYING INTENT at ANY point (e.g., "quero comprar", "qual o pix", "bora fechar"):
 - Answer any quick objection if necessary.
-- State you will generate their PIX or Payment link right now.
-- Ask for their administrative email to link to the billing.
-- Once the user provides the email, IMMEDIATELY trigger the 'generatePagarmePix' tool.
+- You must just state "Vou enviar o PIX abaixo".
 
 # 4. PAYMENT & VALIDATION RULES (ARTISANAL MODE)
 When you trigger a payment tool or the user agrees to pay, you MUST inform them of the following:
@@ -399,41 +397,46 @@ ${dynamicInstruction}
         while (result.functionCalls && result.functionCalls.length > 0 && loopCount < 3) {
             loopCount++;
             const functionResponseParts: any[] = [];
-            
+
             for (const call of result.functionCalls) {
                 const output = await executeToolCall(call.name || '', call.args, clientNumber);
-                
-                functionResponseParts.push({ 
-                    functionResponse: { 
-                        name: call.name, 
-                        response: output 
-                    } 
+
+                functionResponseParts.push({
+                    functionResponse: {
+                        name: call.name,
+                        response: output
+                    }
                 });
             }
-            
+
             console.log(`🔄 [TOOL] Returning tool response to Gemini...`);
             // CRITICAL FIX: Wrap the parts array in a strict Content object
             result = await chat.sendMessage({
                 role: 'user',
                 parts: functionResponseParts
-            });
+            } as any);
         }
 
         const responseText = result.text || '';
 
-        // --- GATILHO DE ENVIO DE QR CODE (ARTESANAL) ---
-        // Se a Eliza falou em PIX ou pagamento, a Evolution manda a foto
+        // 6. Split into bubbles with explicit typing
+        const chunks = responseText.split('||')
+            .map((c: string) => c.trim())
+            .filter((c: string) => c.length > 0);
+
+        // --- GATILHO DE VENDA: COMBO ZERO FRICTION (IMAGEM + TEXTO) ---
         if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
-            console.log(`🖼️ [MEDIA] Enviando QR Code para ${clientNumber}`);
+            console.log(`💸 [ZERO FRICTION] Disparando Combo (QR Code + Texto) para ${clientNumber}`);
 
             const urlSuaFotoQrCode = "https://i.imgur.com/ihpJUn7.jpeg";
+            const pixCopiaECola = "0002012636br.gov.bcb.pix0114+5548980977545204000053039865802BR5913Denis Frainer6013Florianopolis62070503***6304XXXX"; 
 
-            // Chamada direta para a Evolution API (não passa pelo fluxo de texto comum)
+            // 1. Dispara a Imagem via Evolution API (Fire and Forget com Log de Diagnóstico)
             const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
-            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "agente-lobo";
             const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
+            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "agente-lobo";
 
-            await fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
+            fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
                 method: 'POST',
                 headers: {
                     'apikey': evKey,
@@ -443,17 +446,18 @@ ${dynamicInstruction}
                     number: clientNumber,
                     mediaMessage: {
                         mediatype: "image",
-                        caption: "Aqui está o QR Code para o pagamento. 🐺",
+                        caption: "Aqui está o QR Code! 🐺 Se preferir, o código Copia e Cola está logo abaixo:",
                         media: urlSuaFotoQrCode
                     }
                 })
-            });
-        }
+            })
+            .then(res => res.json())
+            .then(data => console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data)))
+            .catch(err => console.error("❌ [MEDIA FETCH ERROR]:", err));
 
-        // 6. Split into bubbles with explicit typing
-        const chunks = responseText.split('||')
-            .map((c: string) => c.trim())
-            .filter((c: string) => c.length > 0);
+            // 2. Injeta o PIX Copia e Cola como uma bolha de texto isolada
+            chunks.push(pixCopiaECola);
+        }
 
         console.log('📤 Sending chunks to WhatsApp:', chunks);
 
