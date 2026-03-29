@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai'; // Se estiver usando o SDK unificado
+import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
@@ -429,7 +429,7 @@ ${dynamicInstruction}
             console.log(`💸 [ZERO FRICTION] Disparando Combo (QR Code + Texto) para ${clientNumber}`);
 
             const urlSuaFotoQrCode = "https://eykfioezqcliwvbhckli.supabase.co/storage/v1/object/public/PIX/qrcode.jpeg";
-            const pixCopiaECola = "00020101021126330014br.gov.bcb.pix0111029594740315204000053039865406499.005802BR5913DENIS F LOPES6012PORTO ALEGRE62070503***6304F302"; 
+            const pixCopiaECola = "00020101021126330014br.gov.bcb.pix0111029594740315204000053039865406499.005802BR5913DENIS F LOPES6012PORTO ALEGRE62070503***6304F302";
 
             // 1. Dispara a Imagem via Evolution API (Fire and Forget com Log de Diagnóstico)
             const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
@@ -590,7 +590,7 @@ http.createServer((req, res) => {
                         const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
                         // Instance can be pulled from the context of the incoming message object
                         const evInstance = body.instance || process.env.EVOLUTION_INSTANCE_NAME || "agente-lobo";
-                        
+
                         const msgId = dataObj.key.id;
 
                         if (!evUrl || !evKey) {
@@ -598,29 +598,30 @@ http.createServer((req, res) => {
                             return;
                         }
 
-                        console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64/${evInstance}`);
+                        console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64FromMessage/${evInstance}`);
 
                         try {
                             // 2. Pega o Base64 da imagem via Evolution API
-                            const evoRes = await fetch(`${evUrl}/chat/getBase64/${evInstance}`, {
+                            const evoRes = await fetch(`${evUrl}/chat/getBase64FromMessage/${evInstance}`, {
                                 method: 'POST',
-                                headers: { 
-                                    'apikey': evKey, 
-                                    'Content-Type': 'application/json' 
+                                headers: {
+                                    'apikey': evKey,
+                                    'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({ messageId: msgId })
+                                body: JSON.stringify({ message: messageObj })
                             });
 
                             if (!evoRes.ok) {
                                 throw new Error(`Evolution API responded with status ${evoRes.status}`);
                             }
 
-                            const { base64 } = await evoRes.json();
+                            const data = await evoRes.json();
+                            const base64 = data.base64 || data;
 
-                            if (base64) {
+                            if (base64 && typeof base64 === 'string') {
                                 console.log(`✅ [OCR START] Base64 captured for ${clientNumber}, ready for Gemini analysis.`);
                                 const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
-                                
+
                                 console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
 
                                 // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
