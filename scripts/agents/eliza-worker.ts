@@ -601,18 +601,25 @@ http.createServer((req, res) => {
                         console.log(`⏳ [OCR] Fetching Base64 from: ${evUrl}/chat/getBase64FromMediaMessage/${evInstance}`);
 
                         try {
-                            // CRITICAL FIX: The correct endpoint name is getBase64FromMediaMessage
+                            // Extract the correct message object payload
+                            // In Evolution API webhooks, the media message structure is usually under data.message
+                            const payload = dataObj.message || messageObj;
+
                             const evoRes = await fetch(`${evUrl}/chat/getBase64FromMediaMessage/${evInstance}`, {
                                 method: 'POST',
                                 headers: {
                                     'apikey': evKey,
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({ message: messageObj })
+                                body: JSON.stringify({
+                                    message: payload
+                                })
                             });
 
                             if (!evoRes.ok) {
-                                throw new Error(`Evolution API HTTP Status: ${evoRes.status} (Endpoint might still be incorrect for this specific API version)`);
+                                // Diagnostic fallback to catch specific error messages
+                                const errBody = await evoRes.text();
+                                throw new Error(`Status ${evoRes.status}. Details: ${errBody}`);
                             }
 
                             const data = await evoRes.json();
