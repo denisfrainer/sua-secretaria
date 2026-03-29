@@ -398,33 +398,25 @@ ${dynamicInstruction}
         let loopCount = 0;
         while (result.functionCalls && result.functionCalls.length > 0 && loopCount < 3) {
             loopCount++;
-            const parts: any[] = [];
+            const functionResponseParts: any[] = [];
             
             for (const call of result.functionCalls) {
-                let output;
-                try {
-                    output = await executeToolCall(call.name || '', call.args, clientNumber);
-                    
-                    // SDK CONSTRAINT: output MUST be a valid JSON object. 
-                    if (!output || typeof output !== 'object') {
-                        output = { status: 'executed', result: String(output) };
-                    }
-                } catch (err: any) {
-                    output = { status: 'error', error: err.message };
-                }
-
-                // Push strictly as a Part object expected by @google/genai
-                parts.push({ 
+                const output = await executeToolCall(call.name || '', call.args, clientNumber);
+                
+                functionResponseParts.push({ 
                     functionResponse: { 
                         name: call.name, 
-                        response: output
+                        response: output 
                     } 
                 });
             }
             
-            console.log(`🔄 [TOOL] Returning tool response array to Gemini...`);
-            // Pass the array of Parts directly
-            result = await chat.sendMessage({ message: parts } as any);
+            console.log(`🔄 [TOOL] Returning tool response to Gemini...`);
+            // CRITICAL FIX: Wrap the parts array in a strict Content object
+            result = await chat.sendMessage({
+                role: 'user',
+                parts: functionResponseParts
+            });
         }
 
         const responseText = result.text || '';
