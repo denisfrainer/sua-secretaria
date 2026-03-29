@@ -20,7 +20,7 @@ export function LogoCloud() {
         <p className="text-sm font-medium text-slate-400 uppercase tracking-widest mb-10">
           Trabalhamos com ferramentas oficiais
         </p>
-        
+
         <div className="relative overflow-hidden">
           {/* Fade edges to smooth the entry/exit of logos */}
           <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10" />
@@ -29,8 +29,8 @@ export function LogoCloud() {
           {/* Scrolling track - Translate from 0 to -50% for seamless loop */}
           <div className="flex items-center animate-marquee whitespace-nowrap w-max hover:[animation-play-state:paused] cursor-pointer">
             {doubled.map((item, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="mx-10 sm:mx-14 flex-shrink-0 flex items-center gap-3 grayscale-0 opacity-100 md:grayscale md:opacity-40 md:hover:grayscale-0 md:hover:opacity-100 transition-all duration-300"
               >
                 <img

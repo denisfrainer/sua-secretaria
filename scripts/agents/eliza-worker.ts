@@ -466,10 +466,14 @@ ${dynamicInstruction}
             const urlSuaFotoQrCode = "https://i.imgur.com/ihpJUn7.jpeg";
 
             // Chamada direta para a Evolution API (não passa pelo fluxo de texto comum)
-            await fetch(`${process.env.EVOLUTION_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`, {
+            const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
+            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "agente-lobo";
+            const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
+
+            await fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
                 method: 'POST',
                 headers: {
-                    'apikey': process.env.EVOLUTION_API_KEY!,
+                    'apikey': evKey,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({

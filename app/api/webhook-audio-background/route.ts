@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         console.log(`🎙️ [BACKGROUND AUDIO] Processando áudio de ${clientNumber}...`);
 
         let audioBase64 = "";
-        let audioUrl = audioMsg.url || dataObj.base64; 
+        let audioUrl = audioMsg.url || dataObj.base64;
 
         if (audioUrl) {
             if (audioUrl.startsWith('http')) {
@@ -70,13 +70,13 @@ export async function POST(req: Request) {
                 audioBase64 = audioUrl.includes('base64,') ? audioUrl.split('base64,')[1] : audioUrl;
             }
         } else if (dataObj.message?.base64) {
-             audioBase64 = dataObj.message.base64;
-             if(audioBase64.includes('base64,')) audioBase64 = audioBase64.split('base64,')[1];
+            audioBase64 = dataObj.message.base64;
+            if (audioBase64.includes('base64,')) audioBase64 = audioBase64.split('base64,')[1];
         }
 
         if (!audioBase64 || audioBase64 === "") {
-             console.error("❌ [BACKGROUND AUDIO] Áudio indisponível ou configurado sem base64 na Evolution.");
-             return NextResponse.json({ error: "No audio data" });
+            console.error("❌ [BACKGROUND AUDIO] Áudio indisponível ou configurado sem base64 na Evolution.");
+            return NextResponse.json({ error: "No audio data" });
         }
 
         // 1. Carregando o Cérebro da meatende.ai
@@ -143,7 +143,7 @@ Use STRICTLY the following information to answer business-related questions:
 `;
 
         const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
-        
+
         const contents: any[] = [
             {
                 role: 'user',
@@ -172,7 +172,7 @@ Use STRICTLY the following information to answer business-related questions:
         const minDelay = 8000;
         const maxDelay = 14000;
         const humanDelayMs = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-        
+
         await sendWhatsAppMessage(clientNumber, finalText, humanDelayMs);
 
         return NextResponse.json({ status: "success" });
