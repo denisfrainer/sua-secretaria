@@ -446,7 +446,7 @@ ${dynamicInstruction}
                     number: clientNumber,
                     mediatype: "image",
                     mimetype: "image/jpeg",
-                    caption: `Aqui está o QR Code! 🐺 Se preferir, pode usar o Copia e Cola automático abaixo:\n\n${pixCopiaECola}`,
+                    caption: pixCopiaECola,
                     media: urlSuaFotoQrCode
                 })
             })
