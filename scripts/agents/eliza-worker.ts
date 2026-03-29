@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
+import { normalizePhone } from '../../lib/utils/phone';
 import http from 'http';
 
 /**
@@ -56,8 +57,8 @@ RULES:
 2. User wants to buy, asks for PIX or price: Intent = BUY. Reply = 'Excelente! Garanta a sua LP Express pelo nosso checkout seguro da Kiwify: https://pay.kiwify.com.br/C4hT4th \\n\\nMe avise assim que concluir o pagamento! 🚀🐺'
 3. User says hello or general talk: Intent = GREET. Reply = 'Olá! LP Express por R$ 499. Vamos fechar?'
 
-OUTPUT ONLY A VALID JSON:
-{ "intent": "GREET" | "BUY" | "PAID", "reply": "..." }`;
+OUTPUT ONLY A VALID JSON EXCLUSIVELY:
+{ "intent": "GREET" | "BUY" | "PAID", "reply": "TEXT" }`;
 
         console.log(`⏳ Calling Gemini API (Wolf Closer Mode)`);
 
@@ -174,7 +175,45 @@ http.createServer((req, res) => {
                 res.end(JSON.stringify({ status: 'received' }));
 
                 const body = JSON.parse(bodyStr);
-                // ... (mantenha sua lógica atual da Evolution aqui dentro)
+                
+                // 1. Extração de Mensagem (Evolution API)
+                let dataObj = body.data;
+                if (Array.isArray(body.data)) dataObj = body.data[0];
+                
+                if (!dataObj?.key || !dataObj.message) return; // Not a message event
+
+                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
+                    ? String(dataObj.key.remoteJidAlt)
+                    : String(dataObj.key.remoteJid);
+                    
+                const clientNumber = normalizePhone(rawJid);
+                
+                const messageType = Object.keys(dataObj.message)[0];
+                let textContent = "";
+                
+                if (messageType === 'conversation') {
+                    textContent = dataObj.message.conversation;
+                } else if (messageType === 'extendedTextMessage') {
+                    textContent = dataObj.message.extendedTextMessage?.text;
+                }
+                
+                if (!textContent) return; // Ignora mídia sem texto aqui
+                
+                console.log(`📥 [EVOLUTION WEBHOOK] Nova mensagem de ${clientNumber}: "${textContent}"`);
+
+                // 2. Salva na tabela messages
+                await supabaseAdmin.from('messages').insert({
+                    lead_phone: clientNumber,
+                    role: 'user',
+                    content: textContent,
+                    message_id: dataObj.key.id
+                });
+                
+                // 3. Atualiza status para reativar o Polling
+                await supabaseAdmin.from('leads_lobo')
+                    .update({ status: 'eliza_processing' })
+                    .eq('phone', clientNumber);
+                    
             } catch (e) { console.error("Erro Webhook Evolution:", e); }
         });
         return;
