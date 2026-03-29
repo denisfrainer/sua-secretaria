@@ -89,20 +89,6 @@ const functionDeclarations: any[] = [
             required: ['date', 'time', 'client_name'],
         },
     },
-    {
-        name: 'generatePagarmePix',
-        description: 'Usa esta função quando o lead decidir comprar o produto Tier 1 (LP Express). Gera o PIX Copia e Cola.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                product_id: { type: 'STRING', description: "Sempre 'LP_EXPRESS'" },
-                lead_email: { type: 'STRING', description: 'O e-mail do lead' },
-                lead_name: { type: 'STRING', description: 'O nome do lead' }
-            },
-            required: ['product_id', 'lead_email', 'lead_name'],
-
-        },
-    },
 
     {
         name: 'verifyPagarmeOrder',
@@ -205,42 +191,6 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         }
     }
 
-    if (name === 'generatePagarmePix') {
-        console.log(`💸 [PAGARME] Gerando PIX integral para Tier 1 (LP Express): ${args.lead_name}`);
-        try {
-            // Valor fixo para LP Express (ex: R$ 500,00 = 50000 cents)
-            const amountCents = 50000;
-
-            const pagarmePayload = {
-                items: [{ amount: amountCents, description: `LP Express - ${args.lead_name}`, quantity: 1 }],
-                customer: { name: args.lead_name, email: args.lead_email, type: 'individual', document: '00000000000' },
-                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
-            };
-
-            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
-                },
-                body: JSON.stringify(pagarmePayload)
-            });
-
-            const pagarmeData = await pagarmeRes.json();
-
-            if (!pagarmeRes.ok) throw new Error("Erro Pagar.me: " + JSON.stringify(pagarmeData));
-
-            return {
-                status: 'success',
-                pix_qr_code: pagarmeData.charges?.[0]?.last_transaction?.qr_code,
-                order_id: pagarmeData.id,
-                instructions: "Mande o PIX Copia e Cola para o cliente e diga que o desenvolvimento começa assim que o pagamento for confirmado."
-            };
-        } catch (err: any) {
-            console.error("❌ [PAGARME ERROR]:", err.message);
-            return { status: "error", message: err.message };
-        }
-    }
 
     if (name === 'verifyPagarmeOrder') {
         console.log(`🔍 [PAGARME] Verificando pedido ${args.order_id}`);
@@ -287,7 +237,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         }
     }
 
-    return { status: 'error', message: 'Tool not found' };
+    return { status: 'error', message: 'Tool execution skipped or not found. Please continue the conversation using standard text.' };
 }
 
 async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
