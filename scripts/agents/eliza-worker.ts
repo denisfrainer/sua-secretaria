@@ -328,6 +328,7 @@ CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVE
 - CONSTRAINT 4: Base answers strictly on the "BUSINESS CONTEXT".
 - CONSTRAINT 5: If the user asks if you are an AI, proudly admit it.
 - CONSTRAINT 6: MESSAGE SPLITTING & DYNAMIC BUBBLES. Vary the interaction by sending between 1 and 3 bubbles depending on the complexity of the response. (Maximum 25 words per bubble). You MUST use the "||" separator to split distinct ideas into separate chat bubbles. NEVER send a single wall of text.
+- CONSTRAINT 7 (ESCAPE HATCH): If the user asks complex technical questions, becomes argumentative, or asks too many off-script questions, YOU MUST IMMEDIATELY STOP the conversation. Output EXACTLY and ONLY this phrase: "Vou chamar um especialista pra te atender melhor na sua dúvida específica, ok? Obrigado pela atenção." followed immediately by the exact string "[HANDOFF_TRIGGERED]". Do not generate any other text, questions, or bubbles.
 - FAST-TRACK BYPASS (CRITICAL): If the user explicitly asks to schedule a meeting ("agendar", "agenda do Denis") or make a payment ("fazer PIX", "comprar") at ANY point, IMMEDIATELY SKIP the qualification funnel. Acknowledge the request, ask for their email, and trigger the appropriate scheduling or payment tool. Do NOT ask triage questions.
 
 # 3. THE INVISIBLE FUNNEL (SDR PLAYBOOK)
@@ -423,6 +424,22 @@ ${dynamicInstruction}
         const chunks = responseText.split('||')
             .map((c: string) => c.trim())
             .filter((c: string) => c.length > 0);
+
+        // --- 🚨 HUMAN HANDOFF TRIGGER 🚨 ---
+        if (responseText.includes("[HANDOFF_TRIGGERED]")) {
+            console.log(`🚨 [HANDOFF] Complex conversation detected. Pausing AI for lead: ${clientNumber}`);
+            
+            // Clean the trigger tag before pushing to chunks
+            const cleanResponse = responseText.replace("[HANDOFF_TRIGGERED]", "").trim();
+            chunks.length = 0; // Evita duplicidade se o split já tiver criado o chunk com a tag
+            chunks.push(cleanResponse);
+
+            // Update Supabase to pause the AI and request human intervention
+            await supabaseAdmin.from('leads_lobo').update({ 
+                needs_human: true, 
+                ai_paused: true 
+            }).eq('phone', clientNumber);
+        }
 
         // --- GATILHO DE VENDA: COMBO ZERO FRICTION (IMAGEM + TEXTO) ---
         if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
