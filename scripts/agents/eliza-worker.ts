@@ -428,8 +428,8 @@ ${dynamicInstruction}
         if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
             console.log(`💸 [ZERO FRICTION] Disparando Combo (QR Code + Texto) para ${clientNumber}`);
 
-            const urlSuaFotoQrCode = "https://i.imgur.com/ihpJUn7.jpeg";
-            const pixCopiaECola = "0002012636br.gov.bcb.pix0114+5548980977545204000053039865802BR5913Denis Frainer6013Florianopolis62070503***6304XXXX"; 
+            const urlSuaFotoQrCode = "https://eykfioezqcliwvbhckli.supabase.co/storage/v1/object/public/PIX/qrcode.jpeg";
+            const pixCopiaECola = "0002012636br.gov.bcb.pix0114+5548980977545204000053039865802BR5913Denis Frainer6013Florianopolis62070503***6304XXXX";
 
             // 1. Dispara a Imagem via Evolution API (Fire and Forget com Log de Diagnóstico)
             const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
@@ -450,13 +450,13 @@ ${dynamicInstruction}
                     media: urlSuaFotoQrCode
                 })
             })
-            .then(res => res.json())
-            .then(data => {
-                console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data));
-            })
-            .catch(err => {
-                console.error("❌ [MEDIA FETCH ERROR]:", err);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data));
+                })
+                .catch(err => {
+                    console.error("❌ [MEDIA FETCH ERROR]:", err);
+                });
 
             // 2. Injeta o PIX Copia e Cola como uma bolha de texto isolada
             chunks.push(pixCopiaECola);
