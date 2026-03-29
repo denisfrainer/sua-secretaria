@@ -250,7 +250,7 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
             contents: [{
                 role: 'user',
                 parts: [
-                    { text: "Analise este comprovante PIX. Retorne ESTRITAMENTE um JSON: { \"is_valid_pix\": boolean, \"amount\": number, \"receiver\": \"string\" }." },
+                    { text: "Analyze this PIX transfer receipt. You must extract the exact transfer amount. Ignore account balances. Return STRICTLY a valid JSON with no markdown formatting: { \"is_valid_pix\": boolean, \"amount\": number, \"receiver\": \"string\" }. If the amount is R$ 499,00, output 499.00." },
                     { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
                 ]
             }]
@@ -603,18 +603,22 @@ http.createServer((req, res) => {
 
                         if (base64) {
                             const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
+                            
+                            console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
 
-                            if (analysis.is_valid_pix && analysis.confidence_score > 0.8) {
-                                console.log(`✅ [OCR SUCCESS] Comprovante de R$${analysis.amount} validado para ${clientNumber}`);
+                            // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
+                            const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
+                            const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
 
-                                // Atualiza no banco e avisa o humano
+                            if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
+                                console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
+
                                 await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
-                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. || Em breve ele entrará em contato! 🚀");
-
-                                // Opcional: Notifica você no seu WhatsApp pessoal
-                                // await sendWhatsAppMessage('SEU_NUMERO', `🔥 LEAD PAGO! ${clientNumber} enviou um PIX de R$${analysis.amount}`);
+                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
                             } else {
-                                await sendWhatsAppMessage(clientNumber, "Puxa, não consegui validar esse comprovante automaticamente. 🧐 || Poderia enviar uma foto mais clara ou o PDF do comprovante? Se preferir, aguarde um instante que o Denis já vai conferir manualmente.");
+                                console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
+                                await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
+                                await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
                             }
                         }
                         return; // Interrompe o fluxo para não tratar a imagem como texto
