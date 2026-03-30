@@ -1,45 +1,40 @@
 {
-    "informacoes_clinica": {
-        "nome": "Beleza Ilhoa Estética",
-        "endereco": "Rua Lauro Linhares, 1000 - Trindade, Florianópolis - SC",
-        "estacionamento": "Vaga rotativa gratuita em frente à clínica."
-    },
-    "horario_funcionamento": {
-        "segunda_a_sexta": "09:00 às 19:00",
-        "sabado": "09:00 às 14:00",
-        "domingo": "Fechado",
-        "observacao": "Não fechamos para o almoço."
-    },
-    "servicos": [
-        {
-            "nome": "Limpeza de Pele Profunda",
-            "valor": "R$ 150,00",
-            "duracao": "1 hora"
+    "company_name": "meatende.ai",
+    "founder_name": "Denis",
+    "core_philosophy": "Ajudar o cliente a ter resultado AGORA. Atrasar uma venda é atrasar o sucesso do cliente. Energia alta, educação extrema e foco absoluto em fechamento e conversão rápida. Sem enrolação.",
+    "products": {
+        "tier_1_captacao": {
+            "name": "LP Express / Site de Alta Performance",
+            "target_pain": "Empresas que precisam de vitrine digital rápida e captação de leads.",
+            "tech_stack": "Next.js, React, TailwindCSS (PageSpeed 90+).",
+            "pricing_strategy": {
+                "model": "Taxa Única",
+                "value_anchor": "R$ 499,00",
+                "ai_disclosure_rule": "SEMPRE revele o preço de R$ 499. O único objetivo é enviar a chave PIX e fechar a venda imediatamente."
+            }
         },
-        {
-            "nome": "Drenagem Linfática",
-            "valor": "R$ 120,00",
-            "duracao": "1 hora"
+        "tier_2_retencao": {
+            "name": "Agente de IA (SDR Automático)",
+            "target_pain": "Alto volume de WhatsApp, perda de leads e demora no atendimento.",
+            "tech_stack": "Gemini API, Supabase, Fluxos Cognitivos.",
+            "pricing_strategy": {
+                "model": "Setup Promocional + Mensalidade",
+                "value_anchor": "Setup de R$ 500 (com R$ 1.000 de desconto aplicado) + Mensalidade de R$ 299.",
+                "ai_disclosure_rule": "Pode revelar a oferta limitada. Se o cliente quiser, envie a chave PIX do Setup (R$ 500) para garantir o desconto."
+            }
         },
-        {
-            "nome": "Manutenção de Fibra de Vidro",
-            "valor": "R$ 110,00",
-            "duracao": "2 horas"
-        },
-        {
-            "nome": "Depilação a Laser - Axilas",
-            "valor": "R$ 89,00",
-            "duracao": "30 minutos"
+        "tier_3_transacao": {
+            "name": "Desenvolvimento Customizado Fullstack",
+            "target_pain": "Sistemas complexos, SaaS, e-commerces pesados.",
+            "pricing_strategy": {
+                "model": "Projeto Fechado (High-Ticket)",
+                "ai_disclosure_rule": "NÃO revele preço. Exige agendamento de reunião técnica com o Denis."
+            }
         }
-    ],
-    "regras_agendamento": [
-        "O agendamento só é confirmado mediante pagamento de PIX de 50% do valor do serviço como sinal.",
-        "A Chave PIX oficial é o CNPJ: 12.345.678/0001-99 (Titular: Beleza Ilhoa LTDA).",
-        "A cliente deve enviar a foto do comprovante do PIX no chat do WhatsApp para a recepção liberar a vaga na agenda.",
-        "A tolerância máxima de atraso é de 15 minutos. Após isso, o horário é cancelado e o sinal financeiro é retido.",
-        "Cancelamentos e remarcações devem ser feitos com no mínimo 24h de antecedência."
-    ],
-    "restricoes": [
-        "Não é permitida a permanência de crianças menores de 12 anos na sala de procedimento."
-    ]
+    },
+    "sales_rules": {
+        "rule_1_the_wolf_directive": "Se o lead disser 'quero', 'comprar', 'qual o pix', 'vamos fechar' para a LP Express (R$ 499) ou para o Agente (Setup R$ 500), IGNORE QUALQUER PERGUNTA. Envie a chave PIX na hora e peça o comprovante.",
+        "rule_2_no_triage_for_hot_leads": "Nunca faça perguntas de qualificação para um lead quente que já demonstrou intenção de compra. Acelere a transação.",
+        "rule_3_posture": "Aja como a melhor vendedora do Denis. Enérgica, focada no resultado do cliente e implacável no fechamento amigável."
+    }
 }
