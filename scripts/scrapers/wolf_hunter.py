@@ -53,18 +53,34 @@ client = genai.Client(
 def run_hunter():
     print("🐺 [WOLF AGENT: HUNTER] Iniciando Caçada com Grounding (50 Leads)...")
 
-    # --- ADICIONE ESTA PARTE AQUI (Sincronização com o Banco) ---
+    # --- PATCH DE SINCRONIZAÇÃO TOTAL COM PAGINAÇÃO ---
     existing_names = set()
     existing_phones = set()
     try:
-        # Busca apenas os nomes dos leads já cadastrados
-        res = supabase.table('leads_lobo').select('name').execute()
-        if res.data:
-            existing_names = {row['name'] for row in res.data if row.get('name')}
-        print(f"📊 {len(existing_names)} leads já conhecidos carregados.")
+        limit = 1000
+        offset = 0
+        while True:
+            # Puxa nome e telefone usando paginação para furar o teto de 1000 do Supabase
+            res = supabase.table('leads_lobo').select('name, phone').range(offset, offset + limit - 1).execute()
+            
+            if not res.data:
+                break
+                
+            for row in res.data:
+                if row.get('name'):
+                    existing_names.add(row['name'])
+                if row.get('phone'):
+                    existing_phones.add(row['phone'])
+            
+            if len(res.data) < limit: # Se retornou menos que 1000, é a última página
+                break
+                
+            offset += limit
+            
+        print(f"📊 {len(existing_names)} nomes e {len(existing_phones)} telefones únicos já conhecidos carregados do Supabase.")
     except Exception as e:
         print(f"⚠️ Erro ao sincronizar base: {e}")
-    # ------------------------------------------------------------
+    # --------------------------------------------------
 
     sys.stdout.flush()
 
@@ -196,8 +212,8 @@ def run_hunter():
                     clean_phone = clean_phone[:4] + clean_phone[5:]
                 
                 # --- BLOCO DE VERIFICAÇÃO ---
-                if name in existing_names or clean_phone in existing_names:
-                    print(f"   ⏭️ [SKIP] Lead já salvo: {name}")
+                if name in existing_names or clean_phone in existing_phones:
+                    print(f"   ⏭️ [SKIP] Lead já salvo: {name} | {clean_phone}")
                     sys.stdout.flush()
                     continue
                 # ----------------------------
