@@ -8,11 +8,14 @@ import path from 'path';
 import http from 'http';
 
 /**
- * ELIZA WORKER - MVP CLÍNICA/ESTÉTICA (SDK @google/genai)
+ * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
  * Target Model: gemini-2.5-flash
  */
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' });
+const ai = new GoogleGenAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
+});
+
 process.env.TZ = 'America/Sao_Paulo';
 
 // ==============================================================
@@ -27,17 +30,43 @@ try {
         scopes: ['https://www.googleapis.com/auth/calendar']
     });
 } catch (error) {
-    console.error("⚠️ [CALENDAR] Aviso: GOOGLE_CREDENTIALS não configurado.");
+    console.error("⚠️ [CALENDAR] Aviso: GOOGLE_CREDENTIALS não configurado ou inválido no .env");
 }
 const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
 // ==============================================================
-// 🔧 FUNCTION DECLARATIONS (Tools do MVP)
+// 🔧 FUNCTION DECLARATIONS (Tools)
 // ==============================================================
 const functionDeclarations: any[] = [
     {
+        name: 'save_lead_data',
+        description: 'Saves lead info (name, company, pain point) to the database.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                phone: { type: 'STRING' },
+                name: { type: 'STRING' },
+                company: { type: 'STRING' },
+                pain_point: { type: 'STRING' },
+            },
+            required: ['phone'],
+        },
+    },
+    {
+        name: 'notify_human_specialist',
+        description: 'Alerts Denis when the lead is ready to buy or needs technical help.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                urgency_level: { type: 'STRING' },
+                summary: { type: 'STRING' },
+            },
+            required: ['urgency_level', 'summary'],
+        },
+    },
+    {
         name: 'check_calendar_availability',
-        description: 'Verifica os horários OCUPADOS na agenda para uma data específica.',
+        description: 'Verifica os horários ocupados na agenda para uma data específica.',
         parameters: {
             type: 'OBJECT',
             properties: {
@@ -47,110 +76,214 @@ const functionDeclarations: any[] = [
         },
     },
     {
-        name: 'schedule_appointment_and_request_pix',
-        description: 'Pré-agenda um compromisso e retorna a chave PIX estática para a IA enviar à cliente.',
+        name: 'schedule_appointment',
+        description: 'Agenda um compromisso na agenda do cliente.',
         parameters: {
             type: 'OBJECT',
             properties: {
                 date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
                 time: { type: 'STRING', description: 'Hora no formato HH:MM' },
-                client_name: { type: 'STRING', description: 'Nome do lead/cliente' },
-                service_type: { type: 'STRING', description: 'Serviço escolhido (Ex: Unha de Gel, Depilação)' }
+                client_name: { type: 'STRING', description: 'Nome do lead' },
+                summary: { type: 'STRING', description: 'Assunto ou tipo de serviço' }
             },
-            required: ['date', 'time', 'client_name', 'service_type'],
+            required: ['date', 'time', 'client_name'],
+        },
+    },
+
+    {
+        name: 'verifyPagarmeOrder',
+        description: 'Verifica se o lead já pagou o PIX gerado.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                order_id: { type: 'STRING', description: 'O ID do pedido gerado (ex: or_1234)' }
+            },
+            required: ['order_id'],
         },
     },
     {
-        name: 'notify_human_specialist',
-        description: 'Pausa a IA e chama a dona da clínica para assumir o atendimento.',
+        name: 'schedule_and_charge_deposit',
+        description: 'Agenda a reunião no Google Calendar e imediatamente gera um PIX de 50% de depósito do serviço (Tier 2 ou Tier 3) para confirmar a reserva.',
         parameters: {
             type: 'OBJECT',
-            properties: { summary: { type: 'STRING' } },
-            required: ['summary'],
+            properties: {
+                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
+                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
+                client_name: { type: 'STRING', description: 'Nome do lead' },
+                client_email: { type: 'STRING', description: 'E-mail do lead' },
+                service_tier: { type: 'STRING', description: 'O tipo de serviço', enum: ['TIER_2', 'TIER_3'] }
+            },
+            required: ['date', 'time', 'client_name', 'client_email', 'service_tier'],
         },
     }
 ];
 
 async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
-    console.log(`🔧 [TOOL EXECUTION]: ${name} | Args:`, args);
-
+    console.log(`🔧 [TOOL EXECUTION]: ${name}`);
+    if (name === 'save_lead_data') {
+        await supabaseAdmin.from('leads_lobo').update({
+            name: args.name,
+            niche: args.company,
+            main_pain: args.pain_point
+        }).eq('phone', clientPhone);
+        return { status: 'success' };
+    }
     if (name === 'notify_human_specialist') {
-        await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', ai_paused: true }).eq('phone', clientPhone);
-        return { status: 'success', notification: 'A dona da clínica foi notificada e assumirá em breve.' };
+        await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
+        return { status: 'success', notification: 'Denis has been alerted.' };
     }
-
-    if (name === 'check_calendar_availability') {
+    if (name === 'schedule_and_charge_deposit') {
+        console.log(`💸 [PIX/CALENDAR] Iniciando schedule_and_charge_deposit para ${args.client_name}`);
         try {
-            const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
-            const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
+            // 1. Calcular o valor do depósito (50%)
+            const amountCents = args.service_tier === 'TIER_3' ? 150000 : 50000;
 
-            const events = await calendar.events.list({
-                calendarId: 'primary',
-                timeMin: startOfDay.toISOString(),
-                timeMax: endOfDay.toISOString(),
-                singleEvents: true,
-                orderBy: 'startTime',
+            // 2. Gerar PIX no Pagar.me
+            const pagarmePayload = {
+                items: [{ amount: amountCents, description: `Depósito Inicial - ${args.service_tier}`, quantity: 1 }],
+                customer: { name: args.client_name, email: args.client_email, type: 'individual', document: '00000000000' },
+                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
+            };
+
+            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
+                },
+                body: JSON.stringify(pagarmePayload)
             });
+            const pagarmeData = await pagarmeRes.json();
 
-            const busySlots = (events.data.items || []).map(e => ({
-                inicio: new Date(e.start?.dateTime || '').toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-                fim: new Date(e.end?.dateTime || '').toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-            }));
+            if (!pagarmeRes.ok) {
+                console.error("❌ [PAGARME] Erro ao gerar PIX:", pagarmeData);
+                return { status: "error", message: "Falha ao gerar o PIX. Avise que ocorreu um erro." };
+            }
 
-            return { status: 'success', data: args.date, horarios_ocupados: busySlots };
-        } catch (error: any) {
-            console.error("❌ [CALENDAR CHECK ERROR]:", error.message);
-            return { status: 'error', message: 'Não foi possível checar a agenda no momento.' };
-        }
-    }
+            const pixData = pagarmeData.charges?.[0]?.last_transaction?.qr_code;
+            const orderId = pagarmeData.id;
 
-    if (name === 'schedule_appointment_and_request_pix') {
-        try {
+            // 3. Agendar no Google Calendar
             const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
-            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assume 1 hora de serviço por padrão
+            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora
 
             await calendar.events.insert({
                 calendarId: 'primary',
                 requestBody: {
-                    summary: `[AGUARDANDO PIX] ${args.client_name} - ${args.service_type}`,
-                    description: `Telefone: ${clientPhone}\nAguardando envio do comprovante no WhatsApp.`,
+                    summary: `[PENDING PIX] Escopo ${args.client_name}`,
+                    description: `Tier: ${args.service_tier}\nEmail: ${args.client_email}\nOrderID: ${orderId}\nTelefone: ${clientPhone}`,
                     start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                     end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                 }
             });
 
-            // CHAVE PIX ESTÁTICA DO SEU CLIENTE (Configure no Painel ou deixe fixo no MVP)
-            const CHAVE_PIX_CLINICA = process.env.CHAVE_PIX_ESTATICA || "CNPJ: 00.000.000/0001-00";
-
+            console.log(`✅ [PIX/CALENDAR] Sucesso! Evento criado e PIX ${orderId} gerado.`);
             return {
                 status: 'success',
-                message: 'Horário pré-reservado no Google Calendar.',
-                chave_pix_para_pagamento: CHAVE_PIX_CLINICA,
-                instructions: 'Forneça a chave PIX acima para a cliente e diga que o horário está pré-reservado. Peça para ela enviar a FOTO DO COMPROVANTE aqui no chat para a dona da clínica confirmar a vaga em definitivo.'
+                message: 'Horário reservado com sucesso e PIX gerado.',
+                pix_qr_code: pixData,
+                order_id: orderId,
+                instructions: 'Apresente a chave PIX Copia e Cola ao lead e reforce que a reunião E a reserva de agenda só estão 100% garantidas após o pagamento.'
             };
         } catch (err: any) {
-            console.error("❌ [CALENDAR SCHEDULE ERROR]:", err.message);
-            return { status: "error", message: 'Falha ao agendar o horário.' };
+            console.error("❌ [PIX/CALENDAR] Exceção:", err.message);
+            return { status: "error", message: err.message };
         }
     }
 
-    return { status: 'error', message: 'Tool not found.' };
+
+    if (name === 'verifyPagarmeOrder') {
+        console.log(`🔍 [PAGARME] Verificando pedido ${args.order_id}`);
+        try {
+            const pagarmeRes = await fetch(`https://api.pagar.me/core/v5/orders/${args.order_id}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}` }
+            });
+            const pagarmeData = await pagarmeRes.json();
+
+            if (pagarmeData.status === 'paid') {
+                console.log(`✅ [PAGARME] Pedido ${args.order_id} PAGO! Removendo tag do calendário...`);
+                try {
+                    const eventsRes = await calendar.events.list({
+                        calendarId: 'primary',
+                        q: args.order_id,
+                        timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                    });
+                    if (eventsRes.data.items && eventsRes.data.items.length > 0) {
+                        const event = eventsRes.data.items[0];
+                        if (event.summary && event.summary.includes('[PENDING PIX]')) {
+                            const newSummary = event.summary.replace('[PENDING PIX]', '[CONFIRMADO]');
+                            await calendar.events.patch({
+                                calendarId: 'primary',
+                                eventId: event.id!,
+                                requestBody: { summary: newSummary }
+                            });
+                            console.log(`✅ [CALENDAR] Tag [PENDING PIX] removida do evento ${event.id}`);
+                        }
+                    }
+                } catch (calErr) {
+                    console.error("❌ [CALENDAR] Erro ao atualizar remoção da tag:", calErr);
+                }
+
+                await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
+                return { status: 'success', payment_status: 'paid', message: 'Pagamento confirmado! Reserva garantida na agenda.' };
+            } else {
+                console.log(`⏳ [PAGARME] Pedido pendente (${pagarmeData.status}).`);
+                return { status: 'pending', payment_status: pagarmeData.status, message: 'O pagamento ainda não foi identificado. Peça para o cliente avisar quando pagar.' };
+            }
+        } catch (err: any) {
+            console.error("❌ [PAGARME] Erro na verificação:", err.message);
+            return { status: 'error', message: err.message };
+        }
+    }
+
+    return { status: 'error', message: 'Tool execution skipped or not found. Please continue the conversation using standard text.' };
 }
 
+async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
+    console.log(`📸 [VISION] Analisando comprovante de ${clientPhone}...`);
+
+    try {
+        // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: "Analyze this PIX transfer receipt. You must extract the exact transfer amount. Ignore account balances. Return STRICTLY a valid JSON with no markdown formatting: { \"is_valid_pix\": boolean, \"amount\": number, \"receiver\": \"string\" }. If the amount is R$ 499,00, output 499.00." },
+                    { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
+                ]
+            }]
+        });
+
+        // No SDK @google/genai, .text é uma propriedade
+        const responseText = result.text || "";
+
+        const cleanedJson = responseText.replace(/```json|```/g, "").trim();
+        return JSON.parse(cleanedJson);
+
+    } catch (error) {
+        console.error("❌ [VISION ERROR]:", error);
+        return { is_valid_pix: false, error: "Falha no processamento da imagem" };
+    }
+} // <--- A função deve fechar APENAS aqui
+
 // ==============================================================
-// 🧠 LEAD PROCESSING LOGIC (O Cérebro da IA)
+// 🧠 LEAD PROCESSING LOGIC
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
     console.log(`\n===========================================`);
-    console.log(`🧠 [ELIZA MVP] Processing Lead: ${clientNumber}`);
+    console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber}`);
 
     try {
+        // 1. Lock lead status
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // Carrega o Banco de Dados da Clínica (Preços, Endereço, etc)
+        // 2. Load context and history
+        // 2. Load context and history
         const contextPath = path.join(process.cwd(), 'business_context.json');
-        const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : 'INFORMAÇÃO: Base de dados não encontrada.';
+        const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
 
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
@@ -160,52 +293,107 @@ async function processLead(lead: any) {
             .limit(20);
 
         let chatHistory = rawHistory || [];
+
         let currentMessage = "Olá";
         let historyForGemini: any[] = [];
 
         if (chatHistory.length > 0) {
+            // Remove a última msg para ser o input do user, PURA e sem sujeira de prompt
             const lastMsg = chatHistory.pop();
             currentMessage = lastMsg?.content || "Olá";
             historyForGemini = chatHistory;
         }
 
-        const systemInstruction = `# 1. IDENTIDADE DA ASSISTENTE
-Você é a Eliza, Recepcionista Virtual da clínica/salão. Seu objetivo é tirar dúvidas, apresentar serviços e agendar clientes.
-RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS BRASILEIRO NATURAL.
+        // ==============================================================
+        // 🧠 INJEÇÃO DE ESTADO (SILICON TWEAK)
+        // ==============================================================
+        const hasPreviousAssistantMessage = historyForGemini.some((msg: any) => msg.role === 'assistant');
+        let dynamicInstruction = "";
 
-# 2. REGRAS ESTRITAS
-- NUNCA invente serviços ou preços.
-- NUNCA envie uma lista gigante de preços. Diagnostique o que a cliente quer primeiro.
-- NUNCA use gerundismo (ex: "vou estar verificando").
-- MÁXIMO DE 2 BOLHAS POR RESPOSTA. Use "||" para dividir mensagens.
-- BOTÃO DE EMERGÊNCIA: Se a dúvida for complexa, envie "[HANDOFF_TRIGGERED]" e diga que a dona vai assumir.
+        if (hasPreviousAssistantMessage) {
+            dynamicInstruction = "STATE: [ACTIVE CONVERSATION]\nDIRETRIZ: O Lobo (ou Denis) já iniciou o contato. NÃO use o STEP 0. Leia o histórico, veja o que foi perguntado e o que o cliente respondeu para dar continuidade direta.";
+        } else {
+            dynamicInstruction = "STATE: [NEW INBOUND]\nDIRETRIZ: Este é um contato novo (inbound). Inicie estritamente pelo STEP 0.";
+        }
 
-# 3. FUNIL DE AGENDAMENTO
-Passo 1: Entenda o serviço desejado.
-Passo 2: Use a tool check_calendar_availability para ver horários. Ofereça opções baseadas nos 'horarios_ocupados'.
-Passo 3: Quando a cliente escolher a hora, use schedule_appointment_and_request_pix.
-Passo 4: Entregue a chave PIX e diga: "Para garantir esse horário exclusivo pra você, faz o PIX do sinal e me manda o comprovante aqui."
+        const systemInstruction = `# 1. IDENTITY & CORE MISSION
+You are Eliza, an AI Sales Development Representative (SDR) and Tech Assistant to Denis at meatende.ai (a company building AI Agents, automated sales machines and lightning speed websites.).
 
-# 4. CONTEXTO DO NEGÓCIO (Horários, Preços, Endereço)
+CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). Translate the intent of all instructions below into PT-BR before outputting.
+
+# 2. STRICT RULES & GUARDRAILS
+- CONSTRAINT 1: NEVER hallucinate services, prices, or deadlines.
+- CONSTRAINT 2: NEVER send a menu or list of services. Diagnose the client first.
+- CONSTRAINT 3: NEVER use gerunds in Portuguese (e.g., output "vou verificar" instead of "vou estar verificando").
+- CONSTRAINT 4: Base answers strictly on the "BUSINESS CONTEXT".
+- CONSTRAINT 5: If the user asks if you are an AI, proudly admit it.
+- CONSTRAINT 6: MESSAGE SPLITTING & DYNAMIC BUBBLES. Vary the interaction by sending between 1 and 3 bubbles depending on the complexity of the response. (Maximum 25 words per bubble). You MUST use the "||" separator to split distinct ideas into separate chat bubbles. NEVER send a single wall of text.
+- CONSTRAINT 7 (ESCAPE HATCH): If the user asks complex technical questions, becomes argumentative, or asks too many off-script questions, YOU MUST IMMEDIATELY STOP the conversation. Output EXACTLY and ONLY this phrase: "Vou chamar um especialista pra te atender melhor na sua dúvida específica, ok? Obrigado pela atenção." followed immediately by the exact string "[HANDOFF_TRIGGERED]". Do not generate any other text, questions, or bubbles.
+- FAST-TRACK BYPASS (CRITICAL): If the user explicitly asks to schedule a meeting ("agendar", "agenda do Denis") or make a payment ("fazer PIX", "comprar") at ANY point, IMMEDIATELY SKIP the qualification funnel. Acknowledge the request, ask for their email, and trigger the appropriate scheduling or payment tool. Do NOT ask triage questions.
+
+# 3. THE INVISIBLE FUNNEL (SDR PLAYBOOK)
+Follow this logical sequence organically. Do not sound like a robot reading a rigid script. Adapt your phrasing to match the user's conversational flow.
+
+STEP 0: The Discovery (Greeting & Rapport)
+- ONLY use this step if the conversation history is EMPTY of any previous assistant/Lobo messages.
+- If the customer says "Bom dia" or "Oi" but there is a previous message from "Denis" or "Lobo" asking about the business, IGNORE Step 0 and proceed directly to Step 1 or Step 2 to address their answer.
+- DO NOT restart the conversation if the client is already answering a question.
+
+STEP 1: The Core Operation Question (Triage)
+Once the user provides their name or explains what they are looking for, smoothly transition into identifying their operational bottleneck. 
+Ask conversationally if their current priority is capturing more leads/traffic, automating a WhatsApp that is overflowing, or building a direct sales system (like e-commerce/delivery). Do not use a hardcoded template; phrase the question naturally based on their previous input.
+
+STEP 2: The Routing Protocol & Pitch
+Listen to the user's answer from Step 1 and STRICTLY select the appropriate PATH. Pitch it naturally in PT-BR.
+- PATH A ("Captação" Lead - needs traffic/quotes): Pitch the "Site de Alta Performance" (LP Express). Explain it acts as a Google conversion machine. Mention the fixed one-time investment is R$500 to R$700, with no monthly fees.
+- PATH B ("Retenção" Lead - lacks time/too many messages): Pitch the "Agente de Inteligência Artificial". Explain it qualifies and schedules clients 24/7 automatically. Do not mention pricing.
+- PATH C ("Transação" Lead - physical products/complex booking): Pitch "Desenvolvimento Customizado". Explain that robust software engineering (database and dashboards) is required. Do not mention pricing.
+Immediately after pitching the appropriate PATH, use the "||" separator and ask ONE closing question (e.g., "Faz sentido para a sua operação?").
+
+STEP 3: THE CALENDAR HAND-OFF & DEPOSIT (TIER 2 & 3)
+If the user agrees to the pitch for Tier 2 or 3, or explicitly asks for a meeting:
+YOU MUST STOP ASKING QUESTIONS. DO NOT REPEAT THE PITCH.
+1. State that Denis will evaluate their operation via a kickoff meeting.
+2. Explicitly explain that a 50% upfront deposit via PIX is required right now to secure the calendar slot.
+3. Ask for their email to generate the billing.
+4. Once the email is provided, call the 'schedule_and_charge_deposit' tool to book the time and generate the PIX.
+
+THE 'HOT LEAD' WARP PIPE (LP EXPRESS)
+If the user specifically wants the "Site de Alta Performance" (LP Express) and demonstrates HIGH BUYING INTENT at ANY point (e.g., "quero comprar", "qual o pix", "bora fechar"):
+- Answer any quick objection if necessary.
+- You must just state "O QR Code e o código PIX já estão logo acima!".
+
+# 4. PAYMENT & VALIDATION RULES (ARTISANAL MODE)
+When you trigger a payment tool or the user agrees to pay, you MUST inform them of the following:
+"Assim que fizer o pagamento, mande um print do comprovante aqui no chat para o meu sistema liberar na hora."
+
+# 5. BUSINESS CONTEXT
+Use STRICTLY the following information to answer business-related questions:
 ${businessContext}
+
+# 6. CURRENT LEAD STATE (CRITICAL)
+${dynamicInstruction}
 `;
 
+
+        // 4. Create Chat Session (Apenas com o PASSADO)
+        // Use a 'ai' global que criamos no topo
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: {
                 systemInstruction: systemInstruction,
                 tools: [{ functionDeclarations }] as any,
-                temperature: 0.3
             },
-            history: historyForGemini.map((msg: any) => ({
+            history: chatHistory.map((msg: any) => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }],
             })),
         });
 
-        console.log(`⏳ Calling Gemini API...`);
+        console.log(`⏳ Calling Gemini API com a mensagem: "${currentMessage}"`);
         let result = await chat.sendMessage({ message: currentMessage });
 
+        // 5. Tool Loop (Function Calling)
         let loopCount = 0;
         while (result.functionCalls && result.functionCalls.length > 0 && loopCount < 3) {
             loopCount++;
@@ -213,45 +401,122 @@ ${businessContext}
 
             for (const call of result.functionCalls) {
                 const output = await executeToolCall(call.name || '', call.args, clientNumber);
+
                 functionResponseParts.push({
-                    functionResponse: { name: call.name, response: output }
+                    functionResponse: {
+                        name: call.name,
+                        response: output
+                    }
                 });
             }
 
-            result = await chat.sendMessage({ role: 'user', parts: functionResponseParts } as any);
+            console.log(`🔄 [TOOL] Returning tool response to Gemini...`);
+            // CRITICAL FIX: Wrap the parts array in a strict Content object
+            result = await chat.sendMessage({
+                role: 'user',
+                parts: functionResponseParts
+            } as any);
         }
 
         const responseText = result.text || '';
-        const chunks = responseText.split('||').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
 
-        // --- HANDOFF ---
+        // 6. Split into bubbles with explicit typing
+        const chunks = responseText.split('||')
+            .map((c: string) => c.trim())
+            .filter((c: string) => c.length > 0);
+
+        // --- 🚨 HUMAN HANDOFF TRIGGER 🚨 ---
         if (responseText.includes("[HANDOFF_TRIGGERED]")) {
-            console.log(`🚨 [HANDOFF] Pausando IA para o lead: ${clientNumber}`);
+            console.log(`🚨 [HANDOFF] Complex conversation detected. Pausing AI for lead: ${clientNumber}`);
+
+            // Clean the trigger tag before pushing to chunks
             const cleanResponse = responseText.replace("[HANDOFF_TRIGGERED]", "").trim();
-            chunks.length = 0;
+            chunks.length = 0; // Evita duplicidade se o split já tiver criado o chunk com a tag
             chunks.push(cleanResponse);
-            await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
+
+            // Update Supabase to pause the AI and request human intervention
+            await supabaseAdmin.from('leads_lobo').update({
+                needs_human: true,
+                ai_paused: true
+            }).eq('phone', clientNumber);
         }
+
+        // --- GATILHO DE VENDA: COMBO ZERO FRICTION (IMAGEM + TEXTO) ---
+        if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
+            console.log(`💸 [ZERO FRICTION] Disparando Combo (QR Code + Texto) para ${clientNumber}`);
+
+            const urlSuaFotoQrCode = "https://eykfioezqcliwvbhckli.supabase.co/storage/v1/object/public/PIX/qrcode.jpeg";
+            const pixCopiaECola = "00020101021126330014br.gov.bcb.pix0111029594740315204000053039865406499.005802BR5913DENIS F LOPES6012PORTO ALEGRE62070503***6304F302";
+
+            // 1. Dispara a Imagem via Evolution API (Fire and Forget com Log de Diagnóstico)
+            const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
+            const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
+            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "agente-lobo";
+
+            fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
+                method: 'POST',
+                headers: {
+                    'apikey': evKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    number: clientNumber,
+                    mediatype: "image",
+                    mimetype: "image/jpeg",
+                    caption: pixCopiaECola,
+                    media: urlSuaFotoQrCode
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data));
+                })
+                .catch(err => {
+                    console.error("❌ [MEDIA FETCH ERROR]:", err);
+                });
+        }
+
+        console.log('📤 Sending chunks to WhatsApp:', chunks);
 
         await sendWhatsAppPresence(clientNumber, 'composing');
 
+        console.log('📤 Sending chunks to WhatsApp:', chunks);
+        await sendWhatsAppPresence(clientNumber, 'composing');
+
+        const CHARS_PER_SECOND = 15;
         let accumulatedDelayMs = 0;
+
         for (const chunk of chunks) {
-            const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / 15) * 1000, 10000));
+            // Calcula o tempo de "digitação" baseado no tamanho da bolha (mínimo 2s, máximo 12s)
+            const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
             accumulatedDelayMs += bubbleTypingTimeMs;
 
-            console.log(`⌨️ [TYPING] Bolha em ${Math.round(accumulatedDelayMs / 1000)}s: "${chunk.substring(0, 30)}..."`);
+            console.log(`⌨️ [TYPING] Bolha enviada em ${Math.round(accumulatedDelayMs / 1000)}s: "${chunk.substring(0, 30)}..."`);
             await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
 
-            if (chunks.length > 1) accumulatedDelayMs += Math.floor(Math.random() * 1500) + 1000;
+            // Adiciona uma pausa humana de respiração/leitura entre bolhas múltiplas
+            if (chunks.length > 1) {
+                const pauseBetweenBubbles = Math.floor(Math.random() * (2500 - 1000 + 1)) + 1000;
+                accumulatedDelayMs += pauseBetweenBubbles;
+            }
         }
 
-        await supabaseAdmin.from('messages').insert({
-            lead_phone: clientNumber, role: 'assistant', content: responseText, message_id: `eliza_${Date.now()}`
+        // 7. Save and Release
+        const fakeMessageId = `eliza_${Date.now()}`; // Cria um ID único para a mensagem da IA
+
+        const { error: insertError } = await supabaseAdmin.from('messages').insert({
+            lead_phone: clientNumber,
+            role: 'assistant',
+            content: responseText,
+            message_id: fakeMessageId // <--- O SEGREDO ESTÁ AQUI
         });
 
+        if (insertError) {
+            console.error("❌ [SUPABASE ERROR] Falha ao salvar memória da Eliza:", insertError);
+        }
+
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-        console.log(`✅ [ELIZA] Atendimento concluído para ${clientNumber}`);
+        console.log(`✅ [ELIZA] Success for ${clientNumber}`);
 
     } catch (error: any) {
         console.error("❌ [ELIZA ERROR]:", error.message);
@@ -263,7 +528,7 @@ ${businessContext}
 // 🔄 POLLING ENGINE
 // ==============================================================
 async function startPolling() {
-    console.log('🔄 [WORKER] Escutando leads pendentes...');
+    console.log('🔄 [WORKER] Listening for eliza_processing leads...');
     while (true) {
         try {
             const { data: leads } = await supabaseAdmin
@@ -273,19 +538,27 @@ async function startPolling() {
                 .eq('ai_paused', false)
                 .limit(1);
 
-            if (leads && leads.length > 0) await processLead(leads[0]);
-        } catch (e) { console.error("Polling error:", e); }
-        await new Promise(r => setTimeout(r, 3000));
+            if (leads && leads.length > 0) {
+                await processLead(leads[0]);
+            }
+        } catch (e) {
+            console.error("Polling error:", e);
+        }
+        await new Promise(r => setTimeout(r, 5000));
     }
 }
 
 // ==============================================================
-// 🌐 WEBHOOK SERVER
+// 🌐 RAILWAY HEALTHCHECK & WEBHOOK SERVER (FULL LOGIC)
 // ==============================================================
 const PORT = process.env.PORT || 8080;
 
 http.createServer((req, res) => {
-    if (req.method === 'GET') { res.writeHead(200); res.end('Eliza MVP Online'); return; }
+    if (req.method === 'GET' && req.url === '/') {
+        res.writeHead(200);
+        res.end('Eliza Worker Online');
+        return;
+    }
 
     if (req.method === 'POST' && req.url === '/webhook') {
         let bodyStr = '';
@@ -293,58 +566,167 @@ http.createServer((req, res) => {
 
         req.on('end', async () => {
             try {
+                // 1. Libera a Evolution API na hora (Fim do Timeout)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'received' }));
 
                 const body = JSON.parse(bodyStr);
                 const isEvolution = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
+
                 if (!isEvolution) return;
 
                 let dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
-                if (!dataObj?.key || dataObj.key.remoteJid.endsWith('@g.us')) return;
+                if (!dataObj) return;
 
-                const clientNumber = normalizePhone(dataObj.key.remoteJid);
+                const remoteJid = dataObj.key?.remoteJid || '';
+                if (remoteJid.endsWith('@g.us')) {
+                    console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
+                    return;
+                }
+
+                if (!dataObj.key) return;
+
+                const isFromMe = dataObj.key.fromMe === true;
+                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
+                    ? String(dataObj.key.remoteJidAlt)
+                    : String(dataObj.key.remoteJid);
+
+                const clientNumber = normalizePhone(rawJid);
+                const incomingMessageId = dataObj.key.id;
                 const messageObj = dataObj.message;
 
-                // 📸 MVP SILICON TWEAK: Se a cliente mandar FOTO do PIX, trava a IA e avisa a dona
-                if (messageObj?.imageMessage) {
-                    console.log(`📸 [COMPROVANTE] Imagem recebida de ${clientNumber}. Acionando Humano.`);
-                    await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
+                let clientMessage = '';
 
-                    // Salva no banco e responde automático confirmando recebimento
-                    await supabaseAdmin.from('messages').insert({ lead_phone: clientNumber, role: 'user', content: "[IMAGEM ENVIADA PELO CLIENTE]", message_id: dataObj.key.id });
-                    await sendWhatsAppMessage(clientNumber, "📸 Comprovante recebido! A recepção vai conferir rapidinho e confirmar sua reserva definitiva, tá bom? Só um instante.");
-                    return;
+                if (messageObj) {
+                    // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
+                    if (messageObj.imageMessage) {
+                        console.log("📸 [WEBHOOK] Imagem recebida. Executando Webhook Hacker (Base64 Nativo)...");
+
+                        // Evolution API injects the base64 string directly into the message object when the 'base64' webhook flag is true.
+                        // We check the most common locations in the payload structure.
+                        const base64 = messageObj.base64 || dataObj.base64 || body.base64;
+
+                        if (base64 && typeof base64 === 'string') {
+                            console.log(`✅ [OCR START] Base64 nativo capturado com sucesso (Tamanho: ${base64.length}). Enviando para a visão do Gemini...`);
+                            const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
+
+                            console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
+
+                            // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
+                            const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
+                            const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
+
+                            if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
+                                console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
+
+                                await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
+                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
+                            } else {
+                                console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
+                                await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
+                                await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
+                            }
+                        } else {
+                            console.error("❌ [OCR ERROR] Base64 string not found in the webhook payload.");
+                            console.log("🚨 [DIAGNOSTIC] Please verify that 'base64: true' is enabled in the Evolution API Webhook settings.");
+                        }
+
+                        return; // Interrompe o fluxo para não tratar a imagem como texto
+                    }
+
+                    // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
+                    if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
+                    if (!messageObj.conversation && !messageObj.extendedTextMessage) return;
+                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
                 }
 
-                const clientMessage = messageObj?.conversation || messageObj?.extendedTextMessage?.text || '';
-                if (!clientMessage) return;
+                if (clientMessage && clientMessage.trim().length > 0) {
+                    // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
+                    if (isFromMe) {
+                        const cmd = clientMessage.trim();
+                        if (cmd === '/pausar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                            return;
+                        } else if (cmd === '/retomar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
+                            return;
+                        }
 
-                // --- Lógica de Pausa Manual (Admin) ---
-                if (dataObj.key.fromMe) {
-                    if (clientMessage.trim() === '/pausar') await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                    if (clientMessage.trim() === '/retomar') await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
-                    if (!dataObj.key.id?.startsWith('eliza_')) await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                    return;
+                        const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+                        if (isAPI) {
+                            return; // Ignora mensagens enviadas pela própria Eliza
+                        } else {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
+                            return;
+                        }
+                    }
+
+                    console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
+
+                    // --- BLINDAGENS DE SEGURANÇA ---
+                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
+                    const msgLower = clientMessage.toLowerCase();
+                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                        console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
+                        return;
+                    }
+
+                    let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
+
+                    if (lead) {
+                        await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+
+                        if (lead.updated_at) {
+                            const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
+                            if (timeSinceContact < 2000) {
+                                console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
+                                return;
+                            }
+                        }
+
+                        if ((lead.reply_count || 0) >= 10) {
+                            console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
+                            await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            return;
+                        }
+
+                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
+                            console.log(`🔒 Lead travado ou com humano. Ignorando.`);
+                            return;
+                        }
+                    }
+
+                    if (!lead) {
+                        const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                            phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
+                        }).select().single();
+                        lead = newLead;
+                    }
+
+                    // --- SALVAMENTO E GATILHO ---
+                    await supabaseAdmin.from('messages').insert({
+                        lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
+                    });
+
+                    const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                    if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                        await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                        return;
+                    }
+
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
+                    console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
                 }
-
-                // --- Inserção Simples no Banco ---
-                let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
-                if (lead?.is_locked || lead?.ai_paused) return; // Se estiver pausado ou travado, ignora.
-
-                if (!lead) {
-                    const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({ phone: clientNumber, status: 'organic_inbound', name: 'Lead' }).select().single();
-                    lead = newLead;
-                }
-
-                await supabaseAdmin.from('messages').insert({ lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: dataObj.key.id });
-                await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing', replied: true }).eq('phone', clientNumber);
-
-            } catch (error) { console.error('❌ [WEBHOOK CRASH]:', error); }
+            } catch (error) {
+                console.error('❌ [WEBHOOK CRASH]:', error);
+            }
         });
         return;
     }
-    res.writeHead(404); res.end();
-}).listen(PORT, () => console.log(`🌐 Eliza MVP Webhook Server rodando na porta ${PORT}`));
+
+    res.writeHead(404);
+    res.end();
+}).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
 
 startPolling();
