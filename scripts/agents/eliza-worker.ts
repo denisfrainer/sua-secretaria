@@ -365,7 +365,7 @@ If the user specifically wants the "Site de Alta Performance" (LP Express) and d
 
 # 4. PAYMENT & VALIDATION RULES (ARTISANAL MODE)
 When you trigger a payment tool or the user agrees to pay, you MUST inform them of the following:
-"O QR Code e o PIX Copia e Cola acabaram de chegar aí acima! Assim que fizer o pagamento, mande um print do comprovante aqui no chat para o meu sistema liberar na hora."
+"Assim que fizer o pagamento, mande um print do comprovante aqui no chat para o meu sistema liberar na hora."
 
 # 5. BUSINESS CONTEXT
 Use STRICTLY the following information to answer business-related questions:
@@ -428,16 +428,16 @@ ${dynamicInstruction}
         // --- 🚨 HUMAN HANDOFF TRIGGER 🚨 ---
         if (responseText.includes("[HANDOFF_TRIGGERED]")) {
             console.log(`🚨 [HANDOFF] Complex conversation detected. Pausing AI for lead: ${clientNumber}`);
-            
+
             // Clean the trigger tag before pushing to chunks
             const cleanResponse = responseText.replace("[HANDOFF_TRIGGERED]", "").trim();
             chunks.length = 0; // Evita duplicidade se o split já tiver criado o chunk com a tag
             chunks.push(cleanResponse);
 
             // Update Supabase to pause the AI and request human intervention
-            await supabaseAdmin.from('leads_lobo').update({ 
-                needs_human: true, 
-                ai_paused: true 
+            await supabaseAdmin.from('leads_lobo').update({
+                needs_human: true,
+                ai_paused: true
             }).eq('phone', clientNumber);
         }
 
@@ -608,28 +608,28 @@ http.createServer((req, res) => {
 
                         if (base64 && typeof base64 === 'string') {
                             console.log(`✅ [OCR START] Base64 nativo capturado com sucesso (Tamanho: ${base64.length}). Enviando para a visão do Gemini...`);
-                                const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
+                            const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
 
-                                console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
+                            console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
 
-                                // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
-                                const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
-                                const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
+                            // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
+                            const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
+                            const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
 
-                                if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
-                                    console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
+                            if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
+                                console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
 
-                                    await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
-                                    await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
-                                } else {
-                                    console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
-                                    await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
-                                    await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
-                                }
+                                await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
+                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
                             } else {
-                                console.error("❌ [OCR ERROR] Base64 string not found in the webhook payload.");
-                                console.log("🚨 [DIAGNOSTIC] Please verify that 'base64: true' is enabled in the Evolution API Webhook settings.");
+                                console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
+                                await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
+                                await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
                             }
+                        } else {
+                            console.error("❌ [OCR ERROR] Base64 string not found in the webhook payload.");
+                            console.log("🚨 [DIAGNOSTIC] Please verify that 'base64: true' is enabled in the Evolution API Webhook settings.");
+                        }
 
                         return; // Interrompe o fluxo para não tratar a imagem como texto
                     }

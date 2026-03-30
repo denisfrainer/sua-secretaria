@@ -31,7 +31,7 @@ function getBrazilDateString(): string {
 
 export async function POST(req: Request) {
     const cronId = Math.random().toString(36).substring(7);
-    console.log(`\n--- 🐺 [${cronId}] WOLF AGENT PROSPECTOR (SUPER API) ---`);
+    console.log(`\n--- 🐺 [${cronId}] WOLF AGENT PROSPECTOR ---`);
 
     try {
         // 1. Authentication
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
         let currentStats = statsData;
 
         if (!currentStats) {
-            const randomDailyLimit = Math.floor(Math.random() * (15 - 10 + 1)) + 10; // 10 to 15
+            const randomDailyLimit = Math.floor(Math.random() * (50 - 45 + 1)) + 45; // 45 to 50
             const { data: newStats, error: insertError } = await supabaseAdmin
                 .from('lobo_daily_stats')
                 .insert([{ date_id: todayStr, sent_count: 0, daily_limit: randomDailyLimit }])
