@@ -196,6 +196,10 @@ def run_hunter():
 
         if leads_data:
             print(f"✅ SUCESSO! O Lobo encontrou {len(leads_data)} empresas reais:")
+
+            # 1. Crie o contador antes de começar a processar os leads
+            saved_count = 0
+
             for lead in leads_data:
                 name = lead.get('name')
                 raw_phone = lead.get('phone')
@@ -232,12 +236,22 @@ def run_hunter():
                     supabase.table('leads_lobo').insert(data).execute()
                     print(f"   💾 [DB] {name} salvo com sucesso.")
                     existing_names.add(name) # Evita duplicados na mesma rodada
+                    existing_phones.add(clean_phone)
+                    saved_count += 1 # Incrementa o contador
                 except Exception as e:
                     if "23505" in str(e):
                         print(f"   ⏭️ [SKIP] Telefone de {name} já existe no banco.")
                     else:
                         print(f"   ❌ [DB ERROR] Falha ao salvar {name}: {e}")
                 # ---------------------------------------
+
+            # 2. Imprima o resumo no final
+            print(f"\n{'='*50}")
+            print(f"📊 RESUMO DA CAÇADA:")
+            print(f"   Empresas encontradas: {len(leads_data)}")
+            print(f"   Empresas salvas no banco: {saved_count}")
+            print(f"   Empresas ignoradas (duplicadas): {len(leads_data) - saved_count}")
+            print(f"{'='*50}\n")
 
     except Exception as e:
         print(f"❌ ERRO TÉCNICO: {e}")
