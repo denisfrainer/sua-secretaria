@@ -151,25 +151,25 @@ export async function POST(req: Request) {
 
             // 2. Verificação Silenciosa (Number Check)
             // Você precisará criar esta função no seu arquivo sender.ts
+            // 2. Verificação Silenciosa (Number Check)
             const hasWhatsApp = await checkWhatsAppNumber(safePhone);
 
             if (!hasWhatsApp) {
-                console.log(`🚫 [${cronId}] O número ${safePhone} não possui WhatsApp ativo. Descartado preventivamente.`);
+                console.log(`🚫 [${cronId}] O número ${safePhone} (${lead.name}) não possui WhatsApp ativo. Descartado.`);
+                invalidCount++;
 
                 if (lead.id) {
                     await supabaseAdmin.from('leads_lobo').update({ status: 'invalid' }).eq('id', lead.id);
                 }
 
-                // Consome a cota diária e agenda o próximo tiro para manter o comportamento orgânico
-                await supabaseAdmin.rpc('increment_lobo_sent_count', { today_date: getBrazilDateString(), increment_by: 1 });
-                const nextHuntMinutes = Math.floor(Math.random() * (45 - 25 + 1)) + 25;
-                const futureDate = new Date(Date.now() + nextHuntMinutes * 60 * 1000).toISOString();
+                // --- 🛡️ ANTI-BAN SHIELD (Jitter) ---
+                // Pausa aleatória entre 3.5s e 7s para não alertar o firewall do Meta
+                const microSleep = Math.floor(Math.random() * (7000 - 3500 + 1)) + 3500;
+                console.log(`🛡️ [ANTI-BAN] Número inválido. Pausando ${microSleep / 1000}s para simular comportamento humano no Meta...`);
+                await sleep(microSleep);
 
-                await supabaseAdmin.from('system_settings').upsert({
-                    key: 'next_hunt_at', value: { timestamp: futureDate, scheduled_by: cronId }, updated_at: new Date().toISOString()
-                }, { onConflict: 'key' });
-
-                break; // Encerra o turno do Cron
+                // SILICON TWEAK: Pula para o próximo sem gastar cota diária ou hibernar por horas.
+                continue;
             }
 
             const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
