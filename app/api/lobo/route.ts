@@ -317,8 +317,21 @@ export async function POST(req: Request) {
 
                 await supabaseAdmin.rpc('increment_lobo_sent_count', { today_date: getBrazilDateString(), increment_by: 1 });
 
-                const nextHuntMinutes = Math.floor(Math.random() * (45 - 25 + 1)) + 25; // 25 to 45 mins
+                // Novo Jitter: Pausa entre 8 e 15 minutos
+                const nextHuntMinutes = Math.floor(Math.random() * (15 - 8 + 1)) + 8;
                 const futureDate = new Date(Date.now() + nextHuntMinutes * 60 * 1000).toISOString();
+
+                console.log(`⏱️ [PACING METRICS] Janela de 10h. Novo cooldown sorteado: ${nextHuntMinutes} min. Capacidade teórica máxima hoje: ${Math.floor(600 / nextHuntMinutes)} leads.`);
+
+                await supabaseAdmin
+                    .from('system_settings')
+                    .upsert({
+                        key: 'next_hunt_at',
+                        value: { timestamp: futureDate, scheduled_by: cronId },
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'key' });
+
+                console.log(`⏰ [${cronId}] Próxima caçada agendada para: ${futureDate}`);
 
                 await supabaseAdmin
                     .from('system_settings')
