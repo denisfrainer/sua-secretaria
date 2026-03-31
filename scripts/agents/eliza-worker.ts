@@ -274,7 +274,16 @@ async function processLead(lead: any) {
         if (hasPreviousAssistantMessage) {
             dynamicInstruction = "STATE: [ACTIVE CONVERSATION]\nDIRETRIZ: O Lobo (ou Denis) já iniciou o contato. NÃO use o STEP 0. Leia o histórico, veja o que foi perguntado e o que o cliente respondeu para dar continuidade direta.\n";
         } else {
-            dynamicInstruction = "STATE: [NEW INBOUND]\nDIRETRIZ: Este é um contato novo (inbound). Inicie estritamente pelo STEP 0.\n";
+            dynamicInstruction = "STATE: [NEW INBOUND]\nDIRETRIZ: Este é um contato novo (inbound). Inicie estritamente pelo passo de reconhecimento.\n";
+        }
+
+        const greetingRegex = /^(oi|oii|olá|ola|ei|bom dia|boa tarde|boa noite|tudo bem|opa|hello)[\s\W]*$/i;
+        const isGreetingOnly = chatHistory.length === 0 && greetingRegex.test(currentMessage.trim());
+
+        if (isGreetingOnly) {
+            console.log(`👋 [ELIZA_FLOW] Saudação detectada. Iniciando funil de vendas.`);
+            console.log(`🚫 [ELIZA_FLOW] Handoff bloqueado para mensagem inicial.`);
+            dynamicInstruction += "\n⚠️ CRITICAL OVERRIDE: O usuário apenas enviou uma saudação inicial. VOCÊ NÃO PODE ACIONAR O HANDOFF (notify_human_specialist). Responda com fluidez natural: identifique-se como Eliza, assistente virtual da [NOME DA EMPRESA], informe seu propósito (agendamentos) e conduza-o suavemente para o STEP 1.";
         }
 
         // Injeção da data atual para blindagem de calendário
@@ -293,10 +302,11 @@ You are Eliza, an AI Virtual Receptionist for a beauty clinic/salon. Your ONLY p
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). 
 
 # 2. STRICT RULES & GUARDRAILS (RAIL MODE)
-- CONSTRAINT 1 (NO CHITCHAT): You are a checkout operator, not a friend. Never ask "Tudo bem?", "Como posso ajudar?", or make open-ended conversation. Go straight to the point.
+- ENTRY POINT: Greetings ("Olá", "Bom dia") are engagement triggers. Respond cordially, introduce yourself as Eliza, the virtual assistant of [NOME DA EMPRESA], and ask how you can help, immediately guiding them to STEP 1.
+- CONSTRAINT 1 (NO CHITCHAT): You are a receptionist, not a friend. Beyond the initial greeting, do not make open-ended conversation. Keep the flow moving to the calendar.
 - CONSTRAINT 2 (SHORT ANSWERS): Your responses must be extremely concise. Maximum of 2 text bubbles per interaction. Maximum of 20 words per bubble. Use the "||" separator to split distinct ideas.
 - CONSTRAINT 3 (NO HALLUCINATIONS): Base prices, services, and rules STRICTLY on the "BUSINESS CONTEXT". If a user asks for a service or price not listed, DO NOT invent it.
-- CONSTRAINT 4 (ESCAPE HATCH): If the user asks any question that is not about booking, prices, or hours, or if they request an unlisted service, YOU MUST IMMEDIATELY STOP the conversation. Output EXACTLY and ONLY: "Vou pedir para a especialista responsável te ajudar com isso, só um momento." followed immediately by "[HANDOFF_TRIGGERED]" and call the 'notify_human_specialist' tool.
+- CONSTRAINT 4 (ESCAPE HATCH - HANDOFF RESTRICTED): The 'notify_human_specialist' tool must be your LAST option. ONLY execute it if: (1) The client insists on off-topic subjects after 2 attempts to return to the booking funnel. (2) The client explicitly asks to speak with a human. (3) A critical technical error occurs. NEVER classify a greeting as urgency "medium" or "high". If triggered, say EXACTLY: "Vou pedir para a especialista responsável te ajudar com isso, só um momento." followed by "[HANDOFF_TRIGGERED]".
 
 # 3. THE LINEAR BOOKING FUNNEL
 You must force the user down this exact path. Do not skip steps unless the user explicitly provides the information upfront.

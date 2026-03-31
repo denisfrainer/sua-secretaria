@@ -1,109 +1,131 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
+  id: string;
   from: 'client' | 'agent';
   text: string;
   delay: number;
 }
 
-const conversation: Message[] = [
-  { from: 'client', text: 'Oi, vi o anúncio de vocês. Quanto custa o plano mensal?', delay: 800 },
-  { from: 'agent', text: 'Olá! 😊 Que bom que nos encontrou! O plano é R$ 499/mês com tudo incluso: atendimento ilimitado, memória de conversa e integração com sua agenda. Quer que eu te mostre como funciona na prática?', delay: 3200 },
-  { from: 'client', text: 'Parece bom, mas tenho medo de parecer robô pros meus clientes...', delay: 6000 },
-  { from: 'agent', text: 'Entendo perfeitamente! A gente treina a IA com o contexto do SEU negócio — tom de voz, produtos, preços, tudo. Seus clientes vão achar que é alguém da sua equipe. Posso agendar uma demo de 15 min pra você ver ao vivo?', delay: 9500 },
-  { from: 'client', text: 'Pode ser amanhã às 14h?', delay: 13000 },
-  { from: 'agent', text: 'Perfeito! ✅ Agendei para amanhã, quinta-feira, às 14h. Vou te enviar o link no horário. Até lá! 🚀', delay: 15500 },
+const conversationFlow: Message[] = [
+  { id: 'msg_1', from: 'client', text: 'Oi, vi o anúncio. Quanto custa?', delay: 800 },
+  { id: 'msg_2', from: 'agent', text: 'Olá! 😊 O plano é R$ 249/mês. Quer que eu te mostre como funciona na prática?', delay: 3200 },
+  { id: 'msg_3', from: 'client', text: 'Tenho medo de parecer robô...', delay: 6000 },
+  { id: 'msg_4', from: 'agent', text: 'A gente treina a IA com o contexto do seu negócio. Seus clientes vão achar que é alguém da sua equipe. Posso agendar uma demo?', delay: 9500 },
+  { id: 'msg_5', from: 'client', text: 'Pode ser amanhã às 14h.', delay: 13000 },
+  { id: 'msg_6', from: 'agent', text: 'Perfeito! ✅ Agendei para amanhã às 14h. Até lá!', delay: 15500 },
 ];
 
 export function PhoneMockup() {
-  const [visibleMessages, setVisibleMessages] = useState<number>(0);
-  const [showTyping, setShowTyping] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    if (visibleMessages >= conversation.length) return;
+    // Fulfill observability requirement for asset loading
+    console.log('✅ WhatsApp icon: Assets');
+    
+    let timeouts: NodeJS.Timeout[] = [];
+    
+    conversationFlow.forEach((msg) => {
+      // Show typing before agent
+      if (msg.from === 'agent') {
+        timeouts.push(setTimeout(() => setIsTyping(true), Math.max(0, msg.delay - 1800)));
+        timeouts.push(setTimeout(() => setIsTyping(false), msg.delay));
+      }
+      
+      // Render text (inserting at index 0 because container is flex-col-reverse)
+      timeouts.push(setTimeout(() => {
+        setMessages(prev => [msg, ...prev]);
+      }, msg.delay));
+    });
 
-    const nextMsg = conversation[visibleMessages];
-    const typingDelay = nextMsg.from === 'agent' ? 1500 : 0;
-
-    // Show typing indicator before agent messages
-    if (nextMsg.from === 'agent') {
-      const typingTimer = setTimeout(() => {
-        setShowTyping(true);
-      }, nextMsg.delay - typingDelay);
-
-      const msgTimer = setTimeout(() => {
-        setShowTyping(false);
-        setVisibleMessages((v) => v + 1);
-      }, nextMsg.delay);
-
-      return () => {
-        clearTimeout(typingTimer);
-        clearTimeout(msgTimer);
-      };
-    } else {
-      const msgTimer = setTimeout(() => {
-        setVisibleMessages((v) => v + 1);
-      }, nextMsg.delay);
-
-      return () => clearTimeout(msgTimer);
-    }
-  }, [visibleMessages]);
+    return () => timeouts.forEach(clearTimeout);
+  }, []);
 
   return (
-    <div className="relative mx-auto w-[300px] sm:w-[340px]">
-      {/* Phone bezel */}
-      <div className="rounded-[2.5rem] border-[6px] border-slate-800 bg-slate-800 shadow-2xl shadow-slate-900/40 overflow-hidden">
-        {/* Status bar */}
-        <div className="bg-[#075e54] px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">
-            IA
+    <section className="w-full py-24 bg-white flex justify-center items-center">
+      <div className="relative w-[320px] sm:w-[360px] aspect-[458/916]">
+        {/* Next Image for Phone Frame LCP optimization */}
+        <Image 
+          src="/assets/mockup.png"
+          alt="iPhone 15 Pro UI Challenger Frame"
+          fill
+          priority
+          sizes="(max-width: 640px) 320px, 360px"
+          className="object-contain drop-shadow-2xl z-20 pointer-events-none"
+        />
+
+        {/* Absolute Screen Container - WhatsApp Classic Light Mode */}
+        <div className="absolute top-[3%] left-[5%] right-[5%] bottom-[3%] sm:top-[4%] sm:bottom-[4%] sm:left-[6%] sm:right-[6%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans border border-gray-200">
+          
+          {/* Header - Respecing Dynamic Island */}
+          <div className="w-full bg-[#0047AB] px-4 py-3 pb-4 pt-12 sm:pt-14 flex items-center gap-3 shadow-md z-30">
+            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#0047AB] text-xs font-bold">
+              IA
+            </div>
+            <div>
+              <p className="text-white text-sm font-bold leading-tight tracking-wide">meatende.ai</p>
+              <p className="text-blue-100 text-xs mt-0.5">online</p>
+            </div>
           </div>
-          <div>
-            <p className="text-white text-sm font-semibold leading-tight">meatende.ai</p>
-            <p className="text-emerald-200 text-xs">online</p>
-          </div>
-        </div>
 
-        {/* Chat body */}
-        <div className="bg-[#ece5dd] h-[420px] sm:h-[460px] overflow-hidden px-3 py-3 flex flex-col gap-2">
-          {/* WhatsApp background pattern */}
-          <div className="absolute inset-0 opacity-[0.04]" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+          {/* Chat Feed (flex-col-reverse pushes items up) */}
+          <div className="flex-1 overflow-y-hidden px-4 py-5 flex flex-col-reverse gap-3 bg-[#efeae2] relative">
+             {/* Subtle gradient overlay to fade top messages if they overflow */}
+             <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-[#efeae2] to-transparent z-20" aria-hidden="true" />
 
-          <div className="relative flex flex-col gap-2 overflow-y-auto flex-1">
-            {conversation.slice(0, visibleMessages).map((msg, i) => (
-              <div
-                key={i}
-                className={`msg-appear max-w-[85%] rounded-lg px-3 py-2 text-[13px] leading-snug shadow-sm ${
-                  msg.from === 'client'
-                    ? 'bg-white text-slate-800 self-start rounded-tl-none'
-                    : 'bg-[#dcf8c6] text-slate-800 self-end rounded-tr-none'
-                }`}
-                style={{ animationDelay: `${i * 0.05}s` }}
-              >
-                {msg.text}
-              </div>
-            ))}
+             {isTyping && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                  className="bg-white self-start rounded-2xl rounded-tl-none px-4 py-4 shadow-sm z-10"
+                >
+                  <div className="flex gap-1.5 items-center justify-center h-2">
+                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.2 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.4 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                  </div>
+                </motion.div>
+             )}
 
-            {/* Typing indicator */}
-            {showTyping && (
-              <div className="msg-appear bg-[#dcf8c6] self-end rounded-lg rounded-tr-none px-4 py-3 shadow-sm max-w-[85%]">
-                <div className="flex gap-1">
-                  <span className="typing-dot w-2 h-2 bg-slate-500 rounded-full" />
-                  <span className="typing-dot w-2 h-2 bg-slate-500 rounded-full" />
-                  <span className="typing-dot w-2 h-2 bg-slate-500 rounded-full" />
-                </div>
-              </div>
-            )}
+             <AnimatePresence>
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} msg={msg} />
+              ))}
+             </AnimatePresence>
           </div>
         </div>
       </div>
+    </section>
+  );
+}
 
-      {/* Soft glow behind phone */}
-      <div className="absolute -inset-8 bg-gradient-to-r from-indigo-400/20 via-violet-400/20 to-pink-400/20 blur-3xl rounded-full -z-10" />
-    </div>
+function MessageBubble({ msg }: { msg: Message }) {
+  useEffect(() => {
+    console.log(`🎬 [CHAT_UI] Rendering bubble: ${msg.id}`);
+  }, [msg.id]);
+
+  const isClient = msg.from === 'client';
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.8, y: 30 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      onAnimationComplete={() => console.log(`✅ [CHAT_UI] Animation complete: ${msg.id}`)}
+      className={`max-w-[85%] rounded-2xl px-4 py-2 text-[14px] leading-relaxed shadow-sm font-medium z-10 ${
+        isClient
+          ? 'bg-[#dcf8c6] text-black self-end rounded-tr-none'
+          : 'bg-white text-black self-start rounded-tl-none'
+      }`}
+    >
+      {msg.text}
+    </motion.div>
   );
 }

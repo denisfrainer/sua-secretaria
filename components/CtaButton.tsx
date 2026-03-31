@@ -1,28 +1,40 @@
+'use client';
+
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface CtaButtonProps {
   text: string;
   href?: string;
   variant?: 'primary' | 'secondary';
+  onClick?: () => void;
 }
 
-export const CtaButton = ({ text, href = "#", variant = "primary" }: CtaButtonProps) => {
+export const CtaButton = ({ text, href = "#", variant = "primary", onClick }: CtaButtonProps) => {
   const baseClasses =
-    "inline-flex items-center justify-center gap-2 rounded-full font-semibold text-base px-8 py-4 transition-all duration-300 ease-out active:scale-[0.98] whitespace-nowrap cursor-pointer";
+    "inline-flex items-center justify-center gap-2 rounded-full font-semibold text-base transition-all duration-300 ease-out whitespace-nowrap cursor-pointer";
 
   const variants = {
     primary:
-      "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:from-indigo-500 hover:to-violet-500",
+      "px-8 py-4 bg-[#0047AB] text-white hover:bg-blue-800 shadow-md",
     secondary:
-      "bg-white text-slate-900 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 hover:shadow-md",
+      "px-4 py-2 bg-transparent text-[#0047AB] hover:underline underline-offset-4",
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    console.log(`🚀 [LEAD ACTION] CtaButton clicado: "${text}" | Destino: ${href}`);
+    if (onClick) onClick();
   };
 
   return (
-    <a
+    <motion.a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       className={`${baseClasses} ${variants[variant]}`}
+      onClick={handleClick}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
     >
       {variant === 'primary' && (
         <svg
@@ -37,6 +49,6 @@ export const CtaButton = ({ text, href = "#", variant = "primary" }: CtaButtonPr
         </svg>
       )}
       {text}
-    </a>
+    </motion.a>
   );
 };

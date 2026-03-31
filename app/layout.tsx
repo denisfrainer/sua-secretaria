@@ -4,15 +4,15 @@
 */
 
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Source_Sans_3 } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
 
-const inter = Inter({
+const sourceSans3 = Source_Sans_3({
     subsets: ["latin"],
-    weight: ["400", "500", "600", "700"],
-    variable: "--font-inter",
+    weight: ["400", "500", "600", "700", "800"],
+    variable: "--font-source-sans",
     display: 'swap',
 });
 
@@ -45,8 +45,8 @@ export default function RootLayout({
         <html lang="pt">
             <body
                 className={cn(
-                    "font-sans antialiased bg-slate-50 text-slate-900",
-                    inter.variable
+                    "font-sans antialiased bg-white text-black",
+                    sourceSans3.variable
                 )}
             >
                 {children}
