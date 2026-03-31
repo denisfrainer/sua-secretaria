@@ -505,6 +505,13 @@ http.createServer((req, res) => {
                 if (!dataObj.key) return;
 
                 const isFromMe = dataObj.key.fromMe === true;
+
+                // 🛡️ [TRAVA DE FOGO AMIGO] Aborta a execução se a mensagem foi enviada pelo próprio aparelho
+                if (isFromMe) {
+                    console.log(`🛡️ [WEBHOOK] Mensagem ignorada (Fogo Amigo). Origem: Outbound (Você enviou).`);
+                    return; // Mata o processo aqui
+                }
+
                 const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
                     ? String(dataObj.key.remoteJidAlt)
                     : String(dataObj.key.remoteJid);
