@@ -60,11 +60,11 @@ export function PhoneMockup() {
         <div className="absolute top-[1.5%] left-[4.2%] right-[4.2%] bottom-[1.8%] sm:left-[5.2%] sm:right-[5.2%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans">
           
           {/* WhatsApp Header - Image 3 Exact Colors and Spacing */}
-          <div className="w-full bg-[#075e54] px-4 py-3 pb-4 pt-4 flex items-center gap-3 shadow-md z-30">
+          <div className="w-full bg-[#075e54] px-4 py-3 pb-4 pt-8 flex items-center gap-3 shadow-md z-30">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold border border-white/30">
               IA
             </div>
-            <div className="translate-y-[2px]">
+            <div className="translate-y-[4px]">
               <p className="text-white text-base font-bold leading-tight tracking-wide">meatende.ai</p>
               <p className="text-[#a2e8d4] text-xs mt-0.5">online</p>
             </div>
