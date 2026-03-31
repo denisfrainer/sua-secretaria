@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Brain, Filter, Shield, CheckCircle } from 'lucide-react';
+import { Brain, Filter, Shield, CheckCircle, QrCode, Mic, Bot, ChevronDown } from 'lucide-react';
 
 const MotionSection = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => (
   <motion.section
@@ -34,7 +34,7 @@ export function LandingSections() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300">
+            <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300 flex flex-col items-center sm:items-start text-center sm:text-left">
               <div className="mb-6">
                 <Brain className="w-10 h-10 text-blue-600" />
               </div>
@@ -44,7 +44,7 @@ export function LandingSections() {
               </p>
             </motion.div>
 
-            <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300">
+            <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300 flex flex-col items-center sm:items-start text-center sm:text-left">
               <div className="mb-6">
                 <Filter className="w-10 h-10 text-blue-600" />
               </div>
@@ -54,7 +54,7 @@ export function LandingSections() {
               </p>
             </motion.div>
 
-            <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300">
+            <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300 flex flex-col items-center sm:items-start text-center sm:text-left">
               <div className="mb-6">
                 <Shield className="w-10 h-10 text-blue-600" />
               </div>
@@ -74,70 +74,97 @@ export function LandingSections() {
             Configure sua IA conversando com ela.
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-            {/* Minimalist connector line */}
-            <div className="hidden md:block absolute top-[28px] left-1/4 right-1/4 h-[1px] bg-gray-300 -z-10" />
+            {/* Minimalist connector line (hidden on mobile) */}
+            <div className="hidden md:block absolute top-[28px] left-1/4 right-1/4 h-[2px] bg-gray-200 -z-10" />
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center text-xl font-bold mb-6">1</div>
+              <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><QrCode className="w-6 h-6 stroke-2"/></div>
               <h3 className="text-xl font-bold text-black mb-3">Conecte seu WhatsApp</h3>
               <p className="text-gray-500 font-medium">Basta escanear o QR Code oficial da Meta. Sem configurações complexas ou códigos.</p>
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center text-xl font-bold mb-6">2</div>
+              <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><Mic className="w-6 h-6 stroke-2"/></div>
               <h3 className="text-xl font-bold text-black mb-3">Treine a IA</h3>
               <p className="text-gray-500 font-medium">Mande um áudio explicando seus serviços, preços e o que você vende. Ela aprende na hora.</p>
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-6">3</div>
-              <h3 className="text-xl font-bold text-black mb-3">Deixe o Lobo Caçar</h3>
+              <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-600/30 z-10"><Bot className="w-6 h-6 stroke-2"/></div>
+              <h3 className="text-xl font-bold text-black mb-3">Deixe sua funcionária trabalhar</h3>
               <p className="text-gray-500 font-medium">A IA assume o primeiro contato instantaneamente, sem deixar nenhum lead esfriar no funil.</p>
             </div>
           </div>
         </div>
       </MotionSection>
 
-      {/* 5. Comparison Table */}
+      {/* 5. Comparison Table (Mobile Optimized) */}
       <MotionSection id="comparativo" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16">
             Por que o meatende.ai domina
           </h2>
-          <div className="overflow-hidden border border-gray-200 shadow-sm rounded-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse bg-white">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="p-6 font-bold text-gray-500 uppercase text-xs tracking-wider">Recurso</th>
-                    <th className="p-6 font-bold text-gray-400 uppercase text-xs tracking-wider border-l border-gray-200">Chatbots de Fluxo</th>
-                    <th className="p-6 font-extrabold text-blue-600 uppercase text-xs tracking-wider border-l border-gray-200">meatende.ai (Gen-IA)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  <tr className="hover:bg-gray-50/50 transition-colors">
-                    <td className="p-6 font-bold text-black">Experiência do Lead</td>
-                    <td className="p-6 text-gray-500 border-l border-gray-100">Engessada com menus de botões</td>
-                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-blue-50/50">Fluida, natural e 100% conversacional</td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50 transition-colors">
-                    <td className="p-6 font-bold text-black">Aprendizado</td>
-                    <td className="p-6 text-gray-500 border-l border-gray-100">Exige programação de regras manuais</td>
-                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-blue-50/50">Aprende tudo via áudio rápido seu</td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50 transition-colors">
-                    <td className="p-6 font-bold text-black">Qualificação</td>
-                    <td className="p-6 text-gray-500 border-l border-gray-100">Repassa custo de Lead sujo para a equipe</td>
-                    <td className="p-6 font-bold text-blue-600 border-l border-gray-100 bg-blue-50/50">Identifica curiosos e defende o ticket</td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50 transition-colors">
-                    <td className="p-6 font-bold text-black">Setup Inicial</td>
-                    <td className="p-6 text-gray-500 border-l border-gray-100">Semanas arrastando blocos lógicos</td>
-                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-blue-50/50">Conectou o QR Code, já está vendendo</td>
-                  </tr>
-                </tbody>
-              </table>
+          
+          <div className="flex flex-col gap-6 md:gap-4">
+            {/* Header row for Desktop */}
+            <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-2 border-b border-gray-200">
+              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Recurso</div>
+              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Chatbots de Fluxo</div>
+              <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">meatende.ai (Gen-IA)</div>
             </div>
+
+            {/* Feature 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
+               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Experiência do Lead</div>
+               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                 Engessada com menus de botões
+               </div>
+               <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                 Fluida, natural e 100% conversacional
+               </div>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
+               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Aprendizado</div>
+               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                 Exige programação de regras manuais
+               </div>
+               <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                 Aprende tudo via áudio rápido seu
+               </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
+               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Qualificação</div>
+               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                 Repassa custo de Lead sujo para a equipe
+               </div>
+               <div className="p-5 md:p-6 font-bold text-blue-600 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                 Identifica curiosos e defende o ticket
+               </div>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
+               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Setup Inicial</div>
+               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                 Semanas arrastando blocos lógicos
+               </div>
+               <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                 Conectou o QR Code, já está vendendo
+               </div>
+            </div>
+            
           </div>
         </div>
       </MotionSection>
@@ -151,7 +178,7 @@ export function LandingSections() {
             </h2>
           </div>
 
-          <div className="bg-white p-10 border border-gray-200 shadow-md text-center">
+          <div className="bg-white p-10 border border-gray-200 shadow-xl rounded-3xl text-center">
             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Acesso Completo</p>
             <div className="flex items-baseline justify-center gap-1 mb-8">
               <span className="text-6xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 249</span>
@@ -160,15 +187,15 @@ export function LandingSections() {
 
             <ul className="text-left space-y-4 mb-10 font-medium">
               <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-black flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <span className="text-gray-600">Atendimento ilimitado de leads</span>
               </li>
               <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-black flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <span className="text-gray-600">Conexão API Oficial Meta Cloud</span>
               </li>
               <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-black flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <span className="text-gray-600">Integração Google Calendar incluída</span>
               </li>
             </ul>
@@ -193,32 +220,32 @@ export function LandingSections() {
           </h2>
 
           <div className="space-y-0 border-t border-gray-200">
-            <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
+            <details className="group border-b border-gray-200" open>
+              <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
                 <span>Não corre risco de ficar robótico?</span>
-                <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
+                <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
               </summary>
-              <div className="pb-6 text-gray-600 font-medium leading-relaxed pr-8">
+              <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
                 De forma alguma. O motor Generativo permite que a IA assuma falhas gramaticais da ponta, gírias e o tom de voz do seu negócio, gerando extrema empatia e fluidez sem menus.
               </div>
             </details>
 
             <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
+              <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
                 <span>Vou perder meu histórico se usar o meu número atual?</span>
-                <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
+                <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
               </summary>
-              <div className="pb-6 text-gray-600 font-medium leading-relaxed pr-8">
+              <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
                 Não. Você mantém todo o acesso ao seu número atual no WhatsApp. A IA apenas roda em plano de fundo absorvendo os leads entrantes instantaneamente.
               </div>
             </details>
 
             <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
+              <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
                 <span>Posso parar a IA no meio de um fechamento? (Silent Handoff)</span>
-                <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
+                <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
               </summary>
-              <div className="pb-6 text-gray-600 font-medium leading-relaxed pr-8">
+              <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
                 Sim! Qualquer mensagem que você, como vendedor raiz, mandar para o lead, aciona nosso modo "Silent Handoff". A IA pausa automaticamente e deixa você realizar o "kill".
               </div>
             </details>

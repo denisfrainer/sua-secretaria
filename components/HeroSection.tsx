@@ -13,7 +13,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative w-full pt-32 pb-16 sm:pt-40 flex flex-col items-center justify-center bg-white text-black min-h-[90vh]">
+    <section className="relative w-full pt-32 pb-0 sm:pt-40 flex flex-col items-center justify-center bg-white text-black min-h-[90vh]">
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -41,7 +41,7 @@ export function HeroSection() {
               Contratar Agora
             </a>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/5548992123255"
               className="border-2 border-blue-600 text-blue-600 font-bold text-lg px-12 py-5 rounded-2xl hover:bg-blue-50 transition-colors w-full sm:w-auto min-w-[280px] flex items-center justify-center gap-3"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">

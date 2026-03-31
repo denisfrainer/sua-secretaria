@@ -44,7 +44,7 @@ export function PhoneMockup() {
   }, []);
 
   return (
-    <section className="w-full py-24 bg-white flex justify-center items-center">
+    <section className="w-full pt-2 pb-24 bg-white flex justify-center items-center">
       <div className="relative w-[320px] sm:w-[360px] aspect-[458/916]">
         {/* iPhone Frame */}
         <Image 
@@ -60,7 +60,7 @@ export function PhoneMockup() {
         <div className="absolute top-[2.5%] left-[5%] right-[5%] bottom-[3%] sm:left-[6%] sm:right-[6%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans border border-gray-200">
           
           {/* WhatsApp Header - Image 3 Exact Colors and Spacing */}
-          <div className="w-full bg-[#075e54] px-4 py-3 pb-4 pt-10 sm:pt-10 flex items-center gap-3 shadow-md z-30">
+          <div className="w-full bg-[#075e54] px-4 py-3 pb-4 pt-4 flex items-center gap-3 shadow-md z-30">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold border border-white/30">
               IA
             </div>
