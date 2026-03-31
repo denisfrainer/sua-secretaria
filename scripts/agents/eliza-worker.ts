@@ -110,34 +110,62 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
     }
 
     if (name === 'check_calendar_availability') {
-        console.log(`📅 [CALENDAR CHECK] Verificando disponibilidade para ${args.date} (${clientPhone})`);
+        console.log(`\n================= 👁️ CONSOLE.GOD (CALENDAR CHECK) 👁️ =================`);
+        console.log(`📅 Leitura de agenda acionada para a data: ${args.date}`);
+
         try {
+            // Ajuste: Permite definir o ID da agenda via variável de ambiente. 
+            // Se usar 'primary', certifique-se de que o evento de teste foi criado na agenda da conta autenticada.
+            const targetCalendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
+
             const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
             const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
 
-            console.log(`➡️  [API REQUEST] Consultando Google Calendar para o intervalo: ${startOfDay.toISOString()} - ${endOfDay.toISOString()}`);
-            const eventsRes = await calendar.events.list({
-                calendarId: 'primary',
+            const requestParams = {
+                calendarId: targetCalendarId,
                 timeMin: startOfDay.toISOString(),
                 timeMax: endOfDay.toISOString(),
-                singleEvents: true,
-                orderBy: 'startTime',
+                singleEvents: true, // CRÍTICO: Garante o retorno de todos os eventos expandidos
+                orderBy: 'startTime'
+            };
+
+            console.log(`➡️ Payload da requisição enviada ao Google:`, JSON.stringify(requestParams, null, 2));
+
+            const response = await calendar.events.list(requestParams);
+
+            const events = response.data.items || [];
+
+            console.log(`⬅️ Payload recebido do Google (Total itens encontrados: ${events.length})`);
+
+            if (events.length > 0) {
+                events.forEach((ev: any) => console.log(`   - Evento: ${ev.summary} | Início: ${ev.start?.dateTime}`));
+            } else {
+                console.log(`   - Nenhum evento retornado pelo Google. A lista está vazia.`);
+                console.log(`   - ATENÇÃO: Se existe evento nesta data, o erro é de permissão/compartilhamento do Calendar ID.`);
+            }
+            console.log(`=======================================================================\n`);
+
+            const busySlots = events.map((ev: any) => {
+                if (ev.start?.dateTime) {
+                    return new Date(ev.start.dateTime).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+                    });
+                }
+                return 'Hora indefinida';
             });
-            const events = eventsRes.data.items || [];
-            console.log(`⬅️  [CALENDAR RESPONSE] Encontrados ${events.length} eventos ocupados para a data.`);
 
             return {
                 status: 'success',
                 date: args.date,
-                busy_slots: events.map((e: any) => ({
-                    start: e.start?.dateTime || e.start?.date,
-                    end: e.end?.dateTime || e.end?.date,
-                    summary: e.summary
-                }))
+                busy_slots: busySlots.length > 0 ? busySlots : 'Nenhum horário ocupado.',
+                message: busySlots.length > 0
+                    ? `Estes horários já estão OCUPADOS: ${busySlots.join(', ')}. Não agende neles.`
+                    : `Agenda 100% livre. Ofereça o horário solicitado.`
             };
+
         } catch (err: any) {
             console.error("❌ [CALENDAR ERROR]:", err.message);
-            return { status: "error", message: err.message };
+            return { status: 'error', message: 'Falha ao consultar a API do Google Calendar.' };
         }
     }
 
@@ -486,23 +514,6 @@ http.createServer((req, res) => {
                 const messageObj = dataObj.message;
 
                 let clientMessage = '';
-
-                // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
-                if (messageObj.imageMessage) {
-                    console.log(`📸 [WEBHOOK] Imagem (Comprovante) recebida de ${clientNumber}. Acionando Humano.`);
-
-                    // Pausa a IA e notifica a recepção
-                    await supabaseAdmin.from('leads_lobo').update({
-                        status: 'needs_human',
-                        ai_paused: true,
-                        needs_human: true
-                    }).eq('phone', clientNumber);
-
-                    // Dispara a mensagem de confirmação para a cliente
-                    await sendWhatsAppMessage(clientNumber, "✅ *Comprovante Recebido!* || A recepção vai conferir o seu PIX e já libera a sua vaga na agenda de forma definitiva. Só um instante!");
-
-                    return; // Interrompe o fluxo aqui
-                }
 
                 // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
                 if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
