@@ -116,7 +116,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         try {
             // Ajuste: Permite definir o ID da agenda via variável de ambiente. 
             // Se usar 'primary', certifique-se de que o evento de teste foi criado na agenda da conta autenticada.
-            const targetCalendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
+            const targetCalendarId = process.env.GOOGLE_CALENDAR_ID || 'denisfrainer93@gmail.com';
 
             const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
             const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
