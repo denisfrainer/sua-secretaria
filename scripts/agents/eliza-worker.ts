@@ -103,7 +103,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         }).eq('phone', clientPhone);
         return { status: 'success' };
     }
-    
+
     if (name === 'notify_human_specialist') {
         await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
         return { status: 'success', notification: 'Denis has been alerted.' };
@@ -114,7 +114,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         try {
             const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
             const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
-            
+
             console.log(`➡️  [API REQUEST] Consultando Google Calendar para o intervalo: ${startOfDay.toISOString()} - ${endOfDay.toISOString()}`);
             const eventsRes = await calendar.events.list({
                 calendarId: 'primary',
@@ -125,7 +125,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
             });
             const events = eventsRes.data.items || [];
             console.log(`⬅️  [CALENDAR RESPONSE] Encontrados ${events.length} eventos ocupados para a data.`);
-            
+
             return {
                 status: 'success',
                 date: args.date,
@@ -326,9 +326,8 @@ ${dynamicInstruction}
             console.log(`🔄 [TOOL] Returning tool response to Gemini...`);
             // CRITICAL FIX: Wrap the parts array in a strict Content object
             result = await chat.sendMessage({
-                role: 'user',
-                parts: functionResponseParts
-            } as any);
+                message: functionResponseParts
+            });
         }
 
         const responseText = result.text || '';
@@ -500,92 +499,92 @@ http.createServer((req, res) => {
                 clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
 
                 if (clientMessage && clientMessage.trim().length > 0) {
-                // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
-                if (isFromMe) {
-                    const cmd = clientMessage.trim();
-                    if (cmd === '/pausar') {
-                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                        return;
-                    } else if (cmd === '/retomar') {
-                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
-                        return;
-                    }
+                    // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
+                    if (isFromMe) {
+                        const cmd = clientMessage.trim();
+                        if (cmd === '/pausar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                            return;
+                        } else if (cmd === '/retomar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
+                            return;
+                        }
 
-                    const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
-                    if (isAPI) {
-                        return; // Ignora mensagens enviadas pela própria Eliza
-                    } else {
-                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                        console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
-                        return;
-                    }
-                }
-
-                console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
-
-                // --- BLINDAGENS DE SEGURANÇA ---
-                const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
-                const msgLower = clientMessage.toLowerCase();
-                if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
-                    console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
-                    return;
-                }
-
-                let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
-
-                if (lead) {
-                    await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
-
-                    if (lead.updated_at) {
-                        const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
-                        if (timeSinceContact < 2000) {
-                            console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
+                        const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+                        if (isAPI) {
+                            return; // Ignora mensagens enviadas pela própria Eliza
+                        } else {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
                             return;
                         }
                     }
 
-                    if ((lead.reply_count || 0) >= 10) {
-                        console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
-                        await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                    console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
+
+                    // --- BLINDAGENS DE SEGURANÇA ---
+                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
+                    const msgLower = clientMessage.toLowerCase();
+                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                        console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
                         return;
                     }
 
-                    if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
-                        console.log(`🔒 Lead travado ou com humano. Ignorando.`);
+                    let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
+
+                    if (lead) {
+                        await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+
+                        if (lead.updated_at) {
+                            const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
+                            if (timeSinceContact < 2000) {
+                                console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
+                                return;
+                            }
+                        }
+
+                        if ((lead.reply_count || 0) >= 10) {
+                            console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
+                            await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                            return;
+                        }
+
+                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
+                            console.log(`🔒 Lead travado ou com humano. Ignorando.`);
+                            return;
+                        }
+                    }
+
+                    if (!lead) {
+                        const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                            phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
+                        }).select().single();
+                        lead = newLead;
+                    }
+
+                    // --- SALVAMENTO E GATILHO ---
+                    await supabaseAdmin.from('messages').insert({
+                        lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
+                    });
+
+                    const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                    if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                        await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                         return;
                     }
+
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
+                    console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
                 }
-
-                if (!lead) {
-                    const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
-                        phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
-                    }).select().single();
-                    lead = newLead;
-                }
-
-                // --- SALVAMENTO E GATILHO ---
-                await supabaseAdmin.from('messages').insert({
-                    lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
-                });
-
-                const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
-                if (elizaSwitch && elizaSwitch.value?.enabled === false) {
-                    await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
-                    return;
-                }
-
-                await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
-                console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
+            } catch (error) {
+                console.error('❌ [WEBHOOK CRASH]:', error);
             }
-        } catch (error) {
-            console.error('❌ [WEBHOOK CRASH]:', error);
-        }
-    });
-return;
+        });
+        return;
     }
 
-res.writeHead(404);
-res.end();
+    res.writeHead(404);
+    res.end();
 }).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
 
 startPolling();
