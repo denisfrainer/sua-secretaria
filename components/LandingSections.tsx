@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { Brain, Filter, Shield, CheckCircle } from 'lucide-react';
-import { CtaButton } from '@/components/CtaButton';
 
 const MotionSection = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => (
   <motion.section
@@ -37,7 +36,7 @@ export function LandingSections() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300">
               <div className="mb-6">
-                <Brain className="w-10 h-10 text-[#0047AB]" />
+                <Brain className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Conversa Real</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
@@ -47,7 +46,7 @@ export function LandingSections() {
 
             <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300">
               <div className="mb-6">
-                <Filter className="w-10 h-10 text-[#0047AB]" />
+                <Filter className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Filtro de Curiosos</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
@@ -57,7 +56,7 @@ export function LandingSections() {
 
             <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl p-8 border border-gray-200 hover:border-black transition-all duration-300">
               <div className="mb-6">
-                <Shield className="w-10 h-10 text-[#0047AB]" />
+                <Shield className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Conexão Oficial</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
@@ -91,7 +90,7 @@ export function LandingSections() {
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-[#0047AB] text-white flex items-center justify-center text-xl font-bold mb-6">3</div>
+              <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-6">3</div>
               <h3 className="text-xl font-bold text-black mb-3">Deixe o Lobo Caçar</h3>
               <p className="text-gray-500 font-medium">A IA assume o primeiro contato instantaneamente, sem deixar nenhum lead esfriar no funil.</p>
             </div>
@@ -112,29 +111,29 @@ export function LandingSections() {
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="p-6 font-bold text-gray-500 uppercase text-xs tracking-wider">Recurso</th>
                     <th className="p-6 font-bold text-gray-400 uppercase text-xs tracking-wider border-l border-gray-200">Chatbots de Fluxo</th>
-                    <th className="p-6 font-extrabold text-[#0047AB] uppercase text-xs tracking-wider border-l border-gray-200">meatende.ai (Gen-IA)</th>
+                    <th className="p-6 font-extrabold text-blue-600 uppercase text-xs tracking-wider border-l border-gray-200">meatende.ai (Gen-IA)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   <tr className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-6 font-bold text-black">Experiência do Lead</td>
                     <td className="p-6 text-gray-500 border-l border-gray-100">Engessada com menus de botões</td>
-                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-[#0047AB]/5">Fluida, natural e 100% conversacional</td>
+                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-blue-50/50">Fluida, natural e 100% conversacional</td>
                   </tr>
                   <tr className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-6 font-bold text-black">Aprendizado</td>
                     <td className="p-6 text-gray-500 border-l border-gray-100">Exige programação de regras manuais</td>
-                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-[#0047AB]/5">Aprende tudo via áudio rápido seu</td>
+                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-blue-50/50">Aprende tudo via áudio rápido seu</td>
                   </tr>
                   <tr className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-6 font-bold text-black">Qualificação</td>
                     <td className="p-6 text-gray-500 border-l border-gray-100">Repassa custo de Lead sujo para a equipe</td>
-                    <td className="p-6 font-bold text-[#0047AB] border-l border-gray-100 bg-[#0047AB]/5">Identifica curiosos e defende o ticket</td>
+                    <td className="p-6 font-bold text-blue-600 border-l border-gray-100 bg-blue-50/50">Identifica curiosos e defende o ticket</td>
                   </tr>
                   <tr className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-6 font-bold text-black">Setup Inicial</td>
                     <td className="p-6 text-gray-500 border-l border-gray-100">Semanas arrastando blocos lógicos</td>
-                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-[#0047AB]/5">Conectou o QR Code, já está vendendo</td>
+                    <td className="p-6 font-bold text-black border-l border-gray-100 bg-blue-50/50">Conectou o QR Code, já está vendendo</td>
                   </tr>
                 </tbody>
               </table>
@@ -155,7 +154,7 @@ export function LandingSections() {
           <div className="bg-white p-10 border border-gray-200 shadow-md text-center">
             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Acesso Completo</p>
             <div className="flex items-baseline justify-center gap-1 mb-8">
-              <span className="text-6xl font-extrabold text-black tracking-tight border-b-2 border-[#0047AB] pb-1">R$ 249</span>
+              <span className="text-6xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 249</span>
               <span className="text-xl text-gray-400 font-bold">/mês</span>
             </div>
 
@@ -175,7 +174,12 @@ export function LandingSections() {
             </ul>
 
             <div className="flex justify-center">
-              <CtaButton text="Assinar Agora" variant="primary" />
+              <a 
+                href="#precos" 
+                className="bg-blue-600 text-white font-bold text-lg px-12 py-5 rounded-2xl shadow-xl hover:bg-blue-700 transition-colors w-full sm:w-auto min-w-[280px] text-center"
+              >
+                Assinar Agora
+              </a>
             </div>
           </div>
         </div>
@@ -190,7 +194,7 @@ export function LandingSections() {
 
           <div className="space-y-0 border-t border-gray-200">
             <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-[#0047AB] transition-colors">
+              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
                 <span>Não corre risco de ficar robótico?</span>
                 <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
               </summary>
@@ -200,7 +204,7 @@ export function LandingSections() {
             </details>
 
             <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-[#0047AB] transition-colors">
+              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
                 <span>Vou perder meu histórico se usar o meu número atual?</span>
                 <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
               </summary>
@@ -210,7 +214,7 @@ export function LandingSections() {
             </details>
 
             <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-[#0047AB] transition-colors">
+              <summary className="flex justify-between items-center py-6 font-bold text-black text-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
                 <span>Posso parar a IA no meio de um fechamento? (Silent Handoff)</span>
                 <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
               </summary>
