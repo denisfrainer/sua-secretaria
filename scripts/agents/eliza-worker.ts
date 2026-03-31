@@ -177,7 +177,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
 
             console.log(`➡️  [API REQUEST] Inserindo evento no Calendar: ${startTime.toISOString()} - ${endTime.toISOString()}`);
             await calendar.events.insert({
-                calendarId: 'primary',
+                calendarId: 'denisfrainer93@gmail.com',
                 requestBody: {
                     summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
                     description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}`,
