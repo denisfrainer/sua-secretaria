@@ -75,22 +75,22 @@ export function LandingSections() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
             {/* Minimalist connector line (hidden on mobile) */}
-            <div className="hidden md:block absolute top-[28px] left-1/4 right-1/4 h-[2px] bg-gray-200 -z-10" />
+            <div className="hidden md:block absolute top-[40px] left-1/4 right-1/4 h-[2px] bg-gray-200 -z-10" />
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><QrCode className="w-6 h-6 stroke-2"/></div>
+              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><QrCode className="w-[32px] h-[32px] stroke-2"/></div>
               <h3 className="text-xl font-bold text-black mb-3">Conecte seu WhatsApp</h3>
               <p className="text-gray-500 font-medium">Basta escanear o QR Code oficial da Meta. Sem configurações complexas ou códigos.</p>
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><Mic className="w-6 h-6 stroke-2"/></div>
+              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><Mic className="w-[32px] h-[32px] stroke-2"/></div>
               <h3 className="text-xl font-bold text-black mb-3">Treine a IA</h3>
               <p className="text-gray-500 font-medium">Mande um áudio explicando seus serviços, preços e o que você vende. Ela aprende na hora.</p>
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-600/30 z-10"><Bot className="w-6 h-6 stroke-2"/></div>
+              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-blue-600 text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-600/30 z-10"><Bot className="w-[32px] h-[32px] stroke-2"/></div>
               <h3 className="text-xl font-bold text-black mb-3">Deixe sua funcionária trabalhar</h3>
               <p className="text-gray-500 font-medium">A IA assume o primeiro contato instantaneamente, sem deixar nenhum lead esfriar no funil.</p>
             </div>
@@ -171,41 +171,127 @@ export function LandingSections() {
 
       {/* 6. Pricing */}
       <MotionSection id="precos" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gray-50 border-y border-gray-200">
-        <div className="max-w-lg mx-auto">
-          <div className="text-center mb-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight">
-              Preço Simples
+              Escolha seu nível de atendimento
             </h2>
           </div>
 
-          <div className="bg-white p-10 border border-gray-200 shadow-xl rounded-3xl text-center">
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Acesso Completo</p>
-            <div className="flex items-baseline justify-center gap-1 mb-8">
-              <span className="text-6xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 249</span>
-              <span className="text-xl text-gray-400 font-bold">/mês</span>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            {/* Tier 1: Chatbot Tradicional */}
+            <div className="bg-white p-8 md:p-10 border border-gray-200 shadow-sm rounded-3xl text-left flex flex-col">
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Bot Tradicional</p>
+              <div className="flex items-baseline justify-start gap-1 mb-6">
+                <span className="text-5xl font-extrabold text-black tracking-tight">R$ 99</span>
+                <span className="text-xl text-gray-400 font-bold">/mês</span>
+              </div>
+              <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+                Chatbot e automação simples, com fluxos baseados em menus tradicionais (digite 1, digite 2).
+              </p>
+              
+              <ul className="text-left space-y-4 mb-10 font-medium flex-1">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-500">Múltipla escolha (menus)</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-500">Respostas estáticas</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-500">Necessário criar próprias regras</span>
+                </li>
+              </ul>
 
-            <ul className="text-left space-y-4 mb-10 font-medium">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-600">Atendimento ilimitado de leads</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-600">Conexão API Oficial Meta Cloud</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-600">Integração Google Calendar incluída</span>
-              </li>
-            </ul>
-
-            <div className="flex justify-center">
               <a 
                 href="#precos" 
-                className="bg-blue-600 text-white font-bold text-lg px-12 py-5 rounded-2xl shadow-xl hover:bg-blue-700 transition-colors w-full sm:w-auto min-w-[280px] text-center"
+                className="block border-2 border-gray-200 text-gray-600 font-bold text-lg py-4 rounded-xl hover:bg-gray-50 transition-colors w-full text-center mt-auto"
               >
-                Assinar Agora
+                Plano Básico
+              </a>
+            </div>
+
+            {/* Tier 2: IA Padrão */}
+            <div className="bg-white p-8 md:p-10 border border-gray-200 shadow-sm rounded-3xl text-left flex flex-col relative">
+              <p className="text-sm font-bold text-gray-600 uppercase tracking-widest mb-3">Funcionária de IA</p>
+              <div className="flex items-baseline justify-start gap-1 mb-6">
+                <span className="text-5xl font-extrabold text-black tracking-tight">R$ 249</span>
+                <span className="text-xl text-gray-400 font-bold">/mês</span>
+              </div>
+              <p className="text-gray-600 font-medium mb-8 leading-relaxed">
+                Inteligência autônoma que responde no escuro, defende o Lead e agenda automaticamente.
+              </p>
+
+              <ul className="text-left space-y-4 mb-10 font-medium flex-1">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">Até 3.000 conversas por mês</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">Integração com Agenda oficial do Google</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">Treinamento de IA (Tom de voz e contexto)</span>
+                </li>
+              </ul>
+
+              <a 
+                href="#precos" 
+                className="block bg-gray-900 text-white font-bold text-lg py-4 rounded-xl shadow-md hover:bg-black transition-colors w-full text-center mt-auto"
+              >
+                Assinar Pro
+              </a>
+            </div>
+
+            {/* Tier 3: Empresarial - Highlighted */}
+            <div className="bg-white p-8 md:p-10 border-2 border-blue-600 shadow-xl rounded-3xl text-left flex flex-col relative transform lg:-translate-y-4">
+              <div className="absolute top-0 right-8 transform -translate-y-1/2">
+                <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest py-1.5 px-3 rounded-full shadow-md">
+                  Mais Popular
+                </span>
+              </div>
+              <p className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-3">Empresarial</p>
+              <div className="flex items-baseline justify-start gap-1 mb-6">
+                <span className="text-5xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 499</span>
+                <span className="text-xl text-gray-400 font-bold">/mês</span>
+              </div>
+              <p className="text-gray-600 font-medium mb-8 leading-relaxed">
+                Escala máxima para operações ativas. Intervenção híbrida, base de dados e suporte total.
+              </p>
+
+              <ul className="text-left space-y-4 mb-10 font-medium flex-1">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-900">Até 9.000 conversas por mês</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-900">Até 3 alterações de contexto no mês</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-900">Suporte Técnico Prioritário 24/7</span>
+                </li>
+                {/* Code-specific features */}
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-900">Handoff Silencioso / Intervenção Nativa do Vendedor</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-900">Dashboard próprio via infraestrutura Supabase Leads</span>
+                </li>
+              </ul>
+
+              <a 
+                href="#precos" 
+                className="block bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-colors w-full text-center mt-auto"
+              >
+                Assinar Elite
               </a>
             </div>
           </div>

@@ -56,8 +56,8 @@ export function PhoneMockup() {
           className="object-contain drop-shadow-2xl z-20 pointer-events-none"
         />
 
-        {/* Absolute Screen Container - Adjusting top margin to dodge the notch cleanly */}
-        <div className="absolute top-[2.5%] left-[5%] right-[5%] bottom-[3%] sm:left-[6%] sm:right-[6%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans border border-gray-200">
+        {/* Absolute Screen Container - Expanding to fill white gaps and shifting 2px down */}
+        <div className="absolute top-[calc(2.5%+2px)] left-[4.8%] right-[4.8%] bottom-[2.8%] sm:left-[5.8%] sm:right-[5.8%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans">
           
           {/* WhatsApp Header - Image 3 Exact Colors and Spacing */}
           <div className="w-full bg-[#075e54] px-4 py-3 pb-4 pt-4 flex items-center gap-3 shadow-md z-30">
