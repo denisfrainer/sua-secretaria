@@ -84,42 +84,17 @@ const functionDeclarations: any[] = [
                 date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
                 time: { type: 'STRING', description: 'Hora no formato HH:MM' },
                 client_name: { type: 'STRING', description: 'Nome do lead' },
-                summary: { type: 'STRING', description: 'Assunto ou tipo de serviço' }
+                service_type: { type: 'STRING', description: 'Assunto ou tipo de serviço' }
             },
-            required: ['date', 'time', 'client_name'],
-        },
-    },
-
-    {
-        name: 'verifyPagarmeOrder',
-        description: 'Verifica se o lead já pagou o PIX gerado.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                order_id: { type: 'STRING', description: 'O ID do pedido gerado (ex: or_1234)' }
-            },
-            required: ['order_id'],
-        },
-    },
-    {
-        name: 'schedule_and_charge_deposit',
-        description: 'Agenda a reunião no Google Calendar e imediatamente gera um PIX de 50% de depósito do serviço (Tier 2 ou Tier 3) para confirmar a reserva.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
-                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
-                client_name: { type: 'STRING', description: 'Nome do lead' },
-                client_email: { type: 'STRING', description: 'E-mail do lead' },
-                service_tier: { type: 'STRING', description: 'O tipo de serviço', enum: ['TIER_2', 'TIER_3'] }
-            },
-            required: ['date', 'time', 'client_name', 'client_email', 'service_tier'],
+            required: ['date', 'time', 'client_name', 'service_type'],
         },
     }
 ];
 
 async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
     console.log(`🔧 [TOOL EXECUTION]: ${name}`);
+    console.log(`➡️  [TOOL ARGS]:`, JSON.stringify(args));
+
     if (name === 'save_lead_data') {
         await supabaseAdmin.from('leads_lobo').update({
             name: args.name,
@@ -128,112 +103,70 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         }).eq('phone', clientPhone);
         return { status: 'success' };
     }
+    
     if (name === 'notify_human_specialist') {
         await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
         return { status: 'success', notification: 'Denis has been alerted.' };
     }
-    if (name === 'schedule_and_charge_deposit') {
-        console.log(`💸 [PIX/CALENDAR] Iniciando schedule_and_charge_deposit para ${args.client_name}`);
+
+    if (name === 'check_calendar_availability') {
+        console.log(`📅 [CALENDAR CHECK] Verificando disponibilidade para ${args.date} (${clientPhone})`);
         try {
-            // 1. Calcular o valor do depósito (50%)
-            const amountCents = args.service_tier === 'TIER_3' ? 150000 : 50000;
-
-            // 2. Gerar PIX no Pagar.me
-            const pagarmePayload = {
-                items: [{ amount: amountCents, description: `Depósito Inicial - ${args.service_tier}`, quantity: 1 }],
-                customer: { name: args.client_name, email: args.client_email, type: 'individual', document: '00000000000' },
-                payments: [{ payment_method: 'pix', pix: { expires_in: 86400 } }]
-            };
-
-            const pagarmeRes = await fetch('https://api.pagar.me/core/v5/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}`
-                },
-                body: JSON.stringify(pagarmePayload)
+            const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
+            const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
+            
+            console.log(`➡️  [API REQUEST] Consultando Google Calendar para o intervalo: ${startOfDay.toISOString()} - ${endOfDay.toISOString()}`);
+            const eventsRes = await calendar.events.list({
+                calendarId: 'primary',
+                timeMin: startOfDay.toISOString(),
+                timeMax: endOfDay.toISOString(),
+                singleEvents: true,
+                orderBy: 'startTime',
             });
-            const pagarmeData = await pagarmeRes.json();
+            const events = eventsRes.data.items || [];
+            console.log(`⬅️  [CALENDAR RESPONSE] Encontrados ${events.length} eventos ocupados para a data.`);
+            
+            return {
+                status: 'success',
+                date: args.date,
+                busy_slots: events.map((e: any) => ({
+                    start: e.start?.dateTime || e.start?.date,
+                    end: e.end?.dateTime || e.end?.date,
+                    summary: e.summary
+                }))
+            };
+        } catch (err: any) {
+            console.error("❌ [CALENDAR ERROR]:", err.message);
+            return { status: "error", message: err.message };
+        }
+    }
 
-            if (!pagarmeRes.ok) {
-                console.error("❌ [PAGARME] Erro ao gerar PIX:", pagarmeData);
-                return { status: "error", message: "Falha ao gerar o PIX. Avise que ocorreu um erro." };
-            }
-
-            const pixData = pagarmeData.charges?.[0]?.last_transaction?.qr_code;
-            const orderId = pagarmeData.id;
-
-            // 3. Agendar no Google Calendar
+    if (name === 'schedule_appointment') {
+        console.log(`📅 [CALENDAR] Iniciando agendamento para ${args.client_name}`);
+        try {
             const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
             const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora
 
+            console.log(`➡️  [API REQUEST] Inserindo evento no Calendar: ${startTime.toISOString()} - ${endTime.toISOString()}`);
             await calendar.events.insert({
                 calendarId: 'primary',
                 requestBody: {
-                    summary: `[PENDING PIX] Escopo ${args.client_name}`,
-                    description: `Tier: ${args.service_tier}\nEmail: ${args.client_email}\nOrderID: ${orderId}\nTelefone: ${clientPhone}`,
+                    summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
+                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}`,
                     start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                     end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                 }
             });
 
-            console.log(`✅ [PIX/CALENDAR] Sucesso! Evento criado e PIX ${orderId} gerado.`);
+            console.log(`✅ [CALENDAR] Sucesso! Evento criado.`);
             return {
                 status: 'success',
-                message: 'Horário reservado com sucesso e PIX gerado.',
-                pix_qr_code: pixData,
-                order_id: orderId,
-                instructions: 'Apresente a chave PIX Copia e Cola ao lead e reforce que a reunião E a reserva de agenda só estão 100% garantidas após o pagamento.'
+                message: 'Horário reservado com sucesso no calendário.',
+                instructions: 'Confirme para o cliente que o agendamento está finalizado e pronto.'
             };
         } catch (err: any) {
-            console.error("❌ [PIX/CALENDAR] Exceção:", err.message);
+            console.error("❌ [CALENDAR] Exceção:", err.message);
             return { status: "error", message: err.message };
-        }
-    }
-
-
-    if (name === 'verifyPagarmeOrder') {
-        console.log(`🔍 [PAGARME] Verificando pedido ${args.order_id}`);
-        try {
-            const pagarmeRes = await fetch(`https://api.pagar.me/core/v5/orders/${args.order_id}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Basic ${Buffer.from(process.env.PAGARME_SECRET_KEY + ':').toString('base64')}` }
-            });
-            const pagarmeData = await pagarmeRes.json();
-
-            if (pagarmeData.status === 'paid') {
-                console.log(`✅ [PAGARME] Pedido ${args.order_id} PAGO! Removendo tag do calendário...`);
-                try {
-                    const eventsRes = await calendar.events.list({
-                        calendarId: 'primary',
-                        q: args.order_id,
-                        timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-                    });
-                    if (eventsRes.data.items && eventsRes.data.items.length > 0) {
-                        const event = eventsRes.data.items[0];
-                        if (event.summary && event.summary.includes('[PENDING PIX]')) {
-                            const newSummary = event.summary.replace('[PENDING PIX]', '[CONFIRMADO]');
-                            await calendar.events.patch({
-                                calendarId: 'primary',
-                                eventId: event.id!,
-                                requestBody: { summary: newSummary }
-                            });
-                            console.log(`✅ [CALENDAR] Tag [PENDING PIX] removida do evento ${event.id}`);
-                        }
-                    }
-                } catch (calErr) {
-                    console.error("❌ [CALENDAR] Erro ao atualizar remoção da tag:", calErr);
-                }
-
-                await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
-                return { status: 'success', payment_status: 'paid', message: 'Pagamento confirmado! Reserva garantida na agenda.' };
-            } else {
-                console.log(`⏳ [PAGARME] Pedido pendente (${pagarmeData.status}).`);
-                return { status: 'pending', payment_status: pagarmeData.status, message: 'O pagamento ainda não foi identificado. Peça para o cliente avisar quando pagar.' };
-            }
-        } catch (err: any) {
-            console.error("❌ [PAGARME] Erro na verificação:", err.message);
-            return { status: 'error', message: err.message };
         }
     }
 
@@ -317,7 +250,7 @@ async function processLead(lead: any) {
         }
 
         const systemInstruction = `# 1. IDENTITY & CORE MISSION
-You are Eliza, an AI Virtual Receptionist for a beauty clinic/salon. Your ONLY purpose is to inform prices, check calendar availability, schedule appointments, and request the PIX deposit receipt.
+You are Eliza, an AI Virtual Receptionist for a beauty clinic/salon. Your ONLY purpose is to inform prices, check calendar availability, and schedule appointments.
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). 
 
 # 2. STRICT RULES & GUARDRAILS (RAIL MODE)
@@ -337,12 +270,9 @@ Ask the user for their preferred date (e.g., "Para qual dia?").
 Once you have the date, YOU MUST call the 'check_calendar_availability' tool. 
 After receiving the available/busy slots, offer the user a maximum of TWO available time slots. (e.g., "Tenho horário livre às 14h ou às 16h. Qual fica melhor?").
 
-STEP 3: SCHEDULING & PIX
-Once the user confirms the exact time, YOU MUST call the 'schedule_appointment_and_request_pix' tool. 
-
-STEP 4: RECEIPT ENFORCEMENT
-After the tool returns the PIX key, you must output the key and instruct the user EXACTLY like this:
-"Seu horário está pré-reservado. Para confirmar em definitivo, realize o PIX de 50% de sinal na chave abaixo. || Assim que pagar, mande a FOTO DO COMPROVANTE aqui no chat para a recepção liberar sua vaga."
+STEP 3: SCHEDULING
+Once the user confirms the exact time, YOU MUST call the 'schedule_appointment' tool.
+After the tool returns success, output a simple confirmation message and end the flow.
 
 # 4. BUSINESS CONTEXT
 Use STRICTLY the following information to answer business-related questions:
@@ -385,6 +315,12 @@ ${dynamicInstruction}
                         response: output
                     }
                 });
+                console.log(`\n================= 👁️ CONSOLE.GOD 👁️ =================`);
+                console.log(`🤖 [GEMINI RAW RESPONSE]:`, JSON.stringify({
+                    text: result.text || 'NENHUM TEXTO',
+                    functionCalls: result.functionCalls || 'NENHUMA FUNCTION CALL'
+                }, null, 2));
+                console.log(`========================================================\n`);
             }
 
             console.log(`🔄 [TOOL] Returning tool response to Gemini...`);
@@ -418,40 +354,7 @@ ${dynamicInstruction}
             }).eq('phone', clientNumber);
         }
 
-        // --- GATILHO DE VENDA: COMBO ZERO FRICTION (IMAGEM + TEXTO) ---
-        if (responseText.toLowerCase().includes("pix") || responseText.toLowerCase().includes("pagamento")) {
-            console.log(`💸 [ZERO FRICTION] Disparando Combo (QR Code + Texto) para ${clientNumber}`);
 
-            const urlSuaFotoQrCode = "https://eykfioezqcliwvbhckli.supabase.co/storage/v1/object/public/PIX/qrcode.jpeg";
-            const pixCopiaECola = "00020101021126330014br.gov.bcb.pix0111029594740315204000053039865406499.005802BR5913DENIS F LOPES6012PORTO ALEGRE62070503***6304F302";
-
-            // 1. Dispara a Imagem via Evolution API (Fire and Forget com Log de Diagnóstico)
-            const evUrl = (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "https://api.revivafotos.com.br").replace(/\/$/, "");
-            const evKey = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_GLOBAL_APIKEY || "";
-            const evInstance = process.env.EVOLUTION_INSTANCE_NAME || process.env.EVOLUTION_INSTANCE || "agente-lobo";
-
-            fetch(`${evUrl}/message/sendMedia/${evInstance}`, {
-                method: 'POST',
-                headers: {
-                    'apikey': evKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    number: clientNumber,
-                    mediatype: "image",
-                    mimetype: "image/jpeg",
-                    caption: pixCopiaECola,
-                    media: urlSuaFotoQrCode
-                })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    console.log("📸 [MEDIA SUCCESS/DIAGNOSTIC]:", JSON.stringify(data));
-                })
-                .catch(err => {
-                    console.error("❌ [MEDIA FETCH ERROR]:", err);
-                });
-        }
 
         console.log('📤 Sending chunks to WhatsApp:', chunks);
 
@@ -574,136 +477,115 @@ http.createServer((req, res) => {
 
                 let clientMessage = '';
 
-                if (messageObj) {
-                    // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
-                    if (messageObj.imageMessage) {
-                        console.log("📸 [WEBHOOK] Imagem recebida. Executando Webhook Hacker (Base64 Nativo)...");
+                // --- 📸 DETECÇÃO DE COMPROVANTE (IMAGEM) ---
+                if (messageObj.imageMessage) {
+                    console.log(`📸 [WEBHOOK] Imagem (Comprovante) recebida de ${clientNumber}. Acionando Humano.`);
 
-                        // Evolution API injects the base64 string directly into the message object when the 'base64' webhook flag is true.
-                        // We check the most common locations in the payload structure.
-                        const base64 = messageObj.base64 || dataObj.base64 || body.base64;
+                    // Pausa a IA e notifica a recepção
+                    await supabaseAdmin.from('leads_lobo').update({
+                        status: 'needs_human',
+                        ai_paused: true,
+                        needs_human: true
+                    }).eq('phone', clientNumber);
 
-                        if (base64 && typeof base64 === 'string') {
-                            console.log(`✅ [OCR START] Base64 nativo capturado com sucesso (Tamanho: ${base64.length}). Enviando para a visão do Gemini...`);
-                            const analysis = await analyzeReceiptWithGemini(base64, clientNumber);
+                    // Dispara a mensagem de confirmação para a cliente
+                    await sendWhatsAppMessage(clientNumber, "✅ *Comprovante Recebido!* || A recepção vai conferir o seu PIX e já libera a sua vaga na agenda de forma definitiva. Só um instante!");
 
-                            console.log(`🔍 [OCR DIAGNOSTIC] Raw Gemini Output for ${clientNumber}:`, JSON.stringify(analysis));
-
-                            // Strict validation: Must be valid PIX, receiver must contain "Denis", and amount must be at least the minimum tier (299)
-                            const isReceiverCorrect = analysis.receiver && analysis.receiver.toLowerCase().includes("denis");
-                            const isAmountValid = typeof analysis.amount === 'number' && (analysis.amount === 299 || analysis.amount === 499 || analysis.amount >= 299);
-
-                            if (analysis.is_valid_pix && isReceiverCorrect && isAmountValid) {
-                                console.log(`✅ [OCR SUCCESS] Comprovante verificado. Valor aceito: R$${analysis.amount} para ${clientNumber}`);
-
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'paid' }).eq('phone', clientNumber);
-                                await sendWhatsAppMessage(clientNumber, "✅ *Pagamento Confirmado!* || Já identifiquei seu PIX aqui. Vou avisar o Denis agora mesmo para darmos andamento ao seu projeto. 🚀");
-                            } else {
-                                console.warn(`⚠️ [OCR REJECTED] Validation failed for ${clientNumber}. Amount: ${analysis.amount}, Receiver: ${analysis.receiver}`);
-                                await sendWhatsAppMessage(clientNumber, "Puxa, identifiquei o seu envio, mas houve uma divergência no valor do comprovante ou na leitura automática da imagem. 🧐 || O Denis vai analisar isso manualmente em instantes.");
-                                await supabaseAdmin.from('leads_lobo').update({ needs_human: true, ai_paused: true }).eq('phone', clientNumber);
-                            }
-                        } else {
-                            console.error("❌ [OCR ERROR] Base64 string not found in the webhook payload.");
-                            console.log("🚨 [DIAGNOSTIC] Please verify that 'base64: true' is enabled in the Evolution API Webhook settings.");
-                        }
-
-                        return; // Interrompe o fluxo para não tratar a imagem como texto
-                    }
-
-                    // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
-                    if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
-                    if (!messageObj.conversation && !messageObj.extendedTextMessage) return;
-                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
+                    return; // Interrompe o fluxo aqui
                 }
+
+                // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
+                if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
+                if (!messageObj.conversation && !messageObj.extendedTextMessage) return;
+                clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
 
                 if (clientMessage && clientMessage.trim().length > 0) {
-                    // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
-                    if (isFromMe) {
-                        const cmd = clientMessage.trim();
-                        if (cmd === '/pausar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                            return;
-                        } else if (cmd === '/retomar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
-                            return;
-                        }
-
-                        const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
-                        if (isAPI) {
-                            return; // Ignora mensagens enviadas pela própria Eliza
-                        } else {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
-                            return;
-                        }
-                    }
-
-                    console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
-
-                    // --- BLINDAGENS DE SEGURANÇA ---
-                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
-                    const msgLower = clientMessage.toLowerCase();
-                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
-                        console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
+                // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
+                if (isFromMe) {
+                    const cmd = clientMessage.trim();
+                    if (cmd === '/pausar') {
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                        return;
+                    } else if (cmd === '/retomar') {
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
                         return;
                     }
 
-                    let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
-
-                    if (lead) {
-                        await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
-
-                        if (lead.updated_at) {
-                            const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
-                            if (timeSinceContact < 2000) {
-                                console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
-                                return;
-                            }
-                        }
-
-                        if ((lead.reply_count || 0) >= 10) {
-                            console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
-                            await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                            return;
-                        }
-
-                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
-                            console.log(`🔒 Lead travado ou com humano. Ignorando.`);
-                            return;
-                        }
-                    }
-
-                    if (!lead) {
-                        const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
-                            phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
-                        }).select().single();
-                        lead = newLead;
-                    }
-
-                    // --- SALVAMENTO E GATILHO ---
-                    await supabaseAdmin.from('messages').insert({
-                        lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
-                    });
-
-                    const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
-                    if (elizaSwitch && elizaSwitch.value?.enabled === false) {
-                        await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                    const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+                    if (isAPI) {
+                        return; // Ignora mensagens enviadas pela própria Eliza
+                    } else {
+                        await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                        console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
                         return;
                     }
-
-                    await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
-                    console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
                 }
-            } catch (error) {
-                console.error('❌ [WEBHOOK CRASH]:', error);
+
+                console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
+
+                // --- BLINDAGENS DE SEGURANÇA ---
+                const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
+                const msgLower = clientMessage.toLowerCase();
+                if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                    console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
+                    return;
+                }
+
+                let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
+
+                if (lead) {
+                    await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+
+                    if (lead.updated_at) {
+                        const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
+                        if (timeSinceContact < 2000) {
+                            console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
+                            return;
+                        }
+                    }
+
+                    if ((lead.reply_count || 0) >= 10) {
+                        console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
+                        await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                        return;
+                    }
+
+                    if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
+                        console.log(`🔒 Lead travado ou com humano. Ignorando.`);
+                        return;
+                    }
+                }
+
+                if (!lead) {
+                    const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                        phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
+                    }).select().single();
+                    lead = newLead;
+                }
+
+                // --- SALVAMENTO E GATILHO ---
+                await supabaseAdmin.from('messages').insert({
+                    lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
+                });
+
+                const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                    return;
+                }
+
+                await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
+                console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
             }
-        });
-        return;
+        } catch (error) {
+            console.error('❌ [WEBHOOK CRASH]:', error);
+        }
+    });
+return;
     }
 
-    res.writeHead(404);
-    res.end();
+res.writeHead(404);
+res.end();
 }).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
 
 startPolling();
