@@ -15,11 +15,8 @@ export function LogoCloud() {
   const doubled = [...integrations, ...integrations];
 
   return (
-    <section className="py-16 bg-white border-y border-slate-100">
+    <section className="py-8 bg-white border-y border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <p className="text-sm font-medium text-slate-400 uppercase tracking-widest mb-10">
-          Trabalhamos com ferramentas oficiais
-        </p>
 
         <div className="relative overflow-hidden">
           {/* Fade edges to smooth the entry/exit of logos */}

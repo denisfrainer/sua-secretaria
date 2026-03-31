@@ -25,19 +25,16 @@ export function PhoneMockup() {
   const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    // Fulfill observability requirement for asset loading
     console.log('✅ WhatsApp icon: Assets');
     
     let timeouts: NodeJS.Timeout[] = [];
     
     conversationFlow.forEach((msg) => {
-      // Show typing before agent
       if (msg.from === 'agent') {
         timeouts.push(setTimeout(() => setIsTyping(true), Math.max(0, msg.delay - 1800)));
         timeouts.push(setTimeout(() => setIsTyping(false), msg.delay));
       }
       
-      // Render text (inserting at index 0 because container is flex-col-reverse)
       timeouts.push(setTimeout(() => {
         setMessages(prev => [msg, ...prev]);
       }, msg.delay));
@@ -49,46 +46,49 @@ export function PhoneMockup() {
   return (
     <section className="w-full py-24 bg-white flex justify-center items-center">
       <div className="relative w-[320px] sm:w-[360px] aspect-[458/916]">
-        {/* Next Image for Phone Frame LCP optimization */}
+        {/* iPhone Frame */}
         <Image 
           src="/assets/mockup.png"
-          alt="iPhone 15 Pro UI Challenger Frame"
+          alt="iPhone 15 Pro UI"
           fill
           priority
           sizes="(max-width: 640px) 320px, 360px"
           className="object-contain drop-shadow-2xl z-20 pointer-events-none"
         />
 
-        {/* Absolute Screen Container - WhatsApp Classic Light Mode */}
-        <div className="absolute top-[3%] left-[5%] right-[5%] bottom-[3%] sm:top-[4%] sm:bottom-[4%] sm:left-[6%] sm:right-[6%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans border border-gray-200">
+        {/* Absolute Screen Container - Adjusting top margin to dodge the notch cleanly */}
+        <div className="absolute top-[2.5%] left-[5%] right-[5%] bottom-[3%] sm:left-[6%] sm:right-[6%] rounded-[2.5rem] bg-[#efeae2] overflow-hidden z-10 flex flex-col font-sans border border-gray-200">
           
-          {/* Header - Respecing Dynamic Island */}
-          <div className="w-full bg-[#0047AB] px-4 py-3 pb-4 pt-12 sm:pt-14 flex items-center gap-3 shadow-md z-30">
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#0047AB] text-xs font-bold">
+          {/* WhatsApp Header - Image 3 Exact Colors and Spacing */}
+          <div className="w-full bg-[#075e54] px-4 py-3 pb-4 pt-10 sm:pt-10 flex items-center gap-3 shadow-md z-30">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold border border-white/30">
               IA
             </div>
             <div>
-              <p className="text-white text-sm font-bold leading-tight tracking-wide">meatende.ai</p>
-              <p className="text-blue-100 text-xs mt-0.5">online</p>
+              <p className="text-white text-base font-bold leading-tight tracking-wide">meatende.ai</p>
+              <p className="text-[#a2e8d4] text-xs mt-0.5">online</p>
             </div>
           </div>
 
-          {/* Chat Feed (flex-col-reverse pushes items up) */}
-          <div className="flex-1 overflow-y-hidden px-4 py-5 flex flex-col-reverse gap-3 bg-[#efeae2] relative">
-             {/* Subtle gradient overlay to fade top messages if they overflow */}
-             <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-[#efeae2] to-transparent z-20" aria-hidden="true" />
+          {/* Chat Feed */}
+          {/* Adding a subtle patterned grid typical of modern web whatsapp */}
+          <div 
+            className="flex-1 overflow-y-hidden px-4 py-5 flex flex-col-reverse gap-3 bg-[#efeae2] relative"
+            style={{ backgroundImage: "radial-gradient(#d1cbbd 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+          >
+             <div className="absolute top-0 inset-x-0 h-6 bg-gradient-to-b from-[#efeae2] to-transparent z-20" aria-hidden="true" />
 
              {isTyping && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.8, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-                  className="bg-white self-start rounded-2xl rounded-tl-none px-4 py-4 shadow-sm z-10"
+                  className="bg-[#dcf8c6] self-end rounded-2xl rounded-tr-none px-4 py-4 shadow-sm z-10"
                 >
                   <div className="flex gap-1.5 items-center justify-center h-2">
-                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.2 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.4 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0 }} className="w-1.5 h-1.5 bg-[#075e54] rounded-full" />
+                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.2 }} className="w-1.5 h-1.5 bg-[#075e54] rounded-full" />
+                    <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.4 }} className="w-1.5 h-1.5 bg-[#075e54] rounded-full" />
                   </div>
                 </motion.div>
              )}
@@ -119,10 +119,10 @@ function MessageBubble({ msg }: { msg: Message }) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       onAnimationComplete={() => console.log(`✅ [CHAT_UI] Animation complete: ${msg.id}`)}
-      className={`max-w-[85%] rounded-2xl px-4 py-2 text-[14px] leading-relaxed shadow-sm font-medium z-10 ${
+      className={`max-w-[85%] rounded-[1.2rem] px-4 py-2 text-[14px] leading-relaxed shadow-sm font-medium z-10 ${
         isClient
-          ? 'bg-[#dcf8c6] text-black self-end rounded-tr-none'
-          : 'bg-white text-black self-start rounded-tl-none'
+          ? 'bg-white text-black self-start rounded-tl-sm border border-gray-100'
+          : 'bg-[#dcf8c6] text-black self-end rounded-tr-sm border border-[#c4eab0]'
       }`}
     >
       {msg.text}

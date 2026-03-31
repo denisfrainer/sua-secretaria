@@ -10,7 +10,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative w-full h-screen flex flex-col items-center justify-center bg-white text-black pt-16">
+    <section className="relative w-full pt-32 pb-16 sm:pt-40 flex flex-col items-center justify-center bg-white text-black min-h-[90vh]">
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-center">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
