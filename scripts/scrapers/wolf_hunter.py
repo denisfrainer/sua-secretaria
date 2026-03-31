@@ -86,21 +86,25 @@ def run_hunter():
 
 # Automated niche selection
     niches = [
-        # Turismo e Hospitalidade
-        "restaurantes", "gastronomia", "pousadas", "hotéis", "hostels", 
-        "agências de turismo", "passeios de barco", "lojas de roupa",
-        "eventos", "bares", "agências de marketing",
+        # 🎯 TIER 1: Ouro Puro (Mão Ocupada + Alto Volume de Agendamento)
+        # Conversão mais rápida para o pitch "Você para o serviço pra responder cliente?"
+        "barbearias", "salões de beleza", "esmalterias", "estúdios de tatuagem",
+        "clínicas de estética", "estética automotiva", "pet shops", "banho e tosa",
 
-        # Saúde e Estética (High Ticket)
-        "clínicas de estética", "clínicas odontológicas", "consultórios médicos",
-        "clínicas veterinárias", "academias",
+        # 🎯 TIER 2: Saúde e Bem-Estar (Recorrência e Agenda Lotada)
+        # Tíquete médio alto, muita dúvida sobre convênio/preços
+        "clínicas odontológicas", "consultórios médicos", "clínicas veterinárias",
+        "fisioterapia", "estúdios de pilates", "academias", "crossfit",
 
-        # Serviços e B2B (High Ticket)
-        "imobiliarias", "construtoras", "energia solar",
-        "escritórios de advocacia", "escritórios de arquitetura", 
+        # 🎯 TIER 3: Turismo e Locais (Forte em Floripa)
+        # Alto volume de dúvidas repetitivas (preço, horário, localização)
+        "pousadas", "hostels", "passeios de barco", "escolas de surf", 
+        "quadras de beach tennis", "aluguel de pranchas",
         
-        # Varejo Premium
-        "móveis planejados", "estética automotiva", "design de interiores",
+        # 🎯 TIER 4: Serviços de Alto Valor (Lead Qualification)
+        # Eliza atua filtrando curiosos antes de passar pro humano
+        "imobiliárias", "construtoras", "energia solar", "móveis planejados", 
+        "oficinas mecânicas especializadas"
     ]
 
     city = [
