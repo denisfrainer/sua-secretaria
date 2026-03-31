@@ -172,124 +172,39 @@ export async function POST(req: Request) {
                 continue;
             }
 
-            const nichoFormatado = lead.niche ? lead.niche.toLowerCase() : 'negócio';
-            const hasSite = lead.website && lead.website.trim() !== '' &&
-                lead.website.toLowerCase() !== 'null' &&
-                !lead.website.includes('instagram.com') &&
-                !lead.website.includes('facebook.com') &&
-                !lead.website.includes('fb.com');
-
-            // --- 🎯 BIFURCATED LETHAL STRIKE: Two ammunition arrays ---
-            const variationsNoSite = [
+            // --- 🎯 LETHAL STRIKE: AI AGENT PITCH ---
+            const variationsAI = [
                 {
-                    part1: `${saudacao}, tudo bem? Sou desenvolvedor aqui de Floripa.`,
-                    part2: `Tava procurando vocês no google mas não achei o site oficial, vocês tão atendendo só pelo insta?`
+                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou de Floripa.`,
+                    part2: `Vocês já pensaram em automatizar o atendimento aqui pelo WhatsApp?`
                 },
                 {
-                    part1: `${saudacao} pessoal, tudo bem?`,
-                    part2: `Achei o ${nichoFormatado} de vocês aqui no Maps, o trampo parece muito bacana. vocês tão sem site no momento ou eu que não achei o link?`
+                    part1: `{Opa|Fala|Oi|Olá}, ${saudacao}! Tudo certo?`,
+                    part2: `Vocês já usam algum sistema para agendar os clientes pelo WhatsApp?`
                 },
                 {
-                    part1: `{opa|fala|oi|olá}, tudo bem? Me chamo Denis, sou desenvolvedor web e moro na Lagoa da Conceição.`,
-                    part2: `Tava pesquisando sobre ${nichoFormatado} e o perfil de vocês chamou atenção. vocês chegaram a desativar o site oficial ou a operação roda 100% na rede social hoje?`
+                    part1: `${saudacao} pessoal, tudo bem? Me chamo Denis.`,
+                    part2: `Como vocês gerenciam os agendamentos hoje? É tudo manual ou tem alguma agenda específica pra isso?`
                 },
                 {
-                    part1: `${saudacao}, pessoal!`,
-                    part2: `Curti bastante o trampo de vocês! Fui dar uma procurada num site pra ver mais detalhes e só achei o Insta. vocês concentram o atendimento todo por aqui mesmo?`
-                },
-                {
-                    part1: `{fala|opa|olá|oi}, ${saudacao}!`,
-                    part2: `Tava dando uma olhada no perfil de vocês aqui e fui procurar o link do site na bio pra ver mais, mas não achei. a operação de vocês tá toda centralizada no WhatsApp mesmo?`
+                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tranquilo?`,
+                    part2: `Vocês já pensaram em ter um sistema de agendamento automático?`
                 }
             ];
 
-            const variationsComSite = [
-                {
-                    part1: `${saudacao}, tudo bem? Me chamo Denis sou desenvolvedor aqui de Floripa.`,
-                    part2: `Dei uma navegada no site de vocês e achei o projeto bem massa. Vocês estão satisfeitos com os resultados do site?`
-                },
-                {
-                    part1: `{Opa|Fala|Oi|Olá}, ${saudacao}! Sou desenvolvedor web aqui da Lagoa da Conceição.`,
-                    part2: `Achei o ${nichoFormatado} de vocês no Maps e acessei o site. O trampo é muito bom! Hoje o site funciona mais como uma vitrine institucional pra vocês ou ele traz bastante clientes?`
-                },
-                {
-                    part1: `${saudacao} pessoal, tudo bem?`,
-                    part2: `Vi que a operação de vocês já tá com um site no ar, muito bacana. Vocês tão conseguindo captar clientes e gerar resultado com ele atualmente?`
-                },
-                {
-                    part1: `{Opa|Fala|Oi|Olá}, ${saudacao}! tudo certo?`,
-                    part2: `Tava olhando o site de vocês pelo celular e achei a estrutura bem bacana. Hoje vocês usam o site mais pra fechar serviço direto ou o objetivo principal é direcionar o pessoal pro WhatsApp?`
-                },
-                {
-                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! tranquilo?`,
-                    part2: `Pesquisando sobre ${nichoFormatado} acabei caindo no site de vocês. Muito legal o trabalho. O site atende bem a demanda de vocês hoje ou vocês sentem que precisariam de algo mais focado em conversão?`
-                }
-            ];
+            let activeVariations = variationsAI;
 
-            // --- 🎯 LETHAL STRIKE 3: PAGESPEED HOOK ---
-            const scoreNum = Number(lead.pagespeed_score);
-            const isSlowSite = !isNaN(scoreNum) && scoreNum < 50 && scoreNum > 0 && lead.pagespeed_time;
-
-            const timeStr = lead.pagespeed_time ? lead.pagespeed_time.replace('.', ',') : '';
-
-            const variationsPageSpeed = [
-                {
-                    part1: `${saudacao}, tudo bem? Sou desenvolvedor aqui de Floripa.`,
-                    part2: `Tava pesquisando serviços de ${nichoFormatado} e tentei entrar no site de vocês pelo celular, mas a tela ficou carregando por uns ${timeStr} segundos. A maioria do pessoal desiste de esperar e acaba indo pro concorrente. Vocês tão sentindo que o site tá trazendo bons resultados atualmente?`
-                },
-                {
-                    part1: `${saudacao}, tudo certo? Achei o negócio de vocês muito bacana.`,
-                    part2: `Como eu crio sites, tenho mania de testar os links que eu clico. Fui abrir o de vocês agora e demorou quase ${timeStr} segundos pra aparecer alguma coisa. Cliente hoje não tem paciência e fecha a aba na hora. Vocês estão satisfeitos com a conversão atual do site?`
-                },
-                {
-                    part1: `{Opa|Oi|Fala|Olá}, pessoal! Tudo bem? Me chamo Denis.`,
-                    part2: `Achei a empresa de vocês aqui no Google, mas quando cliquei no site ele demorou ${timeStr} segundos pra abrir no meu celular. Quase achei que tava fora do ar. Vocês tão usando ele pra captar cliente ativamente ou deixam só como cartão de visitas mesmo?`
-                },
-                {
-                    part1: `{Oi|Opa|Fala|Olá}, ${saudacao}! Sou desenvolvedor web aqui da Lagoa da Conceição.`,
-                    part2: `Curti muito o trabalho de vocês de ${nichoFormatado}. Fui dar uma olhada no site pelo 4G e vi que ele tá levando ${timeStr} segundos pra abrir. Essa demora costuma fazer o cliente desistir e ir procurar outra opção. Vocês tão conseguindo captar clientes e vender por lá?`
-                }
-            ];
-
-            // --- 🎯 LETHAL STRIKE 4: DEAD SITE HOOK ---
-            const isDeadSite = scoreNum === -1 && hasSite; // Tem link, mas a API do Google não conseguiu abrir
-
-            const variationsDeadSite = [
-                {
-                    part1: `${saudacao}, tudo bem? Sou desenvolvedor web aqui de Florianópolis.`,
-                    part2: `Tava pesquisando sobre ${nichoFormatado} e tentei acessar o site de vocês, mas ele tá dando erro de conexão e não abre de jeito nenhum. Vocês estão cientes que ele caiu?`
-                },
-                {
-                    part1: `${saudacao}, tudo certo? Achei o negócio de vocês muito massa no Maps.`,
-                    part2: `Fui clicar no link do site de vocês pra dar uma olhada no serviço, mas a página tá fora do ar. Vocês desativaram ele de propósito ou o servidor caiu mesmo?`
-                },
-                {
-                    part1: `{Opa|Oi|Fala|Olá}, pessoal! Tudo bem? Me chamo Denis, sou desenvolvedor aqui da Lagoa da Conceição.`,
-                    part2: `Tava tentando entrar no site oficial de vocês agora pelo celular, mas parece que o link tá quebrado ou o servidor caiu. Vocês estão cientes disso?`
-                }
-            ];
-
-            // 🎯 ESCOLHENDO A MUNIÇÃO BASEADO NO DIAGNÓSTICO DO ALVO
-            let activeVariations;
-
-            if (isSlowSite) {
-                console.log(`⏱️ [${cronId}] Site Lento Detectado. Usando Hook de PageSpeed (${scoreNum}/100 | ${timeStr}s).`);
-                activeVariations = variationsPageSpeed;
-            } else if (isDeadSite) {
-                console.log(`💀 [${cronId}] Site Morto Detectado (Nota -1). Usando Hook de Site Fora do Ar.`);
-                activeVariations = variationsDeadSite;
-            } else if (hasSite) {
-                console.log(`🌐 [${cronId}] Alvo tem site válido e rápido. Usando Hook Institucional.`);
-                activeVariations = variationsComSite;
-            } else {
-                console.log(`📱 [${cronId}] Alvo não possui site. Usando Hook de Rede Social.`);
-                activeVariations = variationsNoSite;
-            }
-
-            const variation = activeVariations[Math.floor(Math.random() * activeVariations.length)];
+            const selectedIndex = Math.floor(Math.random() * activeVariations.length);
+            const variation = activeVariations[selectedIndex];
 
             const msg1 = parseSpintax(variation.part1);
             const msg2 = parseSpintax(variation.part2);
+
+            // --- OBSERVABILITY LOGGING ---
+            console.log(`⚙️ [PAYLOAD_GENERATION] Hook selected: AI Agent Outreach`);
+            console.log(`📊 [PAYLOAD_DATA] Variation Index: ${selectedIndex}`);
+            console.log(`💬 [PAYLOAD_DISPATCH] Bubble 1: "${msg1}"`);
+            console.log(`💬 [PAYLOAD_DISPATCH] Bubble 2: "${msg2}"`);
 
             try {
                 console.log(`📤 [${cronId}] Tentando enviar (2 bubbles) para ${lead.name} (${safePhone})...`);
