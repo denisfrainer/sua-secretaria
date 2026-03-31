@@ -86,6 +86,10 @@ def run_hunter():
 
 # Automated niche selection
     niches = [
+        "clínicas de depilação", "depilação a laser", "depiladoras", 
+        "design de sobrancelhas", "lash designers", "extensão de cílios", 
+        "micropigmentação", "estúdios de unhas", "nail designers",
+
         # 🎯 TIER 1: Ouro Puro (Mão Ocupada + Alto Volume de Agendamento)
         # Conversão mais rápida para o pitch "Você para o serviço pra responder cliente?"
         "barbearias", "salões de beleza", "esmalterias", "estúdios de tatuagem",
