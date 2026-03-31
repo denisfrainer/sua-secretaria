@@ -175,7 +175,7 @@ export async function POST(req: Request) {
             // --- 🎯 LETHAL STRIKE: AI AGENT PITCH ---
             const variationsAI = [
                 {
-                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou de Floripa.`,
+                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Floripa.`,
                     part2: `Vocês já pensaram em automatizar o atendimento aqui pelo WhatsApp?`
                 },
                 {
@@ -188,7 +188,7 @@ export async function POST(req: Request) {
                 },
                 {
                     part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tranquilo?`,
-                    part2: `Vocês já pensaram em ter um sistema de agendamento automático?`
+                    part2: `Vocês já pensaram em ter um sistema de agendamento automático aqui pelo WhatsApp?`
                 }
             ];
 
