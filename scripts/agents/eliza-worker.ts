@@ -264,41 +264,28 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
     }
 }
 
-async function transcribeAudioWithGemini(base64Audio: string): Promise<string> {
-    console.log(`🎙️ [VOICE] Iniciando transcrição com blindagem de payload...`);
+async function transcribeAudioWithGemini(base64Audio: string, mimeType: string): Promise<string> {
+    console.log(`🎙️ [VOICE] Transcrevendo payload dinâmico (Formato: ${mimeType})...`);
     try {
-        // 1. Limpeza brutal do Base64 (Remove o cabeçalho 'data:audio/xxx;base64,' se a Evolution enviar)
         const cleanBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
-
-        // O prompt deve estar em inglês para evitar confusão de instrução vs conteúdo
-        const promptText = `
-                    Here is an audio file. Generate a strict verbatim transcript of the spoken words in Brazilian Portuguese (PT-BR). 
-                    RULES:
-                    1. Do not add any conversational filler.
-                    2. Do not introduce yourself or apologize. 
-                    3. Do not state that you are an AI.
-                    4. If the audio is completely silent or contains only static noise, output exactly: [SILÊNCIO]
-                    `;
 
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
-                    { inlineData: { data: cleanBase64, mimeType: "audio/ogg" } },
-                    { text: promptText.trim() }
+                    { inlineData: { data: cleanBase64, mimeType: mimeType } },
+                    { text: "Transcreva este áudio em Português do Brasil. Retorne apenas o que foi falado. Se houver apenas estática, retorne [SILÊNCIO]." }
                 ]
             }],
             config: {
-                temperature: 0.0 // Zero criatividade, foco total na extração
+                temperature: 0.0
             }
         });
 
-        const responseText = result.text || "";
-        const cleanText = responseText.trim();
+        const cleanText = (result.text || "").trim();
 
-        if (cleanText === '[SILÊNCIO]' || cleanText.includes('não consigo ouvir') || cleanText.includes('modelo de linguagem')) {
-            console.log(`⚠️ [VOICE] Áudio vazio ou resposta de recusa da IA detectada.`);
+        if (cleanText === '[SILÊNCIO]' || cleanText.includes('modelo de linguagem')) {
             return "";
         }
 
@@ -644,6 +631,10 @@ http.createServer((req, res) => {
                     let audioBase64 = "";
                     let audioUrl = messageObj.audioMessage.url || dataObj.base64;
 
+                    // 1. Extrai o mimetype real direto do objeto da mensagem (ex: audio/ogg; codecs=opus)
+                    const rawMimeType = messageObj.audioMessage.mimetype || "audio/ogg";
+                    const cleanMimeType = rawMimeType.split(';')[0];
+
                     if (audioUrl) {
                         if (audioUrl.startsWith('http')) {
                             const response = await fetch(audioUrl);
@@ -658,15 +649,15 @@ http.createServer((req, res) => {
                     }
 
                     if (audioBase64) {
-                        console.log(`🔍 [DEBUG AUDIO] Base64 recebido. Tamanho da string: ${audioBase64.length} caracteres.`);
+                        console.log(`🔍 [DEBUG AUDIO] Base64: ${audioBase64.length} chars | Tipo Real: ${cleanMimeType}`);
 
-                        // Bloqueio de alucinação (ASR Hallucination)
                         if (audioBase64.length < 500) {
                             console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Áudio vazio ou corrompido. Transcrição abortada.`);
                         } else {
-                            const transcript = await transcribeAudioWithGemini(audioBase64);
+                            // 2. Chama a função passando OS DOIS PARÂMETROS
+                            const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
 
-                            if (transcript && transcript !== "[Áudio inaudível]") {
+                            if (transcript && transcript !== "[SILÊNCIO]") {
                                 clientMessage = transcript;
                                 console.log(`📝 [VOICE] Áudio transcrito: "${clientMessage}"`);
                             } else {
