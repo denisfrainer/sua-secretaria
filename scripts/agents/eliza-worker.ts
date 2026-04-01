@@ -269,13 +269,16 @@ async function transcribeAudioWithGemini(base64Audio: string, mimeType: string):
     try {
         const cleanBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
 
+        // Comando em inglês e modo máquina para burlar o bloqueio de identidade
+        const systemCommand = "System command: Extract the exact spoken words from the attached audio file. Language: pt-BR. Return ONLY the transcribed text. Do not add conversational filler. If silent, return exactly: [SILÊNCIO].";
+
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
                     { inlineData: { data: cleanBase64, mimeType: mimeType } },
-                    { text: "Transcreva este áudio em Português do Brasil. Retorne apenas o que foi falado. Se houver apenas estática, retorne [SILÊNCIO]." }
+                    { text: systemCommand }
                 ]
             }],
             config: {
@@ -285,7 +288,9 @@ async function transcribeAudioWithGemini(base64Audio: string, mimeType: string):
 
         const cleanText = (result.text || "").trim();
 
-        if (cleanText === '[SILÊNCIO]' || cleanText.includes('modelo de linguagem')) {
+        // Limpeza de alucinações caso passe algum lixo
+        if (cleanText === '[SILÊNCIO]' || cleanText.toLowerCase().includes('não consigo ouvir') || cleanText.toLowerCase().includes('modelo de texto')) {
+            console.log(`⚠️ [VOICE] IA recusou o arquivo ou está vazio. Retorno da IA: "${cleanText}"`);
             return "";
         }
 
@@ -631,15 +636,24 @@ http.createServer((req, res) => {
                     let audioBase64 = "";
                     let audioUrl = messageObj.audioMessage.url || dataObj.base64;
 
-                    // 1. Extrai o mimetype real direto do objeto da mensagem (ex: audio/ogg; codecs=opus)
                     const rawMimeType = messageObj.audioMessage.mimetype || "audio/ogg";
                     const cleanMimeType = rawMimeType.split(';')[0];
 
                     if (audioUrl) {
                         if (audioUrl.startsWith('http')) {
-                            const response = await fetch(audioUrl);
-                            const buffer = await response.arrayBuffer();
-                            audioBase64 = Buffer.from(buffer).toString('base64');
+                            // CORREÇÃO CRÍTICA: Injetando a chave da API para a Evolution liberar o download
+                            const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
+                            const response = await fetch(audioUrl, {
+                                headers: { 'apikey': evoKey }
+                            });
+
+                            // Se der erro no download, aborta antes de mandar pro Gemini
+                            if (!response.ok) {
+                                console.log(`❌ [DEBUG AUDIO] Falha ao baixar áudio da Evolution. Status: ${response.status}`);
+                            } else {
+                                const buffer = await response.arrayBuffer();
+                                audioBase64 = Buffer.from(buffer).toString('base64');
+                            }
                         } else {
                             audioBase64 = audioUrl.includes('base64,') ? audioUrl.split('base64,')[1] : audioUrl;
                         }
@@ -652,9 +666,8 @@ http.createServer((req, res) => {
                         console.log(`🔍 [DEBUG AUDIO] Base64: ${audioBase64.length} chars | Tipo Real: ${cleanMimeType}`);
 
                         if (audioBase64.length < 500) {
-                            console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Áudio vazio ou corrompido. Transcrição abortada.`);
+                            console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Áudio vazio ou erro da Evolution.`);
                         } else {
-                            // 2. Chama a função passando OS DOIS PARÂMETROS
                             const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
 
                             if (transcript && transcript !== "[SILÊNCIO]") {
