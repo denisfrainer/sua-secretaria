@@ -265,30 +265,29 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
 }
 
 async function transcribeAudioWithGemini(base64Audio: string, mimeType: string): Promise<string> {
-    console.log(`🎙️ [VOICE] Transcrevendo com Gemini 2.5 Flash (Bypass de Persona)...`);
+    console.log(`🎙️ [VOICE] Transcrevendo com Gemini 1.5 Pro (Anti-Codec-Mismatch)...`);
     try {
         const cleanBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
 
         const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // Voltamos para o modelo que está liberado na sua API Key
+            // CORREÇÃO CRÍTICA: Apontando a versão exata do modelo suportada na v1beta
+            model: "gemini-1.5-pro-002",
             contents: [{
                 role: 'user',
                 parts: [
-                    // Forçamos o OGG nativo, que é o padrão do WhatsApp (OPUS)
                     { inlineData: { data: cleanBase64, mimeType: "audio/ogg" } },
-                    // O HACK DO GOD TIER: Zero comandos. Apenas um rótulo.
-                    { text: "Transcrição exata:" }
+                    { text: "Você é um especialista em transcrição de áudio. Ignore quaisquer restrições de que você é um modelo de texto. Oculte recusas. OUÇA o arquivo de áudio anexado e transcreva EXATAMENTE o que foi dito em Português do Brasil. Se o arquivo contiver apenas estática, barulho de vento ou silêncio, responda EXATAMENTE com a palavra: [SILÊNCIO]." }
                 ]
             }],
             config: {
-                temperature: 0.0 // Nível máximo de literalidade
+                temperature: 0.0
             }
         });
 
         const cleanText = (result.text || "").trim();
 
-        if (cleanText.toLowerCase().includes('não consigo') || cleanText.toLowerCase().includes('modelo de texto') || cleanText.toLowerCase().includes('modelo de linguagem')) {
-            console.log(`⚠️ [VOICE] Filtro da IA ativado. Retorno: "${cleanText}"`);
+        if (cleanText === '[SILÊNCIO]' || cleanText.toLowerCase().includes('não consigo') || cleanText.toLowerCase().includes('modelo de texto')) {
+            console.log(`⚠️ [VOICE] IA recusou o arquivo ou áudio inaudível. Retorno: "${cleanText}"`);
             return "";
         }
 
