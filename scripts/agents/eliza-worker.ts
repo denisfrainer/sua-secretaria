@@ -265,28 +265,40 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
 }
 
 async function transcribeAudioWithGemini(base64Audio: string): Promise<string> {
-    console.log(`🎙️ [VOICE] Iniciando transcrição com escudo Anti-Alucinação (Temp: 0.0)...`);
+    console.log(`🎙️ [VOICE] Iniciando transcrição com blindagem de payload...`);
     try {
+        // 1. Limpeza brutal do Base64 (Remove o cabeçalho 'data:audio/xxx;base64,' se a Evolution enviar)
+        const cleanBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
+
+        // O prompt deve estar em inglês para evitar confusão de instrução vs conteúdo
+        const promptText = `
+                    Here is an audio file. Generate a strict verbatim transcript of the spoken words in Brazilian Portuguese (PT-BR). 
+                    RULES:
+                    1. Do not add any conversational filler.
+                    2. Do not introduce yourself or apologize. 
+                    3. Do not state that you are an AI.
+                    4. If the audio is completely silent or contains only static noise, output exactly: [SILÊNCIO]
+                    `;
+
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
-                    { text: "Você é um transcritor técnico de áudio. Transcreva o áudio em Português (PT-BR). REGRA CRÍTICA DE SEGURANÇA: Se o áudio contiver apenas ruído, estática, silêncio, ou for ininteligível, NÃO TENTE ADIVINHAR OU INVENTAR CONVERSAS. Retorne EXATAMENTE a palavra '[SILÊNCIO]'. Não adicione formatação." },
-                    { inlineData: { data: base64Audio, mimeType: "audio/ogg" } }
+                    { inlineData: { data: cleanBase64, mimeType: "audio/ogg" } },
+                    { text: promptText.trim() }
                 ]
             }],
             config: {
-                temperature: 0.0, // <-- O SEGREDO: Zero criatividade. Só transcreve o que tem certeza absoluta.
-                topP: 0.1
+                temperature: 0.0 // Zero criatividade, foco total na extração
             }
         });
 
         const responseText = result.text || "";
         const cleanText = responseText.trim();
 
-        if (cleanText === '[SILÊNCIO]') {
-            console.log(`⚠️ [VOICE] Áudio vazio ou corrompido detectado pela IA.`);
+        if (cleanText === '[SILÊNCIO]' || cleanText.includes('não consigo ouvir') || cleanText.includes('modelo de linguagem')) {
+            console.log(`⚠️ [VOICE] Áudio vazio ou resposta de recusa da IA detectada.`);
             return "";
         }
 
