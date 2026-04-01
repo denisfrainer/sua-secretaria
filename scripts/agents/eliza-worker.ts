@@ -265,21 +265,32 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
 }
 
 async function transcribeAudioWithGemini(base64Audio: string): Promise<string> {
-    console.log(`🎙️ [VOICE] Iniciando transcrição de áudio com Gemini...`);
+    console.log(`🎙️ [VOICE] Iniciando transcrição com escudo Anti-Alucinação (Temp: 0.0)...`);
     try {
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{
                 role: 'user',
                 parts: [
-                    { text: "Transcreva este áudio de WhatsApp com precisão. O idioma é Português do Brasil (PT-BR). Retorne APENAS o texto transcrito, sem aspas, formatações ou comentários adicionais. Se for inaudível, retorne '[Áudio inaudível]'." },
+                    { text: "Você é um transcritor técnico de áudio. Transcreva o áudio em Português (PT-BR). REGRA CRÍTICA DE SEGURANÇA: Se o áudio contiver apenas ruído, estática, silêncio, ou for ininteligível, NÃO TENTE ADIVINHAR OU INVENTAR CONVERSAS. Retorne EXATAMENTE a palavra '[SILÊNCIO]'. Não adicione formatação." },
                     { inlineData: { data: base64Audio, mimeType: "audio/ogg" } }
                 ]
-            }]
+            }],
+            config: {
+                temperature: 0.0, // <-- O SEGREDO: Zero criatividade. Só transcreve o que tem certeza absoluta.
+                topP: 0.1
+            }
         });
 
         const responseText = result.text || "";
-        return responseText.trim();
+        const cleanText = responseText.trim();
+
+        if (cleanText === '[SILÊNCIO]') {
+            console.log(`⚠️ [VOICE] Áudio vazio ou corrompido detectado pela IA.`);
+            return "";
+        }
+
+        return cleanText;
     } catch (error) {
         console.error("❌ [VOICE ERROR] Falha na transcrição:", error);
         return "";
