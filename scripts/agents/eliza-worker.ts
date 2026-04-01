@@ -125,7 +125,8 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
 
     if (name === 'update_business_context') {
         console.log(`\n================= 👑 CONSOLE.GOD (ADMIN MODE) 👑 =================`);
-        console.log(`📝 [ADMIN] Atualizando arquivo business_context.json...`);
+        console.log(`📝 [ADMIN] Tentativa de atualização do business_context.json detectada.`);
+        console.log(`🔍 [ADMIN PAYLOAD] Conteúdo gerado pela IA para substituição:\n${args.new_comprehensive_context.substring(0, 300)}... [TRUNCADO]`);
 
         try {
             const contextPath = path.join(process.cwd(), 'business_context.json');
@@ -402,19 +403,21 @@ ${dynamicInstruction}
         if (clientNumber === ownerPhone) {
             console.log(`👑 [ROUTING] Número do chefe detectado (${clientNumber}). Desativando modo Eliza. Ativando Admin Mode.`);
 
-            let systemInstruction = `# 1. IDENTIDADE
-                            Você é a Assistente de Operações de IA do sistema. Você NÃO está falando com um cliente, você está falando DIRETAMENTE COM O DONO do negócio.
+            let systemInstruction = `# 1. IDENTITY & PURPOSE
+You are the AI Operations Assistant. You are speaking DIRECTLY TO THE BUSINESS OWNER, not a client.
+Your ONLY job is to help the owner update the business rules, prices, and services.
 
-                            # 2. SEU OBJETIVO
-                            Sua única função é ouvir as instruções do dono para alterar preços, serviços ou regras, e aplicar essas mudanças no catálogo atual usando a ferramenta 'update_business_context'.
+# 2. CURRENT BUSINESS CONTEXT
+${businessContext}
 
-                            # 3. CONTEXTO ATUAL DO NEGÓCIO:
-                            ${businessContext}
-
-                            # 4. REGRAS DE EXECUÇÃO:
-                            - Leia o que o dono pedir.
-                            - Pegue o "CONTEXTO ATUAL DO NEGÓCIO" acima, aplique as modificações exatas que ele pediu, e envie o texto COMPLETO (regras antigas mantidas + novas regras) para a tool 'update_business_context'.
-                            - Após executar a tool, responda de forma extremamente curta (ex: "Feito, chefe. Preço atualizado.").`;
+# 3. EXECUTION RULES (STRICT 2-STEP PROTOCOL)
+- STEP 1 (DRAFT & ASK): When the owner requests a change (via text or audio), DO NOT call the 'update_business_context' tool immediately. First, reply with a bulleted list of the exact changes you understood and explicitly ask for confirmation.
+  Example: "Confirming changes: 
+  - Added Axilla Hair Removal (R$ 50)
+  - Changed Nail price to R$ 45. 
+  Do you confirm?"
+- STEP 2 (EXECUTE): ONLY AFTER the owner explicitly replies confirming the changes (e.g., "yes", "confirm", "ok", "pode mandar"), generate the FULL comprehensive updated context and execute the 'update_business_context' tool.
+- STEP 3 (FINISH): After executing the tool, reply briefly to the owner. Example: "Done. Context updated."`;
         }
         // =========================================================
 
@@ -451,15 +454,15 @@ ${dynamicInstruction}
                         response: output
                     }
                 });
-                console.log(`\n================= 👁️ CONSOLE.GOD 👁️ =================`);
-                console.log(`🤖 [GEMINI RAW RESPONSE]:`, JSON.stringify({
+                console.log(`\n ================= 👁️ CONSOLE.GOD 👁️ ================= `);
+                console.log(`🤖[GEMINI RAW RESPONSE]: `, JSON.stringify({
                     text: result.text || 'NENHUM TEXTO',
                     functionCalls: result.functionCalls || 'NENHUMA FUNCTION CALL'
                 }, null, 2));
                 console.log(`========================================================\n`);
             }
 
-            console.log(`🔄 [TOOL] Returning tool response to Gemini...`);
+            console.log(`🔄[TOOL] Returning tool response to Gemini...`);
             // CRITICAL FIX: Wrap the parts array in a strict Content object
             result = await chat.sendMessage({
                 message: functionResponseParts
@@ -475,7 +478,7 @@ ${dynamicInstruction}
 
         // --- 🚨 HUMAN HANDOFF TRIGGER 🚨 ---
         if (responseText.includes("[HANDOFF_TRIGGERED]")) {
-            console.log(`🚨 [HANDOFF] Complex conversation detected. Pausing AI for lead: ${clientNumber}`);
+            console.log(`🚨[HANDOFF] Complex conversation detected.Pausing AI for lead: ${clientNumber} `);
 
             // Clean the trigger tag before pushing to chunks
             const cleanResponse = responseText.replace("[HANDOFF_TRIGGERED]", "").trim();
@@ -506,7 +509,7 @@ ${dynamicInstruction}
             const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
             accumulatedDelayMs += bubbleTypingTimeMs;
 
-            console.log(`⌨️ [TYPING] Bolha enviada em ${Math.round(accumulatedDelayMs / 1000)}s: "${chunk.substring(0, 30)}..."`);
+            console.log(`⌨️[TYPING] Bolha enviada em ${Math.round(accumulatedDelayMs / 1000)} s: "${chunk.substring(0, 30)}..."`);
             await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
 
             // Adiciona uma pausa humana de respiração/leitura entre bolhas múltiplas
@@ -517,7 +520,7 @@ ${dynamicInstruction}
         }
 
         // 7. Save and Release
-        const fakeMessageId = `eliza_${Date.now()}`; // Cria um ID único para a mensagem da IA
+        const fakeMessageId = `eliza_${Date.now()} `; // Cria um ID único para a mensagem da IA
 
         const { error: insertError } = await supabaseAdmin.from('messages').insert({
             lead_phone: clientNumber,
@@ -531,7 +534,7 @@ ${dynamicInstruction}
         }
 
         await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-        console.log(`✅ [ELIZA] Success for ${clientNumber}`);
+        console.log(`✅[ELIZA] Success for ${clientNumber}`);
 
     } catch (error: any) {
         console.error("❌ [ELIZA ERROR]:", error.message);
@@ -605,7 +608,7 @@ http.createServer((req, res) => {
 
                 // 🛡️ [TRAVA DE FOGO AMIGO] Aborta a execução se a mensagem foi enviada pelo próprio aparelho
                 if (isFromMe) {
-                    console.log(`🛡️ [WEBHOOK] Mensagem ignorada (Fogo Amigo). Origem: Outbound (Você enviou).`);
+                    console.log(`🛡️[WEBHOOK] Mensagem ignorada(Fogo Amigo).Origem: Outbound(Você enviou).`);
                     return; // Mata o processo aqui
                 }
 
@@ -621,7 +624,7 @@ http.createServer((req, res) => {
 
                 // --- 🎙️ ÁUDIO E 💬 TEXTO ---
                 if (messageObj.audioMessage) {
-                    console.log(`🎙️ [WEBHOOK] Áudio recebido de ${clientNumber}.`);
+                    console.log(`🎙️[WEBHOOK] Áudio recebido de ${clientNumber}.`);
 
                     try {
                         // Configurações da sua Evolution API
@@ -629,10 +632,10 @@ http.createServer((req, res) => {
                         const instanceName = body.instance || 'agente-lobo';
                         const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
 
-                        console.log(`📡 [DEBUG AUDIO] Pedindo para Evolution descriptografar o áudio...`);
+                        console.log(`📡[DEBUG AUDIO] Pedindo para Evolution descriptografar o áudio...`);
 
                         // O ESCUDO: Pedimos para a Evolution pegar a mensagem, descriptografar a mídia e devolver o Base64 limpo
-                        const mediaRes = await fetch(`${evoUrl}/chat/getBase64FromMediaMessage/${instanceName}`, {
+                        const mediaRes = await fetch(`${evoUrl} /chat/getBase64FromMediaMessage / ${instanceName} `, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -642,7 +645,7 @@ http.createServer((req, res) => {
                         });
 
                         if (!mediaRes.ok) {
-                            console.error(`❌ [DEBUG AUDIO] Erro na descriptografia da Evolution: ${mediaRes.status}`);
+                            console.error(`❌[DEBUG AUDIO] Erro na descriptografia da Evolution: ${mediaRes.status} `);
                         } else {
                             const mediaData = await mediaRes.json();
 
@@ -650,26 +653,26 @@ http.createServer((req, res) => {
                                 const audioBase64 = mediaData.base64;
                                 const cleanMimeType = (mediaData.mimetype || "audio/ogg").split(';')[0];
 
-                                console.log(`🔍 [DEBUG AUDIO] Áudio descriptografado: ${audioBase64.length} chars | Formato: ${cleanMimeType}`);
+                                console.log(`🔍[DEBUG AUDIO] Áudio descriptografado: ${audioBase64.length} chars | Formato: ${cleanMimeType} `);
 
                                 if (audioBase64.length < 500) {
-                                    console.log(`⚠️ [DEBUG AUDIO] Base64 muito curto. Áudio vazio. Abortando.`);
+                                    console.log(`⚠️[DEBUG AUDIO] Base64 muito curto.Áudio vazio.Abortando.`);
                                 } else {
                                     const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
 
                                     if (transcript && transcript !== "[SILÊNCIO]") {
                                         clientMessage = transcript;
-                                        console.log(`📝 [VOICE] Áudio transcrito com sucesso: "${clientMessage}"`);
+                                        console.log(`📝[VOICE] Áudio transcrito com sucesso: "${clientMessage}"`);
                                     } else {
-                                        console.log(`⚠️ [VOICE] Transcrição falhou ou áudio mudo.`);
+                                        console.log(`⚠️[VOICE] Transcrição falhou ou áudio mudo.`);
                                     }
                                 }
                             } else {
-                                console.error(`❌ [DEBUG AUDIO] Evolution não retornou o Base64 no payload.`);
+                                console.error(`❌[DEBUG AUDIO] Evolution não retornou o Base64 no payload.`);
                             }
                         }
                     } catch (error: any) {
-                        console.error(`❌ [DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message}`);
+                        console.error(`❌[DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message} `);
                     }
                 }
 
@@ -679,81 +682,101 @@ http.createServer((req, res) => {
 
                 if (clientMessage && clientMessage.trim().length > 0) {
                     // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
+                    // ==============================================================
+                    // 🛡️ A TRAVA GOD TIER (SILENT HANDOFF & FOGO AMIGO)
+                    // ==============================================================
                     if (isFromMe) {
-                        const cmd = clientMessage.trim();
-                        if (cmd === '/pausar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                            return;
-                        } else if (cmd === '/retomar') {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false }).eq('phone', clientNumber);
-                            return;
-                        }
-
+                        // Verifica se a mensagem foi enviada pelo próprio sistema (Eliza) via API
                         const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+
                         if (isAPI) {
-                            return; // Ignora mensagens enviadas pela própria Eliza
-                        } else {
-                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true, needs_human: true }).eq('phone', clientNumber);
-                            console.log(`👤 [SILENT HANDOFF] Denis assumiu o chat. IA pausada para ${clientNumber}.`);
+                            // É a Eliza respondendo. Ignoramos para não criar loop.
                             return;
+                        } else {
+                            // É VOCÊ (Denis/Humano) digitando diretamente no WhatsApp ou WhatsApp Web.
+                            let clientMessage = messageObj?.conversation || messageObj?.extendedTextMessage?.text || '';
+                            const cmd = clientMessage.trim();
+
+                            if (cmd === '/pausar') {
+                                await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                                console.log(`⏸️[COMANDO] IA pausada manualmente para ${clientNumber}.`);
+                                return;
+                            } else if (cmd === '/retomar') {
+                                await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false, status: 'organic_inbound' }).eq('phone', clientNumber);
+                                console.log(`▶️[COMANDO] IA retomada manualmente para ${clientNumber}.`);
+                                return;
+                            }
+
+                            // SILENT HANDOFF: Se você digitou qualquer outra coisa, trava a IA para este lead permanentemente.
+                            console.log(`🛡️[FOGO AMIGO] Denis assumiu o controle.Travando a IA para o lead ${clientNumber}.`);
+                            await supabaseAdmin.from('leads_lobo').update({
+                                needs_human: true,
+                                ai_paused: true,
+                                status: 'human_handling'
+                            }).eq('phone', clientNumber);
+
+                            return; // Mata a execução do webhook aqui. A IA não vai nem ler o resto.
                         }
                     }
 
-                    console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
+                    if (clientMessage) {
 
-                    // --- BLINDAGENS DE SEGURANÇA ---
-                    const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
-                    const msgLower = clientMessage.toLowerCase();
-                    if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
-                        console.log(`🛡️ [SHIELD] Auto-reply (Keywords). Ignorando.`);
-                        return;
-                    }
+                        console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
-                    let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
+                        // --- BLINDAGENS DE SEGURANÇA ---
+                        const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
+                        const msgLower = clientMessage.toLowerCase();
+                        if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                            console.log(`🛡️[SHIELD] Auto - reply(Keywords).Ignorando.`);
+                            return;
+                        }
 
-                    if (lead) {
-                        await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+                        let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
 
-                        if (lead.updated_at) {
-                            const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
-                            if (timeSinceContact < 2000) {
-                                console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
+                        if (lead) {
+                            await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+
+                            if (lead.updated_at) {
+                                const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
+                                if (timeSinceContact < 2000) {
+                                    console.log(`🛡️[SHIELD] Auto - reply(Rápido demais).Ignorando.`);
+                                    return;
+                                }
+                            }
+
+                            if ((lead.reply_count || 0) >= 10) {
+                                console.log(`🚨[CIRCUIT BREAKER] Bot Loop.Travando ${clientNumber}.`);
+                                await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                                return;
+                            }
+
+                            if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
+                                console.log(`🔒 Lead travado ou com humano.Ignorando.`);
                                 return;
                             }
                         }
 
-                        if ((lead.reply_count || 0) >= 10) {
-                            console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
-                            await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                        if (!lead) {
+                            const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                                phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
+                            }).select().single();
+                            lead = newLead;
+                        }
+
+                        // --- SALVAMENTO E GATILHO ---
+                        await supabaseAdmin.from('messages').insert({
+                            lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
+                        });
+
+                        const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                        if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                            await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                             return;
                         }
 
-                        if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
-                            console.log(`🔒 Lead travado ou com humano. Ignorando.`);
-                            return;
-                        }
+                        await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
+                        console.log(`🎯[WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'.Worker assumindo.`);
                     }
-
-                    if (!lead) {
-                        const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
-                            phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
-                        }).select().single();
-                        lead = newLead;
-                    }
-
-                    // --- SALVAMENTO E GATILHO ---
-                    await supabaseAdmin.from('messages').insert({
-                        lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
-                    });
-
-                    const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
-                    if (elizaSwitch && elizaSwitch.value?.enabled === false) {
-                        await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
-                        return;
-                    }
-
-                    await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
-                    console.log(`🎯 [WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'. Worker assumindo.`);
                 }
             } catch (error) {
                 console.error('❌ [WEBHOOK CRASH]:', error);
@@ -764,6 +787,6 @@ http.createServer((req, res) => {
 
     res.writeHead(404);
     res.end();
-}).listen(PORT, () => console.log(`🌐 Server (Healthcheck & Webhook) running on port ${PORT}`));
+}).listen(PORT, () => console.log(`🌐 Server(Healthcheck & Webhook) running on port ${PORT} `));
 
 startPolling();
