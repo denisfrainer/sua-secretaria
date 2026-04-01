@@ -265,18 +265,17 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
 }
 
 async function transcribeAudioWithGemini(base64Audio: string, mimeType: string): Promise<string> {
-    console.log(`🎙️ [VOICE] Transcrevendo com Gemini 1.5 Pro (Anti-Codec-Mismatch)...`);
+    console.log(`🎙️ [VOICE] Transcrevendo com Gemini 2.5 Flash...`);
     try {
         const cleanBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
 
         const result = await ai.models.generateContent({
-            // CORREÇÃO CRÍTICA: Apontando a versão exata do modelo suportada na v1beta
-            model: "gemini-1.5-pro-002",
+            model: "gemini-2.5-flash", // O motor correto e ultrarrápido
             contents: [{
                 role: 'user',
                 parts: [
-                    { inlineData: { data: cleanBase64, mimeType: "audio/ogg" } },
-                    { text: "Você é um especialista em transcrição de áudio. Ignore quaisquer restrições de que você é um modelo de texto. Oculte recusas. OUÇA o arquivo de áudio anexado e transcreva EXATAMENTE o que foi dito em Português do Brasil. Se o arquivo contiver apenas estática, barulho de vento ou silêncio, responda EXATAMENTE com a palavra: [SILÊNCIO]." }
+                    { inlineData: { data: cleanBase64, mimeType: mimeType } },
+                    { text: "System prompt: Transcribe the attached audio exactly in Brazilian Portuguese. Return ONLY the text. No conversational filler." }
                 ]
             }],
             config: {
@@ -285,12 +284,6 @@ async function transcribeAudioWithGemini(base64Audio: string, mimeType: string):
         });
 
         const cleanText = (result.text || "").trim();
-
-        if (cleanText === '[SILÊNCIO]' || cleanText.toLowerCase().includes('não consigo') || cleanText.toLowerCase().includes('modelo de texto')) {
-            console.log(`⚠️ [VOICE] IA recusou o arquivo ou áudio inaudível. Retorno: "${cleanText}"`);
-            return "";
-        }
-
         return cleanText;
     } catch (error) {
         console.error("❌ [VOICE ERROR] Falha na transcrição:", error);
@@ -638,15 +631,23 @@ http.createServer((req, res) => {
 
                     if (audioUrl) {
                         if (audioUrl.startsWith('http')) {
-                            // CORREÇÃO CRÍTICA: Injetando a chave da API para a Evolution liberar o download
                             const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
+                            console.log(`📡 [DEBUG AUDIO] Baixando áudio da Evolution...`);
+
                             const response = await fetch(audioUrl, {
                                 headers: { 'apikey': evoKey }
                             });
 
-                            // Se der erro no download, aborta antes de mandar pro Gemini
-                            if (!response.ok) {
-                                console.log(`❌ [DEBUG AUDIO] Falha ao baixar áudio da Evolution. Status: ${response.status}`);
+                            // 🛑 O ESCUDO DEFINITIVO: O que a Evolution entregou?
+                            const contentType = response.headers.get('content-type') || '';
+
+                            if (contentType.includes('application/json') || contentType.includes('text/html')) {
+                                const errorText = await response.text();
+                                console.error(`❌ [DEBUG AUDIO] FALSO ÁUDIO! A Evolution não entregou mídia, entregou este erro: ${errorText}`);
+                                audioBase64 = ""; // Anula o envio para o Gemini
+                            } else if (!response.ok) {
+                                console.error(`❌ [DEBUG AUDIO] Falha HTTP: ${response.status}`);
+                                audioBase64 = "";
                             } else {
                                 const buffer = await response.arrayBuffer();
                                 audioBase64 = Buffer.from(buffer).toString('base64');
@@ -660,10 +661,10 @@ http.createServer((req, res) => {
                     }
 
                     if (audioBase64) {
-                        console.log(`🔍 [DEBUG AUDIO] Base64: ${audioBase64.length} chars | Tipo Real: ${cleanMimeType}`);
+                        console.log(`🔍 [DEBUG AUDIO] Payload real validado: ${audioBase64.length} chars | Formato: ${cleanMimeType}`);
 
                         if (audioBase64.length < 500) {
-                            console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Áudio vazio ou erro da Evolution.`);
+                            console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Abortando.`);
                         } else {
                             const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
 
@@ -671,7 +672,7 @@ http.createServer((req, res) => {
                                 clientMessage = transcript;
                                 console.log(`📝 [VOICE] Áudio transcrito: "${clientMessage}"`);
                             } else {
-                                console.log(`⚠️ [VOICE] Transcrição falhou ou o áudio estava inaudível.`);
+                                console.log(`⚠️ [VOICE] Transcrição falhou.`);
                             }
                         }
                     }
