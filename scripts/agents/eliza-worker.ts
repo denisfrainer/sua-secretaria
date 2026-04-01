@@ -88,6 +88,20 @@ const functionDeclarations: any[] = [
             },
             required: ['date', 'time', 'client_name', 'service_type'],
         },
+    },
+    {
+        name: 'update_business_context',
+        description: 'Atualiza o arquivo de regras, preços e serviços do negócio (business_context.json).',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                new_comprehensive_context: {
+                    type: 'STRING',
+                    description: 'O texto COMPLETO do novo catálogo, contendo todas as regras anteriores mais as alterações solicitadas pelo dono.'
+                }
+            },
+            required: ['new_comprehensive_context'],
+        },
     }
 ];
 
@@ -107,6 +121,27 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
     if (name === 'notify_human_specialist') {
         await supabaseAdmin.from('leads_lobo').update({ status: 'hot_lead' }).eq('phone', clientPhone);
         return { status: 'success', notification: 'Denis has been alerted.' };
+    }
+
+    if (name === 'update_business_context') {
+        console.log(`\n================= 👑 CONSOLE.GOD (ADMIN MODE) 👑 =================`);
+        console.log(`📝 [ADMIN] Atualizando arquivo business_context.json...`);
+
+        try {
+            const contextPath = path.join(process.cwd(), 'business_context.json');
+            fs.writeFileSync(contextPath, args.new_comprehensive_context, 'utf8');
+
+            console.log(`✅ [ADMIN] Contexto do negócio reescrito com sucesso!`);
+            console.log(`=======================================================================\n`);
+
+            return {
+                status: 'success',
+                message: 'O catálogo foi atualizado. Informe ao dono que a alteração foi salva com sucesso e você já está operando com as novas regras.'
+            };
+        } catch (err: any) {
+            console.error(`❌ [ADMIN ERROR] Falha ao salvar arquivo:`, err.message);
+            return { status: 'error', message: 'Falha ao salvar as alterações no servidor.' };
+        }
     }
 
     if (name === 'check_calendar_availability') {
@@ -227,7 +262,29 @@ async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string)
         console.error("❌ [VISION ERROR]:", error);
         return { is_valid_pix: false, error: "Falha no processamento da imagem" };
     }
-} // <--- A função deve fechar APENAS aqui
+}
+
+async function transcribeAudioWithGemini(base64Audio: string): Promise<string> {
+    console.log(`🎙️ [VOICE] Iniciando transcrição de áudio com Gemini...`);
+    try {
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: "Transcreva este áudio de WhatsApp com precisão. O idioma é Português do Brasil (PT-BR). Retorne APENAS o texto transcrito, sem aspas, formatações ou comentários adicionais. Se for inaudível, retorne '[Áudio inaudível]'." },
+                    { inlineData: { data: base64Audio, mimeType: "audio/ogg" } }
+                ]
+            }]
+        });
+
+        const responseText = result.text || "";
+        return responseText.trim();
+    } catch (error) {
+        console.error("❌ [VOICE ERROR] Falha na transcrição:", error);
+        return "";
+    }
+}
 
 // ==============================================================
 // 🧠 LEAD PROCESSING LOGIC
@@ -333,6 +390,28 @@ ${businessContext}
 # 5. CURRENT LEAD STATE (CRITICAL)
 ${dynamicInstruction}
 `;
+
+        // 👑 ADICIONE ESTE BLOCO LOGO ABAIXO DA STRING ACIMA 👑
+        const ownerPhone = process.env.OWNER_PHONE || '554899999999'; // Substitua pelo seu número como fallback de segurança
+
+        if (clientNumber === ownerPhone) {
+            console.log(`👑 [ROUTING] Número do chefe detectado (${clientNumber}). Desativando modo Eliza. Ativando Admin Mode.`);
+
+            let systemInstruction = `# 1. IDENTIDADE
+                            Você é a Assistente de Operações de IA do sistema. Você NÃO está falando com um cliente, você está falando DIRETAMENTE COM O DONO do negócio.
+
+                            # 2. SEU OBJETIVO
+                            Sua única função é ouvir as instruções do dono para alterar preços, serviços ou regras, e aplicar essas mudanças no catálogo atual usando a ferramenta 'update_business_context'.
+
+                            # 3. CONTEXTO ATUAL DO NEGÓCIO:
+                            ${businessContext}
+
+                            # 4. REGRAS DE EXECUÇÃO:
+                            - Leia o que o dono pedir.
+                            - Pegue o "CONTEXTO ATUAL DO NEGÓCIO" acima, aplique as modificações exatas que ele pediu, e envie o texto COMPLETO (regras antigas mantidas + novas regras) para a tool 'update_business_context'.
+                            - Após executar a tool, responda de forma extremamente curta (ex: "Feito, chefe. Preço atualizado.").`;
+        }
+        // =========================================================
 
 
         // 4. Create Chat Session (Apenas com o PASSADO)
@@ -535,10 +614,38 @@ http.createServer((req, res) => {
 
                 let clientMessage = '';
 
-                // --- 🎙️ ÁUDIO E 💬 TEXTO (Mantenha o seu código atual aqui abaixo) ---
-                if (messageObj.audioMessage) { /* ... seu código de áudio ... */ }
-                if (!messageObj.conversation && !messageObj.extendedTextMessage) return;
-                clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
+                // --- 🎙️ ÁUDIO E 💬 TEXTO ---
+                if (messageObj.audioMessage) {
+                    console.log(`🎙️ [WEBHOOK] Áudio recebido de ${clientNumber}.`);
+                    
+                    let audioBase64 = "";
+                    let audioUrl = messageObj.audioMessage.url || dataObj.base64;
+
+                    if (audioUrl) {
+                        if (audioUrl.startsWith('http')) {
+                            const response = await fetch(audioUrl);
+                            const buffer = await response.arrayBuffer();
+                            audioBase64 = Buffer.from(buffer).toString('base64');
+                        } else {
+                            audioBase64 = audioUrl.includes('base64,') ? audioUrl.split('base64,')[1] : audioUrl;
+                        }
+                    } else if (messageObj?.base64) {
+                        audioBase64 = messageObj.base64;
+                        if (audioBase64.includes('base64,')) audioBase64 = audioBase64.split('base64,')[1];
+                    }
+
+                    if (audioBase64) {
+                        const transcript = await transcribeAudioWithGemini(audioBase64);
+                        if (transcript && transcript !== "[Áudio inaudível]") {
+                            clientMessage = transcript;
+                            console.log(`📝 [VOICE] Áudio transcrito: "${clientMessage}"`);
+                        }
+                    }
+                }
+
+                if (!clientMessage) {
+                    clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
+                }
 
                 if (clientMessage && clientMessage.trim().length > 0) {
                     // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
