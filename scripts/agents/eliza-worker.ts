@@ -623,58 +623,53 @@ http.createServer((req, res) => {
                 if (messageObj.audioMessage) {
                     console.log(`🎙️ [WEBHOOK] Áudio recebido de ${clientNumber}.`);
 
-                    let audioBase64 = "";
-                    let audioUrl = messageObj.audioMessage.url || dataObj.base64;
+                    try {
+                        // Configurações da sua Evolution API
+                        const evoUrl = process.env.EVOLUTION_API_URL || 'https://api.revivafotos.com.br';
+                        const instanceName = body.instance || 'agente-lobo';
+                        const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
 
-                    const rawMimeType = messageObj.audioMessage.mimetype || "audio/ogg";
-                    const cleanMimeType = rawMimeType.split(';')[0];
+                        console.log(`📡 [DEBUG AUDIO] Pedindo para Evolution descriptografar o áudio...`);
 
-                    if (audioUrl) {
-                        if (audioUrl.startsWith('http')) {
-                            const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
-                            console.log(`📡 [DEBUG AUDIO] Baixando áudio da Evolution...`);
+                        // O ESCUDO: Pedimos para a Evolution pegar a mensagem, descriptografar a mídia e devolver o Base64 limpo
+                        const mediaRes = await fetch(`${evoUrl}/chat/getBase64FromMediaMessage/${instanceName}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': evoKey
+                            },
+                            body: JSON.stringify({ message: dataObj })
+                        });
 
-                            const response = await fetch(audioUrl, {
-                                headers: { 'apikey': evoKey }
-                            });
-
-                            // 🛑 O ESCUDO DEFINITIVO: O que a Evolution entregou?
-                            const contentType = response.headers.get('content-type') || '';
-
-                            if (contentType.includes('application/json') || contentType.includes('text/html')) {
-                                const errorText = await response.text();
-                                console.error(`❌ [DEBUG AUDIO] FALSO ÁUDIO! A Evolution não entregou mídia, entregou este erro: ${errorText}`);
-                                audioBase64 = ""; // Anula o envio para o Gemini
-                            } else if (!response.ok) {
-                                console.error(`❌ [DEBUG AUDIO] Falha HTTP: ${response.status}`);
-                                audioBase64 = "";
-                            } else {
-                                const buffer = await response.arrayBuffer();
-                                audioBase64 = Buffer.from(buffer).toString('base64');
-                            }
+                        if (!mediaRes.ok) {
+                            console.error(`❌ [DEBUG AUDIO] Erro na descriptografia da Evolution: ${mediaRes.status}`);
                         } else {
-                            audioBase64 = audioUrl.includes('base64,') ? audioUrl.split('base64,')[1] : audioUrl;
-                        }
-                    } else if (messageObj?.base64) {
-                        audioBase64 = messageObj.base64;
-                        if (audioBase64.includes('base64,')) audioBase64 = audioBase64.split('base64,')[1];
-                    }
+                            const mediaData = await mediaRes.json();
 
-                    if (audioBase64) {
-                        console.log(`🔍 [DEBUG AUDIO] Payload real validado: ${audioBase64.length} chars | Formato: ${cleanMimeType}`);
+                            if (mediaData && mediaData.base64) {
+                                const audioBase64 = mediaData.base64;
+                                const cleanMimeType = (mediaData.mimetype || "audio/ogg").split(';')[0];
 
-                        if (audioBase64.length < 500) {
-                            console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Abortando.`);
-                        } else {
-                            const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
+                                console.log(`🔍 [DEBUG AUDIO] Áudio descriptografado: ${audioBase64.length} chars | Formato: ${cleanMimeType}`);
 
-                            if (transcript && transcript !== "[SILÊNCIO]") {
-                                clientMessage = transcript;
-                                console.log(`📝 [VOICE] Áudio transcrito: "${clientMessage}"`);
+                                if (audioBase64.length < 500) {
+                                    console.log(`⚠️ [DEBUG AUDIO] Base64 muito curto. Áudio vazio. Abortando.`);
+                                } else {
+                                    const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
+
+                                    if (transcript && transcript !== "[SILÊNCIO]") {
+                                        clientMessage = transcript;
+                                        console.log(`📝 [VOICE] Áudio transcrito com sucesso: "${clientMessage}"`);
+                                    } else {
+                                        console.log(`⚠️ [VOICE] Transcrição falhou ou áudio mudo.`);
+                                    }
+                                }
                             } else {
-                                console.log(`⚠️ [VOICE] Transcrição falhou.`);
+                                console.error(`❌ [DEBUG AUDIO] Evolution não retornou o Base64 no payload.`);
                             }
                         }
+                    } catch (error: any) {
+                        console.error(`❌ [DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message}`);
                     }
                 }
 
