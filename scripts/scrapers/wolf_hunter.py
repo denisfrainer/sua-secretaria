@@ -93,22 +93,12 @@ def run_hunter():
         # 🎯 TIER 1: Ouro Puro (Mão Ocupada + Alto Volume de Agendamento)
         # Conversão mais rápida para o pitch "Você para o serviço pra responder cliente?"
         "barbearias", "salões de beleza", "esmalterias", "estúdios de tatuagem",
-        "clínicas de estética", "estética automotiva", "pet shops", "banho e tosa",
-
-        # 🎯 TIER 2: Saúde e Bem-Estar (Recorrência e Agenda Lotada)
-        # Tíquete médio alto, muita dúvida sobre convênio/preços
-        "clínicas odontológicas", "consultórios médicos", "clínicas veterinárias",
-        "fisioterapia", "estúdios de pilates", "academias", "crossfit",
+        "clínicas de estética", "pet shops", "banho e tosa",
 
         # 🎯 TIER 3: Turismo e Locais (Forte em Floripa)
         # Alto volume de dúvidas repetitivas (preço, horário, localização)
         "pousadas", "hostels", "passeios de barco", "escolas de surf", 
         "quadras de beach tennis", "aluguel de pranchas",
-        
-        # 🎯 TIER 4: Serviços de Alto Valor (Lead Qualification)
-        # Eliza atua filtrando curiosos antes de passar pro humano
-        "imobiliárias", "construtoras", "energia solar", "móveis planejados", 
-        "oficinas mecânicas especializadas"
     ]
 
     city = [

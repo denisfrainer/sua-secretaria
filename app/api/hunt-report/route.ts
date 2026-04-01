@@ -41,16 +41,18 @@ export async function POST(req: Request) {
             .select('*', { count: 'exact', head: true })
             .eq('status', 'pending');
 
-        // 2. Count Contacted (DAILY - Da tabela de stats oficial)
-        const { data: loboStats } = await supabaseAdmin
-            .from('lobo_daily_stats')
-            .select('sent_count')
-            .eq('date_id', brDate)
-            .single();
+        // 2. Count Contacted (DAILY) - Tratamento de erro e fallback de Null
+        const { count: contactedCount, error: contactedError } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('*', { count: 'exact', head: true })
+            .in('status', ['waiting_reply', 'lead_replied'])
+            .gte('updated_at', startOfDayIso)
+            .lte('updated_at', endOfDayIso);
 
-        const contactedCount = loboStats?.sent_count || 0;
+        if (contactedError) console.error('❌ Erro na query Contacted:', contactedError.message);
+        const safeContacted = contactedCount || 0;
 
-        // 3. Count Invalid (DAILY - Apenas o que foi invalidado HOJE)
+        // 3. Count Invalid (DAILY)
         const { count: invalidCount } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
@@ -58,11 +60,19 @@ export async function POST(req: Request) {
             .gte('updated_at', startOfDayIso)
             .lte('updated_at', endOfDayIso);
 
-        // 4. Count Quarantine (ALL-TIME)
-        const { count: quarantineCount } = await supabaseAdmin
+        const safeInvalid = invalidCount || 0;
+
+        // 4. Count Hunted (DAILY - Substituindo a Quarentena)
+        // Representa todos os leads processados HOJE (deixaram de ser pending)
+        const { count: huntedCount, error: huntedError } = await supabaseAdmin
             .from('leads_lobo')
             .select('*', { count: 'exact', head: true })
-            .or('status.eq.needs_human,is_locked.eq.true');
+            .neq('status', 'pending')
+            .gte('updated_at', startOfDayIso)
+            .lte('updated_at', endOfDayIso);
+
+        if (huntedError) console.error('❌ Erro na query Hunted:', huntedError.message);
+        const safeHunted = huntedCount || 0;
 
         // 5. Leads Recentes (Últimos 10 processados)
         const { data: recentLeads } = await supabaseAdmin
@@ -102,25 +112,25 @@ export async function POST(req: Request) {
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
                 <div style="background-color: #111; color: #fff; padding: 25px; text-align: center;">
                     <h2 style="margin: 0;">🐺 Hunt Report</h2>
-                    <p style="margin: 5px 0 0 0; color: #aaa; font-size: 13px;">${dateHeader} - Resultados Diários</p>
+                    <p style="margin: 5px 0 0 0; color: #aaa; font-size: 13px;">${dateHeader} - Daily Results</p>
                 </div>
                 <div style="padding: 30px;">
                     <div style="display: flex; justify-content: space-between; gap: 10px; text-align: center;">
-                        <div style="background: #f8fafc; padding: 15px 5px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
-                            <div style="font-size: 20px; font-weight: 800; color: #0284c7;">${pendingCount || 0}</div>
-                            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Pending</div>
-                        </div>
                         <div style="background: #f0fdf4; padding: 15px 5px; border-radius: 8px; width: 23%; border: 1px solid #bbf7d0;">
-                            <div style="font-size: 20px; font-weight: 800; color: #16a34a;">${contactedCount}</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #16a34a;">${safeContacted}</div>
                             <div style="font-size: 10px; color: #166534; text-transform: uppercase;">Contacted</div>
                         </div>
+                        <div style="background: #f3e8ff; padding: 15px 5px; border-radius: 8px; width: 23%; border: 1px solid #d8b4fe;">
+                            <div style="font-size: 20px; font-weight: 800; color: #7e22ce;">${safeHunted}</div>
+                            <div style="font-size: 10px; color: #6b21a8; text-transform: uppercase;">Hunted</div>
+                        </div>
                         <div style="background: #fff1f2; padding: 15px 5px; border-radius: 8px; width: 23%; border: 1px solid #fecdd3;">
-                            <div style="font-size: 20px; font-weight: 800; color: #e11d48;">${quarantineCount || 0}</div>
-                            <div style="font-size: 10px; color: #9f1239; text-transform: uppercase;">Quarantine</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #e11d48;">${safeInvalid}</div>
+                            <div style="font-size: 10px; color: #9f1239; text-transform: uppercase;">Invalid</div>
                         </div>
                         <div style="background: #f8fafc; padding: 15px 5px; border-radius: 8px; width: 23%; border: 1px solid #e2e8f0;">
-                            <div style="font-size: 20px; font-weight: 800; color: #dc2626;">${invalidCount || 0}</div>
-                            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Invalid</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #64748b;">${pendingCount || 0}</div>
+                            <div style="font-size: 10px; color: #475569; text-transform: uppercase;">Pending Queue</div>
                         </div>
                     </div>
                     <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 18px; margin-top: 30px;">Atividade Recente</h3>

@@ -176,19 +176,19 @@ export async function POST(req: Request) {
             const variationsAI = [
                 {
                     part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Floripa.`,
-                    part2: `Vocês já pensaram em automatizar o atendimento aqui pelo WhatsApp?`
+                    part2: `Como funciona o sistema de agendamento de vocês atualmente?`
                 },
                 {
-                    part1: `{Opa|Fala|Oi|Olá}, ${saudacao}! Tudo certo?`,
-                    part2: `Vocês já usam algum sistema para agendar os clientes pelo WhatsApp?`
+                    part1: `${saudacao} pessoal, tudo certo? Me chamo Denis, sou desenvolvedor aqui da Lagoa da Conceição.`,
+                    part2: `Vocês já utilizam algum sistema para agendar os clientes atualmente?`
                 },
                 {
-                    part1: `${saudacao} pessoal, tudo bem? Me chamo Denis.`,
+                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tudo bem? Me chamo Denis, sou desenvolvedor de software residente em Florianópolis.`,
                     part2: `Como vocês gerenciam os agendamentos hoje? É tudo manual ou tem alguma agenda específica pra isso?`
                 },
                 {
                     part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tranquilo?`,
-                    part2: `Vocês já pensaram em ter um sistema de agendamento automático aqui pelo WhatsApp?`
+                    part2: `Vocês já cogitaram ter um sistema de agendamento automático 24/7 aqui pelo WhatsApp?`
                 }
             ];
 
