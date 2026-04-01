@@ -617,7 +617,7 @@ http.createServer((req, res) => {
                 // --- 🎙️ ÁUDIO E 💬 TEXTO ---
                 if (messageObj.audioMessage) {
                     console.log(`🎙️ [WEBHOOK] Áudio recebido de ${clientNumber}.`);
-                    
+
                     let audioBase64 = "";
                     let audioUrl = messageObj.audioMessage.url || dataObj.base64;
 
@@ -635,10 +635,20 @@ http.createServer((req, res) => {
                     }
 
                     if (audioBase64) {
-                        const transcript = await transcribeAudioWithGemini(audioBase64);
-                        if (transcript && transcript !== "[Áudio inaudível]") {
-                            clientMessage = transcript;
-                            console.log(`📝 [VOICE] Áudio transcrito: "${clientMessage}"`);
+                        console.log(`🔍 [DEBUG AUDIO] Base64 recebido. Tamanho da string: ${audioBase64.length} caracteres.`);
+
+                        // Bloqueio de alucinação (ASR Hallucination)
+                        if (audioBase64.length < 500) {
+                            console.log(`⚠️ [DEBUG AUDIO] ALERTA: Base64 muito curto. Áudio vazio ou corrompido. Transcrição abortada.`);
+                        } else {
+                            const transcript = await transcribeAudioWithGemini(audioBase64);
+
+                            if (transcript && transcript !== "[Áudio inaudível]") {
+                                clientMessage = transcript;
+                                console.log(`📝 [VOICE] Áudio transcrito: "${clientMessage}"`);
+                            } else {
+                                console.log(`⚠️ [VOICE] Transcrição falhou ou o áudio estava inaudível.`);
+                            }
                         }
                     }
                 }
