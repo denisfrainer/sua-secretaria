@@ -22,7 +22,7 @@ export function HeroSection() {
           className="flex flex-col gap-6 items-center"
         >
           <h1 className={`${inter.className} text-[32px] font-extrabold leading-[1.05] tracking-tight text-black max-w-4xl`}>
-            Sua secretária virtual que atende no WhatsApp e marca horários 24h por dia.
+            Sua secretária virtual que atende o WhatsApp e faz agendamentos 24h por dia.
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
             Feito para quem trabalha com as mãos e não pode parar para responder o celular. A <strong className="font-semibold text-black">meatende.ai</strong> conversa com seus clientes como uma pessoa real, tira dúvidas e lota sua agenda no automático.
