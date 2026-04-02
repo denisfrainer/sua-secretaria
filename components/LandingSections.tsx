@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Brain, Filter, Shield, CheckCircle, QrCode, Mic, Bot, ChevronDown } from 'lucide-react';
+import { Brain, Filter, Shield, CheckCircle, QrCode, Mic, Bot, ChevronDown, MessageSquare, Zap } from 'lucide-react';
 
 const MotionSection = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => (
   <motion.section
@@ -55,6 +55,33 @@ export function LandingSections() {
     {
       question: "Posso parar a IA no meio de um fechamento? (Silent Handoff)",
       answer: "Sim! Qualquer mensagem que você, como vendedor raiz, mandar para o lead, aciona nosso modo \"Silent Handoff\". A IA pausa automaticamente e deixa você realizar o \"kill\"."
+    }
+  ];
+  
+  const comparisonData = [
+    {
+      feature: "Experiência do Lead",
+      competitor: "Engessada com menus de botões",
+      meatende: "Fluida, natural e 100% conversacional",
+      icon: MessageSquare
+    },
+    {
+      feature: "Aprendizado",
+      competitor: "Exige programação de regras manuais",
+      meatende: "Aprende tudo via áudio rápido seu",
+      icon: Brain
+    },
+    {
+      feature: "Qualificação",
+      competitor: "Repassa custo de Lead sujo para a equipe",
+      meatende: "Identifica curiosos e defende o ticket",
+      icon: Filter
+    },
+    {
+      feature: "Setup Inicial",
+      competitor: "Semanas arrastando blocos lógicos",
+      meatende: "Conectou o QR Code, já está vendendo",
+      icon: Zap
     }
   ];
 
@@ -137,73 +164,46 @@ export function LandingSections() {
         </div>
       </MotionSection>
 
-      {/* 5. Comparison Table (Mobile Optimized) */}
-      <MotionSection id="comparativo" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16">
+      {/* 5. Comparison Table (Fully Responsive Stacked Cards & Desktop Grid) */}
+      <MotionSection id="comparativo" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white w-full max-w-full overflow-hidden">
+        <div className="max-w-4xl mx-auto w-full">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16 break-words whitespace-normal">
             Por que o meatende.ai domina
           </h2>
 
-          <div className="flex flex-col gap-6 md:gap-4">
-            {/* Header row for Desktop */}
-            <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-2 border-b border-gray-200">
+          <div className="w-full flex flex-col gap-8 md:gap-4">
+            {/* Header row for Desktop only */}
+            <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-4 border-b border-gray-200">
               <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Recurso</div>
               <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Chatbots de Fluxo</div>
               <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">meatende.ai (Gen-IA)</div>
             </div>
 
-            {/* Feature 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Experiência do Lead</div>
-              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                Engessada com menus de botões
-              </div>
-              <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                Fluida, natural e 100% conversacional
-              </div>
-            </div>
+            {/* Feature Comparison Items */}
+            {comparisonData.map((item, idx) => (
+              <div 
+                key={idx} 
+                className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none md:border-none overflow-hidden shadow-sm md:shadow-none transition-all duration-300 hover:shadow-md md:hover:shadow-none"
+              >
+                {/* Feature Header - Mobile Header, Desktop First Column */}
+                <div className="bg-gray-100 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center gap-3 border-b md:border-none border-gray-200 min-w-0">
+                  <item.icon className="w-5 h-5 text-blue-600 shrink-0" />
+                  <span className="break-words whitespace-normal leading-tight">{item.feature}</span>
+                </div>
 
-            {/* Feature 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Aprendizado</div>
-              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                Exige programação de regras manuais
-              </div>
-              <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                Aprende tudo via áudio rápido seu
-              </div>
-            </div>
+                {/* Competitor Block - Mobile Stack, Desktop Second Column */}
+                <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl min-w-0">
+                  <span className="block text-[10px] uppercase font-bold text-gray-400 mb-2 md:hidden tracking-wider">Chatbots de Fluxo</span>
+                  <p className="break-words whitespace-normal font-medium">{item.competitor}</p>
+                </div>
 
-            {/* Feature 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Qualificação</div>
-              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                Repassa custo de Lead sujo para a equipe
+                {/* meatende.ai Block - Mobile Stack, Desktop Third Column */}
+                <div className="p-5 md:p-6 font-bold text-blue-700 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl min-w-0">
+                  <span className="block text-[10px] uppercase font-extrabold text-blue-600 mb-2 md:hidden tracking-wider">meatende.ai</span>
+                  <p className="break-words whitespace-normal">{item.meatende}</p>
+                </div>
               </div>
-              <div className="p-5 md:p-6 font-bold text-blue-600 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                Identifica curiosos e defende o ticket
-              </div>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Setup Inicial</div>
-              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                Semanas arrastando blocos lógicos
-              </div>
-              <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                Conectou o QR Code, já está vendendo
-              </div>
-            </div>
-
+            ))}
           </div>
         </div>
       </MotionSection>
