@@ -3,8 +3,6 @@ import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
 import { google } from 'googleapis';
-import fs from 'fs';
-import path from 'path';
 import http from 'http';
 
 /**
@@ -125,23 +123,34 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
 
     if (name === 'update_business_context') {
         console.log(`\n================= 👑 CONSOLE.GOD (ADMIN MODE) 👑 =================`);
-        console.log(`📝 [ADMIN] Tentativa de atualização do business_context.json detectada.`);
+        console.log(`📝 [ADMIN] Tentativa de atualização do business_context detectada.`);
         console.log(`🔍 [ADMIN PAYLOAD] Conteúdo gerado pela IA para substituição:\n${args.new_comprehensive_context.substring(0, 300)}... [TRUNCADO]`);
 
         try {
-            const contextPath = path.join(process.cwd(), 'business_context.json');
-            fs.writeFileSync(contextPath, args.new_comprehensive_context, 'utf8');
+            // Converte a string enviada pela IA em um objeto estruturado
+            const parsedContext = JSON.parse(args.new_comprehensive_context);
 
-            console.log(`✅ [ADMIN] Contexto do negócio reescrito com sucesso!`);
+            // Atualiza a linha 1 do banco de dados onde o JSON mestre está armazenado
+            const { error } = await supabaseAdmin
+                .from('business_config')
+                .update({
+                    context_json: parsedContext,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', 1);
+
+            if (error) throw error;
+
+            console.log(`✅ [ADMIN] Contexto do negócio atualizado com sucesso no Supabase!`);
             console.log(`=======================================================================\n`);
 
             return {
                 status: 'success',
-                message: 'O catálogo foi atualizado. Informe ao dono que a alteração foi salva com sucesso e você já está operando com as novas regras.'
+                message: 'O catálogo foi atualizado no banco de dados. Informe ao dono que a alteração foi salva com sucesso e você já está operando com as novas regras.'
             };
         } catch (err: any) {
-            console.error(`❌ [ADMIN ERROR] Falha ao salvar arquivo:`, err.message);
-            return { status: 'error', message: 'Falha ao salvar as alterações no servidor.' };
+            console.error(`❌ [ADMIN ERROR] Falha ao salvar no Supabase:`, err.message);
+            return { status: 'error', message: 'Falha ao salvar as alterações no banco de dados.' };
         }
     }
 
@@ -305,9 +314,23 @@ async function processLead(lead: any) {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
         // 2. Load context and history
-        // 2. Load context and history
-        const contextPath = path.join(process.cwd(), 'business_context.json');
-        const businessContext = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
+        console.log(`📡 [DB] Buscando business_context atualizado no Supabase...`);
+
+        const { data: configData, error: configError } = await supabaseAdmin
+            .from('business_config')
+            .select('context_json')
+            .eq('id', 1)
+            .single();
+
+        let businessContext = "";
+        if (configError || !configData) {
+            console.error(`❌ [DB ERROR] Falha ao carregar o cérebro da clínica:`, configError?.message);
+            // Fallback de segurança mínimo caso o banco caia
+            businessContext = JSON.stringify({ servicos: [], aviso: "Sistema em manutenção" });
+        } else {
+            businessContext = JSON.stringify(configData.context_json);
+            console.log(`✅ [DB] Contexto de negócio carregado com sucesso (${businessContext.length} bytes).`);
+        }
 
         const { data: rawHistory } = await supabaseAdmin
             .from('messages')
