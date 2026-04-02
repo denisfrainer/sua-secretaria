@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,9 +41,8 @@ export function Header() {
                   {item.label}
                 </a>
               ))}
-              <LanguageSwitcher />
               <a
-                href="https://wa.me/yournumero"
+                href="https://wa.me/5548992123255"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300"
               >
                 Testar Agora
@@ -53,7 +51,6 @@ export function Header() {
 
             {/* Mobile Controls */}
             <div className="md:hidden flex items-center gap-3">
-              <LanguageSwitcher />
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -96,7 +93,7 @@ export function Header() {
             </a>
           ))}
           <a
-            href="https://wa.me/yournumero"
+            href="https://wa.me/5548992123255"
             onClick={() => setIsMenuOpen(false)}
             className="block text-sm py-2.5 px-4 mt-1 text-center rounded-full font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
           >

@@ -57,7 +57,7 @@ export function LandingSections() {
       answer: "Sim! Qualquer mensagem que você, como vendedor raiz, mandar para o lead, aciona nosso modo \"Silent Handoff\". A IA pausa automaticamente e deixa você realizar o \"kill\"."
     }
   ];
-  
+
   const comparisonData = [
     {
       feature: "Experiência do Lead",
@@ -181,8 +181,8 @@ export function LandingSections() {
 
             {/* Feature Comparison Items */}
             {comparisonData.map((item, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none md:border-none overflow-hidden shadow-sm md:shadow-none transition-all duration-300 hover:shadow-md md:hover:shadow-none"
               >
                 {/* Feature Header - Mobile Header, Desktop First Column */}
@@ -375,7 +375,7 @@ export function LandingSections() {
 
       {/* Floating CTA / WhatsApp Tracker */}
       <a
-        href="https://wa.me/5511999999999"
+        href="https://wa.me/554992123255"
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => console.log('🚀 [LEAD ACTION] Clicou no Floating WhatsApp')}
