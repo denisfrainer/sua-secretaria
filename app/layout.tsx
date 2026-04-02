@@ -17,7 +17,7 @@ const sourceSans3 = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://wolfagent.netlify.app'),
+    metadataBase: new URL('https://meatendeai.netlify.app'),
     title: "meatende.ai",
     description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
     openGraph: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
         type: 'website',
         images: [
             {
-                url: 'https://wolfagent.netlify.app/og-image.jpg',
+                url: 'https://meatendeai.netlify.app/og-image.jpg',
                 width: 1200,
                 height: 630,
                 alt: 'meatende.ai',
