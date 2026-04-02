@@ -92,7 +92,7 @@ export function LandingSections() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight">
-              A diferença entre um bot repetitivo e um Ativo de Vendas
+              A diferença entre um bot repetitivo e um funcionário 24/7
             </h2>
             <p className="mt-6 text-xl text-gray-500 leading-relaxed font-medium">
               O meatende.ai não apenas responde mensagens. Ele entende, qualifica e fecha.
