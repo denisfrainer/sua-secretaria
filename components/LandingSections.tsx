@@ -19,6 +19,45 @@ const MotionSection = ({ children, className, id }: { children: React.ReactNode,
 export function LandingSections() {
   const currentYear = new Date().getFullYear();
 
+  const faqData = [
+    {
+      question: "O que é a meatende.ai?",
+      answer: "A meatende.ai é um chatbot de inteligência artificial para WhatsApp que atende e qualifica seus leads automaticamente, 24 horas por dia. Diferente de chatbots tradicionais baseados em fluxos prontos, a meatende.ai usa IA generativa para aprender o tom de voz e o processo de vendas da sua empresa a partir das suas conversas reais. Quando um lead entra em contato, ela responde em segundos, qualifica o interesse e organiza tudo no CRM automático com funil de vendas."
+    },
+    {
+      question: "Para quem a meatende.ai é indicada?",
+      answer: "A meatende.ai é ideal para qualquer negócio que recebe leads pelo WhatsApp e quer automatizar o primeiro atendimento sem perder a qualidade humana. Os principais segmentos incluem: corretores de imóveis, e-commerces, prestadores de serviço, consultores, clínicas, academias, equipes de vendas B2B e consórcios."
+    },
+    {
+      question: "Como a meatende.ai aprende meu jeito de vender?",
+      answer: "A meatende.ai analisa todas as suas conversas anteriores no WhatsApp e aprende automaticamente seu tom de voz, as perguntas que você faz, e como você conduz uma venda. Não precisa programar nada — ela se adapta ao seu estilo real de atendimento."
+    },
+    {
+      question: "A meatende.ai funciona com o meu número de WhatsApp?",
+      answer: "Sim. A meatende.ai usa a API oficial do WhatsApp da Meta, então funciona diretamente no seu número existente. Não precisa trocar de número nem criar um novo. A conexão é feita de forma segura via QR Code."
+    },
+    {
+      question: "A meatende.ai parece um robô?",
+      answer: "Não. A meatende.ai usa IA generativa que aprende a partir das suas conversas reais. Ela conversa de forma fluida, entende contexto e conduz a qualificação como um humano faria. Os clientes muitas vezes nem percebem que é IA."
+    },
+    {
+      question: "A meatende.ai é segura?",
+      answer: "Sim. A meatende.ai é parceira oficial da Meta como Tech Provider verificado e membro do WhatsApp AI Startups Hub. Todas as mensagens são protegidas com criptografia de ponta-a-ponta e a empresa segue as diretrizes da LGPD."
+    },
+    {
+      question: "Não corre risco de ficar robótico?",
+      answer: "De forma alguma. O motor Generativo permite que a IA assuma falhas gramaticais da ponta, gírias e o tom de voz do seu negócio, gerando extrema empatia e fluidez sem menus."
+    },
+    {
+      question: "Vou perder meu histórico se usar o meu número atual?",
+      answer: "Não. Você mantém todo o acesso ao seu número atual no WhatsApp. A IA apenas roda em plano de fundo absorvendo os leads entrantes instantaneamente."
+    },
+    {
+      question: "Posso parar a IA no meio de um fechamento? (Silent Handoff)",
+      answer: "Sim! Qualquer mensagem que você, como vendedor raiz, mandar para o lead, aciona nosso modo \"Silent Handoff\". A IA pausa automaticamente e deixa você realizar o \"kill\"."
+    }
+  ];
+
   return (
     <>
       {/* 3. Differentials (Features Grid) */}
@@ -76,21 +115,21 @@ export function LandingSections() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
             {/* Minimalist connector line (hidden on mobile) */}
             <div className="hidden md:block absolute top-[40px] left-1/4 right-1/4 h-[2px] bg-gray-200 -z-10" />
-            
+
             <div className="flex flex-col items-center">
-              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><QrCode className="w-[32px] h-[32px] stroke-2"/></div>
+              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><QrCode className="w-[32px] h-[32px] stroke-2" /></div>
               <h3 className="text-xl font-bold text-black mb-3">Conecte seu WhatsApp</h3>
               <p className="text-gray-500 font-medium">Basta escanear o QR Code oficial da Meta. Sem configurações complexas ou códigos.</p>
             </div>
-            
+
             <div className="flex flex-col items-center">
-              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><Mic className="w-[32px] h-[32px] stroke-2"/></div>
+              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-white border border-gray-200 text-black flex items-center justify-center mb-6 shadow-sm shadow-black/5 z-10"><Mic className="w-[32px] h-[32px] stroke-2" /></div>
               <h3 className="text-xl font-bold text-black mb-3">Treine a IA</h3>
               <p className="text-gray-500 font-medium">Mande um áudio explicando seus serviços, preços e o que você vende. Ela aprende na hora.</p>
             </div>
-            
+
             <div className="flex flex-col items-center">
-              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-blue-600 text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-600/30 z-10"><Bot className="w-[32px] h-[32px] stroke-2"/></div>
+              <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-blue-600 text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-600/30 z-10"><Bot className="w-[32px] h-[32px] stroke-2" /></div>
               <h3 className="text-xl font-bold text-black mb-3">Deixe sua funcionária trabalhar</h3>
               <p className="text-gray-500 font-medium">A IA assume o primeiro contato instantaneamente, sem deixar nenhum lead esfriar no funil.</p>
             </div>
@@ -104,7 +143,7 @@ export function LandingSections() {
           <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16">
             Por que o meatende.ai domina
           </h2>
-          
+
           <div className="flex flex-col gap-6 md:gap-4">
             {/* Header row for Desktop */}
             <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-2 border-b border-gray-200">
@@ -115,56 +154,56 @@ export function LandingSections() {
 
             {/* Feature 1 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Experiência do Lead</div>
-               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                 Engessada com menus de botões
-               </div>
-               <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                 Fluida, natural e 100% conversacional
-               </div>
+              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Experiência do Lead</div>
+              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                Engessada com menus de botões
+              </div>
+              <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                Fluida, natural e 100% conversacional
+              </div>
             </div>
 
             {/* Feature 2 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Aprendizado</div>
-               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                 Exige programação de regras manuais
-               </div>
-               <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                 Aprende tudo via áudio rápido seu
-               </div>
+              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Aprendizado</div>
+              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                Exige programação de regras manuais
+              </div>
+              <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                Aprende tudo via áudio rápido seu
+              </div>
             </div>
 
             {/* Feature 3 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Qualificação</div>
-               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                 Repassa custo de Lead sujo para a equipe
-               </div>
-               <div className="p-5 md:p-6 font-bold text-blue-600 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                 Identifica curiosos e defende o ticket
-               </div>
+              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Qualificação</div>
+              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                Repassa custo de Lead sujo para a equipe
+              </div>
+              <div className="p-5 md:p-6 font-bold text-blue-600 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                Identifica curiosos e defende o ticket
+              </div>
             </div>
 
             {/* Feature 4 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none overflow-hidden shadow-sm md:shadow-none md:border-none md:bg-transparent">
-               <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Setup Inicial</div>
-               <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
-                 Semanas arrastando blocos lógicos
-               </div>
-               <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
-                 <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
-                 Conectou o QR Code, já está vendendo
-               </div>
+              <div className="bg-gray-50 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center border-b md:border-none border-gray-100">Setup Inicial</div>
+              <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl">
+                <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1.5 md:hidden">Chatbots</span>
+                Semanas arrastando blocos lógicos
+              </div>
+              <div className="p-5 md:p-6 font-bold text-black bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl">
+                <span className="block text-[11px] uppercase font-extrabold text-blue-600 mb-1.5 md:hidden">meatende.ai</span>
+                Conectou o QR Code, já está vendendo
+              </div>
             </div>
-            
+
           </div>
         </div>
       </MotionSection>
@@ -189,7 +228,7 @@ export function LandingSections() {
               <p className="text-gray-500 font-medium mb-8 leading-relaxed">
                 Chatbot e automação simples, com fluxos baseados em menus tradicionais (digite 1, digite 2).
               </p>
-              
+
               <ul className="text-left space-y-4 mb-10 font-medium flex-1">
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
@@ -205,8 +244,8 @@ export function LandingSections() {
                 </li>
               </ul>
 
-              <a 
-                href="#precos" 
+              <a
+                href="#precos"
                 className="block border-2 border-gray-200 text-gray-600 font-bold text-lg py-4 rounded-xl hover:bg-gray-50 transition-colors w-full text-center mt-auto"
               >
                 Plano Básico
@@ -239,8 +278,8 @@ export function LandingSections() {
                 </li>
               </ul>
 
-              <a 
-                href="#precos" 
+              <a
+                href="#precos"
                 className="block bg-gray-900 text-white font-bold text-lg py-4 rounded-xl shadow-md hover:bg-black transition-colors w-full text-center mt-auto"
               >
                 Assinar Pro
@@ -287,8 +326,8 @@ export function LandingSections() {
                 </li>
               </ul>
 
-              <a 
-                href="#precos" 
+              <a
+                href="#precos"
                 className="block bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-colors w-full text-center mt-auto"
               >
                 Assinar Elite
@@ -306,48 +345,30 @@ export function LandingSections() {
           </h2>
 
           <div className="space-y-0 border-t border-gray-200">
-            <details className="group border-b border-gray-200" open>
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
-                <span>Não corre risco de ficar robótico?</span>
-                <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
-              </summary>
-              <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
-                De forma alguma. O motor Generativo permite que a IA assuma falhas gramaticais da ponta, gírias e o tom de voz do seu negócio, gerando extrema empatia e fluidez sem menus.
-              </div>
-            </details>
-
-            <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
-                <span>Vou perder meu histórico se usar o meu número atual?</span>
-                <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
-              </summary>
-              <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
-                Não. Você mantém todo o acesso ao seu número atual no WhatsApp. A IA apenas roda em plano de fundo absorvendo os leads entrantes instantaneamente.
-              </div>
-            </details>
-
-            <details className="group border-b border-gray-200">
-              <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
-                <span>Posso parar a IA no meio de um fechamento? (Silent Handoff)</span>
-                <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
-              </summary>
-              <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
-                Sim! Qualquer mensagem que você, como vendedor raiz, mandar para o lead, aciona nosso modo "Silent Handoff". A IA pausa automaticamente e deixa você realizar o "kill".
-              </div>
-            </details>
+            {faqData.map((item, index) => (
+              <details key={index} className="group border-b border-gray-200" open={index === 0}>
+                <summary className="flex justify-between items-center py-6 font-bold text-black text-xl md:text-2xl cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-blue-600 transition-colors">
+                  <span>{item.question}</span>
+                  <ChevronDown className="w-6 h-6 text-gray-400 group-open:rotate-180 transition-transform duration-300" />
+                </summary>
+                <div className="pb-6 text-gray-600 font-medium leading-relaxed md:text-lg pr-8">
+                  {item.answer}
+                </div>
+              </details>
+            ))}
           </div>
         </div>
       </MotionSection>
+
 
       {/* 8. Footer Strict Palette */}
       <footer className="py-16 bg-black text-white text-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-6">
           <p className="font-medium text-gray-400 tracking-wide text-sm">
-            <span className="text-white font-bold">meatende.ai</span> — Inteligência Artificial aplicada ao mundo real.<br className="hidden sm:block" />
-            Parte do ecossistema Wolf Agent.
+            <span className="text-white font-bold">meatende.ai</span> — Inteligência Artificial aplicada ao mundo dos negócios.<br className="hidden sm:block" />
           </p>
           <p className="text-xs text-gray-600 font-bold uppercase tracking-widest mt-4">
-            © {currentYear} Florianópolis, SC. Todos os direitos reservados.
+            Todos os direitos reservados © {currentYear}
           </p>
         </div>
       </footer>
@@ -361,9 +382,9 @@ export function LandingSections() {
         className="fixed bottom-6 right-6 z-50 w-16 h-16 flex items-center justify-center drop-shadow-2xl hover:opacity-90 transition-opacity"
         title="Fale Conosco no WhatsApp"
       >
-        <img 
-          src="/assets/whatsapp.svg" 
-          alt="WhatsApp Logo" 
+        <img
+          src="/assets/whatsapp.svg"
+          alt="WhatsApp Logo"
           className="w-full h-full object-contain bg-transparent"
           onLoad={() => console.log('✅ WhatsApp icon: Assets')}
         />
