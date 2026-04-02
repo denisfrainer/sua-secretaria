@@ -22,65 +22,65 @@ export function LandingSections() {
   const faqData = [
     {
       question: "O que é a meatende.ai?",
-      answer: "A meatende.ai é um chatbot de inteligência artificial para WhatsApp que atende e qualifica seus leads automaticamente, 24 horas por dia. Diferente de chatbots tradicionais baseados em fluxos prontos, a meatende.ai usa IA generativa para aprender o tom de voz e o processo de vendas da sua empresa a partir das suas conversas reais. Quando um lead entra em contato, ela responde em segundos, qualifica o interesse e organiza tudo no CRM automático com funil de vendas."
+      answer: "A meatende.ai é uma secretária virtual com inteligência artificial para WhatsApp. Ela atende seus clientes 24 horas por dia, tira dúvidas sobre seus procedimentos e agenda horários automaticamente. Diferente de robôs de opções (digite 1 ou 2), ela conversa de forma natural como uma pessoa real."
     },
     {
       question: "Para quem a meatende.ai é indicada?",
-      answer: "A meatende.ai é ideal para qualquer negócio que recebe leads pelo WhatsApp e quer automatizar o primeiro atendimento sem perder a qualidade humana. Os principais segmentos incluem: corretores de imóveis, e-commerces, prestadores de serviço, consultores, clínicas, academias, equipes de vendas B2B e consórcios."
+      answer: "É ideal para quem trabalha com as mãos e não pode parar para responder o celular. Os principais segmentos incluem: barbearias, salões de beleza, clínicas de estética, estúdios de tatuagem, manicures e qualquer profissional que precise focar no serviço enquanto a agenda enche sozinha."
     },
     {
-      question: "Como a meatende.ai aprende meu jeito de vender?",
-      answer: "A meatende.ai analisa todas as suas conversas anteriores no WhatsApp e aprende automaticamente seu tom de voz, as perguntas que você faz, e como você conduz uma venda. Não precisa programar nada — ela se adapta ao seu estilo real de atendimento."
+      question: "Como a meatende.ai sabe o que responder?",
+      answer: "É simples: você cadastra os seus serviços, durações, preços e horários de funcionamento no nosso painel. A partir daí, a inteligência artificial entende o seu estilo e conversa com seus clientes passando exatamente as informações do seu negócio, sem você precisar programar regras difíceis."
     },
     {
       question: "A meatende.ai funciona com o meu número de WhatsApp?",
-      answer: "Sim. A meatende.ai usa a API oficial do WhatsApp da Meta, então funciona diretamente no seu número existente. Não precisa trocar de número nem criar um novo. A conexão é feita de forma segura via QR Code."
+      answer: "Sim. Funciona diretamente no seu número de trabalho existente. Você não precisa trocar de número nem comprar um celular novo. A conexão é rápida, segura e feita apenas lendo um QR Code."
     },
     {
-      question: "A meatende.ai parece um robô?",
-      answer: "Não. A meatende.ai usa IA generativa que aprende a partir das suas conversas reais. Ela conversa de forma fluida, entende contexto e conduz a qualificação como um humano faria. Os clientes muitas vezes nem percebem que é IA."
+      question: "A meatende.ai parece um robô chato?",
+      answer: "Não. A meatende.ai entende mensagens curtas, gírias e o contexto da conversa. Ela atende de forma tão fluida e educada que muitos clientes nem percebem que estão falando com uma inteligência artificial na hora de marcar o horário."
     },
     {
-      question: "A meatende.ai é segura?",
-      answer: "Sim. A meatende.ai é parceira oficial da Meta como Tech Provider verificado e membro do WhatsApp AI Startups Hub. Todas as mensagens são protegidas com criptografia de ponta-a-ponta e a empresa segue as diretrizes da LGPD."
+      question: "Meu número corre risco de ser banido?",
+      answer: "Não. Utilizamos a conexão oficial do WhatsApp (API Oficial da Meta). Isso significa que sua operação roda de forma legalizada, estável e 100% blindada contra banimentos e bloqueios por uso de automação."
     },
     {
-      question: "Não corre risco de ficar robótico?",
-      answer: "De forma alguma. O motor Generativo permite que a IA assuma falhas gramaticais da ponta, gírias e o tom de voz do seu negócio, gerando extrema empatia e fluidez sem menus."
+      question: "Não corre risco do atendimento ficar engessado?",
+      answer: "De jeito nenhum. Esqueça aqueles robôs de operadora. A nossa tecnologia é feita para gerar empatia, dar bom dia, entender o que o cliente quer e responder de forma direta e acolhedora, totalmente sem menus numéricos."
     },
     {
       question: "Vou perder meu histórico se usar o meu número atual?",
-      answer: "Não. Você mantém todo o acesso ao seu número atual no WhatsApp. A IA apenas roda em plano de fundo absorvendo os leads entrantes instantaneamente."
+      answer: "Não. Você continua com o seu WhatsApp normal no seu celular, com todas as suas conversas antigas intactas. A secretária virtual apenas roda junto com você, assumindo as novas conversas para você não deixar ninguém esperando."
     },
     {
-      question: "Posso parar a IA no meio de um fechamento? (Silent Handoff)",
-      answer: "Sim! Qualquer mensagem que você, como vendedor raiz, mandar para o lead, aciona nosso modo \"Silent Handoff\". A IA pausa automaticamente e deixa você realizar o \"kill\"."
+      question: "Posso assumir a conversa no celular se eu quiser?",
+      answer: "Sim! A qualquer momento você pode pegar o seu aparelho e responder o cliente normalmente. Quando você, como dono(a), envia uma mensagem, a IA pausa automaticamente e deixa você continuar o atendimento daquele cliente."
     }
   ];
 
   const comparisonData = [
     {
-      feature: "Experiência do Lead",
-      competitor: "Engessada com menus de botões",
-      meatende: "Fluida, natural e 100% conversacional",
+      feature: "Experiência do Cliente",
+      competitor: "Chato, obriga o cliente a \"digitar 1 ou 2\"",
+      meatende: "Conversa natural e fluida, como se fosse você",
       icon: MessageSquare
     },
     {
-      feature: "Aprendizado",
-      competitor: "Exige programação de regras manuais",
-      meatende: "Aprende tudo via áudio rápido seu",
+      feature: "Configuração",
+      competitor: "Exige montar caminhos e regras complexas",
+      meatende: "É só cadastrar os serviços e ela aprende sozinha",
       icon: Brain
     },
     {
-      feature: "Qualificação",
-      competitor: "Repassa custo de Lead sujo para a equipe",
-      meatende: "Identifica curiosos e defende o ticket",
+      feature: "Filtro de Curiosos",
+      competitor: "Só repassa a pessoa para você ter que atender",
+      meatende: "Tira as dúvidas de preço e foca em fechar o horário",
       icon: Filter
     },
     {
-      feature: "Setup Inicial",
-      competitor: "Semanas arrastando blocos lógicos",
-      meatende: "Conectou o QR Code, já está vendendo",
+      feature: "Começar a usar",
+      competitor: "Dias perdidos tentando configurar o sistema",
+      meatende: "Escaneou o QR Code, ela já começa a agendar",
       icon: Zap
     }
   ];
@@ -92,10 +92,10 @@ export function LandingSections() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight">
-              A diferença entre um bot repetitivo e um funcionário 24/7
+              A diferença entre um robô chato e a sua secretária ideal
             </h2>
             <p className="mt-6 text-xl text-gray-500 leading-relaxed font-medium">
-              O meatende.ai não apenas responde mensagens. Ele entende, qualifica e fecha.
+              A meatende.ai não manda opções prontas. Ela entende o cliente, tira as dúvidas e marca o horário.
             </p>
           </div>
 
@@ -104,9 +104,9 @@ export function LandingSections() {
               <div className="mb-6">
                 <Brain className="w-10 h-10 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Conversa Real</h3>
+              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Atendimento Natural</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
-                Diferente de robôs de "digite 1 para X", nossa IA entende contexto. Ela aprende o seu tom de voz e o seu processo de vendas fluido.
+                Diferente daquele "digite 1 para valores", nossa IA entende o que o cliente quer. Ela conversa do seu jeito, explica os procedimentos e passa os preços de forma humana e natural.
               </p>
             </motion.div>
 
@@ -114,9 +114,9 @@ export function LandingSections() {
               <div className="mb-6">
                 <Filter className="w-10 h-10 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Filtro de Curiosos</h3>
+              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Foco na Agenda</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
-                A IA qualifica o lead durante a conversa. Se for apenas um curioso, ela encerra educadamente. Se for comprador, ela agenda o fechamento.
+                Ela não só responde, como organiza sua vida. Se a pessoa só quer saber o preço, a IA informa educadamente. Se quer marcar, ela encontra um horário livre e já deixa agendado para você.
               </p>
             </motion.div>
 
@@ -124,9 +124,9 @@ export function LandingSections() {
               <div className="mb-6">
                 <Shield className="w-10 h-10 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">Conexão Oficial</h3>
+              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">WhatsApp Seguro</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
-                Esqueça gambiarras e WhatsApp banido. Utilizamos a API Oficial da Meta. Sua operação fica 100% blindada, estável e profissional.
+                Esqueça gambiarras ou medo de ter o WhatsApp banido. Utilizamos a conexão Oficial da Meta. Seu número de trabalho fica 100% seguro, funcionando sem quedas ou bloqueios.
               </p>
             </motion.div>
           </div>
@@ -168,15 +168,15 @@ export function LandingSections() {
       <MotionSection id="comparativo" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white w-full max-w-full overflow-hidden">
         <div className="max-w-4xl mx-auto w-full">
           <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16 break-words whitespace-normal">
-            Por que o meatende.ai domina
+            Por que a meatende.ai é diferente
           </h2>
 
           <div className="w-full flex flex-col gap-8 md:gap-4">
             {/* Header row for Desktop only */}
             <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-4 border-b border-gray-200">
-              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Recurso</div>
-              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Chatbots de Fluxo</div>
-              <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">meatende.ai (Gen-IA)</div>
+              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Diferença</div>
+              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Robôs Comuns</div>
+              <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">meatende.ai</div>
             </div>
 
             {/* Feature Comparison Items */}
@@ -193,7 +193,7 @@ export function LandingSections() {
 
                 {/* Competitor Block - Mobile Stack, Desktop Second Column */}
                 <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl min-w-0">
-                  <span className="block text-[10px] uppercase font-bold text-gray-400 mb-2 md:hidden tracking-wider">Chatbots de Fluxo</span>
+                  <span className="block text-[10px] uppercase font-bold text-gray-400 mb-2 md:hidden tracking-wider">Robôs Comuns</span>
                   <p className="break-words whitespace-normal font-medium">{item.competitor}</p>
                 </div>
 
