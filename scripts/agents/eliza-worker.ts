@@ -383,9 +383,17 @@ async function processLead(lead: any) {
 
         dynamicInstruction += `\nDATA_ATUAL_DO_SISTEMA: Hoje é ${formattedDate}. Use este ano e mês como base absoluta para interpretar datas solicitadas pelo cliente.`;
 
+        // Extração segura do tom de voz
+        const toneStyle = configData?.context_json?.tone_of_voice?.base_style || 'Amigável e profissional';
+        const toneRules = configData?.context_json?.tone_of_voice?.custom_instructions || 'Responda de forma natural.';
+
         let systemInstruction = `# 1. IDENTITY & CORE MISSION
 You are Eliza, an AI Virtual Receptionist for a beauty clinic/salon. Your ONLY purpose is to inform prices, check calendar availability, and schedule appointments.
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). 
+
+# 1.1 TONE OF VOICE & PERSONALITY
+- ESTILO BASE: Você deve assumir rigorosamente o arquétipo "${toneStyle}".
+- REGRAS COMPORTAMENTAIS: ${toneRules}
 
 # 2. STRICT RULES & GUARDRAILS (RAIL MODE)
 - ENTRY POINT: Greetings ("Olá", "Bom dia") are engagement triggers. Respond cordially, introduce yourself as Eliza, the virtual assistant of [NOME DA EMPRESA], and ask how you can help, immediately guiding them to STEP 1.

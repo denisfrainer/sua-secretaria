@@ -8,7 +8,7 @@ import {
     Save, Plus, Trash2, LogOut, Sparkles,
     Building2, Clock, ListChecks,
     CheckCircle2, AlertTriangle, Loader2, Scissors,
-    MapPin, ParkingCircle
+    MapPin, ParkingCircle, Smile
 } from 'lucide-react';
 
 // ==============================================================
@@ -31,16 +31,20 @@ interface BusinessConfig {
             parking: string;
         };
         operating_hours: {
-            weekdays: string;
-            saturday: string;
-            sunday: string;
+            weekdays: { open: string; close: string; is_closed: boolean };
+            saturday: { open: string; close: string; is_closed: boolean };
+            sunday: { open: string; close: string; is_closed: boolean };
             observations: string;
         };
         services: Service[];
         scheduling_rules: string[];
         restrictions: string[];
-    };
-    updated_at: string;
+        tone_of_voice: {
+            base_style: string;
+            custom_instructions: string;
+        };
+        updated_at: string;
+    }
 }
 
 // ==============================================================
@@ -122,15 +126,48 @@ export default function ConfigPage() {
         });
     };
 
-    const updateOperatingHours = (field: string, value: string) => {
+    const updateOperatingHours = (day: 'weekdays' | 'saturday' | 'sunday', field: 'open' | 'close' | 'is_closed', value: any) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating operating_hours field [${field}]:`, value);
+        console.log(`📝 [STATE] Updating operating_hours [${day}] field [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
                 ...config.context_json,
                 operating_hours: {
                     ...config.context_json.operating_hours,
+                    [day]: {
+                        ...(config.context_json.operating_hours[day] || { open: '09:00', close: '18:00', is_closed: false }),
+                        [field]: value
+                    }
+                }
+            }
+        });
+    };
+
+    const updateObservations = (value: string) => {
+        if (!config) return;
+        console.log(`📝 [STATE] Updating operating_hours observations:`, value);
+        setConfig({
+            ...config,
+            context_json: {
+                ...config.context_json,
+                operating_hours: {
+                    ...config.context_json.operating_hours,
+                    observations: value
+                }
+            }
+        });
+    };
+
+    const updateToneOfVoice = (field: string, value: string) => {
+        if (!config) return;
+        console.log(`📝 [STATE] Updating tone_of_voice field [${field}]:`, value);
+        setConfig({
+            ...config,
+            context_json: {
+                ...config.context_json,
+                tone_of_voice: {
+                    ...config.context_json.tone_of_voice,
                     [field]: value
                 }
             }
@@ -294,30 +331,31 @@ export default function ConfigPage() {
                             <h2 className="text-base font-bold text-black/40">Agenda</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
+                        <div className="flex flex-col gap-6 w-full">
+                            <div className="grid grid-cols-1 gap-4 w-full">
+                                <OperatingHoursRow
+                                    label="Segunda a Sexta"
+                                    data={config?.context_json.operating_hours.weekdays}
+                                    onChange={(field, val) => updateOperatingHours('weekdays', field, val)}
+                                />
+                                <OperatingHoursRow
+                                    label="Sábados"
+                                    data={config?.context_json.operating_hours.saturday}
+                                    onChange={(field, val) => updateOperatingHours('saturday', field, val)}
+                                />
+                                <OperatingHoursRow
+                                    label="Domingos"
+                                    data={config?.context_json.operating_hours.sunday}
+                                    onChange={(field, val) => updateOperatingHours('sunday', field, val)}
+                                />
+                            </div>
+
                             <StudioInput
-                                label="Segunda a Sexta"
-                                value={config?.context_json.operating_hours.weekdays || ''}
-                                onChange={(val) => updateOperatingHours('weekdays', val)}
-                                placeholder="09:00 - 19:00"
-                            />
-                            <StudioInput
-                                label="Sábados"
-                                value={config?.context_json.operating_hours.saturday || ''}
-                                onChange={(val) => updateOperatingHours('saturday', val)}
-                                placeholder="09:00 - 15:00"
-                            />
-                            <StudioInput
-                                label="Domingos"
-                                value={config?.context_json.operating_hours.sunday || ''}
-                                onChange={(val) => updateOperatingHours('sunday', val)}
-                                placeholder="Fechado"
-                            />
-                            <StudioInput
-                                label="Observações"
+                                label="Observações de Agenda"
                                 value={config?.context_json.operating_hours.observations || ''}
-                                onChange={(val) => updateOperatingHours('observations', val)}
-                                placeholder="Intervalo de almoço as 12:00"
+                                onChange={(val) => updateObservations(val)}
+                                placeholder="Ex: Intervalo de almoço das 12:00 às 13:00"
+                                icon={<Smile size={16} />}
                             />
                         </div>
                     </motion.section>
@@ -405,6 +443,38 @@ export default function ConfigPage() {
                         </div>
                     </motion.section>
 
+                    {/* SECTION: TONE OF VOICE */}
+                    <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
+                        <div className="flex items-center gap-3 border-b border-black/5 pb-3">
+                            <Smile size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <h2 className="text-base font-bold text-black/40">Personalidade da IA</h2>
+                        </div>
+
+                        <div className="flex flex-col gap-5 w-full">
+                            <StudioInput
+                                label="Estilo Base de Atendimento"
+                                value={config?.context_json.tone_of_voice?.base_style || ''}
+                                onChange={(val) => updateToneOfVoice('base_style', val)}
+                                placeholder="Ex: Jovem e Descontraído, Luxo e Formal, etc."
+                            />
+
+                            <div className="w-full flex flex-col gap-2">
+                                <label className="text-base font-bold text-black/40 ml-1 truncate">
+                                    Instruções Específicas (Gírias, Emojis, Palavras proibidas)
+                                </label>
+                                <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-black/5 w-full">
+                                    <textarea
+                                        rows={3}
+                                        value={config?.context_json.tone_of_voice?.custom_instructions || ''}
+                                        onChange={(e) => updateToneOfVoice('custom_instructions', e.target.value)}
+                                        placeholder="Ex: Use emojis de brilho ✨. Chame de 'flor' ou 'querida'. Nunca diga a palavra 'barato'."
+                                        className="w-full bg-transparent border-none p-0 text-base text-black/80 focus:ring-0 placeholder:text-black/20 resize-none leading-relaxed"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </motion.section>
+
                     {/* SECTION 4: RULES */}
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
@@ -472,6 +542,88 @@ export default function ConfigPage() {
 // ==============================================================
 // SUB-COMPONENTS
 // ==============================================================
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+    const hours = Math.floor(i / 2);
+    const minutes = i % 2 === 0 ? '00' : '30';
+    return `${hours.toString().padStart(2, '0')}:${minutes}`;
+});
+
+function OperatingHoursRow({
+    label,
+    data,
+    onChange
+}: {
+    label: string,
+    data?: { open: string; close: string; is_closed: boolean },
+    onChange: (field: 'open' | 'close' | 'is_closed', val: any) => void
+}) {
+    // Defensive check for legacy data
+    const safeData = typeof data === 'object' && data !== null ? data : { open: '09:00', close: '18:00', is_closed: false };
+
+    return (
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <div className="flex flex-col gap-1">
+                <span className="text-base font-bold text-black/80">{label}</span>
+                <span className="text-sm font-medium text-black/30">
+                    {safeData.is_closed ? 'Estabelecimento fechado' : `${safeData.open} — ${safeData.close}`}
+                </span>
+            </div>
+
+            <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 pr-6 border-r border-black/5">
+                    <span className="text-sm font-bold text-black/30 uppercase tracking-widest">Aberto</span>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            console.log(`🔘 [UI] Toggle MacOS Switch [${label}]:`, !safeData.is_closed);
+                            onChange('is_closed', !safeData.is_closed);
+                        }}
+                        className={`
+                            relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none
+                            ${!safeData.is_closed ? 'bg-blue-600' : 'bg-zinc-200'}
+                        `}
+                    >
+                        <div
+                            className={`
+                                absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200
+                                ${!safeData.is_closed ? 'translate-x-5' : 'translate-x-0'}
+                            `}
+                        />
+                    </button>
+                </div>
+
+                <div className={`flex items-center gap-2 transition-opacity duration-200 ${safeData.is_closed ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+                    <select
+                        value={safeData.open}
+                        onChange={(e) => {
+                            console.log(`🕒 [UI] Select Open Time [${label}]:`, e.target.value);
+                            onChange('open', e.target.value);
+                        }}
+                        className="bg-zinc-50 border border-black/5 rounded-xl px-3 py-2 text-sm font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer"
+                    >
+                        {TIME_OPTIONS.map(time => (
+                            <option key={time} value={time}>{time}</option>
+                        ))}
+                    </select>
+                    <span className="text-black/20 font-bold">às</span>
+                    <select
+                        value={safeData.close}
+                        onChange={(e) => {
+                            console.log(`🕒 [UI] Select Close Time [${label}]:`, e.target.value);
+                            onChange('close', e.target.value);
+                        }}
+                        className="bg-zinc-50 border border-black/5 rounded-xl px-3 py-2 text-sm font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer"
+                    >
+                        {TIME_OPTIONS.map(time => (
+                            <option key={time} value={time}>{time}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function StudioInput({
     label,
