@@ -340,19 +340,29 @@ export default function ConfigPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 ml-auto">
-                        <button
-                            type="button"
-                            onClick={toggleAiStatus}
-                            disabled={togglingAi}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-all border ${isAiActive
-                                ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                                : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
-                                } disabled:opacity-50`}
-                        >
-                            <Power size={16} className={togglingAi ? 'animate-pulse' : ''} />
-                            {isAiActive ? 'IA Ativada' : 'IA Pausada'}
-                        </button>
+                    <div className="flex items-center gap-6 ml-auto">
+                        <div className="flex items-center gap-3">
+                            <span className={`text-sm font-bold transition-colors ${isAiActive ? 'text-green-600' : 'text-zinc-400'}`}>
+                                {isAiActive ? 'IA Ativada' : 'IA Pausada'}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={toggleAiStatus}
+                                disabled={togglingAi}
+                                className={`
+                                    relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none
+                                    ${isAiActive ? 'bg-[#34C759]' : 'bg-[#E9E9EA]'}
+                                    disabled:opacity-50
+                                `}
+                            >
+                                <div
+                                    className={`
+                                        absolute top-0.5 left-0.5 bg-white w-6 h-6 rounded-full shadow-lg transition-transform duration-200
+                                        ${isAiActive ? 'translate-x-5' : 'translate-x-0'}
+                                    `}
+                                />
+                            </button>
+                        </div>
 
                         <button
                             onClick={handleLogout}
