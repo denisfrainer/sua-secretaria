@@ -18,6 +18,7 @@ import {
     Save,
     Palmtree,
     Sparkles,
+    LogOut,
 } from 'lucide-react';
 
 // ==============================================================
@@ -188,54 +189,39 @@ export default function CabinDashboard() {
                                 Dashboard da Cabana
                             </h1>
                             <p className="text-xs text-gray-400 -mt-0.5">
-                                Painel de controle · Praia do Rosa
+                                Cabana Sonho do Rosa
                             </p>
                         </div>
                     </div>
 
-                    {/* AI TOGGLE */}
-                    <button
-                        onClick={toggleAI}
-                        className="group flex items-center gap-2.5 cursor-pointer select-none"
-                        id="ai-toggle"
-                    >
-                        <span className="text-xs font-semibold text-gray-400 group-hover:text-gray-600 transition-colors">
-                            Eliza IA
-                        </span>
-                        <div className={`
-                            relative w-12 h-7 rounded-full transition-colors duration-300 ease-in-out
-                            ${config.ai_active ? 'bg-emerald-500' : 'bg-red-400'}
-                        `}>
-                            <motion.div
-                                className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md"
-                                animate={{ left: config.ai_active ? '22px' : '2px' }}
-                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                            />
-                            <AnimatePresence mode="wait">
-                                {config.ai_active ? (
-                                    <motion.div
-                                        key="active"
-                                        initial={{ opacity: 0, scale: 0.5 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.5 }}
-                                        className="absolute left-1.5 top-1/2 -translate-y-1/2"
-                                    >
-                                        <Sparkles className="w-3 h-3 text-white" />
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="inactive"
-                                        initial={{ opacity: 0, scale: 0.5 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.5 }}
-                                        className="absolute right-1.5 top-1/2 -translate-y-1/2"
-                                    >
-                                        <span className="text-[9px] font-bold text-white">OFF</span>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </button>
+                    <div className="flex items-center gap-4">
+                        {/* AI TOGGLE */}
+                        <button
+                            onClick={toggleAI}
+                            className="group flex items-center cursor-pointer select-none"
+                            id="ai-toggle"
+                        >
+                            <div className={`
+                                relative w-14 h-8 rounded-full transition-colors duration-300 ease-in-out
+                                ${config.ai_active ? 'bg-emerald-500' : 'bg-red-400'}
+                            `}>
+                                <motion.div
+                                    className="absolute top-0.5 w-7 h-7 rounded-full bg-white shadow-md"
+                                    animate={{ left: config.ai_active ? '26px' : '2px' }}
+                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                />
+                            </div>
+                        </button>
+
+                        {/* LOGOUT BUTTON */}
+                        <button
+                            onClick={() => window.location.href = '/admin/login'}
+                            className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
+                            aria-label="Sair"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </header>
 
