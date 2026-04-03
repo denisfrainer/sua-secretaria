@@ -1,6 +1,6 @@
 {
-  "name": "MeAtende.ai Admin",
-  "short_name": "MeAtende",
+  "name": "meatende.ai",
+  "short_name": "meatende.ai",
   "description": "Painel de Controle da Inteligência Artificial",
   "start_url": "/admin/lucas",
   "display": "standalone",

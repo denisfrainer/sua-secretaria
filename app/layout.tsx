@@ -3,7 +3,7 @@
   Root layout — Inter font, light-mode foundation
 */
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
@@ -36,12 +36,15 @@ export const metadata: Metadata = {
         ],
     },
     manifest: '/manifest.json',
-    themeColor: '#2563EB',
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'MeAtende',
+        title: 'meatende.ai',
     },
+};
+
+export const viewport: Viewport = {
+    themeColor: '#2563EB',
 };
 
 export default function RootLayout({

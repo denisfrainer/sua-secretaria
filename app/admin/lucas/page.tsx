@@ -20,6 +20,7 @@ import {
     Palmtree,
     Sparkles,
     LogOut,
+    AlertTriangle,
 } from 'lucide-react';
 
 // ==============================================================
@@ -46,7 +47,7 @@ interface CabinConfig {
 }
 
 // ==============================================================
-// DEFAULT STATE
+// DEFAULT STATE (Fallback if DB has no data yet)
 // ==============================================================
 const DEFAULT_CONFIG: CabinConfig = {
     ai_active: true,
@@ -64,23 +65,151 @@ const DEFAULT_CONFIG: CabinConfig = {
     integrations: {
         ical_export_url: '',
     },
-    rules: [
-        'Silêncio após as 22:00',
-        'Não é permitido animais de estimação',
-        'Lotação máxima de 4 pessoas',
-        'Proibido fumar dentro da cabana',
-    ],
-    faq: [
-        { question: 'Qual a distância da praia?', answer: '5 minutos a pé pela trilha.' },
-        { question: 'Tem Wi-Fi?', answer: 'Sim, fibra óptica de 200Mbps.' },
-    ],
+    rules: [],
+    faq: [],
 };
+
+// ==============================================================
+// SKELETON LOADER COMPONENT
+// ==============================================================
+function DashboardSkeleton() {
+    return (
+        <div className="min-h-screen bg-white text-gray-900 antialiased">
+            {/* Header Skeleton */}
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+                <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gray-100 animate-pulse" />
+                        <div className="space-y-1.5">
+                            <div className="h-5 w-40 bg-gray-100 rounded-lg animate-pulse" />
+                            <div className="h-3 w-28 bg-gray-50 rounded-md animate-pulse" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-8 bg-gray-100 rounded-full animate-pulse" />
+                        <div className="w-9 h-9 bg-gray-50 rounded-xl animate-pulse" />
+                    </div>
+                </div>
+            </header>
+
+            <main className="max-w-4xl mx-auto px-6 py-8 space-y-8 pb-32">
+                {/* Property Name Skeleton */}
+                <div>
+                    <div className="h-3 w-32 bg-gray-100 rounded mb-2 animate-pulse" />
+                    <div className="h-12 w-full bg-gray-50 rounded-xl border border-gray-100 animate-pulse" />
+                </div>
+
+                {/* Pricing Card Skeleton */}
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2.5">
+                        <div className="w-4 h-4 bg-rose-100 rounded animate-pulse" />
+                        <div className="h-4 w-36 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                    <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        {[1, 2, 3].map(i => (
+                            <div key={i}>
+                                <div className="h-3 w-20 bg-gray-100 rounded mb-1.5 animate-pulse" />
+                                <div className="h-12 w-full bg-gray-50 rounded-xl border border-gray-100 animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="px-6 py-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
+                        <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                        <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                </div>
+
+                {/* Operations Card Skeleton */}
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2.5">
+                        <div className="w-4 h-4 bg-rose-100 rounded animate-pulse" />
+                        <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                    <div className="p-6 space-y-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            {[1, 2, 3].map(i => (
+                                <div key={i}>
+                                    <div className="h-3 w-20 bg-gray-100 rounded mb-1.5 animate-pulse" />
+                                    <div className="h-12 w-full bg-gray-50 rounded-xl border border-gray-100 animate-pulse" />
+                                </div>
+                            ))}
+                        </div>
+                        <div>
+                            <div className="h-3 w-40 bg-gray-100 rounded mb-1.5 animate-pulse" />
+                            <div className="h-12 w-full bg-gray-50 rounded-xl border border-gray-100 animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Rules Skeleton */}
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2.5">
+                        <div className="w-4 h-4 bg-rose-100 rounded animate-pulse" />
+                        <div className="h-4 w-28 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                    <div className="p-6 space-y-2">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-12 w-full bg-gray-50 rounded-xl border border-gray-100 animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+
+                {/* FAQ Skeleton */}
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2.5">
+                        <div className="w-4 h-4 bg-rose-100 rounded animate-pulse" />
+                        <div className="h-4 w-36 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                    <div className="p-6 space-y-2">
+                        {[1, 2].map(i => (
+                            <div key={i} className="h-12 w-full bg-gray-50 rounded-xl border border-gray-100 animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+}
+
+// ==============================================================
+// ERROR STATE COMPONENT
+// ==============================================================
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+    return (
+        <div className="min-h-screen bg-white flex items-center justify-center px-6">
+            <div className="text-center max-w-sm space-y-5">
+                <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center mx-auto">
+                    <AlertTriangle className="w-7 h-7 text-rose-500" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-gray-900 mb-1">
+                        Falha ao carregar
+                    </h2>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                        Não foi possível conectar ao banco de dados. Verifique sua conexão e tente novamente.
+                    </p>
+                </div>
+                <p className="text-xs text-gray-300 font-mono bg-gray-50 rounded-lg px-3 py-2 break-all">
+                    {message}
+                </p>
+                <button
+                    onClick={onRetry}
+                    className="px-6 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 transition-colors"
+                >
+                    Tentar novamente
+                </button>
+            </div>
+        </div>
+    );
+}
 
 // ==============================================================
 // MAIN COMPONENT
 // ==============================================================
 export default function CabinDashboard() {
     const [config, setConfig] = useState<CabinConfig>(DEFAULT_CONFIG);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [newRule, setNewRule] = useState('');
     const [newFaqQ, setNewFaqQ] = useState('');
     const [newFaqA, setNewFaqA] = useState('');
@@ -90,26 +219,65 @@ export default function CabinDashboard() {
 
     const supabase = createClient();
 
-    // --- FETCH CONFIG FROM DB ---
-    useEffect(() => {
-        const fetchConfig = async () => {
+    // --- SAFE FETCH CONFIG FROM DB ---
+    const fetchConfig = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
             console.log('📡 [DB] Fetching cabin context (id: 2) from Supabase...');
-            const { data, error } = await supabase
+
+            const { data, error: fetchError } = await supabase
                 .from('business_config')
                 .select('context_json')
                 .eq('id', 2)
                 .single();
 
-            if (data && data.context_json) {
-                console.log('✅ [DB] Context fetched successfully:', data.context_json);
-                setConfig(data.context_json as CabinConfig);
-            } else if (error) {
-                console.error('❌ [DB ERROR] Failed to fetch cabin context:', error.message);
+            if (fetchError) {
+                console.error('❌ [DB ERROR] Supabase fetch failed:', fetchError.message, fetchError.code);
+                setError(fetchError.message);
+                setIsLoading(false);
+                return;
             }
-        };
 
-        fetchConfig();
+            if (data?.context_json) {
+                const ctx = data.context_json as CabinConfig;
+                // Ensure arrays exist even if DB has partial data
+                const safeConfig: CabinConfig = {
+                    ai_active: ctx.ai_active ?? DEFAULT_CONFIG.ai_active,
+                    property: {
+                        name: ctx.property?.name ?? DEFAULT_CONFIG.property.name,
+                        max_guests: ctx.property?.max_guests ?? DEFAULT_CONFIG.property.max_guests,
+                        base_price: ctx.property?.base_price ?? DEFAULT_CONFIG.property.base_price,
+                        cleaning_fee: ctx.property?.cleaning_fee ?? DEFAULT_CONFIG.property.cleaning_fee,
+                    },
+                    schedule: {
+                        check_in: ctx.schedule?.check_in ?? DEFAULT_CONFIG.schedule.check_in,
+                        check_out: ctx.schedule?.check_out ?? DEFAULT_CONFIG.schedule.check_out,
+                        minimum_stay: ctx.schedule?.minimum_stay ?? DEFAULT_CONFIG.schedule.minimum_stay,
+                    },
+                    integrations: {
+                        ical_export_url: ctx.integrations?.ical_export_url ?? DEFAULT_CONFIG.integrations.ical_export_url,
+                    },
+                    rules: Array.isArray(ctx.rules) ? ctx.rules : DEFAULT_CONFIG.rules,
+                    faq: Array.isArray(ctx.faq) ? ctx.faq : DEFAULT_CONFIG.faq,
+                };
+                console.log('✅ [DB] Context fetched and validated successfully.', safeConfig);
+                setConfig(safeConfig);
+            } else {
+                console.log('⚠️ [DB] No context_json found in row. Using defaults.');
+            }
+
+            setIsLoading(false);
+        } catch (err: any) {
+            console.error('❌ [DB FATAL] Unhandled exception during fetch:', err);
+            setError(err?.message || 'Erro desconhecido');
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchConfig();
+    }, [fetchConfig]);
 
     // --- STATE UPDATERS WITH OBSERVABILITY ---
 
@@ -150,17 +318,17 @@ export default function CabinDashboard() {
         console.log('📜 [STATE] Adding new rule:', newRule.trim());
         setConfig(prev => ({
             ...prev,
-            rules: [...prev.rules, newRule.trim()],
+            rules: [...(prev.rules || []), newRule.trim()],
         }));
         setNewRule('');
     }, [newRule]);
 
     const removeRule = useCallback((index: number) => {
         setConfig(prev => {
-            console.log('🗑️ [STATE] Removing rule at index:', index, 'Content:', prev.rules[index]);
+            console.log('🗑️ [STATE] Removing rule at index:', index, 'Content:', prev.rules?.[index]);
             return {
                 ...prev,
-                rules: prev.rules.filter((_, i) => i !== index),
+                rules: (prev.rules || []).filter((_, i) => i !== index),
             };
         });
     }, []);
@@ -170,7 +338,7 @@ export default function CabinDashboard() {
         console.log('❓ [STATE] Adding FAQ. Q:', newFaqQ.trim());
         setConfig(prev => ({
             ...prev,
-            faq: [...prev.faq, { question: newFaqQ.trim(), answer: newFaqA.trim() }],
+            faq: [...(prev.faq || []), { question: newFaqQ.trim(), answer: newFaqA.trim() }],
         }));
         setNewFaqQ('');
         setNewFaqA('');
@@ -178,10 +346,10 @@ export default function CabinDashboard() {
 
     const removeFaq = useCallback((index: number) => {
         setConfig(prev => {
-            console.log('🗑️ [STATE] Removing FAQ at index:', index, 'Q:', prev.faq[index]?.question);
+            console.log('🗑️ [STATE] Removing FAQ at index:', index, 'Q:', prev.faq?.[index]?.question);
             return {
                 ...prev,
-                faq: prev.faq.filter((_, i) => i !== index),
+                faq: (prev.faq || []).filter((_, i) => i !== index),
             };
         });
     }, []);
@@ -190,22 +358,43 @@ export default function CabinDashboard() {
         setSaving(true);
         console.log('💾 [DB] Saving cabin context updates to Supabase (id: 2)...');
 
-        const { error: updateError } = await supabase
-            .from('business_config')
-            .update({ context_json: config })
-            .eq('id', 2);
+        try {
+            const { error: updateError } = await supabase
+                .from('business_config')
+                .update({ context_json: config })
+                .eq('id', 2);
 
-        if (updateError) {
-            console.error('❌ [DB ERROR] Failed to save config:', updateError.message);
+            if (updateError) {
+                console.error('❌ [DB ERROR] Failed to save config:', updateError.message);
+                setSaving(false);
+                return;
+            }
+
+            console.log('✅ [SAVE] Config persisted successfully in business_config (id: 2).');
             setSaving(false);
-            return;
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2500);
+        } catch (err: any) {
+            console.error('❌ [SAVE FATAL] Unhandled exception during save:', err);
+            setSaving(false);
         }
-
-        console.log('✅ [SAVE] Config persisted successfully in business_config (id: 2).');
-        setSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
     }, [config]);
+
+    // --- EARLY RETURNS: LOADING & ERROR ---
+
+    if (isLoading) {
+        return <DashboardSkeleton />;
+    }
+
+    if (error) {
+        return <ErrorState message={error} onRetry={fetchConfig} />;
+    }
+
+    // --- SAFE ACCESSORS ---
+    const rules = config?.rules || [];
+    const faq = config?.faq || [];
+    const basePrice = config?.property?.base_price ?? 0;
+    const cleaningFee = config?.property?.cleaning_fee ?? 0;
 
     // --- RENDER ---
 
@@ -276,7 +465,7 @@ export default function CabinDashboard() {
                         <input
                             id="property-name"
                             type="text"
-                            value={config.property.name}
+                            value={config?.property?.name ?? ''}
                             onChange={e => updateProperty('name', e.target.value)}
                             className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                             placeholder="Nome da cabana..."
@@ -309,7 +498,7 @@ export default function CabinDashboard() {
                                 <input
                                     id="base-price"
                                     type="number"
-                                    value={config.property.base_price}
+                                    value={config?.property?.base_price ?? 0}
                                     onChange={e => updateProperty('base_price', Number(e.target.value))}
                                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                 />
@@ -328,7 +517,7 @@ export default function CabinDashboard() {
                                 <input
                                     id="cleaning-fee"
                                     type="number"
-                                    value={config.property.cleaning_fee}
+                                    value={config?.property?.cleaning_fee ?? 0}
                                     onChange={e => updateProperty('cleaning_fee', Number(e.target.value))}
                                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                 />
@@ -345,7 +534,7 @@ export default function CabinDashboard() {
                                 <input
                                     id="max-guests"
                                     type="number"
-                                    value={config.property.max_guests}
+                                    value={config?.property?.max_guests ?? 0}
                                     onChange={e => updateProperty('max_guests', Number(e.target.value))}
                                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                 />
@@ -357,7 +546,7 @@ export default function CabinDashboard() {
                     <div className="px-6 py-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Exemplo: 3 diárias</span>
                         <span className="text-sm font-bold text-gray-900">
-                            R$ {(config.property.base_price * 3 + config.property.cleaning_fee).toLocaleString('pt-BR')}
+                            R$ {(basePrice * 3 + cleaningFee).toLocaleString('pt-BR')}
                             <span className="text-xs font-normal text-gray-400 ml-1">total</span>
                         </span>
                     </div>
@@ -387,7 +576,7 @@ export default function CabinDashboard() {
                                     <input
                                         id="check-in-time"
                                         type="time"
-                                        value={config.schedule.check_in}
+                                        value={config?.schedule?.check_in ?? '14:00'}
                                         onChange={e => updateSchedule('check_in', e.target.value)}
                                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                     />
@@ -404,7 +593,7 @@ export default function CabinDashboard() {
                                     <input
                                         id="check-out-time"
                                         type="time"
-                                        value={config.schedule.check_out}
+                                        value={config?.schedule?.check_out ?? '12:00'}
                                         onChange={e => updateSchedule('check_out', e.target.value)}
                                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                     />
@@ -422,7 +611,7 @@ export default function CabinDashboard() {
                                         id="min-stay"
                                         type="number"
                                         min={1}
-                                        value={config.schedule.minimum_stay}
+                                        value={config?.schedule?.minimum_stay ?? 2}
                                         onChange={e => updateSchedule('minimum_stay', Number(e.target.value))}
                                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                     />
@@ -443,7 +632,7 @@ export default function CabinDashboard() {
                                 <input
                                     id="ical-url"
                                     type="url"
-                                    value={config.integrations.ical_export_url}
+                                    value={config?.integrations?.ical_export_url ?? ''}
                                     onChange={e => updateIcal(e.target.value)}
                                     placeholder="https://www.airbnb.com/calendar/ical/..."
                                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
@@ -466,7 +655,7 @@ export default function CabinDashboard() {
                             <h2 className="text-sm font-bold text-gray-800">Regras da Casa</h2>
                         </div>
                         <span className="text-xs font-medium text-gray-300">
-                            {config.rules.length} regra{config.rules.length !== 1 && 's'}
+                            {rules.length} regra{rules.length !== 1 && 's'}
                         </span>
                     </div>
 
@@ -474,7 +663,7 @@ export default function CabinDashboard() {
                         <LayoutGroup>
                             <motion.ul className="space-y-2 mb-4" layout>
                                 <AnimatePresence mode="popLayout">
-                                    {config.rules.map((rule, i) => (
+                                    {rules.map((rule, i) => (
                                         <motion.li
                                             key={rule + i}
                                             layout
@@ -534,7 +723,7 @@ export default function CabinDashboard() {
                             <h2 className="text-sm font-bold text-gray-800">Perguntas Frequentes</h2>
                         </div>
                         <span className="text-xs font-medium text-gray-300">
-                            {config.faq.length} ite{config.faq.length !== 1 ? 'ns' : 'm'}
+                            {faq.length} ite{faq.length !== 1 ? 'ns' : 'm'}
                         </span>
                     </div>
 
@@ -542,7 +731,7 @@ export default function CabinDashboard() {
                         <LayoutGroup>
                             <motion.div className="space-y-2 mb-5" layout>
                                 <AnimatePresence mode="popLayout">
-                                    {config.faq.map((item, i) => (
+                                    {faq.map((item, i) => (
                                         <motion.div
                                             key={item.question + i}
                                             layout
