@@ -8,7 +8,8 @@ import {
     Save, Plus, Trash2, LogOut, Sparkles,
     Building2, Clock, ListChecks,
     CheckCircle2, AlertTriangle, Loader2, Scissors,
-    MapPin, ParkingCircle, Smile, Power, Wallet, ShieldAlert
+    MapPin, ParkingCircle, Smile, Power, Wallet, ShieldAlert,
+    MessageCircleQuestion
 } from 'lucide-react';
 
 // ==============================================================
@@ -20,6 +21,11 @@ interface Service {
     price: string;
     duration: string;
     description: string;
+}
+
+interface FAQItem {
+    question: string;
+    answer: string;
 }
 
 interface BusinessConfig {
@@ -51,6 +57,7 @@ interface BusinessConfig {
         booking_policies: {
             minimum_advance_notice: string;
         };
+        faq: FAQItem[];
         updated_at: string;
     }
 }
@@ -279,6 +286,40 @@ export default function ConfigPage() {
                 ...config.context_json,
                 services: newServices
             }
+        });
+    };
+
+    const addFaq = () => {
+        if (!config) return;
+        console.log(`➕ [UI] Adding new empty FAQ item.`);
+        setConfig({
+            ...config,
+            context_json: {
+                ...config.context_json,
+                faq: [...(config.context_json.faq || []), { question: '', answer: '' }]
+            }
+        });
+    };
+
+    const removeFaq = (index: number) => {
+        if (!config) return;
+        console.log(`🗑️ [UI] Removing FAQ at index: ${index}`);
+        const newFaq = [...config.context_json.faq];
+        newFaq.splice(index, 1);
+        setConfig({
+            ...config,
+            context_json: { ...config.context_json, faq: newFaq }
+        });
+    };
+
+    const updateFaq = (index: number, field: keyof FAQItem, value: string) => {
+        if (!config) return;
+        console.log(`📝 [STATE] Updating FAQ at index ${index}, field [${field}]:`, value);
+        const newFaq = [...config.context_json.faq];
+        newFaq[index] = { ...newFaq[index], [field]: value };
+        setConfig({
+            ...config,
+            context_json: { ...config.context_json, faq: newFaq }
         });
     };
 
@@ -632,6 +673,69 @@ export default function ConfigPage() {
                                 placeholder="Ex: Cancelamento com 2h de antecedência..."
                                 className="w-full bg-transparent border-none p-0 text-base text-black/80 focus:ring-0 placeholder:text-black/20 resize-none leading-relaxed"
                             />
+                        </div>
+                    </motion.section>
+
+                    {/* SECTION: FAQ */}
+                    <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
+                        <div className="flex items-center justify-between border-b border-black/5 pb-3">
+                            <div className="flex items-center gap-3">
+                                <MessageCircleQuestion size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                                <h2 className="text-base font-bold text-black/40">Dúvidas Frequentes (FAQ)</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={addFaq}
+                                className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200 shrink-0"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-4 w-full">
+                            <AnimatePresence mode='popLayout'>
+                                {config?.context_json.faq?.map((item, index) => (
+                                    <motion.div
+                                        key={`faq-${index}`}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.98 }}
+                                        className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-black/5 flex flex-col gap-4 w-full"
+                                    >
+                                        <div className="flex flex-col gap-1 w-full">
+                                            <p className="text-sm font-bold text-black/30">Pergunta do Cliente</p>
+                                            <input
+                                                value={item.question}
+                                                onChange={(e) => updateFaq(index, 'question', e.target.value)}
+                                                placeholder="Ex: A depilação a laser dói?"
+                                                className="w-full bg-transparent border-none p-0 text-base font-bold text-zinc-800 focus:ring-0 placeholder:text-black/20 transition-colors"
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1 w-full border-t border-black/5 pt-3">
+                                            <p className="text-sm font-bold text-black/30">Como a IA deve responder</p>
+                                            <textarea
+                                                rows={2}
+                                                value={item.answer}
+                                                onChange={(e) => updateFaq(index, 'answer', e.target.value)}
+                                                placeholder="Ex: Utilizamos uma máquina com ponteira resfriada que torna o procedimento praticamente indolor..."
+                                                className="w-full bg-transparent border-none p-0 text-base text-zinc-800 focus:ring-0 placeholder:text-black/20 break-words whitespace-normal text-wrap resize-y transition-colors leading-relaxed"
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-end pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFaq(index)}
+                                                className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0 transition-colors hover:bg-red-100"
+                                            >
+                                                <Trash2 size={18} strokeWidth={1.5} />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
                         </div>
                     </motion.section>
 

@@ -86,25 +86,18 @@ def run_hunter():
 
 # Automated niche selection
     niches = [
-        "clínicas de depilação", "depilação a laser", "depiladoras", 
-        "design de sobrancelhas", "lash designers", "extensão de cílios", 
-        "micropigmentação", "estúdios de unhas", "nail designers",
-
-        # 🎯 TIER 1: Ouro Puro (Mão Ocupada + Alto Volume de Agendamento)
-        # Conversão mais rápida para o pitch "Você para o serviço pra responder cliente?"
-        "barbearias", "salões de beleza", "esmalterias", "estúdios de tatuagem",
-        "clínicas de estética", "pet shops", "banho e tosa",
-
-        # 🎯 TIER 3: Turismo e Locais (Forte em Floripa)
-        # Alto volume de dúvidas repetitivas (preço, horário, localização)
-        "pousadas", "hostels", "passeios de barco", "escolas de surf", 
-        "quadras de beach tennis", "aluguel de pranchas",
+        "manicure", "depilação", "depiladoras", "barbearias",
+        "salões de beleza", "esmalterias", "estúdios de tatuagem",
+        "design de sobrancelhas", "clínicas de estética", "pet shops",
+        "banho e tosa", "clínica de estética avançada", "estúdio de unhas"
     ]
 
     city = [
         "Florianópolis, SC",
         "Porto Alegre, RS",
-        "Curitiba, PR"
+        "Curitiba, PR",
+        "São Paulo, SP",
+        "Rio de Janeiro, RJ"
     ]
 
     keyword = random.choice(niches)
