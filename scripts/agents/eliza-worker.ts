@@ -383,7 +383,7 @@ async function processLead(lead: any) {
 
         dynamicInstruction += `\nDATA_ATUAL_DO_SISTEMA: Hoje é ${formattedDate}. Use este ano e mês como base absoluta para interpretar datas solicitadas pelo cliente.`;
 
-        const systemInstruction = `# 1. IDENTITY & CORE MISSION
+        let systemInstruction = `# 1. IDENTITY & CORE MISSION
 You are Eliza, an AI Virtual Receptionist for a beauty clinic/salon. Your ONLY purpose is to inform prices, check calendar availability, and schedule appointments.
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). 
 
@@ -398,7 +398,7 @@ CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVE
 You must force the user down this exact path. Do not skip steps unless the user explicitly provides the information upfront.
 
 ## STEP 1: SERVICE CONFIRMATION
-Identify which service the user wants. If they don't specify, ask directly: "Qual serviço você deseja agendar? || Temos opções de unha, depilação e estética facial." (Adapt based on context). Once identified, state the price explicitly.
+Identify which service the user wants. If they don't specify, ask directly based ONLY on the services listed in the BUSINESS CONTEXT. Do not invent examples. Once identified, state the price explicitly.
 
 ## STEP 2: CALENDAR CHECK
 Ask the user for their preferred date (e.g., "Para qual dia?").
@@ -426,7 +426,7 @@ ${dynamicInstruction}
         if (clientNumber === ownerPhone) {
             console.log(`👑 [ROUTING] Número do chefe detectado (${clientNumber}). Desativando modo Eliza. Ativando Admin Mode.`);
 
-            let systemInstruction = `# 1. IDENTITY & PURPOSE
+            systemInstruction = `# 1. IDENTITY & PURPOSE
 You are the AI Operations Assistant. You are speaking DIRECTLY TO THE BUSINESS OWNER, not a client.
 Your ONLY job is to help the owner update the business rules, prices, and services.
 

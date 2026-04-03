@@ -12,33 +12,33 @@ import {
 } from 'lucide-react';
 
 // ==============================================================
-// TYPES
+// TYPES (GOLD STANDARD ENGLISH)
 // ==============================================================
 
-interface Servico {
-    nome: string;
-    valor: string;
-    duracao: string;
-    descricao: string;
+interface Service {
+    name: string;
+    price: string;
+    duration: string;
+    description: string;
 }
 
 interface BusinessConfig {
     id: number;
     context_json: {
-        informacoes_clinica: {
+        business_info: {
             name: string;
             address: string;
             parking: string;
         };
-        horario_funcionamento: {
-            "mon-fri": string;
-            sat: string;
-            sun: string;
+        operating_hours: {
+            weekdays: string;
+            saturday: string;
+            sunday: string;
             observations: string;
         };
-        servicos: Servico[];
-        regras_agendamento: string[];
-        restricoes: string[];
+        services: Service[];
+        scheduling_rules: string[];
+        restrictions: string[];
     };
     updated_at: string;
 }
@@ -76,7 +76,7 @@ export default function ConfigPage() {
 
     // FETCH DATA
     const fetchData = async () => {
-        console.log(`📡 [API] Buscando dados do Supabase (business_config)...`);
+        console.log(`📡 [API] Fetching business_config from Supabase...`);
         setLoading(true);
         const { data, error: fetchError } = await supabase
             .from('business_config')
@@ -85,10 +85,10 @@ export default function ConfigPage() {
             .single();
 
         if (fetchError) {
-            console.error(`❌ [API ERROR] Falha no fetch:`, fetchError);
+            console.error(`❌ [API ERROR] Fetch failed:`, fetchError);
             setError('Falha ao sincronizar dados do estúdio.');
         } else {
-            console.log(`✅ [API] Dados carregados com sucesso.`, data);
+            console.log(`✅ [API] Data loaded successfully:`, data);
             setConfig(data);
         }
         setLoading(false);
@@ -100,35 +100,37 @@ export default function ConfigPage() {
 
     // LOGOUT
     const handleLogout = async () => {
-        console.log(`🔐 [AUTH] Executando logout...`);
+        console.log(`🔐 [AUTH] Executing logout...`);
         await supabase.auth.signOut();
         router.refresh();
         router.push('/admin/login');
     };
 
     // UPDATE STATE HELPERS
-    const updateClinicInfo = (field: string, value: string) => {
+    const updateBusinessInfo = (field: string, value: string) => {
         if (!config) return;
+        console.log(`📝 [STATE] Updating business_info field [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
                 ...config.context_json,
-                informacoes_clinica: {
-                    ...config.context_json.informacoes_clinica,
+                business_info: {
+                    ...config.context_json.business_info,
                     [field]: value
                 }
             }
         });
     };
 
-    const updateHours = (field: string, value: string) => {
+    const updateOperatingHours = (field: string, value: string) => {
         if (!config) return;
+        console.log(`📝 [STATE] Updating operating_hours field [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
                 ...config.context_json,
-                horario_funcionamento: {
-                    ...config.context_json.horario_funcionamento,
+                operating_hours: {
+                    ...config.context_json.operating_hours,
                     [field]: value
                 }
             }
@@ -137,40 +139,41 @@ export default function ConfigPage() {
 
     const addService = () => {
         if (!config) return;
-        console.log(`➕ [UI] Adicionando novo serviço vazio ao array.`);
-        const newService = { nome: '', valor: '', duracao: '', descricao: '' };
+        console.log(`➕ [UI] Adding new empty service to array.`);
+        const newService = { name: '', price: '', duration: '', description: '' };
         setConfig({
             ...config,
             context_json: {
                 ...config.context_json,
-                servicos: [...config.context_json.servicos, newService]
+                services: [...config.context_json.services, newService]
             }
         });
     };
 
     const removeService = (index: number) => {
         if (!config) return;
-        console.log(`🗑️ [UI] Removendo serviço no índice: ${index}`);
-        const newServices = [...config.context_json.servicos];
+        console.log(`🗑️ [UI] Removing service at index: ${index}`);
+        const newServices = [...config.context_json.services];
         newServices.splice(index, 1);
         setConfig({
             ...config,
             context_json: {
                 ...config.context_json,
-                servicos: newServices
+                services: newServices
             }
         });
     };
 
-    const updateService = (index: number, field: keyof Servico, value: string) => {
+    const updateService = (index: number, field: keyof Service, value: string) => {
         if (!config) return;
-        const newServices = [...config.context_json.servicos];
+        console.log(`📝 [STATE] Updating service at index ${index}, field [${field}]:`, value);
+        const newServices = [...config.context_json.services];
         newServices[index] = { ...newServices[index], [field]: value };
         setConfig({
             ...config,
             context_json: {
                 ...config.context_json,
-                servicos: newServices
+                services: newServices
             }
         });
     };
@@ -180,7 +183,7 @@ export default function ConfigPage() {
         if (e) e.preventDefault();
         if (!config) return;
 
-        console.log(`💾 [API] Iniciando processo de salvamento... payload:`, config.context_json);
+        console.log(`💾 [API] Initiating save process. Payload:`, config.context_json);
         setSaving(true);
         setError(null);
         setSuccess(false);
@@ -196,10 +199,10 @@ export default function ConfigPage() {
             .eq('id', 1);
 
         if (updateError) {
-            console.error(`❌ [API ERROR] Falha ao atualizar Supabase:`, updateError);
+            console.error(`❌ [API ERROR] Supabase update failed:`, updateError);
             setError(`Erro ao salvar: ${updateError.message}`);
         } else {
-            console.log(`✅ [API] Supabase atualizado com sucesso.`);
+            console.log(`✅ [API] Supabase updated successfully.`);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -262,22 +265,22 @@ export default function ConfigPage() {
                         <div className="flex flex-col gap-5 w-full">
                             <StudioInput
                                 label="Nome do Estabelecimento"
-                                value={config?.context_json.informacoes_clinica.name || ''}
-                                onChange={(val) => updateClinicInfo('name', val)}
+                                value={config?.context_json.business_info.name || ''}
+                                onChange={(val) => updateBusinessInfo('name', val)}
                                 placeholder="Ex: Studio Art Tatoo"
                                 icon={<Sparkles size={16} />}
                             />
                             <StudioInput
                                 label="Logradouro"
-                                value={config?.context_json.informacoes_clinica.address || ''}
-                                onChange={(val) => updateClinicInfo('address', val)}
+                                value={config?.context_json.business_info.address || ''}
+                                onChange={(val) => updateBusinessInfo('address', val)}
                                 placeholder="Endereço completo"
                                 icon={<MapPin size={16} />}
                             />
                             <StudioInput
                                 label="Estacionamento & Acesso"
-                                value={config?.context_json.informacoes_clinica.parking || ''}
-                                onChange={(val) => updateClinicInfo('parking', val)}
+                                value={config?.context_json.business_info.parking || ''}
+                                onChange={(val) => updateBusinessInfo('parking', val)}
                                 placeholder="Detalhes de acesso..."
                                 icon={<ParkingCircle size={16} />}
                             />
@@ -294,26 +297,26 @@ export default function ConfigPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                             <StudioInput
                                 label="Segunda a Sexta"
-                                value={config?.context_json.horario_funcionamento["mon-fri"] || ''}
-                                onChange={(val) => updateHours('mon-fri', val)}
+                                value={config?.context_json.operating_hours.weekdays || ''}
+                                onChange={(val) => updateOperatingHours('weekdays', val)}
                                 placeholder="09:00 - 19:00"
                             />
                             <StudioInput
                                 label="Sábados"
-                                value={config?.context_json.horario_funcionamento.sat || ''}
-                                onChange={(val) => updateHours('sat', val)}
+                                value={config?.context_json.operating_hours.saturday || ''}
+                                onChange={(val) => updateOperatingHours('saturday', val)}
                                 placeholder="09:00 - 15:00"
                             />
                             <StudioInput
                                 label="Domingos"
-                                value={config?.context_json.horario_funcionamento.sun || ''}
-                                onChange={(val) => updateHours('sun', val)}
+                                value={config?.context_json.operating_hours.sunday || ''}
+                                onChange={(val) => updateOperatingHours('sunday', val)}
                                 placeholder="Fechado"
                             />
                             <StudioInput
                                 label="Observações"
-                                value={config?.context_json.horario_funcionamento.observations || ''}
-                                onChange={(val) => updateHours('observations', val)}
+                                value={config?.context_json.operating_hours.observations || ''}
+                                onChange={(val) => updateOperatingHours('observations', val)}
                                 placeholder="Intervalo de almoço as 12:00"
                             />
                         </div>
@@ -337,7 +340,7 @@ export default function ConfigPage() {
 
                         <div className="flex flex-col gap-4 w-full">
                             <AnimatePresence mode='popLayout'>
-                                {config?.context_json.servicos.map((servico, index) => (
+                                {config?.context_json.services.map((service, index) => (
                                     <motion.div
                                         key={index}
                                         layout
@@ -349,8 +352,8 @@ export default function ConfigPage() {
                                         <div className="flex flex-col gap-1 w-full">
                                             <p className="text-base font-bold text-black/30">Procedimento</p>
                                             <input
-                                                value={servico.nome}
-                                                onChange={(e) => updateService(index, 'nome', e.target.value)}
+                                                value={service.name}
+                                                onChange={(e) => updateService(index, 'name', e.target.value)}
                                                 placeholder="Nome do serviço"
                                                 className="w-full bg-transparent border-none p-0 text-lg font-bold text-zinc-800 focus:ring-0 placeholder:text-black/20 truncate transition-colors"
                                             />
@@ -360,8 +363,8 @@ export default function ConfigPage() {
                                             <p className="text-base font-bold text-black/30">Descrição</p>
                                             <textarea
                                                 rows={2}
-                                                value={servico.descricao}
-                                                onChange={(e) => updateService(index, 'descricao', e.target.value)}
+                                                value={service.description}
+                                                onChange={(e) => updateService(index, 'description', e.target.value)}
                                                 placeholder="Descrição do serviço"
                                                 className="w-full bg-transparent border-none p-0 text-lg font-bold text-zinc-800 focus:ring-0 placeholder:text-black/20 break-words whitespace-normal text-wrap resize-y transition-colors"
                                             />
@@ -372,8 +375,8 @@ export default function ConfigPage() {
                                                 <div className="flex flex-col gap-1 flex-1 min-w-0">
                                                     <p className="text-base font-bold text-black/30">Valor</p>
                                                     <input
-                                                        value={servico.valor}
-                                                        onChange={(e) => updateService(index, 'valor', e.target.value)}
+                                                        value={service.price}
+                                                        onChange={(e) => updateService(index, 'price', e.target.value)}
                                                         placeholder="R$ 0,00"
                                                         className="w-full bg-transparent border-none p-0 text-lg font-bold text-blue-600 focus:ring-0 placeholder:text-black/20 truncate"
                                                     />
@@ -381,8 +384,8 @@ export default function ConfigPage() {
                                                 <div className="flex flex-col gap-1 flex-1 min-w-0 border-l border-black/5 pl-4">
                                                     <p className="text-base font-bold text-black/30">Tempo</p>
                                                     <input
-                                                        value={servico.duracao}
-                                                        onChange={(e) => updateService(index, 'duracao', e.target.value)}
+                                                        value={service.duration}
+                                                        onChange={(e) => updateService(index, 'duration', e.target.value)}
                                                         placeholder="30 min"
                                                         className="w-full bg-transparent border-none p-0 text-base font-medium text-black/60 focus:ring-0 placeholder:text-black/20 truncate"
                                                     />
@@ -412,12 +415,12 @@ export default function ConfigPage() {
                         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-black/5 w-full">
                             <textarea
                                 rows={5}
-                                value={config?.context_json.regras_agendamento.join('\n') || ''}
+                                value={config?.context_json.scheduling_rules.join('\n') || ''}
                                 onChange={(e) => {
                                     const lines = e.target.value.split('\n');
                                     setConfig({
                                         ...config!,
-                                        context_json: { ...config!.context_json, regras_agendamento: lines }
+                                        context_json: { ...config!.context_json, scheduling_rules: lines }
                                     });
                                 }}
                                 placeholder="Ex: Cancelamento com 2h de antecedência..."
