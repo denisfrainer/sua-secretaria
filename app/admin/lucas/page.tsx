@@ -21,6 +21,7 @@ import {
     Sparkles,
     LogOut,
     AlertTriangle,
+    Download,
 } from 'lucide-react';
 
 // ==============================================================
@@ -216,6 +217,7 @@ export default function CabinDashboard() {
     const [faqOpen, setFaqOpen] = useState<number | null>(null);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
     const supabase = createClient();
 
@@ -278,6 +280,21 @@ export default function CabinDashboard() {
     useEffect(() => {
         fetchConfig();
     }, [fetchConfig]);
+
+    // --- PWA INSTALL LOGIC ---
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: any) => {
+            e.preventDefault();
+            console.log('✅ [PWA] Install prompt intercepted and saved.');
+            setDeferredPrompt(e);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
 
     // --- STATE UPDATERS WITH OBSERVABILITY ---
 
@@ -380,6 +397,15 @@ export default function CabinDashboard() {
         }
     }, [config]);
 
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        console.log('🚀 [PWA] Triggering manual install prompt...');
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`✅ [PWA] User installation response: ${outcome}`);
+        setDeferredPrompt(null);
+    };
+
     // --- EARLY RETURNS: LOADING & ERROR ---
 
     if (isLoading) {
@@ -417,7 +443,23 @@ export default function CabinDashboard() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        {/* PWA INSTALL BUTTON */}
+                        <AnimatePresence>
+                            {deferredPrompt && (
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    onClick={handleInstallClick}
+                                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition-all border border-blue-100 shadow-sm"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    Instalar App
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
+
                         {/* AI TOGGLE */}
                         <button
                             onClick={toggleAI}

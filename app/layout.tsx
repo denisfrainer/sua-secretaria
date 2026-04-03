@@ -54,6 +54,9 @@ export default function RootLayout({
 }) {
     return (
         <html lang="pt">
+            <head>
+                <link rel="manifest" href="/manifest.json" />
+            </head>
             <body
                 className={cn(
                     "font-sans antialiased bg-white text-black",
