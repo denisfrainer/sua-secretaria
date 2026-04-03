@@ -8,7 +8,7 @@ import {
     Save, Plus, Trash2, LogOut, Sparkles,
     Building2, Clock, ListChecks,
     CheckCircle2, AlertTriangle, Loader2, Scissors,
-    MapPin, ParkingCircle, Smile
+    MapPin, ParkingCircle, Smile, Power, Wallet, ShieldAlert
 } from 'lucide-react';
 
 // ==============================================================
@@ -42,6 +42,14 @@ interface BusinessConfig {
         tone_of_voice: {
             base_style: string;
             custom_instructions: string;
+        };
+        payment_info: {
+            pix_type: string;
+            pix_key: string;
+            owner_name: string;
+        };
+        booking_policies: {
+            minimum_advance_notice: string;
         };
         updated_at: string;
     }
@@ -78,24 +86,53 @@ export default function ConfigPage() {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [isAiActive, setIsAiActive] = useState<boolean>(true);
+    const [togglingAi, setTogglingAi] = useState<boolean>(false);
+
     // FETCH DATA
     const fetchData = async () => {
-        console.log(`📡 [API] Fetching business_config from Supabase...`);
+        console.log(`📡 [API] Fetching business_config and system_settings...`);
         setLoading(true);
-        const { data, error: fetchError } = await supabase
-            .from('business_config')
-            .select('*')
-            .eq('id', 1)
-            .single();
 
-        if (fetchError) {
-            console.error(`❌ [API ERROR] Fetch failed:`, fetchError);
+        const [configRes, settingsRes] = await Promise.all([
+            supabase.from('business_config').select('*').eq('id', 1).single(),
+            supabase.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle()
+        ]);
+
+        if (configRes.error) {
+            console.error(`❌ [API ERROR] Config fetch failed:`, configRes.error);
             setError('Falha ao sincronizar dados do estúdio.');
         } else {
-            console.log(`✅ [API] Data loaded successfully:`, data);
-            setConfig(data);
+            console.log(`✅ [API] Config loaded:`, configRes.data);
+            setConfig(configRes.data);
         }
+
+        if (settingsRes.data) {
+            const enabled = (settingsRes.data.value as any)?.enabled;
+            console.log(`✅ [API] AI Status loaded:`, enabled);
+            setIsAiActive(enabled ?? true);
+        }
+
         setLoading(false);
+    };
+
+    // Kill Switch Toggle Function
+    const toggleAiStatus = async () => {
+        console.log(`🔄 [STATE] Toggling AI status. Current: ${isAiActive}`);
+        setTogglingAi(true);
+        const newState = !isAiActive;
+
+        const { error } = await supabase
+            .from('system_settings')
+            .upsert({ key: 'eliza_active', value: { enabled: newState } });
+
+        if (error) {
+            console.error(`❌ [API ERROR] Failed to toggle AI:`, error);
+        } else {
+            console.log(`✅ [API] AI status successfully set to: ${newState}`);
+            setIsAiActive(newState);
+        }
+        setTogglingAi(false);
     };
 
     useEffect(() => {
@@ -168,6 +205,36 @@ export default function ConfigPage() {
                 ...config.context_json,
                 tone_of_voice: {
                     ...config.context_json.tone_of_voice,
+                    [field]: value
+                }
+            }
+        });
+    };
+
+    const updatePaymentInfo = (field: string, value: string) => {
+        if (!config) return;
+        console.log(`📝 [STATE] Updating payment_info [${field}]:`, value);
+        setConfig({
+            ...config,
+            context_json: {
+                ...config.context_json,
+                payment_info: {
+                    ...(config.context_json.payment_info || { pix_type: '', pix_key: '', owner_name: '' }),
+                    [field]: value
+                }
+            }
+        });
+    };
+
+    const updateBookingPolicies = (field: string, value: string) => {
+        if (!config) return;
+        console.log(`📝 [STATE] Updating booking_policies [${field}]:`, value);
+        setConfig({
+            ...config,
+            context_json: {
+                ...config.context_json,
+                booking_policies: {
+                    ...(config.context_json.booking_policies || { minimum_advance_notice: '' }),
                     [field]: value
                 }
             }
@@ -273,12 +340,27 @@ export default function ConfigPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleLogout}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-4"
-                    >
-                        <LogOut size={22} strokeWidth={1.5} />
-                    </button>
+                    <div className="flex items-center gap-4 ml-auto">
+                        <button
+                            type="button"
+                            onClick={toggleAiStatus}
+                            disabled={togglingAi}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-all border ${isAiActive
+                                ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                                : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                                } disabled:opacity-50`}
+                        >
+                            <Power size={16} className={togglingAi ? 'animate-pulse' : ''} />
+                            {isAiActive ? 'IA Ativada' : 'IA Pausada'}
+                        </button>
+
+                        <button
+                            onClick={handleLogout}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-0"
+                        >
+                            <LogOut size={22} strokeWidth={1.5} />
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -440,6 +522,52 @@ export default function ConfigPage() {
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
+                        </div>
+                    </motion.section>
+                    
+                    {/* SECTION: BOOKING POLICIES */}
+                    <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
+                        <div className="flex items-center gap-3 border-b border-black/5 pb-3">
+                            <ShieldAlert size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <h2 className="text-base font-bold text-black/40">Blindagem de Agenda</h2>
+                        </div>
+                        <div className="flex flex-col gap-5 w-full">
+                            <StudioInput
+                                label="Antecedência Mínima para Agendamento"
+                                value={config?.context_json.booking_policies?.minimum_advance_notice || ''}
+                                onChange={(val) => updateBookingPolicies('minimum_advance_notice', val)}
+                                placeholder="Ex: 2 horas"
+                            />
+                        </div>
+                    </motion.section>
+
+                    {/* SECTION: PAYMENT INFO */}
+                    <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
+                        <div className="flex items-center gap-3 border-b border-black/5 pb-3">
+                            <Wallet size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <h2 className="text-base font-bold text-black/40">Dados de Pagamento (PIX)</h2>
+                        </div>
+                        <div className="flex flex-col gap-5 w-full">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <StudioInput
+                                    label="Tipo de Chave"
+                                    value={config?.context_json.payment_info?.pix_type || ''}
+                                    onChange={(val) => updatePaymentInfo('pix_type', val)}
+                                    placeholder="Ex: CNPJ, Celular, Email"
+                                />
+                                <StudioInput
+                                    label="Chave PIX"
+                                    value={config?.context_json.payment_info?.pix_key || ''}
+                                    onChange={(val) => updatePaymentInfo('pix_key', val)}
+                                    placeholder="Ex: 00.000.000/0001-00"
+                                />
+                            </div>
+                            <StudioInput
+                                label="Nome do Titular"
+                                value={config?.context_json.payment_info?.owner_name || ''}
+                                onChange={(val) => updatePaymentInfo('owner_name', val)}
+                                placeholder="Ex: Beleza Ilhoa Estética LTDA"
+                            />
                         </div>
                     </motion.section>
 
