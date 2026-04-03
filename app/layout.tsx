@@ -8,6 +8,7 @@ import { Source_Sans_3 } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
+import PwaRegistry from './components/PwaRegistry';
 
 const sourceSans3 = Source_Sans_3({
     subsets: ["latin"],
@@ -34,6 +35,13 @@ export const metadata: Metadata = {
             },
         ],
     },
+    manifest: '/manifest.json',
+    themeColor: '#2563EB',
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'MeAtende',
+    },
 };
 
 export default function RootLayout({
@@ -49,6 +57,7 @@ export default function RootLayout({
                     sourceSans3.variable
                 )}
             >
+                <PwaRegistry />
                 {children}
             </body>
             <GoogleTagManager gtmId="GTM-TNPWHLB8" />

@@ -267,12 +267,12 @@ async function processLead(lead: any) {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
         // 2. Load context and history
-        console.log(`📡 [DB] Buscando business_context atualizado no Supabase...`);
+        console.log(`📡 [DB] Fetching updated business_context for Cabin (id: 2)...`);
 
         const { data: configData, error: configError } = await supabaseAdmin
             .from('business_config')
             .select('context_json')
-            .eq('id', 1)
+            .eq('id', 2)
             .single();
 
         let businessContext = "";

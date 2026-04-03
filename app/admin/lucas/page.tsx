@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 import {
     Home,
     DollarSign,
@@ -87,6 +88,29 @@ export default function CabinDashboard() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
+    const supabase = createClient();
+
+    // --- FETCH CONFIG FROM DB ---
+    useEffect(() => {
+        const fetchConfig = async () => {
+            console.log('📡 [DB] Fetching cabin context (id: 2) from Supabase...');
+            const { data, error } = await supabase
+                .from('business_config')
+                .select('context_json')
+                .eq('id', 2)
+                .single();
+
+            if (data && data.context_json) {
+                console.log('✅ [DB] Context fetched successfully:', data.context_json);
+                setConfig(data.context_json as CabinConfig);
+            } else if (error) {
+                console.error('❌ [DB ERROR] Failed to fetch cabin context:', error.message);
+            }
+        };
+
+        fetchConfig();
+    }, []);
+
     // --- STATE UPDATERS WITH OBSERVABILITY ---
 
     const toggleAI = useCallback(() => {
@@ -164,12 +188,22 @@ export default function CabinDashboard() {
 
     const handleSave = useCallback(async () => {
         setSaving(true);
-        console.log('💾 [SAVE] Saving cabin config to backend...', JSON.stringify(config, null, 2));
-        // Simulate API call
-        await new Promise(r => setTimeout(r, 1200));
+        console.log('💾 [DB] Saving cabin context updates to Supabase (id: 2)...');
+
+        const { error: updateError } = await supabase
+            .from('business_config')
+            .update({ context_json: config })
+            .eq('id', 2);
+
+        if (updateError) {
+            console.error('❌ [DB ERROR] Failed to save config:', updateError.message);
+            setSaving(false);
+            return;
+        }
+
+        console.log('✅ [SAVE] Config persisted successfully in business_config (id: 2).');
         setSaving(false);
         setSaved(true);
-        console.log('✅ [SAVE] Config persisted successfully.');
         setTimeout(() => setSaved(false), 2500);
     }, [config]);
 
