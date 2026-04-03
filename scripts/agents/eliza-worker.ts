@@ -502,6 +502,45 @@ ${businessContext}
 
         const responseText = result.text || '';
 
+        console.log(`🔍 [CIRCUIT BREAKER] Analisando similaridade de repetição para ${clientNumber}...`);
+
+        // Encontra a última mensagem que a IA enviou neste histórico
+        const lastAssistantMsg = [...chatHistory].reverse().find((msg: any) => msg.role === 'assistant');
+
+        if (lastAssistantMsg) {
+            // Verificação de Loop Exato ou Alta Similaridade
+            const isExactMatch = responseText.trim() === lastAssistantMsg.content.trim();
+
+            // Verificação parcial (se a IA enviou o mesmo bloco de menu gigante novamente)
+            const isPartialLoop = responseText.includes("Qual serviço você deseja agendar?") &&
+                lastAssistantMsg.content.includes("Qual serviço você deseja agendar?");
+
+            if (isExactMatch || isPartialLoop) {
+                console.log(`🚨 [ANTI-LOOP TRIGGERED] A Eliza tentou repetir a mesma mensagem. Travando fluxo.`);
+                console.log(`➡️ [LOG] Mensagem abortada: ${responseText.substring(0, 50)}...`);
+
+                // Trava a IA no banco de dados e aciona o Handoff Silencioso
+                await supabaseAdmin.from('leads_lobo').update({
+                    needs_human: true,
+                    ai_paused: true,
+                    status: 'human_handling'
+                }).eq('id', lead.id);
+
+                // Mensagem de escape amigável para o cliente
+                const escapeMessage = "Desculpe, meu sistema está passando por uma instabilidade com os agendamentos. Já chamei a especialista humana e ela vai assumir o seu atendimento em um minuto, tudo bem?";
+
+                await sendWhatsAppMessage(clientNumber, escapeMessage, 1000);
+
+                // Salva o log do escape na tabela de mensagens
+                await supabaseAdmin.from('messages').insert({
+                    lead_phone: clientNumber,
+                    role: 'assistant',
+                    content: escapeMessage,
+                    message_id: `eliza_escape_${Date.now()}`
+                });
+            }
+        }
+
         // 6. Split into bubbles with explicit typing
         const chunks = responseText.split('||')
             .map((c: string) => c.trim())
