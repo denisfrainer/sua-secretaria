@@ -341,17 +341,15 @@ export default function ConfigPage() {
                     </div>
 
                     <div className="flex items-center gap-6 ml-auto">
-                        <div className="flex items-center gap-3">
-                            <span className={`text-sm font-bold transition-colors ${isAiActive ? 'text-green-600' : 'text-zinc-400'}`}>
-                                {isAiActive ? 'IA Ativada' : 'IA Pausada'}
-                            </span>
+                        <div className="flex items-center">
                             <button
                                 type="button"
                                 onClick={toggleAiStatus}
                                 disabled={togglingAi}
+                                title={isAiActive ? 'IA Ativada' : 'IA Pausada'}
                                 className={`
                                     relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none
-                                    ${isAiActive ? 'bg-[#34C759]' : 'bg-[#E9E9EA]'}
+                                    ${isAiActive ? 'bg-[#34C759]' : 'bg-[#FF3B30]'}
                                     disabled:opacity-50
                                 `}
                             >
