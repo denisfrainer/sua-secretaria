@@ -82,9 +82,10 @@ const functionDeclarations: any[] = [
                 date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
                 time: { type: 'STRING', description: 'Hora no formato HH:MM' },
                 client_name: { type: 'STRING', description: 'Nome do lead' },
-                service_type: { type: 'STRING', description: 'Assunto ou tipo de serviço' }
+                service_type: { type: 'STRING', description: 'Assunto ou tipo de serviço' },
+                duration_minutes: { type: 'NUMBER', description: 'Duração exata do serviço em minutos (ex: 30, 60, 120)' }
             },
-            required: ['date', 'time', 'client_name', 'service_type'],
+            required: ['date', 'time', 'client_name', 'service_type', 'duration_minutes'],
         },
     },
     {
@@ -218,14 +219,20 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         console.log(`📅 [CALENDAR] Iniciando agendamento para ${args.client_name}`);
         try {
             const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
-            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora
+            
+            // Extract duration from args or default to 60 minutes
+            const durationInMinutes = args.duration_minutes ? Number(args.duration_minutes) : 60;
+            
+            // Calculate end time based on actual service duration
+            const endTime = new Date(startTime.getTime() + (durationInMinutes * 60 * 1000));
 
-            console.log(`➡️  [API REQUEST] Inserindo evento no Calendar: ${startTime.toISOString()} - ${endTime.toISOString()}`);
+            console.log(`➡️ [API REQUEST] Event: ${startTime.toISOString()} to ${endTime.toISOString()} (Duration: ${durationInMinutes}m)`);
+            
             await calendar.events.insert({
-                calendarId: 'denisfrainer93@gmail.com',
+                calendarId: process.env.GOOGLE_CALENDAR_ID || 'denisfrainer93@gmail.com',
                 requestBody: {
                     summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
-                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}`,
+                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}\nDuração Padrão: ${durationInMinutes}m`,
                     start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                     end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                 }
@@ -238,7 +245,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
                 instructions: 'Confirme para o cliente que o agendamento está finalizado e pronto.'
             };
         } catch (err: any) {
-            console.error("❌ [CALENDAR] Exceção:", err.message);
+            console.error("❌ [CALENDAR EXCEPTION]:", err.message);
             return { status: "error", message: err.message };
         }
     }

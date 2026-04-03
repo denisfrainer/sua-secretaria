@@ -35,6 +35,7 @@ interface BusinessConfig {
             name: string;
             address: string;
             parking: string;
+            handoff_phone: string;
         };
         operating_hours: {
             weekdays: { open: string; close: string; is_closed: boolean };
@@ -56,6 +57,7 @@ interface BusinessConfig {
         };
         booking_policies: {
             minimum_advance_notice: string;
+            buffer_time_minutes: string;
         };
         faq: FAQItem[];
         updated_at: string;
@@ -452,6 +454,12 @@ export default function ConfigPage() {
                                 placeholder="Detalhes de acesso..."
                                 icon={<ParkingCircle size={16} />}
                             />
+                            <StudioInput
+                                label="WhatsApp p/ Transbordo Humano"
+                                value={config?.context_json.business_info?.handoff_phone || ''}
+                                onChange={(val) => updateBusinessInfo('handoff_phone', val)}
+                                placeholder="Ex: 554899999999"
+                            />
                         </div>
                     </motion.section>
 
@@ -586,6 +594,12 @@ export default function ConfigPage() {
                                 value={config?.context_json.booking_policies?.minimum_advance_notice || ''}
                                 onChange={(val) => updateBookingPolicies('minimum_advance_notice', val)}
                                 placeholder="Ex: 2 horas"
+                            />
+                            <StudioInput
+                                label="Intervalo de Limpeza/Buffer (Minutos)"
+                                value={config?.context_json.booking_policies?.buffer_time_minutes || ''}
+                                onChange={(val) => updateBookingPolicies('buffer_time_minutes', val)}
+                                placeholder="Ex: 15"
                             />
                         </div>
                     </motion.section>
