@@ -78,9 +78,6 @@ function MetricCard({ label, value, Icon, iconColor }: { label: string; value: s
                     <p className="text-[26px] font-bold font-sans tabular-nums text-slate-900 tracking-tight leading-none">{value}</p>
                 </div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-slate-300" />
-            </div>
         </motion.div>
     );
 }
@@ -208,7 +205,7 @@ export default function AdminDashboard() {
                         <div className="w-10 h-10 flex items-center justify-center transition-transform hover:scale-110 active:rotate-3">
                             <Image src="/assets/robot.png" width={32} height={32} alt="Wizard" className="w-8 h-8 object-contain" />
                         </div>
-                        <h1 className="text-[20px] font-bold text-slate-900 font-sans tracking-tight">Hello, wizard</h1>
+                        <h1 className="text-[24px] font-bold text-slate-900 font-sans tracking-tight">Hello, wizard</h1>
                     </div>
                     {/* Logout Button: Rectangle removed, size/position preserved */}
                     <button
@@ -247,7 +244,7 @@ export default function AdminDashboard() {
                 <MetricCard label="Conversion rate" value={`${conversionRate}%`} Icon={TrendingUp} iconColor="text-emerald-500" />
                 
                 {/* Footer Quote */}
-                <footer className="mt-16 pb-12 flex justify-center">
+                <footer className="mt-10 pb-6 flex justify-center">
                     <p className="text-[16px] text-slate-500 font-sans lowercase tracking-tight opacity-70">
                         some people just like to build things
                     </p>
