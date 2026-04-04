@@ -1,19 +1,21 @@
-/*
-  app/layout.tsx
-  Root layout — Inter font, light-mode foundation
-*/
-
 import type { Metadata, Viewport } from "next";
-import { Source_Sans_3 } from "next/font/google";
+import { Outfit, Space_Grotesk } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
 import PwaRegistry from './components/PwaRegistry';
 
-const sourceSans3 = Source_Sans_3({
+const outfit = Outfit({
     subsets: ["latin"],
-    weight: ["400", "500", "600", "700", "800"],
-    variable: "--font-source-sans",
+    weight: ["400", "500", "600", "700", "800", "900"],
+    variable: "--font-outfit",
+    display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700"],
+    variable: "--font-space-grotesk",
     display: 'swap',
 });
 
@@ -60,7 +62,8 @@ export default function RootLayout({
             <body
                 className={cn(
                     "font-sans antialiased bg-white text-black",
-                    sourceSans3.variable
+                    outfit.variable,
+                    spaceGrotesk.variable
                 )}
             >
                 <PwaRegistry />

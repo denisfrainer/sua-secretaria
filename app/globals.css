@@ -6,7 +6,8 @@
 */
 
 @theme {
-  --font-sans: var(--font-source-sans), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-outfit), system-ui, -apple-system, sans-serif;
+  --font-space-grotesk: var(--font-space-grotesk), system-ui, sans-serif;
 }
 
 :root {
@@ -34,7 +35,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-source-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
