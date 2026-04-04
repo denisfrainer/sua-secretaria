@@ -58,7 +58,7 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 font-source-sans antialiased selection:bg-blue-100">
+        <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 font-source antialiased selection:bg-blue-100">
             <div className="w-full max-w-sm flex flex-col gap-12">
                 
                 {/* BRAND HEADER */}

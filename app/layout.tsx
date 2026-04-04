@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Space_Grotesk } from "next/font/google";
+import { Outfit, Source_Sans_3, Space_Grotesk } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
@@ -9,6 +9,13 @@ const outfit = Outfit({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700", "800", "900"],
     variable: "--font-outfit",
+    display: 'swap',
+});
+
+const sourceSans = Source_Sans_3({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700", "800", "900"],
+    variable: "--font-source-sans-3",
     display: 'swap',
 });
 
@@ -61,15 +68,16 @@ export default function RootLayout({
             </head>
             <body
                 className={cn(
-                    "font-sans antialiased bg-white text-black",
+                    "antialiased bg-white text-black",
                     outfit.variable,
+                    sourceSans.variable,
                     spaceGrotesk.variable
                 )}
             >
                 <PwaRegistry />
                 {children}
+                <GoogleTagManager gtmId="GTM-TNPWHLB8" />
             </body>
-            <GoogleTagManager gtmId="GTM-TNPWHLB8" />
         </html>
     );
 }

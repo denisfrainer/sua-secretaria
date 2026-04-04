@@ -368,7 +368,7 @@ export default function ConfigPage() {
     }
 
     return (
-        <div className="w-full min-h-screen bg-[#fafafa] text-[#000000] antialiased font-sans flex flex-col overflow-x-hidden">
+        <div className="w-full min-h-screen bg-[#fafafa] text-[#000000] antialiased font-source flex flex-col overflow-x-hidden">
 
             {/* STICKY HEADER */}
             <header className="h-20 w-full sticky top-0 bg-[#fafafa]/90 backdrop-blur-md z-40 border-b border-black/5">

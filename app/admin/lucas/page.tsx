@@ -74,7 +74,7 @@ const DEFAULT_CONFIG: CabinConfig = {
 // ==============================================================
 function DashboardSkeleton() {
     return (
-        <div className="min-h-screen bg-white text-gray-900 antialiased">
+        <div className="min-h-screen bg-white text-gray-900 font-system antialiased">
             {/* Header Skeleton */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -176,7 +176,7 @@ function DashboardSkeleton() {
 // ==============================================================
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
     return (
-        <div className="min-h-screen bg-white flex items-center justify-center px-6">
+        <div className="min-h-screen bg-white flex items-center justify-center px-6 font-system">
             <div className="text-center max-w-sm space-y-5">
                 <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center mx-auto">
                     <AlertTriangle className="w-7 h-7 text-rose-500" />
@@ -403,7 +403,7 @@ export default function CabinDashboard() {
     // --- RENDER ---
 
     return (
-        <div className="min-h-screen bg-white text-gray-900 antialiased">
+        <div className="min-h-screen bg-white text-gray-900 font-system antialiased">
             {/* ======== HEADER ======== */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">

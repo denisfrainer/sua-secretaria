@@ -74,8 +74,8 @@ function MetricCard({ label, value, Icon, iconColor }: { label: string; value: s
                     <Icon className={`w-7 h-7 ${iconColor}`} />
                 </div>
                 <div>
-                    <p className="text-[16px] font-sans text-slate-400 font-medium leading-none mb-1.5">{label}</p>
-                    <p className="text-[26px] font-bold font-sans tabular-nums text-slate-900 tracking-tight leading-none">{value}</p>
+                    <p className="text-[16px] font-outfit text-slate-400 font-medium leading-none mb-1.5">{label}</p>
+                    <p className="text-[26px] font-bold font-outfit tabular-nums text-slate-900 tracking-tight leading-none">{value}</p>
                 </div>
             </div>
         </motion.div>
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
             <div className="h-screen bg-white flex items-center justify-center p-6">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-                    <p className="text-[18px] text-slate-400 font-sans font-medium">Syncing Command Center...</p>
+                    <p className="text-[18px] text-slate-400 font-outfit font-medium">Syncing Command Center...</p>
                 </div>
             </div>
         );
@@ -179,8 +179,8 @@ export default function AdminDashboard() {
             <div className="h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
                 <div className="w-full max-w-[420px] bg-white rounded-3xl p-10 shadow-sm border border-slate-200">
                     <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto mb-6" />
-                    <h1 className="text-[24px] font-bold text-slate-900 font-sans mb-2 uppercase tracking-tighter">Security Alert</h1>
-                    <p className="text-[16px] text-slate-500 font-sans mb-8">Invalid encryption key. System access denied.</p>
+                    <h1 className="text-[24px] font-bold text-slate-900 font-outfit mb-2 uppercase tracking-tighter">Security Alert</h1>
+                    <p className="text-[16px] text-slate-500 font-outfit mb-8">Invalid encryption key. System access denied.</p>
                 </div>
             </div>
         );
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
     const conversionRate = total > 0 ? Math.round((closed / total) * 100) : 0;
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col items-center selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-outfit flex flex-col items-center selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
 
             {/* ======== HEADER ======== */}
             <header className="w-full max-w-[420px] px-6 pt-10 pb-4">
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                         <div className="w-10 h-10 flex items-center justify-center transition-transform hover:scale-110 active:rotate-3">
                             <Image src="/assets/robot.png" width={32} height={32} alt="Wizard" className="w-8 h-8 object-contain" />
                         </div>
-                        <h1 className="text-[24px] font-bold text-slate-900 font-sans tracking-tight">Hello, wizard</h1>
+                        <h1 className="text-[24px] font-bold text-slate-900 font-outfit tracking-tight">Hello, wizard</h1>
                     </div>
                     {/* Logout Button: Rectangle removed, size/position preserved */}
                     <button
@@ -245,7 +245,7 @@ export default function AdminDashboard() {
                 
                 {/* Footer Quote */}
                 <footer className="mt-10 pb-6 flex justify-center">
-                    <p className="text-[16px] text-slate-500 font-sans lowercase tracking-tight opacity-70">
+                    <p className="text-[16px] text-slate-500 font-outfit lowercase tracking-tight opacity-70">
                         some people just like to build things
                     </p>
                 </footer>
