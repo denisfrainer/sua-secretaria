@@ -43,17 +43,17 @@ function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange:
                 opacity: loading ? 0.6 : 1
             }}
             onClick={() => !loading && onChange()}
-            className={`relative w-[50px] h-[28px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
+            className={`relative w-[58px] h-[32px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
         >
             <motion.span 
                 layout
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 className={`
-                    absolute top-[2px] left-[2px] w-[24px] h-[24px] rounded-full bg-white shadow-md flex items-center justify-center
-                    ${enabled ? 'translate-x-[22px]' : 'translate-x-0'}
+                    absolute top-[2px] left-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md flex items-center justify-center
+                    ${enabled ? 'translate-x-[26px]' : 'translate-x-0'}
                 `} 
             >
-                {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
             </motion.span>
         </motion.button>
     );
@@ -216,20 +216,20 @@ export default function AdminDashboard() {
                     </button>
                 </div>
 
-                {/* Agent Toggles Row: Strictly RAW mode (42px) */}
+                {/* Agent Toggles Row: Strictly RAW mode (48px) */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     {/* Eliza Toggle (Raw Icon) */}
-                    <div className="p-4 flex items-center justify-between">
-                        <div className="flex items-center w-[42px] h-[42px] justify-center">
-                            <Image src="/assets/eliza.png" width={42} height={42} alt="Eliza" className="w-[42px] h-[42px] object-contain" />
+                    <div className="p-4 flex items-center justify-start gap-4">
+                        <div className="flex items-center w-[48px] h-[48px] justify-center">
+                            <Image src="/assets/eliza.png" width={48} height={48} alt="Eliza" className="w-[48px] h-[48px] object-contain" />
                         </div>
                         <IosToggle enabled={elizaActive} loading={elizaLoading} onChange={() => toggleAgent('eliza_active', elizaActive, setElizaActive, setElizaLoading)} />
                     </div>
 
                     {/* Lobo Toggle (Raw Icon, No filter) */}
-                    <div className="p-4 flex items-center justify-between">
-                        <div className="flex items-center w-[42px] h-[42px] justify-center">
-                            <Image src="/assets/wolf.png" width={42} height={42} alt="Lobo" className="w-[42px] h-[42px] object-contain" />
+                    <div className="p-4 flex items-center justify-start gap-4">
+                        <div className="flex items-center w-[48px] h-[48px] justify-center">
+                            <Image src="/assets/wolf.png" width={48} height={48} alt="Lobo" className="w-[48px] h-[48px] object-contain" />
                         </div>
                         <IosToggle enabled={wolfActive} loading={wolfLoading} onChange={() => toggleAgent('wolf_prospect_active', wolfActive, setWolfActive, setWolfLoading)} />
                     </div>
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
                 <MetricCard label="Conversion rate" value={`${conversionRate}%`} Icon={TrendingUp} iconColor="text-emerald-500" />
                 
                 {/* Footer Quote */}
-                <footer className="mt-10 pb-6 flex justify-center">
+                <footer className="mt-8 pb-6 flex justify-center">
                     <p className="text-[16px] text-slate-500 font-outfit lowercase tracking-tight opacity-70">
                         some people just like to build things
                     </p>

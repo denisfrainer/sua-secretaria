@@ -15,7 +15,7 @@ const outfit = Outfit({
 const sourceSans = Source_Sans_3({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700", "800", "900"],
-    variable: "--font-source-sans-3",
+    variable: "--font-source-sans",
     display: 'swap',
 });
 

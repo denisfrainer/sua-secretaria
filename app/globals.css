@@ -8,9 +8,26 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-outfit: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
-  --font-source: var(--font-source-sans-3), ui-sans-serif, system-ui, sans-serif;
+  --font-source: var(--font-source-sans), sans-serif;
   --font-system: ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-space-grotesk: var(--font-space-grotesk), system-ui, sans-serif;
+}
+
+/* 
+   ULTRA-STRICT FONT FORCE 
+   Forces every child within these containers to inherit the correct font family, 
+   bypassing any browser or platform defaults for headers, labels, and inputs.
+*/
+.font-source, .font-source * {
+  font-family: var(--font-source-sans), sans-serif !important;
+}
+
+.font-outfit, .font-outfit * {
+  font-family: var(--font-outfit), sans-serif !important;
+}
+
+.font-system, .font-system * {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
 }
 
 :root {

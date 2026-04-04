@@ -358,7 +358,7 @@ export default function ConfigPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4 font-source">
                 <div className="flex flex-col items-center gap-6">
                     <Loader2 size={40} className="animate-spin text-blue-600 opacity-20" />
                     <p className="text-base font-bold text-[#000000] opacity-40">Carregando estúdio...</p>
@@ -375,7 +375,7 @@ export default function ConfigPage() {
                 <div className="w-full max-w-3xl h-full px-4 mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0">
-                            <Scissors size={20} className="text-black/80" />
+                            <Scissors size={20} className="text-black/80 translate-y-[1.5px] relative" />
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-lg font-bold tracking-tight text-black truncate">Contexto do Negócio</h1>
@@ -428,7 +428,7 @@ export default function ConfigPage() {
                     {/* SECTION 1: STUDIO INFO */}
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-                            <Building2 size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <Building2 size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                             <h2 className="text-base font-bold text-black/40">Informações Básicas</h2>
                         </div>
 
@@ -466,7 +466,7 @@ export default function ConfigPage() {
                     {/* SECTION 2: HOURS */}
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-                            <Clock size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <Clock size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                             <h2 className="text-base font-bold text-black/40">Agenda</h2>
                         </div>
 
@@ -503,7 +503,7 @@ export default function ConfigPage() {
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center justify-between border-b border-black/5 pb-3">
                             <div className="flex items-center gap-3">
-                                <Scissors size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                                <Scissors size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                                 <h2 className="text-base font-bold text-black/40">Serviços</h2>
                             </div>
                             <button
@@ -585,7 +585,7 @@ export default function ConfigPage() {
                     {/* SECTION: BOOKING POLICIES */}
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-                            <ShieldAlert size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <ShieldAlert size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                             <h2 className="text-base font-bold text-black/40">Blindagem de Agenda</h2>
                         </div>
                         <div className="flex flex-col gap-5 w-full">
@@ -607,7 +607,7 @@ export default function ConfigPage() {
                     {/* SECTION: PAYMENT INFO */}
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-                            <Wallet size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <Wallet size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                             <h2 className="text-base font-bold text-black/40">Dados de Pagamento (PIX)</h2>
                         </div>
                         <div className="flex flex-col gap-5 w-full">
@@ -637,7 +637,7 @@ export default function ConfigPage() {
                     {/* SECTION: TONE OF VOICE */}
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-                            <Smile size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                            <Smile size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                             <h2 className="text-base font-bold text-black/40">Personalidade da IA</h2>
                         </div>
 
@@ -694,7 +694,7 @@ export default function ConfigPage() {
                     <motion.section variants={itemVariants} className="flex flex-col gap-6 w-full">
                         <div className="flex items-center justify-between border-b border-black/5 pb-3">
                             <div className="flex items-center gap-3">
-                                <MessageCircleQuestion size={22} strokeWidth={1.5} className="text-blue-600 shrink-0" />
+                                <MessageCircleQuestion size={22} strokeWidth={1.5} className="text-blue-600 shrink-0 translate-y-[1.5px] relative" />
                                 <h2 className="text-base font-bold text-black/40">Dúvidas Frequentes (FAQ)</h2>
                             </div>
                             <button
@@ -757,7 +757,7 @@ export default function ConfigPage() {
             </main>
 
             {/* STICKY FOOTER ACTION BUTTON */}
-            <div className="fixed bottom-0 left-0 w-full p-4 pb-8 flex justify-center z-50 pointer-events-none bg-gradient-to-t from-[#fafafa] via-[#fafafa]/80 to-transparent">
+            <div className="fixed bottom-0 left-0 w-full p-4 pb-8 flex justify-center z-50 pointer-events-none bg-gradient-to-t from-[#fafafa] via-[#fafafa]/80 to-transparent font-source">
                 <div className="w-full max-w-3xl pointer-events-auto">
                     <button
                         onClick={() => handleSubmit()}
@@ -782,7 +782,7 @@ export default function ConfigPage() {
 
             {/* ERROR TOAST */}
             {error && (
-                <div className="fixed top-24 left-0 w-full px-4 flex justify-center z-50 pointer-events-none">
+                <div className="fixed top-24 left-0 w-full px-4 flex justify-center z-50 pointer-events-none font-source">
                     <div className="bg-red-50 border border-red-100 text-red-600 rounded-2xl p-4 flex items-center gap-3 shadow-xl max-w-sm w-full pointer-events-auto">
                         <AlertTriangle size={20} className="shrink-0" />
                         <p className="text-sm font-bold truncate flex-1">{error}</p>
@@ -816,7 +816,7 @@ function OperatingHoursRow({
     const safeData = typeof data === 'object' && data !== null ? data : { open: '09:00', close: '18:00', is_closed: false };
 
     return (
-        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full font-source">
             <div className="flex flex-col gap-1">
                 <span className="text-base font-bold text-black/80">{label}</span>
                 <span className="text-sm font-medium text-black/30">
@@ -893,13 +893,13 @@ function StudioInput({
     icon?: React.ReactNode
 }) {
     return (
-        <div className="w-full flex flex-col gap-2">
+        <div className="w-full flex flex-col gap-2 font-source">
             <label className="text-base font-bold text-black/40 ml-1 truncate">
                 {label}
             </label>
             <div className="relative w-full">
                 {icon && (
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 pointer-events-none">
+                    <div className="absolute left-4 top-1/2 -translate-y-[calc(50%-1px)] text-black/30 pointer-events-none">
                         {icon}
                     </div>
                 )}
