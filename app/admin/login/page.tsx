@@ -65,7 +65,7 @@ export default function LoginPage() {
                 <div className="flex flex-col items-center text-center gap-6">
                     <div className="w-16 h-16 rounded-3xl bg-white shadow-xl shadow-zinc-200 border border-zinc-100 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
                         <Image 
-                            src="/assets/logo.png" 
+                            src="/assets/robot.png" 
                             width={40} 
                             height={40} 
                             alt="meatende.ai" 

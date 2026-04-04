@@ -239,7 +239,7 @@ export default function AdminDashboard() {
         return (
             <div className={`h-screen bg-black flex items-center justify-center ${sourceSans3.className}`}>
                 <div className="text-center space-y-5">
-                    <Image src="/assets/logo.png" width={48} height={48} alt="meatende.ai" className="mx-auto opacity-40" />
+                    <Image src="/assets/robot.png" width={48} height={48} alt="meatende.ai" className="mx-auto opacity-40" />
                     <h1 className="text-xl font-medium text-white/80 tracking-tight">Access Denied</h1>
                     <p className="text-sm text-white/30">Valid credentials required.</p>
                 </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
         return (
             <div className={`h-screen bg-black flex items-center justify-center ${sourceSans3.className}`}>
                 <div className="text-center space-y-5">
-                    <Image src="/assets/logo.png" width={40} height={40} alt="meatende.ai" className="mx-auto animate-pulse opacity-30" />
+                    <Image src="/assets/robot.png" width={40} height={40} alt="meatende.ai" className="mx-auto animate-pulse opacity-30" />
                     <p className="text-sm text-white/30 tracking-widest uppercase">Loading...</p>
                 </div>
             </div>
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
             {/* LEFT SIDEBAR */}
             <aside className="w-[70px] border-r border-white/[0.05] flex flex-col items-center py-8 gap-10 shrink-0 bg-[#0A0A0A]">
                 <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] shadow-[0_0_15px_rgba(255,255,255,0.02)]">
-                    <Image src="/assets/logo.png" width={24} height={24} alt="L" />
+                    <Image src="/assets/robot.png" width={24} height={24} alt="L" />
                 </div>
 
                 <nav className="flex flex-col gap-6">
