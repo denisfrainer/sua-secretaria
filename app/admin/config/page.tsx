@@ -555,7 +555,7 @@ export default function ConfigPage() {
                                                         value={service.price}
                                                         onChange={(e) => updateService(index, 'price', e.target.value)}
                                                         placeholder="R$ 0,00"
-                                                        className="w-full bg-transparent border-none p-0 text-lg font-bold text-blue-600 focus:ring-0 placeholder:text-black/20 truncate"
+                                                        className="w-full bg-transparent border-none p-0 text-2xl font-bold text-[#34C759] focus:ring-0 placeholder:text-black/20 truncate"
                                                     />
                                                 </div>
                                                 <div className="flex flex-col gap-1 flex-1 min-w-0 border-l border-black/5 pl-4">

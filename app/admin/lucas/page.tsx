@@ -550,7 +550,7 @@ export default function CabinDashboard() {
                     {/* Price Summary Strip */}
                     <div className="px-6 py-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Exemplo: 3 diárias</span>
-                        <span className="text-sm font-bold text-gray-900">
+                        <span className="text-xl font-bold text-emerald-500">
                             R$ {(basePrice * 3 + cleaningFee).toLocaleString('pt-BR')}
                             <span className="text-xs font-normal text-gray-400 ml-1">total</span>
                         </span>
