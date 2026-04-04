@@ -66,7 +66,10 @@ const DEFAULT_CONFIG: CabinConfig = {
         ical_export_url: '',
     },
     rules: [],
-    faq: [],
+    faq: [
+        { question: 'Tem Wi-Fi?', answer: 'Sim, temos Wi-Fi de alta velocidade disponível gratuitamente em toda a propriedade.' },
+        { question: 'Tem ar condicionado?', answer: 'Sim, a acomodação está equipada com ar condicionado para seu total conforto.' }
+    ],
 };
 
 // ==============================================================
@@ -431,7 +434,7 @@ export default function CabinDashboard() {
                         >
                             <div className={`
                                 relative w-14 h-8 rounded-full transition-colors duration-300 ease-in-out
-                                ${config.ai_active ? 'bg-emerald-500' : 'bg-red-400'}
+                                ${config.ai_active ? 'bg-[#34C759]' : 'bg-[#FF3B30]'}
                             `}>
                                 <motion.div
                                     className="absolute top-0.5 w-7 h-7 rounded-full bg-white shadow-md"
@@ -550,7 +553,7 @@ export default function CabinDashboard() {
                     {/* Price Summary Strip */}
                     <div className="px-6 py-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Exemplo: 3 diárias</span>
-                        <span className="text-xl font-bold text-emerald-500">
+                        <span className="text-xl font-bold text-[#34C759]">
                             R$ {(basePrice * 3 + cleaningFee).toLocaleString('pt-BR')}
                             <span className="text-xs font-normal text-gray-400 ml-1">total</span>
                         </span>
@@ -693,7 +696,7 @@ export default function CabinDashboard() {
                         </LayoutGroup>
 
                         {/* Add Rule */}
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2.5">
                             <input
                                 id="new-rule-input"
                                 type="text"
@@ -701,12 +704,12 @@ export default function CabinDashboard() {
                                 onChange={e => setNewRule(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && addRule()}
                                 placeholder="Nova regra..."
-                                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
+                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                             />
                             <button
                                 onClick={addRule}
                                 disabled={!newRule.trim()}
-                                className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+                                className="w-full px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
                             >
                                 <Plus className="w-4 h-4" />
                                 Adicionar

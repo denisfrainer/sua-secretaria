@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -719,22 +719,21 @@ export default function ConfigPage() {
                                     >
                                         <div className="flex flex-col gap-1 w-full">
                                             <p className="text-sm font-bold text-black/30">Pergunta do Cliente</p>
-                                            <input
+                                            <AutoResizeTextarea
                                                 value={item.question}
-                                                onChange={(e) => updateFaq(index, 'question', e.target.value)}
+                                                onChange={(val) => updateFaq(index, 'question', val)}
                                                 placeholder="Ex: A depilação a laser dói?"
-                                                className="w-full bg-transparent border-none p-0 text-base font-bold text-zinc-800 focus:ring-0 placeholder:text-black/20 transition-colors"
+                                                className="w-full bg-transparent border-none p-0 text-base font-bold text-zinc-800 focus:ring-0 placeholder:text-black/20 whitespace-normal break-words text-wrap transition-all"
                                             />
                                         </div>
 
                                         <div className="flex flex-col gap-1 w-full border-t border-black/5 pt-3">
                                             <p className="text-sm font-bold text-black/30">Como a IA deve responder</p>
-                                            <textarea
-                                                rows={2}
+                                            <AutoResizeTextarea
                                                 value={item.answer}
-                                                onChange={(e) => updateFaq(index, 'answer', e.target.value)}
+                                                onChange={(val) => updateFaq(index, 'answer', val)}
                                                 placeholder="Ex: Utilizamos uma máquina com ponteira resfriada que torna o procedimento praticamente indolor..."
-                                                className="w-full bg-transparent border-none p-0 text-base text-zinc-800 focus:ring-0 placeholder:text-black/20 break-words whitespace-normal text-wrap resize-y transition-colors leading-relaxed"
+                                                className="w-full bg-transparent border-none p-0 text-base text-zinc-800 focus:ring-0 placeholder:text-black/20 break-words whitespace-normal text-wrap resize-none transition-all leading-relaxed overflow-hidden"
                                             />
                                         </div>
 
@@ -816,7 +815,7 @@ function OperatingHoursRow({
     const safeData = typeof data === 'object' && data !== null ? data : { open: '09:00', close: '18:00', is_closed: false };
 
     return (
-        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full font-source">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full font-source">
             <div className="flex flex-col gap-1">
                 <span className="text-base font-bold text-black/80">{label}</span>
                 <span className="text-sm font-medium text-black/30">
@@ -824,9 +823,9 @@ function OperatingHoursRow({
                 </span>
             </div>
 
-            <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3 pr-6 border-r border-black/5">
-                    <span className="text-sm font-bold text-black/30 uppercase tracking-widest">Aberto</span>
+            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
+                <div className="flex items-center gap-3 sm:pr-6 sm:border-r border-black/5">
+                    <span className="text-sm font-bold text-black/30 uppercase tracking-widest leading-none">Aberto</span>
                     <button
                         type="button"
                         onClick={() => {
@@ -835,7 +834,7 @@ function OperatingHoursRow({
                         }}
                         className={`
                             relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none
-                            ${!safeData.is_closed ? 'bg-blue-600' : 'bg-zinc-200'}
+                            ${!safeData.is_closed ? 'bg-[#34C759]' : 'bg-[#FF3B30]'}
                         `}
                     >
                         <div
@@ -847,14 +846,14 @@ function OperatingHoursRow({
                     </button>
                 </div>
 
-                <div className={`flex items-center gap-2 transition-opacity duration-200 ${safeData.is_closed ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+                <div className={`flex items-center gap-1.5 transition-opacity duration-200 ${safeData.is_closed ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
                     <select
                         value={safeData.open}
                         onChange={(e) => {
                             console.log(`🕒 [UI] Select Open Time [${label}]:`, e.target.value);
                             onChange('open', e.target.value);
                         }}
-                        className="bg-zinc-50 border border-black/5 rounded-xl px-3 py-2 text-sm font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer"
+                        className="bg-zinc-50 border border-black/5 rounded-xl px-2 sm:px-3 py-2 text-[16px] font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer min-w-[75px]"
                     >
                         {TIME_OPTIONS.map(time => (
                             <option key={time} value={time}>{time}</option>
@@ -867,7 +866,7 @@ function OperatingHoursRow({
                             console.log(`🕒 [UI] Select Close Time [${label}]:`, e.target.value);
                             onChange('close', e.target.value);
                         }}
-                        className="bg-zinc-50 border border-black/5 rounded-xl px-3 py-2 text-sm font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer"
+                        className="bg-zinc-50 border border-black/5 rounded-xl px-2 sm:px-3 py-2 text-[16px] font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer min-w-[75px]"
                     >
                         {TIME_OPTIONS.map(time => (
                             <option key={time} value={time}>{time}</option>
@@ -916,5 +915,48 @@ function StudioInput({
                 />
             </div>
         </div>
+    );
+}
+
+function AutoResizeTextarea({
+    value,
+    onChange,
+    placeholder,
+    className
+}: {
+    value: string;
+    onChange: (val: string) => void;
+    placeholder?: string;
+    className?: string;
+}) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const adjustHeight = useCallback(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }, []);
+
+    useEffect(() => {
+        adjustHeight();
+        window.addEventListener('resize', adjustHeight);
+        return () => window.removeEventListener('resize', adjustHeight);
+    }, [value, adjustHeight]);
+
+    return (
+        <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => {
+                onChange(e.target.value);
+                adjustHeight();
+            }}
+            placeholder={placeholder}
+            className={className}
+            rows={1}
+            style={{ overflow: 'hidden', resize: 'none' }}
+        />
     );
 }

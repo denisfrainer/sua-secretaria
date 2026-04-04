@@ -39,7 +39,7 @@ function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange:
             aria-checked={enabled}
             initial={false}
             animate={{ 
-                backgroundColor: enabled ? '#10b981' : '#f43f5e',
+                backgroundColor: enabled ? '#34C759' : '#FF3B30',
                 opacity: loading ? 0.6 : 1
             }}
             onClick={() => !loading && onChange()}
@@ -239,9 +239,9 @@ export default function AdminDashboard() {
             <main className="w-full max-w-[420px] px-6 py-4 flex flex-col gap-4 pb-24">
                 {/* ======== STACKED METRIC CARDS (LIGHT MODE) ======== */}
                 <MetricCard label="Contacted today" value={contactedToday} Icon={Mail} iconColor="text-blue-500" />
-                <MetricCard label="Talking" value={talking} Icon={MessageCircle} iconColor="text-indigo-500" />
-                <MetricCard label="Profits" value={closed} Icon={DollarSign} iconColor="text-emerald-500" />
-                <MetricCard label="Conversion rate" value={`${conversionRate}%`} Icon={TrendingUp} iconColor="text-emerald-500" />
+                <MetricCard label="In contact" value={talking} Icon={MessageCircle} iconColor="text-indigo-500" />
+                <MetricCard label="Profits" value={closed} Icon={DollarSign} iconColor="text-[#34C759]" />
+                <MetricCard label="Conversion rate" value={`${conversionRate}%`} Icon={TrendingUp} iconColor="text-[#34C759]" />
                 
                 {/* Footer Quote */}
                 <footer className="mt-8 pb-6 flex justify-center">
