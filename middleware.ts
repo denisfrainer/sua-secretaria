@@ -27,7 +27,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Do NOT use getSession(). Use getUser() to validate the token securely.
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname;

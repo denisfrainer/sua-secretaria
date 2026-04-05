@@ -435,8 +435,7 @@ ${businessContext}
 ${dynamicInstruction}
 `;
 
-        // 👑 ADICIONE ESTE BLOCO LOGO ABAIXO DA STRING ACIMA 👑
-        const ownerPhone = process.env.OWNER_PHONE || '554899999999'; // Substitua pelo seu número como fallback de segurança
+        const ownerPhone = normalizePhone(process.env.OWNER_PHONE || '554899999999'); 
 
         if (clientNumber === ownerPhone) {
             console.log(`👑 [ROUTING] Número do chefe detectado (${clientNumber}). Desativando modo Eliza. Ativando Admin Mode.`);
@@ -760,12 +759,15 @@ http.createServer((req, res) => {
                     clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
                 }
 
+                const ownerPhone = normalizePhone(process.env.OWNER_PHONE || '554899999999');
+                const isOwner = clientNumber === ownerPhone;
+
                 if (clientMessage && clientMessage.trim().length > 0) {
                     // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
                     // ==============================================================
                     // 🛡️ A TRAVA GOD TIER (SILENT HANDOFF & FOGO AMIGO)
                     // ==============================================================
-                    if (isFromMe) {
+                    if (isFromMe || isOwner) {
                         // Verifica se a mensagem foi enviada pelo próprio sistema (Eliza) via API
                         const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
 
@@ -773,8 +775,7 @@ http.createServer((req, res) => {
                             // É a Eliza respondendo. Ignoramos para não criar loop.
                             return;
                         } else {
-                            // É VOCÊ (Denis/Humano) digitando diretamente no WhatsApp ou WhatsApp Web.
-                            let clientMessage = messageObj?.conversation || messageObj?.extendedTextMessage?.text || '';
+                            // É VOCÊ (Denis/Humano) digitando diretamente no WhatsApp ou pelo OWNER_PHONE.
                             const cmd = clientMessage.trim();
 
                             if (cmd === '/pausar') {
@@ -788,7 +789,7 @@ http.createServer((req, res) => {
                             }
 
                             // SILENT HANDOFF: Se você digitou qualquer outra coisa, trava a IA para este lead permanentemente.
-                            console.log(`🛡️[FOGO AMIGO] Denis assumiu o controle.Travando a IA para o lead ${clientNumber}.`);
+                            console.log(`🛡️[FOGO AMIGO] Denis assumiu o controle via ${isOwner ? 'OWNER_PHONE' : 'DIRECT'}. Travando a IA para o lead ${clientNumber}.`);
                             await supabaseAdmin.from('leads_lobo').update({
                                 needs_human: true,
                                 ai_paused: true,
@@ -883,16 +884,21 @@ http.createServer((req, res) => {
                         }
 
                         // --- BRANCH B: AI AGENT ---
-                        if (instanceName === 'demo-agente') {
-                            console.log(`🚦 [ROUTER] Branch B: AI Agent acionado para ${clientNumber}`);
+                        // Dynamic Routing: Any instance that is NOT the static menu is routed to the AI Agent
+                        if (instanceName !== 'demo-menu') {
+                            console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
                             const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
                             if (elizaSwitch && elizaSwitch.value?.enabled === false) {
                                 await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                                 return;
                             }
 
-                            await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
-                            console.log(`🎯[WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'.Worker assumindo.`);
+                            await supabaseAdmin.from('leads_lobo').update({ 
+                                status: 'eliza_processing',
+                                instance_name: instanceName // Synchronize instance name
+                            }).eq('phone', clientNumber);
+                            
+                            console.log(`🎯 [WEBHOOK] Status of ${clientNumber} set to 'eliza_processing'.`);
                         }
                     }
                 }
