@@ -13,15 +13,31 @@ export async function GET(request: Request) {
   }
 
   try {
+    const supabase = await createClient();
+
+    // 1. Double-fire protection: Fast-path if session already established
+    const { data: { session: initialSession } } = await supabase.auth.getSession();
+    if (initialSession) {
+      console.log(`✅ [AUTH CALLBACK] Session already active. Bypassing code exchange. Redirecting to dashboard.`);
+      return NextResponse.redirect(`${origin}/dashboard`);
+    }
+
     console.log(`🔄 [AUTH CALLBACK] Received OAuth code. Exchanging for session...`);
     
-    const supabase = await createClient();
-    
-    // Exchange the authorization code for a session
+    // 2. Exchange the authorization code for a session
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (error) {
       console.error(`❌ [AUTH CALLBACK] Supabase exchangeCodeForSession error:`, error.message);
+      
+      // 3. Graceful Error Handling: Check if parallel request just succeeded milliseconds ago
+      const { data: { session: fallbackSession } } = await supabase.auth.getSession();
+      
+      if (fallbackSession) {
+         console.log(`⚠️ [AUTH CALLBACK] Exchange failed with PKCE error, BUT session is active (Race condition averted).`);
+         return NextResponse.redirect(`${origin}/dashboard`);
+      }
+      
       return NextResponse.redirect(`${origin}?error=${encodeURIComponent(error.message)}`);
     }
 
