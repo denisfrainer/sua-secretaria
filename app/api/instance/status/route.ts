@@ -57,7 +57,15 @@ export async function GET(request: Request) {
         const qrData = await qrRes.json();
         // Evolution v2 returns 'base64' for QR and 'code' for pairing
         qrCodeBase64 = qrData?.base64 || null; 
-        pairingCode = qrData?.code || null;
+        
+        // HARDENED EXTRACTION: Strictly grab 'code' and validate length
+        const rawCode = qrData?.code || null;
+        if (rawCode && rawCode.length <= 10) {
+            pairingCode = rawCode;
+            console.log(`✅ [API STATUS] Valid pairing code extracted: ${pairingCode}`);
+        } else if (rawCode) {
+            console.warn(`⚠️ [API STATUS] Received long hash instead of pairing code: ${rawCode.substring(0, 10)}...`);
+        }
       } else {
         const errorData = await qrRes.text();
         console.warn(`⚠️ [API STATUS] Evolution connect failed:`, errorData);
@@ -69,7 +77,7 @@ export async function GET(request: Request) {
       instance: instanceName,
       state: currentState,
       qr: qrCodeBase64,
-      pairingCode: pairingCode, // Expected to be 8 characters
+      pairingCode: pairingCode, // Strictly <= 10 characters
     });
 
   } catch (error: any) {

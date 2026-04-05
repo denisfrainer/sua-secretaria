@@ -185,9 +185,9 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                                     <div className="flex flex-col items-center gap-3">
                                         <span className="text-xs font-extrabold uppercase tracking-[0.2em] opacity-60">Código de Pareamento</span>
                                         <div className="text-5xl font-black tracking-widest font-mono drop-shadow-sm select-all">
-                                            {pairingCode.length >= 8 
+                                            {pairingCode && pairingCode.length <= 10 
                                                 ? `${pairingCode.slice(0, 4)}-${pairingCode.slice(4, 8)}` 
-                                                : pairingCode}
+                                                : "ERRO: Tente novamente"}
                                         </div>
                                     </div>
                                     <p className="text-center text-[13px] font-bold opacity-80 leading-snug px-2">
