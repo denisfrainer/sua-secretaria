@@ -1,0 +1,76 @@
+import { redirect } from 'next/navigation';
+import Image from 'next/image';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function LoginPage() {
+    // Server-side check to prevent logged-in users from seeing the login page
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+        redirect('/dashboard');
+    }
+
+    return (
+        <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 antialiased selection:bg-indigo-100 font-outfit">
+            <div className="w-full max-w-sm flex flex-col gap-10">
+                {/* BRAND HEADER */}
+                <div className="flex flex-col items-center text-center gap-6">
+                    <div className="w-16 h-16 rounded-3xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+                        <Image 
+                            src="/assets/robot.png" 
+                            width={40} 
+                            height={40} 
+                            alt="meatende.ai" 
+                            className="object-contain"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                            Welcome back
+                        </h1>
+                        <p className="text-base font-medium text-slate-500">
+                            Acesse a sua conta para continuar
+                        </p>
+                    </div>
+                </div>
+
+                {/* LOGIN FORM CARD */}
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100/60">
+                    <div className="flex flex-col gap-6">
+                        <div className="w-full">
+                            <GoogleLoginButton />
+                        </div>
+                        
+                        <div className="relative flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-slate-100"></div>
+                            </div>
+                            <div className="relative bg-white px-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+                                OR EMAIL
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-5">
+                            <div className="group relative">
+                                <input
+                                    type="email"
+                                    disabled
+                                    className="w-full bg-slate-50/50 border border-slate-100 rounded-2xl py-4 px-4 text-base font-medium text-slate-700 cursor-not-allowed placeholder:text-slate-400"
+                                    placeholder="seu@email.com (Em breve)"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-2 text-center opacity-40 mt-4">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                        meatende.ai &copy; {new Date().getFullYear()}
+                    </p>
+                </div>
+            </div>
+        </main>
+    );
+}

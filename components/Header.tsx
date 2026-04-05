@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import GoogleLoginButton from '@/components/GoogleLoginButton';
+import Link from 'next/link';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,14 +61,19 @@ export function Header() {
               <div className="h-4 w-px bg-slate-200"></div>
               
               {isLoggedIn ? (
-                <a
+                <Link
                   href="/dashboard"
                   className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
                   Ir para Painel
-                </a>
+                </Link>
               ) : (
-                <GoogleLoginButton text="Entrar" variant="navbar" />
+                <Link 
+                  href="/login" 
+                  className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors"
+                >
+                  Entrar
+                </Link>
               )}
 
               <a
@@ -83,7 +88,12 @@ export function Header() {
             <div className="md:hidden flex items-center gap-3">
               {!isLoggedIn && (
                  <div className="mr-2">
-                   <GoogleLoginButton text="Entrar" variant="navbar" />
+                   <Link 
+                     href="/login" 
+                     className="text-sm font-bold text-slate-700 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-50"
+                   >
+                     Entrar
+                   </Link>
                  </div>
               )}
               <button
@@ -128,13 +138,13 @@ export function Header() {
             </a>
           ))}
           {isLoggedIn && (
-            <a
+            <Link
               href="/dashboard"
               onClick={() => setIsMenuOpen(false)}
               className="block text-sm py-2 px-2 rounded-lg font-bold text-indigo-600 hover:bg-slate-50 transition-all"
             >
               Ir para Painel
-            </a>
+            </Link>
           )}
           <div className="my-2 border-t border-slate-100"></div>
           <a

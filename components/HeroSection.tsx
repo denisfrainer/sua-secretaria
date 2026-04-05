@@ -17,7 +17,7 @@ export function HeroSection() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setIsLoggedIn(!!user);
     });
-    
+
     // Listen for auth changes to instantly swap CTAs
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session);
@@ -36,7 +36,7 @@ export function HeroSection() {
           className="flex flex-col gap-6 items-center"
         >
           <h1 className={`${inter.className} text-[32px] font-extrabold leading-[1.05] tracking-tight text-black max-w-4xl`}>
-            Sua secretária digital que atende o WhatsApp igual um ser humano e faz agendamentos automáticos 24/7.
+            Sua secretária que atende o WhatsApp com linguagem natural e faz agendamentos automáticos 24/7.
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
             Feito para quem trabalha com as mãos e não pode parar para responder o celular. A <strong className="font-semibold text-black">meatende.ai</strong> conversa com seus clientes como uma pessoa real, tira dúvidas e lota sua agenda no automático.

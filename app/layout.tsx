@@ -68,10 +68,8 @@ export default function RootLayout({
             </head>
             <body
                 className={cn(
-                    "antialiased bg-white text-black",
-                    outfit.variable,
-                    sourceSans.variable,
-                    spaceGrotesk.variable
+                    "antialiased bg-white text-black font-outfit",
+                    outfit.variable
                 )}
             >
                 <PwaRegistry />
