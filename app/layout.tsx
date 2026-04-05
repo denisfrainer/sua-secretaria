@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Source_Sans_3, Space_Grotesk } from "next/font/google";
+import { Inter, Source_Sans_3 } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
 import PwaRegistry from './components/PwaRegistry';
 
-const outfit = Outfit({
+const inter = Inter({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700", "800", "900"],
-    variable: "--font-outfit",
+    variable: "--font-inter",
     display: 'swap',
 });
 
@@ -19,12 +19,7 @@ const sourceSans = Source_Sans_3({
     display: 'swap',
 });
 
-const spaceGrotesk = Space_Grotesk({
-    subsets: ["latin"],
-    weight: ["400", "500", "600", "700"],
-    variable: "--font-space-grotesk",
-    display: 'swap',
-});
+
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://meatendeai.netlify.app'),
@@ -68,8 +63,9 @@ export default function RootLayout({
             </head>
             <body
                 className={cn(
-                    "antialiased bg-white text-black font-outfit",
-                    outfit.variable
+                    "antialiased bg-white text-black font-source",
+                    inter.variable,
+                    sourceSans.variable
                 )}
             >
                 <PwaRegistry />
