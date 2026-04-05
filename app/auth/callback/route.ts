@@ -1,31 +1,47 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server'; // Ensure this uses @supabase/ssr
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard'; // Assume onboarding/dashboard is the next step
+  const next = searchParams.get('next') ?? '/dashboard';
 
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=no_code`);
   }
 
-  const supabase = await createClient();
+  const cookieStore = await cookies();
+  
+  // Explicitly instantiating the client to FORCE cookie injection
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+        },
+      },
+    }
+  );
 
-  // Attempt the exchange
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   
   if (error) {
-    console.warn(`⚠️ [AUTH CALLBACK] Code exchange failed (likely Next.js double-fire): ${error.message}`);
-    // SILICON TWEAK: FAIL FORWARD
-    // Ignore the PKCE error and redirect to the protected route anyway.
-    // If the parallel Request A succeeded, the browser has the cookie and the Dashboard will load.
-    // If it's a genuine failure, the Dashboard's layout/middleware will safely kick them back to login.
-    return NextResponse.redirect(`${origin}${next}`);
+    console.warn(`⚠️ [AUTH CALLBACK] Fail Forward triggered: ${error.message}`);
+  } else {
+    console.log("✅ [AUTH CALLBACK] Session verified and Cookies SET.");
   }
 
-  console.log("✅ [AUTH CALLBACK] Session successfully created. Redirecting.");
+  // The browser now physically has the session cookies. Middleware will allow passage.
   return NextResponse.redirect(`${origin}${next}`);
 }
