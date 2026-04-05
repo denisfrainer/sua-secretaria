@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Mail, Lock, Loader2, AlertCircle, ChevronRight } from 'lucide-react';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
 
 /**
  * LoginPage: Admin Authentication
@@ -20,8 +21,21 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [codeProcessing, setCodeProcessing] = useState(false);
     const supabase = createClient();
     const router = useRouter();
+
+    useEffect(() => {
+        // "Ghost" Auto-Login: Catch any stranded Google OAuth codes 
+        // and aggressively route them to the callback handler.
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (code) {
+            console.log('🔄 [AUTH] Google OAuth code detected on login page. Rerouting to callback...');
+            setCodeProcessing(true);
+            router.push(`/auth/callback?code=${code}`);
+        }
+    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,7 +73,7 @@ export default function LoginPage() {
 
     return (
         <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 font-source antialiased selection:bg-blue-100">
-            <div className="w-full max-w-sm flex flex-col gap-12">
+            <div className="w-full max-w-sm flex flex-col gap-10">
                 
                 {/* BRAND HEADER */}
                 <div className="flex flex-col items-center text-center gap-6">
@@ -83,8 +97,29 @@ export default function LoginPage() {
                 </div>
 
                 {/* LOGIN FORM CARD */}
-                <div className="bg-[#fafafa] rounded-[40px] p-8 border border-zinc-100 shadow-sm">
-                    <form onSubmit={handleLogin} className="flex flex-col gap-8">
+                <div className="bg-[#fafafa] rounded-[32px] p-8 border border-zinc-100 shadow-sm">
+                    {codeProcessing ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4">
+                            <Loader2 className="animate-spin text-blue-600" size={32} />
+                            <p className="text-zinc-500 font-medium text-sm">Autenticando sessão segura...</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-6">
+                            
+                            <div className="w-full">
+                                <GoogleLoginButton />
+                            </div>
+
+                            <div className="relative flex items-center justify-center">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-zinc-200"></div>
+                                </div>
+                                <div className="relative bg-[#fafafa] px-4 text-xs font-bold uppercase tracking-widest text-zinc-400">
+                                    ou admin
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleLogin} className="flex flex-col gap-6">
                         
                         {error && (
                             <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm animate-in slide-in-from-top-2 duration-300">
@@ -141,18 +176,19 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-16 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:grayscale overflow-hidden relative group"
+                            className="w-full px-4 py-2 bg-slate-900 text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:bg-slate-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 flex items-center justify-center gap-2 disabled:opacity-70 disabled:grayscale"
                         >
                             {loading ? (
-                                <Loader2 className="animate-spin" size={24} />
+                                <Loader2 className="animate-spin" size={20} />
                             ) : (
                                 <>
-                                    <span className="text-base font-extrabold tracking-wide uppercase">Acessar Painel</span>
-                                    <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <span>Acessar Painel</span>
                                 </>
                             )}
                         </button>
                     </form>
+                    </div>
+                )}
                 </div>
 
                 <div className="flex flex-col items-center gap-2 text-center opacity-40">

@@ -33,18 +33,16 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-8 w-full"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 w-full sm:w-auto sm:min-w-[400px] mx-auto"
           >
             <a
               href="#precos"
-              className="bg-blue-600 text-white font-bold text-lg px-12 py-5 rounded-2xl shadow-xl hover:bg-blue-700 transition-colors w-full sm:w-auto min-w-[280px] text-center"
+              className="flex items-center justify-center w-full sm:w-1/2 px-4 py-2 bg-slate-900 text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:bg-slate-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900"
             >
               Contratar Agora
             </a>
-            <div className="w-full sm:w-auto min-w-[280px] h-full flex items-center">
-              <div className="w-full">
-                <GoogleLoginButton />
-              </div>
+            <div className="w-full sm:w-1/2">
+              <GoogleLoginButton />
             </div>
           </motion.div>
         </motion.div>
