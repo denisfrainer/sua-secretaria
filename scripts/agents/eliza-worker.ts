@@ -63,29 +63,29 @@ const functionDeclarations: any[] = [
         },
     },
     {
-        name: 'check_cabin_availability',
-        description: 'Verifica se a cabana está livre para um período de datas.',
+        name: 'check_calendar_availability',
+        description: 'Verifica os horários ocupados na agenda para uma data específica.',
         parameters: {
             type: 'OBJECT',
             properties: {
-                check_in: { type: 'STRING', description: 'Data de entrada no formato YYYY-MM-DD' },
-                check_out: { type: 'STRING', description: 'Data de saída no formato YYYY-MM-DD' }
+                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
             },
-            required: ['check_in', 'check_out'],
+            required: ['date'],
         },
     },
     {
-        name: 'schedule_cabin_reservation',
-        description: 'Bloqueia o calendário e agenda a cabana.',
+        name: 'schedule_appointment',
+        description: 'Agenda um compromisso na agenda do cliente.',
         parameters: {
             type: 'OBJECT',
             properties: {
-                check_in: { type: 'STRING', description: 'Data de entrada YYYY-MM-DD' },
-                check_out: { type: 'STRING', description: 'Data de saída YYYY-MM-DD' },
-                client_name: { type: 'STRING', description: 'Nome do hóspede' },
-                guest_count: { type: 'NUMBER', description: 'Número total de pessoas' }
+                date: { type: 'STRING', description: 'Data no formato YYYY-MM-DD' },
+                time: { type: 'STRING', description: 'Hora no formato HH:MM' },
+                client_name: { type: 'STRING', description: 'Nome do lead' },
+                service_type: { type: 'STRING', description: 'Assunto ou tipo de serviço' },
+                duration_minutes: { type: 'NUMBER', description: 'Duração exata do serviço em minutos (ex: 30, 60, 120)' }
             },
-            required: ['check_in', 'check_out', 'client_name', 'guest_count'],
+            required: ['date', 'time', 'client_name', 'service_type', 'duration_minutes'],
         },
     },
     {
@@ -155,66 +155,94 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         }
     }
 
-    if (name === 'check_cabin_availability') {
-        console.log(`\n================= 🏖️ CONSOLE.GOD (CABIN CHECK) 🏖️ =================`);
-        console.log(`📅 [API] Verificando cabana: ${args.check_in} até ${args.check_out}`);
+    if (name === 'check_calendar_availability') {
+        console.log(`\n================= 👁️ CONSOLE.GOD (CALENDAR CHECK) 👁️ =================`);
+        console.log(`📅 Leitura de agenda acionada para a data: ${args.date}`);
 
         try {
-            const timeMin = new Date(`${args.check_in}T14:00:00-03:00`).toISOString();
-            const timeMax = new Date(`${args.check_out}T12:00:00-03:00`).toISOString();
+            // Ajuste: Permite definir o ID da agenda via variável de ambiente. 
+            // Se usar 'primary', certifique-se de que o evento de teste foi criado na agenda da conta autenticada.
+            const targetCalendarId = process.env.GOOGLE_CALENDAR_ID || 'denisfrainer93@gmail.com';
 
-            const response = await calendar.events.list({
-                calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
-                timeMin: timeMin,
-                timeMax: timeMax,
-                singleEvents: true,
+            const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
+            const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
+
+            const requestParams = {
+                calendarId: targetCalendarId,
+                timeMin: startOfDay.toISOString(),
+                timeMax: endOfDay.toISOString(),
+                singleEvents: true, // CRÍTICO: Garante o retorno de todos os eventos expandidos
                 orderBy: 'startTime'
-            });
+            };
+
+            console.log(`➡️ Payload da requisição enviada ao Google:`, JSON.stringify(requestParams, null, 2));
+
+            const response = await calendar.events.list(requestParams);
 
             const events = response.data.items || [];
-            console.log(`⬅️ [API] Retornou ${events.length} eventos conflitantes.`);
+
+            console.log(`⬅️ Payload recebido do Google (Total itens encontrados: ${events.length})`);
 
             if (events.length > 0) {
-                events.forEach((ev: any) => console.log(`   - Bloqueio: ${ev.summary} (${ev.start?.dateTime || ev.start?.date})`));
-                return { 
-                    status: 'unavailable', 
-                    message: `As datas de ${args.check_in} a ${args.check_out} já estão ocupadas. Peça para o cliente sugerir novas datas.` 
-                };
+                events.forEach((ev: any) => console.log(`   - Evento: ${ev.summary} | Início: ${ev.start?.dateTime}`));
+            } else {
+                console.log(`   - Nenhum evento retornado pelo Google. A lista está vazia.`);
+                console.log(`   - ATENÇÃO: Se existe evento nesta data, o erro é de permissão/compartilhamento do Calendar ID.`);
             }
+            console.log(`=======================================================================\n`);
 
-            return { 
-                status: 'available', 
-                message: `Período livre. Informe as regras, o valor total e peça o NOME COMPLETO e a QUANTIDADE DE PESSOAS para reservar.` 
+            const busySlots = events.map((ev: any) => {
+                if (ev.start?.dateTime) {
+                    return new Date(ev.start.dateTime).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+                    });
+                }
+                return 'Hora indefinida';
+            });
+
+            return {
+                status: 'success',
+                date: args.date,
+                busy_slots: busySlots.length > 0 ? busySlots : 'Nenhum horário ocupado.',
+                message: busySlots.length > 0
+                    ? `Estes horários já estão OCUPADOS: ${busySlots.join(', ')}. Não agende neles.`
+                    : `Agenda 100% livre. Ofereça o horário solicitado.`
             };
+
         } catch (err: any) {
             console.error("❌ [CALENDAR ERROR]:", err.message);
-            return { status: 'error', message: 'Falha na API do Calendar.' };
+            return { status: 'error', message: 'Falha ao consultar a API do Google Calendar.' };
         }
     }
 
-    if (name === 'schedule_cabin_reservation') {
-        console.log(`\n================= 📝 CONSOLE.GOD (CABIN BOOKING) 📝 =================`);
-        console.log(`📅 [API] Reservando para ${args.client_name} (${args.guest_count} pax)`);
-
+    if (name === 'schedule_appointment') {
+        console.log(`📅 [CALENDAR] Iniciando agendamento para ${args.client_name}`);
         try {
-            const startTime = new Date(`${args.check_in}T14:00:00-03:00`);
-            const endTime = new Date(`${args.check_out}T12:00:00-03:00`);
-            
+            const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
+
+            // Extract duration from args or default to 60 minutes
+            const durationInMinutes = args.duration_minutes ? Number(args.duration_minutes) : 60;
+
+            // Calculate end time based on actual service duration
+            const endTime = new Date(startTime.getTime() + (durationInMinutes * 60 * 1000));
+
+            console.log(`➡️ [API REQUEST] Event: ${startTime.toISOString()} to ${endTime.toISOString()} (Duration: ${durationInMinutes}m)`);
+
             await calendar.events.insert({
-                calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
+                calendarId: process.env.GOOGLE_CALENDAR_ID || 'denisfrainer93@gmail.com',
                 requestBody: {
-                    summary: `[RESERVA] ${args.client_name}`,
-                    description: `Hóspedes: ${args.guest_count}\nTelefone: ${clientPhone}\nOrigem: IA WhatsApp`,
+                    summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
+                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}\nDuração Padrão: ${durationInMinutes}m`,
                     start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                     end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
-                    colorId: '5'
                 }
             });
 
-            console.log(`✅ [CALENDAR] Reserva efetuada com sucesso.`);
+            console.log(`✅ [CALENDAR] Sucesso! Evento criado.`);
             return {
                 status: 'success',
-                message: 'Reserva confirmada. Envie a chave PIX e informe que o pagamento de 50% garante a data.'
+                message: 'Horário reservado com sucesso no calendário.',
+                instructions: 'Confirme para o cliente que o agendamento está finalizado e pronto.'
             };
         } catch (err: any) {
             console.error("❌ [CALENDAR EXCEPTION]:", err.message);
@@ -225,7 +253,33 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
     return { status: 'error', message: 'Tool execution skipped or not found. Please continue the conversation using standard text.' };
 }
 
+async function analyzeReceiptWithGemini(base64Data: string, clientPhone: string) {
+    console.log(`📸 [VISION] Analisando comprovante de ${clientPhone}...`);
 
+    try {
+        // Certifique-se de que a variável 'ai' está definida globalmente no topo do arquivo
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: "Analyze this PIX transfer receipt. You must extract the exact transfer amount. Ignore account balances. Return STRICTLY a valid JSON with no markdown formatting: { \"is_valid_pix\": boolean, \"amount\": number, \"receiver\": \"string\" }. If the amount is R$ 499,00, output 499.00." },
+                    { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
+                ]
+            }]
+        });
+
+        // No SDK @google/genai, .text é uma propriedade
+        const responseText = result.text || "";
+
+        const cleanedJson = responseText.replace(/```json|```/g, "").trim();
+        return JSON.parse(cleanedJson);
+
+    } catch (error) {
+        console.error("❌ [VISION ERROR]:", error);
+        return { is_valid_pix: false, error: "Falha no processamento da imagem" };
+    }
+}
 
 async function transcribeAudioWithGemini(base64Audio: string, mimeType: string): Promise<string> {
     console.log(`🎙️ [VOICE] Transcrevendo com Gemini 2.5 Flash...`);
@@ -267,12 +321,12 @@ async function processLead(lead: any) {
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
         // 2. Load context and history
-        console.log(`📡 [DB] Fetching updated business_context for Cabin (id: 2)...`);
+        console.log(`📡 [DB] Buscando business_context atualizado no Supabase...`);
 
         const { data: configData, error: configError } = await supabaseAdmin
             .from('business_config')
             .select('context_json')
-            .eq('id', 2)
+            .eq('id', 1)
             .single();
 
         let businessContext = "";
@@ -341,7 +395,7 @@ async function processLead(lead: any) {
         const toneRules = configData?.context_json?.tone_of_voice?.custom_instructions || 'Responda de forma natural.';
 
         let systemInstruction = `# 1. IDENTITY & CORE MISSION
-You are Eliza, an AI Virtual Concierge for a vacation rental cabin. Your ONLY purpose is to inform prices, check calendar availability, and schedule reservations.
+You are Eliza, an AI Virtual Receptionist for a beauty clinic/salon. Your ONLY purpose is to inform prices, check calendar availability, and schedule appointments.
 CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVELY IN NATURAL BRAZILIAN PORTUGUESE (PT-BR). 
 
 # 1.1 TONE OF VOICE & PERSONALITY
@@ -350,22 +404,28 @@ CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVE
 
 # 2. STRICT RULES & GUARDRAILS (RAIL MODE)
 - ENTRY POINT: Greetings ("Olá", "Bom dia") are engagement triggers. Respond cordially, introduce yourself as Eliza, the virtual assistant of [NOME DA EMPRESA], and ask how you can help, immediately guiding them to STEP 1.
-- CONSTRAINT 1 (NO CHITCHAT): You are a concierge, not a friend. Beyond the initial greeting, do not make open-ended conversation. Keep the flow moving to the reservation.
+- CONSTRAINT 1 (NO CHITCHAT): You are a receptionist, not a friend. Beyond the initial greeting, do not make open-ended conversation. Keep the flow moving to the calendar.
 - CONSTRAINT 2 (SHORT ANSWERS): Your responses must be extremely concise. Maximum of 2 text bubbles per interaction. Maximum of 20 words per bubble. Use the "||" separator to split distinct ideas.
-- CONSTRAINT 3 (NO HALLUCINATIONS): Base prices, rules, and availability STRICTLY on the "BUSINESS CONTEXT". If a user asks for something not listed, DO NOT invent it.
+- CONSTRAINT 3 (NO HALLUCINATIONS): Base prices, services, and rules STRICTLY on the "BUSINESS CONTEXT". If a user asks for a service or price not listed, DO NOT invent it.
 - CONSTRAINT 4 (ESCAPE HATCH - HANDOFF RESTRICTED): The 'notify_human_specialist' tool must be your LAST option. ONLY execute it if: (1) The client insists on off-topic subjects after 2 attempts to return to the booking funnel. (2) The client explicitly asks to speak with a human. (3) A critical technical error occurs. NEVER classify a greeting as urgency "medium" or "high". If triggered, say EXACTLY: "Vou pedir para a especialista responsável te ajudar com isso, só um momento." followed by "[HANDOFF_TRIGGERED]".
 
 # 3. THE LINEAR BOOKING FUNNEL
 You must force the user down this exact path. Do not skip steps unless the user explicitly provides the information upfront.
 
-## STEP 1: DATE COLLECTION
-Ask the user for their exact check-in and check-out dates.
+## STEP 1: SERVICE CONFIRMATION
+Identify which service the user wants. If they don't specify, ask directly based ONLY on the services listed in the BUSINESS CONTEXT. Do not invent examples. Once identified, state the price explicitly.
 
 ## STEP 2: CALENDAR CHECK
-Once you have both dates, execute the 'check_cabin_availability' tool. If available, inform them of the total price based on the BUSINESS CONTEXT rules (daily rate + cleaning fee) and ask for their full name and number of guests.
+Ask the user for their preferred date (e.g., "Para qual dia?").
+Once you have the date, YOU MUST call the 'check_calendar_availability' tool. 
+After receiving the available/busy slots, offer the user a maximum of TWO available time slots. (e.g., "Tenho horário livre às 14h ou às 16h. Qual fica melhor?").
 
-## STEP 3: RESERVATION
-ONLY AFTER the user provides their name and guest count, execute the 'schedule_cabin_reservation' tool. Never confirm the reservation textually before the tool returns a success status.
+## STEP 3: DATA COLLECTION AND EXECUTION
+- GOLDEN RULE: You MUST NEVER confirm an appointment textually before successfully executing the 'schedule_appointment' tool.
+- When the client chooses an available time slot, ask ONLY for their full name.
+- Do not state that the time is confirmed at this stage. Simply say: "Alright. To book this on the calendar, what is your full name?".
+- ONLY AFTER the client provides their name, execute the 'schedule_appointment' tool, filling in all required parameters: date, time, service_type, and client_name.
+- After the tool executes successfully and returns a positive response, inform the client that their appointment has been confirmed.
 
 # 4. BUSINESS CONTEXT
 Use STRICTLY the following information to answer business-related questions:
@@ -691,10 +751,6 @@ http.createServer((req, res) => {
                     } catch (error: any) {
                         console.error(`❌[DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message} `);
                     }
-                }
-
-                if (messageObj.imageMessage) {
-                    console.log('🖼️ [WEBHOOK] Image received but ignored. Delegating payment to gateway.');
                 }
 
                 if (!clientMessage) {
