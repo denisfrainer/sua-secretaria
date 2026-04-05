@@ -8,8 +8,8 @@ import {
     Save, Plus, Trash2, LogOut, Sparkles,
     Building2, Clock, ListChecks,
     CheckCircle2, AlertTriangle, Loader2, Scissors,
-    MapPin, ParkingCircle, Smile, Power, Wallet, ShieldAlert,
-    MessageCircleQuestion
+    MapPin, ParkingCircle, Smile, Wallet, ShieldAlert,
+    MessageCircleQuestion, ArrowLeft
 } from 'lucide-react';
 
 // ==============================================================
@@ -30,6 +30,7 @@ interface FAQItem {
 
 interface BusinessConfig {
     id: number;
+    owner_id: string;
     context_json: {
         business_info: {
             name: string;
@@ -85,7 +86,7 @@ const itemVariants = {
 // MAIN COMPONENT
 // ==============================================================
 
-export default function ConfigPage() {
+export default function SettingsPage() {
     const supabase = createClient();
     const router = useRouter();
 
@@ -100,25 +101,30 @@ export default function ConfigPage() {
 
     // FETCH DATA
     const fetchData = async () => {
-        console.log(`📡 [API] Fetching business_config and system_settings...`);
+        console.log(`📡 [SETTINGS] Fetching business_config and system_settings...`);
         setLoading(true);
 
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            router.push('/admin/login');
+            return;
+        }
+
         const [configRes, settingsRes] = await Promise.all([
-            supabase.from('business_config').select('*').eq('id', 1).single(),
+            supabase.from('business_config').select('*').eq('owner_id', session.user.id).single(),
             supabase.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle()
         ]);
 
         if (configRes.error) {
-            console.error(`❌ [API ERROR] Config fetch failed:`, configRes.error);
-            setError('Falha ao sincronizar dados do estúdio.');
+            console.error(`❌ [SETTINGS ERROR] Config fetch failed:`, configRes.error);
+            setError('Falha ao sincronizar dados do seu negócio.');
         } else {
-            console.log(`✅ [API] Config loaded:`, configRes.data);
+            console.log(`✅ [SETTINGS] Config loaded for user:`, session.user.id);
             setConfig(configRes.data);
         }
 
         if (settingsRes.data) {
             const enabled = (settingsRes.data.value as any)?.enabled;
-            console.log(`✅ [API] AI Status loaded:`, enabled);
             setIsAiActive(enabled ?? true);
         }
 
@@ -127,7 +133,6 @@ export default function ConfigPage() {
 
     // Kill Switch Toggle Function
     const toggleAiStatus = async () => {
-        console.log(`🔄 [STATE] Toggling AI status. Current: ${isAiActive}`);
         setTogglingAi(true);
         const newState = !isAiActive;
 
@@ -135,10 +140,7 @@ export default function ConfigPage() {
             .from('system_settings')
             .upsert({ key: 'eliza_active', value: { enabled: newState } });
 
-        if (error) {
-            console.error(`❌ [API ERROR] Failed to toggle AI:`, error);
-        } else {
-            console.log(`✅ [API] AI status successfully set to: ${newState}`);
+        if (!error) {
             setIsAiActive(newState);
         }
         setTogglingAi(false);
@@ -150,7 +152,6 @@ export default function ConfigPage() {
 
     // LOGOUT
     const handleLogout = async () => {
-        console.log(`🔐 [AUTH] Executing logout...`);
         await supabase.auth.signOut();
         router.refresh();
         router.push('/admin/login');
@@ -159,7 +160,6 @@ export default function ConfigPage() {
     // UPDATE STATE HELPERS
     const updateBusinessInfo = (field: string, value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating business_info field [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
@@ -174,7 +174,6 @@ export default function ConfigPage() {
 
     const updateOperatingHours = (day: 'weekdays' | 'saturday' | 'sunday', field: 'open' | 'close' | 'is_closed', value: any) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating operating_hours [${day}] field [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
@@ -192,7 +191,6 @@ export default function ConfigPage() {
 
     const updateObservations = (value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating operating_hours observations:`, value);
         setConfig({
             ...config,
             context_json: {
@@ -207,7 +205,6 @@ export default function ConfigPage() {
 
     const updateToneOfVoice = (field: string, value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating tone_of_voice field [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
@@ -222,7 +219,6 @@ export default function ConfigPage() {
 
     const updatePaymentInfo = (field: string, value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating payment_info [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
@@ -237,7 +233,6 @@ export default function ConfigPage() {
 
     const updateBookingPolicies = (field: string, value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating booking_policies [${field}]:`, value);
         setConfig({
             ...config,
             context_json: {
@@ -252,7 +247,6 @@ export default function ConfigPage() {
 
     const addService = () => {
         if (!config) return;
-        console.log(`➕ [UI] Adding new empty service to array.`);
         const newService = { name: '', price: '', duration: '', description: '' };
         setConfig({
             ...config,
@@ -265,7 +259,6 @@ export default function ConfigPage() {
 
     const removeService = (index: number) => {
         if (!config) return;
-        console.log(`🗑️ [UI] Removing service at index: ${index}`);
         const newServices = [...config.context_json.services];
         newServices.splice(index, 1);
         setConfig({
@@ -279,7 +272,6 @@ export default function ConfigPage() {
 
     const updateService = (index: number, field: keyof Service, value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating service at index ${index}, field [${field}]:`, value);
         const newServices = [...config.context_json.services];
         newServices[index] = { ...newServices[index], [field]: value };
         setConfig({
@@ -293,7 +285,6 @@ export default function ConfigPage() {
 
     const addFaq = () => {
         if (!config) return;
-        console.log(`➕ [UI] Adding new empty FAQ item.`);
         setConfig({
             ...config,
             context_json: {
@@ -305,7 +296,6 @@ export default function ConfigPage() {
 
     const removeFaq = (index: number) => {
         if (!config) return;
-        console.log(`🗑️ [UI] Removing FAQ at index: ${index}`);
         const newFaq = [...config.context_json.faq];
         newFaq.splice(index, 1);
         setConfig({
@@ -316,7 +306,6 @@ export default function ConfigPage() {
 
     const updateFaq = (index: number, field: keyof FAQItem, value: string) => {
         if (!config) return;
-        console.log(`📝 [STATE] Updating FAQ at index ${index}, field [${field}]:`, value);
         const newFaq = [...config.context_json.faq];
         newFaq[index] = { ...newFaq[index], [field]: value };
         setConfig({
@@ -330,7 +319,6 @@ export default function ConfigPage() {
         if (e) e.preventDefault();
         if (!config) return;
 
-        console.log(`💾 [API] Initiating save process. Payload:`, config.context_json);
         setSaving(true);
         setError(null);
         setSuccess(false);
@@ -343,13 +331,11 @@ export default function ConfigPage() {
         const { error: updateError } = await supabase
             .from('business_config')
             .update(payload)
-            .eq('id', 1);
+            .eq('id', config.id);
 
         if (updateError) {
-            console.error(`❌ [API ERROR] Supabase update failed:`, updateError);
             setError(`Erro ao salvar: ${updateError.message}`);
         } else {
-            console.log(`✅ [API] Supabase updated successfully.`);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -361,7 +347,7 @@ export default function ConfigPage() {
             <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4 font-source">
                 <div className="flex flex-col items-center gap-6">
                     <Loader2 size={40} className="animate-spin text-blue-600 opacity-20" />
-                    <p className="text-base font-bold text-[#000000] opacity-40">Carregando estúdio...</p>
+                    <p className="text-base font-bold text-[#000000] opacity-40">Carregando configurações...</p>
                 </div>
             </div>
         );
@@ -374,12 +360,15 @@ export default function ConfigPage() {
             <header className="h-20 w-full sticky top-0 bg-[#fafafa]/90 backdrop-blur-md z-40 border-b border-black/5">
                 <div className="w-full max-w-3xl h-full px-4 mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0">
-                            <Scissors size={20} className="text-black/80 translate-y-[1.5px] relative" />
-                        </div>
+                        <button 
+                            onClick={() => router.push('/dashboard')}
+                            className="w-10 h-10 rounded-xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-colors"
+                        >
+                            <ArrowLeft size={20} className="text-black/80" />
+                        </button>
                         <div className="min-w-0">
-                            <h1 className="text-lg font-bold tracking-tight text-black truncate">Contexto do Negócio</h1>
-                            <p className="text-base font-normal text-black/40 truncate">Painel de Configurações</p>
+                            <h1 className="text-lg font-bold tracking-tight text-black truncate">Configurações</h1>
+                            <p className="text-sm font-normal text-black/40 truncate">Ajuste o comportamento da sua IA</p>
                         </div>
                     </div>
 
@@ -407,7 +396,7 @@ export default function ConfigPage() {
 
                         <button
                             onClick={handleLogout}
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-0"
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                         >
                             <LogOut size={22} strokeWidth={1.5} />
                         </button>
@@ -829,7 +818,6 @@ function OperatingHoursRow({
                     <button
                         type="button"
                         onClick={() => {
-                            console.log(`🔘 [UI] Toggle MacOS Switch [${label}]:`, !safeData.is_closed);
                             onChange('is_closed', !safeData.is_closed);
                         }}
                         className={`
@@ -850,7 +838,6 @@ function OperatingHoursRow({
                     <select
                         value={safeData.open}
                         onChange={(e) => {
-                            console.log(`🕒 [UI] Select Open Time [${label}]:`, e.target.value);
                             onChange('open', e.target.value);
                         }}
                         className="bg-zinc-50 border border-black/5 rounded-xl px-2 sm:px-3 py-2 text-[16px] font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer min-w-[75px]"
@@ -863,7 +850,6 @@ function OperatingHoursRow({
                     <select
                         value={safeData.close}
                         onChange={(e) => {
-                            console.log(`🕒 [UI] Select Close Time [${label}]:`, e.target.value);
                             onChange('close', e.target.value);
                         }}
                         className="bg-zinc-50 border border-black/5 rounded-xl px-2 sm:px-3 py-2 text-[16px] font-bold text-zinc-800 focus:ring-0 focus:border-blue-600 outline-none cursor-pointer min-w-[75px]"

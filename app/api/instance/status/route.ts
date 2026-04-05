@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const instanceName = searchParams.get('instance');
+    const phoneNumber = searchParams.get('number'); // Optional for pairing code
 
     if (!instanceName) {
       return NextResponse.json({ error: 'Missing instance name' }, { status: 400 });
@@ -36,22 +37,31 @@ export async function GET(request: Request) {
     const currentState = stateData?.instance?.state || 'DISCONNECTED';
 
     let qrCodeBase64 = null;
+    let pairingCode = null;
 
-    // 2. If not connected, fetch the QR Code base64 from the /connect endpoint
+    // 2. If not connected, fetch the connection data
     if (currentState !== 'open') {
-      const qrRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, { headers, signal: AbortSignal.timeout(5000) });
+      // If a phone number is provided, we request a pairing code instead of a QR code
+      const connectUrl = phoneNumber 
+        ? `${baseUrl}/instance/connect/${instanceName}?number=${phoneNumber}`
+        : `${baseUrl}/instance/connect/${instanceName}`;
+
+      const qrRes = await fetch(connectUrl, { headers, signal: AbortSignal.timeout(5000) });
+      
       if (qrRes.ok) {
         const qrData = await qrRes.json();
-        // Evolution v2 returns the image string in the 'base64' property
+        // Evolution v2 returns 'base64' for QR and 'code' for pairing
         qrCodeBase64 = qrData?.base64 || null; 
+        pairingCode = qrData?.code || null;
       }
     }
 
-    // Return exactly what the QRCodeDisplay component expects
+    // Return extended status
     return NextResponse.json({
       instance: instanceName,
       state: currentState,
-      qr: qrCodeBase64, // The frontend should use this property to render the <img src={qr} />
+      qr: qrCodeBase64,
+      pairingCode: pairingCode,
     });
 
   } catch (error: any) {

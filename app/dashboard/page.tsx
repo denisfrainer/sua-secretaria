@@ -30,13 +30,22 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full max-w-4xl px-4 py-8 sm:py-16 flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
-        <p className="text-base text-gray-500 font-medium tracking-wide">
-          {isConnected 
-            ? 'Bem-vindo, sua IA está configurada e operando.' 
-            : `Instância ${businessConfig.instance_name} provisionada. Conclua a conexão do WhatsApp.`}
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
+          <p className="text-base text-gray-500 font-medium tracking-wide">
+            {isConnected 
+              ? 'Bem-vindo, sua IA está configurada e operando.' 
+              : `Instância ${businessConfig.instance_name} provisionada. Conclua a conexão do WhatsApp.`}
+          </p>
+        </div>
+        <a 
+          href="/dashboard/settings"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-black/5 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all"
+        >
+          <Sparkles size={16} className="text-blue-600" />
+          Configurações
+        </a>
       </div>
 
       {!isConnected ? (

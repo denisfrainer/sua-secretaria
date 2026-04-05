@@ -50,9 +50,9 @@ export default function LoginPage() {
             }
 
             console.log(`✅ [AUTH] Login successful! Session granted for: ${data.user?.email}`);
-            console.log(`🚀 [AUTH] Redirecting to: /admin/config`);
+            console.log(`🚀 [AUTH] Redirecting to: /dashboard`);
             
-            router.push('/admin/config');
+            router.push('/dashboard');
             router.refresh();
         } catch (err) {
             console.error(`❌ [AUTH ERROR] Unexpected exception during login flow:`, err);
