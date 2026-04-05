@@ -670,6 +670,9 @@ http.createServer((req, res) => {
 
                 if (!isEvolution) return;
 
+                const instanceName = body.instance || 'demo-agente';
+                console.log(`🚦 [ROUTER] Payload received from instance: ${instanceName}`);
+
                 let dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
                 if (!dataObj) return;
 
@@ -706,7 +709,7 @@ http.createServer((req, res) => {
                     try {
                         // Configurações da sua Evolution API
                         const evoUrl = process.env.EVOLUTION_API_URL || 'https://api.revivafotos.com.br';
-                        const instanceName = body.instance || 'agente-lobo';
+                        // instanceName now inherited from outer router scope
                         const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
 
                         console.log(`📡[DEBUG AUDIO] Pedindo para Evolution descriptografar o áudio...`);
@@ -808,7 +811,7 @@ http.createServer((req, res) => {
                             return;
                         }
 
-                        let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).maybeSingle();
+                        let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).eq('instance_name', instanceName).maybeSingle();
 
                         if (lead) {
                             await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
@@ -835,7 +838,7 @@ http.createServer((req, res) => {
 
                         if (!lead) {
                             const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
-                                phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false
+                                phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false, instance_name: instanceName
                             }).select().single();
                             lead = newLead;
                         }
@@ -845,14 +848,52 @@ http.createServer((req, res) => {
                             lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
                         });
 
-                        const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
-                        if (elizaSwitch && elizaSwitch.value?.enabled === false) {
-                            await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
-                            return;
+                        // --- BRANCH A: STATIC MENU ---
+                        if (instanceName === 'demo-menu') {
+                            console.log(`🚦 [ROUTER] Branch A: Static Menu acionado para ${clientNumber}`);
+                            const msgClean = clientMessage.trim().toLowerCase();
+
+                            let menuResponse = "";
+                            let newStatus = "waiting_menu_choice";
+
+                            if (msgClean === '1') {
+                                menuResponse = "Você escolheu a Opção 1: Informações sobre nossos serviços.\n💅 Manicure: R$ 45,00\n💆‍♀️ Limpeza de Pele: R$ 120,00\n\nDigite 0 para voltar ao menu principal.";
+                            } else if (msgClean === '2') {
+                                menuResponse = "Você escolheu a Opção 2: Falar com atendente humano. Um momento, por favor, nossa equipe já vai te atender.";
+                                newStatus = "human_handling";
+                                await supabaseAdmin.from('leads_lobo').update({
+                                    status: newStatus,
+                                    needs_human: true,
+                                    ai_paused: true
+                                }).eq('id', lead.id);
+                            } else if (msgClean === '3') {
+                                menuResponse = "Você escolheu a Opção 3: Horários de funcionamento.\n🕒 Funcionamos das 08:00 às 18:00 de segunda a sexta.\n\nDigite 0 para voltar ao menu principal.";
+                            } else {
+                                menuResponse = "Olá! Bem-vindo ao *Menu Estático de Teste*.\n\nEscolha uma opção:\n1️⃣ Nossos serviços e preços\n2️⃣ Falar com atendente\n3️⃣ Horários de funcionamento";
+                            }
+
+                            await sendWhatsAppPresence(clientNumber, 'composing');
+                            await sendWhatsAppMessage(clientNumber, menuResponse, 1000);
+
+                            // Apenas atualiza o status se for a ramificação do menu
+                            await supabaseAdmin.from('leads_lobo').update({ status: newStatus }).eq('id', lead.id);
+
+                            console.log(`🚦 [ROUTER] Branch A finalizada.`);
+                            return; // CRITICAL: Ends webhook execution here so the AI engine is never engaged
                         }
 
-                        await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
-                        console.log(`🎯[WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'.Worker assumindo.`);
+                        // --- BRANCH B: AI AGENT ---
+                        if (instanceName === 'demo-agente') {
+                            console.log(`🚦 [ROUTER] Branch B: AI Agent acionado para ${clientNumber}`);
+                            const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                            if (elizaSwitch && elizaSwitch.value?.enabled === false) {
+                                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                                return;
+                            }
+
+                            await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_processing' }).eq('phone', clientNumber);
+                            console.log(`🎯[WEBHOOK] Status de ${clientNumber} -> 'eliza_processing'.Worker assumindo.`);
+                        }
                     }
                 }
             } catch (error) {

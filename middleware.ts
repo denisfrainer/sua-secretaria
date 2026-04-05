@@ -16,6 +16,18 @@ export async function middleware(request: NextRequest) {
 
   console.log(`[Middleware] Path: ${pathname}, Logged: ${!!user}`);
 
+  // 🔓 AUTH CALLBACK BYPASS: Never let i18n touch the OAuth callback route
+  if (pathname.startsWith('/auth/callback')) {
+    console.log(`[Middleware] AUTH CALLBACK detected. Passing through to route handler.`);
+    return response;
+  }
+
+  // 🔓 DASHBOARD BYPASS: Supabase session refresh only, no i18n rewriting
+  if (pathname.startsWith('/dashboard')) {
+    console.log(`[Middleware] DASHBOARD route detected. Session refresh only.`);
+    return response;
+  }
+
   // 🛡️ Admin Protection
   if (pathname.startsWith('/admin')) {
     // 1. A exceção: Permite carregar a página de login (com ou sem barra no final)
@@ -44,9 +56,13 @@ export const config = {
     /*
      * 🛡️ ESCUDO DO LOBO ATUALIZADO:
      * 1. /admin/:path* explicitamente para proteção
-     * 2. Exclui estáticos e api
+     * 2. /auth/:path* para OAuth callback handling
+     * 3. /dashboard/:path* para session refresh
+     * 4. Exclui estáticos e api
      */
     '/admin/:path*',
+    '/auth/:path*',
+    '/dashboard/:path*',
     '/((?!api|_next/static|_next/image|favicon.ico|images|certificates|.*\\..*).*)',
     '/(pt|en|es)/:path*'
   ],
