@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 /**
- * Enhanced Instance Status Endpoint (Pivot to v2 Pairing)
+ * Enhanced Instance Status Endpoint (Resilience Revert)
  * - Fetch current connection state
  * - If not connected, fetch either QR code (base64) OR pairing code (alpha-numeric)
- * - CRITICAL: Case-by-case protocol Selection (GET /pairingCode for Pairing)
+ * - REVERT: Using GET /instance/connect with cache-busting t= parameter.
+ * - OBSERVABILITY: Explicitly logs the Evolution API response.
  */
 export async function GET(request: Request) {
   try {
@@ -27,14 +28,14 @@ export async function GET(request: Request) {
     
     const baseUrl = evoUrl.replace(/\/$/, '');
 
-    const commonHeaders = {
+    const headers = {
       'apikey': evoKey,
       'Content-Type': 'application/json'
     };
 
     // 1. Check the current state of the instance
     const stateRes = await fetch(`${baseUrl}/instance/connectionState/${instanceName}`, { 
-        headers: commonHeaders, 
+        headers, 
         signal: AbortSignal.timeout(5000),
         cache: 'no-store'
     });
@@ -49,51 +50,48 @@ export async function GET(request: Request) {
     let qrCodeBase64 = null;
     let pairingCode = null;
 
-    // 2. If instance is not fully 'open' (Connected), fetch pairing/QR data
+    // 2. If instance is not fully 'open' (Connected), fetch from connect endpoint
     if (currentState !== 'open') {
       const cleanNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : null;
       
-      if (cleanNumber) {
-          // OFFICIAL EVOLUTION v2 PAIRING ENDPOINT: GET /instance/pairingCode/:instance
-          const pairingUrl = `${baseUrl}/instance/pairingCode/${instanceName}?number=${cleanNumber}`;
-          console.log(`🔗 [PAIRING ATTEMPT] Endpoint: ${pairingUrl}`);
-          
-          const pairingRes = await fetch(pairingUrl, { 
-              headers: commonHeaders,
-              signal: AbortSignal.timeout(10000),
-              cache: 'no-store'
-          });
-          
-          if (pairingRes.ok) {
-              const pairingData = await pairingRes.json();
-              console.log("[PAIRING RESPONSE]", JSON.stringify(pairingData, null, 2));
-              pairingCode = pairingData?.code || null;
-          } else {
-              const errorData = await pairingRes.text();
-              console.warn(`⚠️ [PAIRING ATTEMPT] Failed:`, errorData);
-          }
-      }
+      // Evolution v2 pairing via connect endpoint (GET) + cache-busting timestamp
+      const connectUrl = cleanNumber 
+        ? `${baseUrl}/instance/connect/${instanceName}?number=${cleanNumber}&t=${Date.now()}`
+        : `${baseUrl}/instance/connect/${instanceName}?t=${Date.now()}`;
 
-      // If we don't have a pairing code, we always fetch/ensure QR fallback is available
-      const qrUrl = `${baseUrl}/instance/connect/${instanceName}`;
-      const qrRes = await fetch(qrUrl, { 
-          headers: commonHeaders, 
-          signal: AbortSignal.timeout(10000),
-          cache: 'no-store'
+      console.log(`🔗 [API STATUS] Connecting via: ${connectUrl}`);
+      
+      const connectRes = await fetch(connectUrl, { 
+        headers: { 'apikey': evoKey }, 
+        signal: AbortSignal.timeout(10000),
+        cache: 'no-store'
       });
       
-      if (qrRes.ok) {
-          const qrData = await qrRes.json();
-          qrCodeBase64 = qrData?.base64 || null;
-          // In case the Pairing Code isn't fetched via the specialized route but appears here
-          if (!pairingCode) {
-              pairingCode = qrData?.code || qrData?.pairingCode || null;
-              if (pairingCode && pairingCode.length > 15) pairingCode = null; // Filter hashes
-          }
+      if (connectRes.ok) {
+        const connectData = await connectRes.json();
+        
+        // --- OBSERVABILITY BLOCK ---
+        console.log(`[EVOLUTION CONNECT RESPONSE]`, JSON.stringify(connectData, null, 2));
+
+        qrCodeBase64 = connectData?.base64 || null; 
+        
+        // Extraction logic for v2 pairing code
+        const rawCode = connectData?.code || connectData?.pairingCode || null;
+
+        // VALIDATION: Reject raw hashes (~60+ characters)
+        if (rawCode && rawCode.length < 15) {
+            pairingCode = rawCode;
+            console.log(`✅ [API STATUS] Valid pairing code detected: ${pairingCode}`);
+        } else if (rawCode) {
+            console.warn(`⚠️ [API STATUS] Evolution returned a HASH instead of a 8-char CODE.`);
+        }
+      } else {
+        const errorData = await connectRes.text();
+        console.warn(`⚠️ [API STATUS] Evolution connect failed:`, errorData);
       }
     }
 
-    // Return the dual-mode status payload
+    // Return the payload
     return NextResponse.json({
       instance: instanceName,
       state: currentState,

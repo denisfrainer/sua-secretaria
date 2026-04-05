@@ -329,6 +329,18 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                         {showPairingView ? "Voltar para Escaneamento" : "Vincular via Número"}
                     </button>
 
+                    <button
+                        onClick={() => {
+                            setPairingCode(null);
+                            setQrBase64(null);
+                            setPhoneNumber('');
+                            window.location.reload(); // Hard reset
+                        }}
+                        className="text-[10px] font-black text-red-400 hover:text-red-600 transition-all uppercase tracking-widest flex items-center gap-2 py-2 px-4 bg-red-50 rounded-full border border-red-100/50"
+                    >
+                        Reiniciar Instância
+                    </button>
+
                     <div className="flex items-center gap-2 text-[13px] text-blue-600 font-bold px-5 py-2 bg-blue-50 rounded-full border border-blue-100 animate-pulse">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                         Status: Aguardando Conexão
