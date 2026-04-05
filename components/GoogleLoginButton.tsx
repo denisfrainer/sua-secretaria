@@ -8,15 +8,24 @@ export default function GoogleLoginButton() {
   const supabase = createClient();
 
   const handleGoogleLogin = async () => {
+    if (isLoading) return; // Strict Client-Side Lock
+    
     try {
       setIsLoading(true);
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      console.log(`🔑 [AUTH] Initiating Google OAuth. Redirect target: ${siteUrl}/auth/callback`);
+
+      // Clear Stale Storage Before Login to prevent PKCE verifier conflicts
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-')) localStorage.removeItem(key);
+        });
+      }
+
+      console.log(`🔑 [AUTH] Initiating Google OAuth. Redirect target: ${window.location.origin}/auth/callback`);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${siteUrl}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
