@@ -4,11 +4,11 @@ import { withWhatsAppLock } from '../utils/whatsapp-lock';
 
 const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
-export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number) {
+export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number, instanceName?: string) {
     return withWhatsAppLock(async () => {
-        const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+        const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || 'agente-lobo';
         const apikey = process.env.EVOLUTION_API_KEY;
-        const url = `${getBaseUrl()}/message/sendText/${instanceName}`;
+        const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
 
         const payload = {
             number: phone,
@@ -48,10 +48,10 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
     });
 }
 
-export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available') {
-    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available', instanceName?: string) {
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || 'agente-lobo';
     const apikey = process.env.EVOLUTION_API_KEY;
-    const url = `${getBaseUrl()}/chat/sendPresence/${instanceName}`;
+    const url = `${getBaseUrl()}/chat/sendPresence/${targetInstance}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);

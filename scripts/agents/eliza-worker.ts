@@ -313,8 +313,10 @@ async function transcribeAudioWithGemini(base64Audio: string, mimeType: string):
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
+    const instanceToUse = lead.instance_name || process.env.EVOLUTION_INSTANCE_NAME || 'agente-lobo';
+    
     console.log(`\n===========================================`);
-    console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber}`);
+    console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber} (Instance: ${instanceToUse})`);
 
     try {
         // 1. Lock lead status
@@ -535,7 +537,7 @@ ${businessContext}
                 // Mensagem de escape amigável para o cliente
                 const escapeMessage = "Desculpe, meu sistema está passando por uma instabilidade com os agendamentos. Já chamei a especialista humana e ela vai assumir o seu atendimento em um minuto, tudo bem?";
 
-                await sendWhatsAppMessage(clientNumber, escapeMessage, 1000);
+                await sendWhatsAppMessage(clientNumber, escapeMessage, 1000, instanceToUse);
 
                 // Salva o log do escape na tabela de mensagens
                 await supabaseAdmin.from('messages').insert({
@@ -572,10 +574,7 @@ ${businessContext}
 
         console.log('📤 Sending chunks to WhatsApp:', chunks);
 
-        await sendWhatsAppPresence(clientNumber, 'composing');
-
-        console.log('📤 Sending chunks to WhatsApp:', chunks);
-        await sendWhatsAppPresence(clientNumber, 'composing');
+        await sendWhatsAppPresence(clientNumber, 'composing', instanceToUse);
 
         const CHARS_PER_SECOND = 15;
         let accumulatedDelayMs = 0;
@@ -586,7 +585,7 @@ ${businessContext}
             accumulatedDelayMs += bubbleTypingTimeMs;
 
             console.log(`⌨️[TYPING] Bolha enviada em ${Math.round(accumulatedDelayMs / 1000)} s: "${chunk.substring(0, 30)}..."`);
-            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs);
+            await sendWhatsAppMessage(clientNumber, chunk, accumulatedDelayMs, instanceToUse);
 
             // Adiciona uma pausa humana de respiração/leitura entre bolhas múltiplas
             if (chunks.length > 1) {
