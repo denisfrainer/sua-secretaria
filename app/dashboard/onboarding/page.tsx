@@ -30,8 +30,8 @@ export default function OnboardingPage() {
             setIsLoading(true);
             setError(null);
 
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error("Usuário não autenticado");
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Usuário não autenticado");
 
             const instanceName = generateInstanceName(businessName);
             console.log(`[ONBOARDING] Generated instance name: ${instanceName}`);
@@ -86,7 +86,7 @@ export default function OnboardingPage() {
             const { error: insertError } = await supabase
                 .from('business_config')
                 .insert({
-                    owner_id: session.user.id,
+                    owner_id: user.id,
                     instance_name: instanceName,
                     context_json: defaultContext
                 });

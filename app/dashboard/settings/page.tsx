@@ -104,14 +104,14 @@ export default function SettingsPage() {
         console.log(`📡 [SETTINGS] Fetching business_config and system_settings...`);
         setLoading(true);
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
             router.push('/admin/login');
             return;
         }
 
         const [configRes, settingsRes] = await Promise.all([
-            supabase.from('business_config').select('*').eq('owner_id', session.user.id).single(),
+            supabase.from('business_config').select('*').eq('owner_id', user.id).single(),
             supabase.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle()
         ]);
 
@@ -119,7 +119,7 @@ export default function SettingsPage() {
             console.error(`❌ [SETTINGS ERROR] Config fetch failed:`, configRes.error);
             setError('Falha ao sincronizar dados do seu negócio.');
         } else {
-            console.log(`✅ [SETTINGS] Config loaded for user:`, session.user.id);
+            console.log(`✅ [SETTINGS] Config loaded for user:`, user.id);
             setConfig(configRes.data);
         }
 

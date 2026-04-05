@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 /**
- * Enhanced Instance Status Endpoint
+ * Enhanced Instance Status Endpoint (Pivot to v2 Pairing)
  * - Fetch current connection state
  * - If not connected, fetch either QR code (base64) OR pairing code (alpha-numeric)
- * - CRITICAL: Case-by-case protocol Selection (GET for QR, POST for Pairing)
+ * - CRITICAL: Case-by-case protocol Selection (GET /pairingCode for Pairing)
  */
 export async function GET(request: Request) {
   try {
@@ -53,41 +53,43 @@ export async function GET(request: Request) {
     if (currentState !== 'open') {
       const cleanNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : null;
       
-      // EVOLUTION v2 PROTOCOL: POST with body for pairing code, GET for QR code
-      const fetchParams: RequestInit = {
-          headers: commonHeaders,
-          signal: AbortSignal.timeout(10000),
-          cache: 'no-store'
-      };
-
       if (cleanNumber) {
-          fetchParams.method = 'POST';
-          fetchParams.body = JSON.stringify({ number: cleanNumber });
-      } else {
-          fetchParams.method = 'GET';
+          // OFFICIAL EVOLUTION v2 PAIRING ENDPOINT: GET /instance/pairingCode/:instance
+          const pairingUrl = `${baseUrl}/instance/pairingCode/${instanceName}?number=${cleanNumber}`;
+          console.log(`🔗 [PAIRING ATTEMPT] Endpoint: ${pairingUrl}`);
+          
+          const pairingRes = await fetch(pairingUrl, { 
+              headers: commonHeaders,
+              signal: AbortSignal.timeout(10000),
+              cache: 'no-store'
+          });
+          
+          if (pairingRes.ok) {
+              const pairingData = await pairingRes.json();
+              console.log("[PAIRING RESPONSE]", JSON.stringify(pairingData, null, 2));
+              pairingCode = pairingData?.code || null;
+          } else {
+              const errorData = await pairingRes.text();
+              console.warn(`⚠️ [PAIRING ATTEMPT] Failed:`, errorData);
+          }
       }
 
-      const connectUrl = `${baseUrl}/instance/connect/${instanceName}`;
-      console.log(`🔗 [API STATUS] Mode: ${cleanNumber ? 'PAIRING (POST)' : 'QR (GET)'} | Endpoint: ${connectUrl}`);
-      
-      const qrRes = await fetch(connectUrl, fetchParams);
+      // If we don't have a pairing code, we always fetch/ensure QR fallback is available
+      const qrUrl = `${baseUrl}/instance/connect/${instanceName}`;
+      const qrRes = await fetch(qrUrl, { 
+          headers: commonHeaders, 
+          signal: AbortSignal.timeout(10000),
+          cache: 'no-store'
+      });
       
       if (qrRes.ok) {
-        const qrData = await qrRes.json();
-        
-        // --- OBSERVABILITY BLOCK ---
-        console.log(`[EVOLUTION ${fetchParams.method} RESPONSE]`, JSON.stringify(qrData, null, 2));
-
-        qrCodeBase64 = qrData?.base64 || null; 
-        const rawCode = qrData?.code || qrData?.pairingCode || null;
-
-        // VALIDATION: Reject raw hashes
-        if (rawCode && rawCode.length < 15) {
-            pairingCode = rawCode;
-        }
-      } else {
-        const errorData = await qrRes.text();
-        console.warn(`⚠️ [API STATUS] Evolution connect failed:`, errorData);
+          const qrData = await qrRes.json();
+          qrCodeBase64 = qrData?.base64 || null;
+          // In case the Pairing Code isn't fetched via the specialized route but appears here
+          if (!pairingCode) {
+              pairingCode = qrData?.code || qrData?.pairingCode || null;
+              if (pairingCode && pairingCode.length > 15) pairingCode = null; // Filter hashes
+          }
       }
     }
 

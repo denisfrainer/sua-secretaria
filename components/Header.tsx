@@ -11,8 +11,8 @@ export function Header() {
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user);
     });
     
     // Listen for auth changes

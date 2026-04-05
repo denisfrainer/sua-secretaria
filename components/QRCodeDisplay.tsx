@@ -53,12 +53,12 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
     // Final Success Callback
     const markAsConnected = useCallback(async () => {
         setIsPolling(false);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
             const { data: config } = await supabase
                 .from('business_config')
                 .select('context_json, id')
-                .eq('owner_id', session.user.id)
+                .eq('owner_id', user.id)
                 .single();
 
             if (config) {

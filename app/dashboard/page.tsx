@@ -7,9 +7,9 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   
   // Guard clause is handled by layout, but we fetch safely
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/admin/login');
   }
 
@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const { data: businessConfig } = await supabase
     .from('business_config')
     .select('*')
-    .eq('owner_id', session.user.id)
+    .eq('owner_id', user.id)
     .maybeSingle();
 
   // Route them to onboarding if no profile exists
