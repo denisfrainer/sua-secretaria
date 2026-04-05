@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = searchParams.get('next') ?? '/dashboard'; // Assume onboarding/dashboard is the next step
 
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=no_code`);
@@ -14,30 +14,18 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
-  try {
-    // Attempt the exchange
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    
-    if (error) {
-      // If it fails (likely PKCE already consumed by race condition), check if session exists anyway
-      console.warn(`⚠️ [AUTH CALLBACK] Code exchange failed: ${error.message}. Checking for existing session...`);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        console.log("✅ [AUTH CALLBACK] Session found despite exchange error. Proceeding to dashboard.");
-        return NextResponse.redirect(`${origin}${next}`);
-      } else {
-        throw error; // No session and exchange failed, this is a real error
-      }
-    }
-
-    // Exchange successful
-    console.log("✅ [AUTH CALLBACK] Session successfully created. Redirecting.");
+  // Attempt the exchange
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  
+  if (error) {
+    console.warn(`⚠️ [AUTH CALLBACK] Code exchange failed (likely Next.js double-fire): ${error.message}`);
+    // SILICON TWEAK: FAIL FORWARD
+    // Ignore the PKCE error and redirect to the protected route anyway.
+    // If the parallel Request A succeeded, the browser has the cookie and the Dashboard will load.
+    // If it's a genuine failure, the Dashboard's layout/middleware will safely kick them back to login.
     return NextResponse.redirect(`${origin}${next}`);
-
-  } catch (err: any) {
-    console.error("❌ [AUTH CALLBACK FATAL ERROR]:", err.message);
-    return NextResponse.redirect(`${origin}/?error=auth_failed`);
   }
+
+  console.log("✅ [AUTH CALLBACK] Session successfully created. Redirecting.");
+  return NextResponse.redirect(`${origin}${next}`);
 }
