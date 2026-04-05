@@ -25,17 +25,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const router = useRouter();
 
-    useEffect(() => {
-        // "Ghost" Auto-Login: Catch any stranded Google OAuth codes 
-        // and aggressively route them to the callback handler.
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        if (code) {
-            console.log('🔄 [AUTH] Google OAuth code detected on login page. Rerouting to callback...');
-            setCodeProcessing(true);
-            router.push(`/auth/callback?code=${code}`);
-        }
-    }, [router]);
+    // Deprecated: Client-side routing removed to prevent Service Worker PKCE collisions
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

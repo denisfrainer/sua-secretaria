@@ -1,10 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   const navItems = [
     { label: 'Home', href: '/' },
@@ -41,8 +58,21 @@ export function Header() {
                   {item.label}
                 </a>
               ))}
+              <div className="h-4 w-px bg-slate-200"></div>
+              
+              {isLoggedIn ? (
+                <a
+                  href="/dashboard"
+                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+                >
+                  Ir para Painel
+                </a>
+              ) : (
+                <GoogleLoginButton text="Entrar" variant="navbar" />
+              )}
+
               <a
-                href="https://wa.me/5548992123255"
+                href="#precos"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300"
               >
                 Testar Agora
@@ -51,6 +81,11 @@ export function Header() {
 
             {/* Mobile Controls */}
             <div className="md:hidden flex items-center gap-3">
+              {!isLoggedIn && (
+                 <div className="mr-2">
+                   <GoogleLoginButton text="Entrar" variant="navbar" />
+                 </div>
+              )}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -92,8 +127,18 @@ export function Header() {
               {item.label}
             </a>
           ))}
+          {isLoggedIn && (
+            <a
+              href="/dashboard"
+              onClick={() => setIsMenuOpen(false)}
+              className="block text-sm py-2 px-2 rounded-lg font-bold text-indigo-600 hover:bg-slate-50 transition-all"
+            >
+              Ir para Painel
+            </a>
+          )}
+          <div className="my-2 border-t border-slate-100"></div>
           <a
-            href="https://wa.me/5548992123255"
+            href="#precos"
             onClick={() => setIsMenuOpen(false)}
             className="block text-sm py-2.5 px-4 mt-1 text-center rounded-full font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
           >

@@ -1,17 +1,30 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LogoCloud } from '@/components/LogoCloud';
 import { motion } from 'framer-motion';
 import { Inter } from 'next/font/google';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
+import { createClient } from '@/lib/supabase/client';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export function HeroSection() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const supabase = createClient();
+
   useEffect(() => {
-    console.log('✅ [HERO] logos scrolling.');
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+    
+    // Listen for auth changes to instantly swap CTAs
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   return (
     <section className="relative w-full pt-32 pb-0 sm:pt-40 flex flex-col items-center justify-center bg-white text-black min-h-[90vh]">
@@ -35,15 +48,29 @@ export function HeroSection() {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 w-full sm:w-auto sm:min-w-[400px] mx-auto"
           >
-            <a
-              href="#precos"
-              className="flex items-center justify-center w-full sm:w-1/2 px-4 py-2 bg-[#533AFD] text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:opacity-90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#533AFD]"
-            >
-              Contratar Agora
-            </a>
-            <div className="w-full sm:w-1/2">
-              <GoogleLoginButton />
-            </div>
+            {isLoggedIn ? (
+              <a
+                href="/dashboard"
+                className="flex items-center justify-center w-full px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-md shadow-md text-[16px] font-bold transition-all duration-200 ease-in-out hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+              >
+                Ir para o Dashboard
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            ) : (
+              <>
+                <a
+                  href="#precos"
+                  className="flex items-center justify-center w-full sm:w-1/2 px-4 py-2 bg-[#533AFD] text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#533AFD]"
+                >
+                  Contratar Agora
+                </a>
+                <div className="w-full sm:w-1/2">
+                  <GoogleLoginButton text="Começar grátis com Google" variant="default" />
+                </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       </div>
