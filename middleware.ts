@@ -1,70 +1,58 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './i18n';
-import { updateSession } from './lib/supabase/middleware';
-
-const intlMiddleware = createMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed',
-});
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // 1. Atualiza sessão do Supabase (lida com refresh de tokens)
-  const { response, user } = await updateSession(request);
-  const { pathname } = request.nextUrl;
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
-  console.log(`[Middleware] Path: ${pathname}, Logged: ${!!user}`);
-
-  // 🔓 AUTH CALLBACK BYPASS: Never let i18n touch the OAuth callback route
-  if (pathname.startsWith('/auth/callback')) {
-    console.log(`[Middleware] AUTH CALLBACK detected. Passing through to route handler.`);
-    return response;
-  }
-
-  // 🔓 DASHBOARD BYPASS: Supabase session refresh only, no i18n rewriting
-  if (pathname.startsWith('/dashboard')) {
-    console.log(`[Middleware] DASHBOARD route detected. Session refresh only.`);
-    return response;
-  }
-
-  // 🛡️ Admin Protection
-  if (pathname.startsWith('/admin')) {
-    // 1. A exceção: Permite carregar a página de login (com ou sem barra no final)
-    if (pathname.startsWith('/admin/login')) {
-      // Se já estiver logado e tentar ir pro login, manda pro painel
-      if (user) return NextResponse.redirect(new URL('/admin/config', request.url));
-      // Se não estiver logado, libera o acesso para ele poder digitar a senha
-      return response;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
     }
+  )
 
-    // 2. O Bloqueio: Qualquer outra rota dentro de /admin/ sem usuário logado toma block
-    if (!user) {
-      console.log(`[Middleware] BLOCKED: Unauthenticated access to ${pathname}.`);
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
+  // IMPORTANT: Do NOT use getSession(). Use getUser() to validate the token securely.
+  const { data: { user } } = await supabase.auth.getUser()
 
-    return response;
+  const pathname = request.nextUrl.pathname;
+  const isProtectedRoute = pathname.startsWith('/dashboard') || (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login'))
+  
+  if (isProtectedRoute && !user) {
+    // Se não há usuário autenticado nas rotas privadas, jogue para o login
+    const url = request.nextUrl.clone()
+    url.pathname = '/admin/login' 
+    return NextResponse.redirect(url)
   }
 
-  // 🌐 i18n para outras rotas (não-admin)
-  return intlMiddleware(request);
+  // Prevenir que usuário logado veja a tela de login
+  if (pathname.startsWith('/admin/login') && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    /*
-     * 🛡️ ESCUDO DO LOBO ATUALIZADO:
-     * 1. /admin/:path* explicitamente para proteção
-     * 2. /auth/:path* para OAuth callback handling
-     * 3. /dashboard/:path* para session refresh
-     * 4. Exclui estáticos e api
-     */
-    '/admin/:path*',
-    '/auth/:path*',
-    '/dashboard/:path*',
-    '/((?!api|_next/static|_next/image|favicon.ico|images|certificates|.*\\..*).*)',
-    '/(pt|en|es)/:path*'
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}
 
