@@ -10,12 +10,14 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
         const apikey = process.env.EVOLUTION_API_KEY;
         const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
 
+        // Ensure number is strictly digits for Evolution v2
+        const cleanNumber = phone.replace(/\D/g, '');
+
         const payload = {
-            number: phone,
+            number: cleanNumber,
             text: text,
-            delay: Math.round(delayMs || 2000),
-            presence: "composing",
-            options: { linkPreview: false }
+            delay: Math.round(delayMs || 1200),
+            linkPreview: false
         };
 
         // CRIANDO UM TIMEOUT DE "GUERRA" (2 minutos)
@@ -23,27 +25,31 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
         const timeoutId = setTimeout(() => controller.abort(), 120000);
 
         try {
-            console.log(`📡 [SENDER] Tentando enviar para Evolution no IP: ${url}`);
+            console.log(`📤 [SENDER] Payload para ${targetInstance}:`, JSON.stringify(payload));
 
             const res = await axios.post(url, payload, {
                 headers: {
                     'apikey': apikey as string,
                     'Content-Type': 'application/json'
                 },
-                signal: controller.signal, // Se demorar mais de 2min, aí sim cancela
-                timeout: 110000,           // Timeout interno do Axios (um pouco menor que o controller)
-                proxy: false               // Ignora qualquer proxy do Railway
+                signal: controller.signal,
+                timeout: 110000,
+                proxy: false
             });
 
             clearTimeout(timeoutId);
-            console.log(`✅ [SENDER] Resposta da Evolution:`, res.status);
+            console.log(`✅ [SENDER] Resposta da Evolution @ ${targetInstance}:`, res.status);
             return res.data;
         } catch (error: any) {
             clearTimeout(timeoutId);
-            if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
-                throw new Error("❌ Timeout: A Evolution API no Google Cloud demorou demais para responder (Gargalo de Hardware).");
+            if (error.response) {
+                console.error(`❌ [SENDER ERROR] Detalhes da API (${error.response.status}):`, JSON.stringify(error.response.data));
+            } else if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+                console.error("❌ [SENDER ERROR] Timeout na Evolution API.");
+            } else {
+                console.error(`❌ [SENDER ERROR] Falha na requisição: ${error.message}`);
             }
-            throw new Error(`❌ Erro Evolution API: ${error.message}`);
+            throw error;
         }
     });
 }
