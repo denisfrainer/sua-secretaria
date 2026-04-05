@@ -21,7 +21,7 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                 const res = await fetch(`/api/instance/status?instance=${instanceName}`);
                 const data = await res.json();
 
-                if (data.status === 'CONNECTED') {
+                if (data.state === 'open') {
                     setIsPolling(false);
                     // Update the DB state to CONNECTED
                     const { data: { session } } = await supabase.auth.getSession();
@@ -48,8 +48,8 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                     return;
                 }
 
-                if (data.base64) {
-                    setQrBase64(data.base64);
+                if (data.qr) {
+                    setQrBase64(data.qr);
                 }
 
             } catch (err) {
