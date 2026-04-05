@@ -50,12 +50,14 @@ export async function POST(request: Request) {
                 'apikey': apiKey,
             },
             body: JSON.stringify({
-                webhook: {
-                    url: `${webhookUrl}/webhook`,
-                    webhookByEvents: false,
-                    webhookBase64: false,
-                    events: ["MESSAGES_UPSERT"]
-                }
+                enabled: true,
+                url: `${webhookUrl}/webhook`,
+                webhookByEvents: false,
+                webhookBase64: false,
+                events: [
+                    "MESSAGES_UPSERT",
+                    "CONNECTION_UPDATE"
+                ]
             }),
         });
 
