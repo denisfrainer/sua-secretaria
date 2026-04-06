@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { LogOut, Menu } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { DashboardHeaderMenu } from '@/components/DashboardHeaderMenu';
 
 export default async function DashboardLayout({
   children,
@@ -34,12 +35,7 @@ export default async function DashboardLayout({
           meatende.ai
         </Link>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-black/50 hidden md:block">
-            {user.email}
-          </span>
-          <button className="p-2 hover:bg-black/5 rounded-lg transition-colors">
-            <Menu size={20} className="text-black/70" />
-          </button>
+          <DashboardHeaderMenu email={user.email || 'Admin'} />
         </div>
       </header>
 
