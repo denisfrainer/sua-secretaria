@@ -7,6 +7,7 @@
 
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-inter: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-jakarta: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-system: ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
@@ -18,6 +19,10 @@
 */
 .font-jakarta, .font-jakarta * {
   font-family: var(--font-jakarta), sans-serif !important;
+}
+
+.font-jakarta h1, .font-jakarta h2, .font-jakarta h3, .font-jakarta h4, .font-jakarta h5, .font-jakarta h6 {
+  font-family: var(--font-inter), sans-serif !important;
 }
 
 

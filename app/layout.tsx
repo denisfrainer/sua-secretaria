@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
 import PwaRegistry from './components/PwaRegistry';
 
 
+
+const inter = Inter({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700", "800", "900"],
+    variable: "--font-inter",
+    display: 'swap',
+});
 
 const jakarta = Plus_Jakarta_Sans({
     subsets: ["latin"],
@@ -59,6 +66,7 @@ export default function RootLayout({
             <body
                 className={cn(
                     "antialiased bg-white text-black font-jakarta",
+                    inter.variable,
                     jakarta.variable
                 )}
             >
