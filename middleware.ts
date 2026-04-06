@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname;
-  const isProtectedRoute = pathname.startsWith('/dashboard') || (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login'))
+  const isProtectedRoute = pathname.startsWith('/dashboard')
   
   if (isProtectedRoute && !user) {
     // Se não há usuário autenticado nas rotas privadas, jogue para o login
