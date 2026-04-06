@@ -3,10 +3,42 @@
 import { useState } from 'react';
 import { Bot, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { motion } from 'framer-motion';
 
 interface SystemHealthCardProps {
   initialIsAiActive: boolean;
   instanceName: string;
+}
+
+// ==============================================================
+// iOS TOGGLE (ANIMATED) - USER SPECIFIED
+// ==============================================================
+function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange: () => void; loading: boolean }) {
+  return (
+    <motion.button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      initial={false}
+      animate={{ 
+        backgroundColor: enabled ? '#34C759' : '#FF3B30',
+        opacity: loading ? 0.6 : 1
+      }}
+      onClick={() => !loading && onChange()}
+      className={`relative w-[58px] h-[32px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
+    >
+      <motion.span 
+        layout
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className={`
+          absolute top-[2px] left-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md flex items-center justify-center
+          ${enabled ? 'translate-x-[26px]' : 'translate-x-0'}
+        `} 
+      >
+        {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
+      </motion.span>
+    </motion.button>
+  );
 }
 
 export function SystemHealthCard({ initialIsAiActive, instanceName }: SystemHealthCardProps) {
@@ -55,26 +87,12 @@ export function SystemHealthCard({ initialIsAiActive, instanceName }: SystemHeal
           </span>
         </div>
 
-        {/* TOGGLE SWITCH - Same logic as Config Page */}
-        <button
-          type="button"
-          onClick={toggleAiStatus}
-          disabled={togglingAi}
-          className={`
-            relative w-14 h-8 rounded-full transition-colors duration-200 focus:outline-none shrink-0
-            ${isAiActive ? 'bg-[#34C759]' : 'bg-[#FF3B30]'}
-            disabled:opacity-50 shadow-inner
-          `}
-        >
-          <div
-            className={`
-              absolute top-1 left-1 bg-white w-6 h-6 rounded-full shadow-md transition-transform duration-200 flex items-center justify-center
-              ${isAiActive ? 'translate-x-6' : 'translate-x-0'}
-            `}
-          >
-            {togglingAi && <Loader2 size={12} className="animate-spin text-gray-400" />}
-          </div>
-        </button>
+        {/* REPLACED WITH USER'S iOS TOGGLE */}
+        <IosToggle 
+          enabled={isAiActive} 
+          onChange={toggleAiStatus} 
+          loading={togglingAi} 
+        />
       </div>
     </div>
   );
