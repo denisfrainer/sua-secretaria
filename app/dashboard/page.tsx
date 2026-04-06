@@ -51,7 +51,7 @@ export default async function DashboardPage() {
         </div>
         <a 
           href="/dashboard/settings"
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-black/5 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shrink-0"
+          className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-black/5 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shrink-0"
         >
           <Settings size={16} className="text-blue-600" />
           Configurações
@@ -61,45 +61,32 @@ export default async function DashboardPage() {
       {!isConnected ? (
         <QRCodeDisplay instanceName={businessConfig.instance_name} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500 w-full">
-          <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4 min-w-0">
-            <div className="flex items-center gap-3 border-b border-black/5 pb-4">
-              <Building2 size={24} className="text-blue-600 shrink-0" />
-              <h2 className="text-lg font-bold text-black/80 truncate">Identidade Conectada</h2>
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full animate-in fade-in duration-500">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <Bot size={24} className="text-blue-600" />
             </div>
-            <div className="flex flex-col gap-1 mt-2">
-              <span className="text-xs font-bold text-black/30 uppercase tracking-wider">Instância API</span>
-              <span className="text-xl font-bold text-gray-800 break-all">{businessConfig.instance_name || 'N/A'}</span>
-            </div>
-            <div className="flex flex-col gap-1 mt-2">
-              <span className="text-xs font-bold text-black/30 uppercase tracking-wider">Empresa</span>
-              <span className="text-base font-semibold text-gray-600 break-words">
-                {businessConfig.context_json?.business_info?.name || 'Não definido'}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4 min-w-0">
-            <div className="flex items-center gap-3 border-b border-black/5 pb-4">
-              <Bot size={24} className="text-blue-600 shrink-0" />
-              <h2 className="text-lg font-bold text-black/80 truncate">Status da Secretária</h2>
-            </div>
-            <div className="flex flex-col gap-3 mt-2">
-              <div className="flex items-center gap-3">
-                 <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-                 <span className="text-base font-bold text-gray-800">Online e Monitorando</span>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+                <h2 className="text-base font-bold text-gray-900 truncate">Online e Monitorando</h2>
               </div>
-              <p className="text-sm font-medium text-gray-500 leading-relaxed mt-2 break-words">
-                Sua inteligência artificial está aguardando novos contatos no WhatsApp conectado.
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Instância: <span className="font-bold text-gray-700 uppercase">{businessConfig.instance_name}</span>
               </p>
             </div>
+          </div>
+          
+          <div className="px-4 py-2 bg-gray-50 rounded-lg flex flex-col sm:items-end justify-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Status do Sistema</span>
+            <span className="text-xs font-bold text-gray-600">Aguardando novos contatos</span>
           </div>
         </div>
       )}
 
       {/* KPI GRID */}
       {isConnected && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500 delay-150 fill-mode-both w-full">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 animate-in fade-in duration-500 delay-150 fill-mode-both w-full">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-black/5 flex flex-col gap-2">
             <div className="flex items-center gap-2 text-gray-500 mb-1">
               <MessageSquare size={16} />

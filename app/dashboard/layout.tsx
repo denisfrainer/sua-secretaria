@@ -4,6 +4,7 @@ import { LogOut, Menu } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DashboardHeaderMenu } from '@/components/DashboardHeaderMenu';
+import { MobileDrawerMenu } from '@/components/MobileDrawerMenu';
 
 export default async function DashboardLayout({
   children,
@@ -35,7 +36,12 @@ export default async function DashboardLayout({
           meatende.ai
         </Link>
         <div className="flex items-center gap-4">
-          <DashboardHeaderMenu email={user.email || 'Admin'} />
+          <div className="hidden md:block">
+            <DashboardHeaderMenu email={user.email || 'Admin'} />
+          </div>
+          <div className="md:hidden">
+            <MobileDrawerMenu email={user.email || 'Admin'} />
+          </div>
         </div>
       </header>
 
