@@ -245,10 +245,12 @@ export function LandingSections() {
               </ul>
 
               <a
-                href="#precos"
+                href="https://wa.me/5548992123255?text=Olá, quero assinar o Plano Básico"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block border-2 border-gray-200 text-gray-600 font-bold text-lg py-4 rounded-xl hover:bg-gray-50 transition-colors w-full text-center mt-auto"
               >
-                Plano Básico
+                Assinar Plano Básico
               </a>
             </div>
 
@@ -279,7 +281,9 @@ export function LandingSections() {
               </ul>
 
               <a
-                href="#precos"
+                href="https://wa.me/5548992123255?text=Olá, quero assinar o Plano Pro"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block bg-gray-900 text-white font-bold text-lg py-4 rounded-xl shadow-md hover:bg-black transition-colors w-full text-center mt-auto"
               >
                 Assinar Pro
@@ -327,7 +331,9 @@ export function LandingSections() {
               </ul>
 
               <a
-                href="#precos"
+                href="https://wa.me/5548992123255?text=Olá, quero assinar o Plano Elite"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-colors w-full text-center mt-auto"
               >
                 Assinar Elite
