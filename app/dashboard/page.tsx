@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const isConnected = businessConfig.context_json?.connection_status === 'CONNECTED';
 
   return (
-    <div className="w-full max-w-4xl px-4 py-8 sm:py-16 flex flex-col gap-8">
+    <div className="w-full max-w-4xl px-4 py-8 sm:py-16 flex flex-col gap-8 mx-auto overflow-x-hidden">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
@@ -51,35 +51,35 @@ export default async function DashboardPage() {
       {!isConnected ? (
         <QRCodeDisplay instanceName={businessConfig.instance_name} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500 w-full">
+          <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4 min-w-0">
             <div className="flex items-center gap-3 border-b border-black/5 pb-4">
-              <Building2 size={24} className="text-blue-600" />
-              <h2 className="text-lg font-bold text-black/80">Identidade Conectada</h2>
+              <Building2 size={24} className="text-blue-600 shrink-0" />
+              <h2 className="text-lg font-bold text-black/80 truncate">Identidade Conectada</h2>
             </div>
             <div className="flex flex-col gap-1 mt-2">
               <span className="text-xs font-bold text-black/30 uppercase tracking-wider">Instância API</span>
-              <span className="text-xl font-bold text-gray-800">{businessConfig.instance_name || 'N/A'}</span>
+              <span className="text-xl font-bold text-gray-800 break-all">{businessConfig.instance_name || 'N/A'}</span>
             </div>
             <div className="flex flex-col gap-1 mt-2">
               <span className="text-xs font-bold text-black/30 uppercase tracking-wider">Empresa</span>
-              <span className="text-base font-semibold text-gray-600">
+              <span className="text-base font-semibold text-gray-600 break-words">
                 {businessConfig.context_json?.business_info?.name || 'Não definido'}
               </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4">
+          <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4 min-w-0">
             <div className="flex items-center gap-3 border-b border-black/5 pb-4">
-              <Bot size={24} className="text-blue-600" />
-              <h2 className="text-lg font-bold text-black/80">Status da Secretária</h2>
+              <Bot size={24} className="text-blue-600 shrink-0" />
+              <h2 className="text-lg font-bold text-black/80 truncate">Status da Secretária</h2>
             </div>
             <div className="flex flex-col gap-3 mt-2">
               <div className="flex items-center gap-3">
-                 <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                 <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shrink-0"></div>
                  <span className="text-base font-bold text-gray-800">Online e Monitorando</span>
               </div>
-              <p className="text-sm font-medium text-gray-500 leading-relaxed mt-2">
+              <p className="text-sm font-medium text-gray-500 leading-relaxed mt-2 break-words">
                 Sua inteligência artificial está aguardando novos contatos no WhatsApp conectado.
               </p>
             </div>
