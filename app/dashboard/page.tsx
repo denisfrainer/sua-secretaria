@@ -123,7 +123,6 @@ export default async function DashboardPage() {
               <History size={20} className="text-blue-600" />
               <h2 className="text-lg font-bold text-black/80">Atividade Recente</h2>
             </div>
-            <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition">Ver todos</button>
           </div>
           
           <div className="flex flex-col divide-y divide-black/5">

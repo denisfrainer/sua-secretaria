@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, X, LayoutDashboard, History, Settings, LogOut, User } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Settings, LogOut, History } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
@@ -37,7 +37,6 @@ export function MobileDrawerMenu({ email }: { email: string }) {
 
   const navLinks = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Histórico', href: '/dashboard/history', icon: History },
     { label: 'Configurações', href: '/dashboard/settings', icon: Settings },
   ];
 
