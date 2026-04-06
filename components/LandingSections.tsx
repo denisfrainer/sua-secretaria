@@ -256,7 +256,7 @@ export function LandingSections() {
             <div className="bg-white p-8 md:p-10 border border-gray-200 shadow-sm rounded-3xl text-left flex flex-col relative">
               <p className="text-sm font-bold text-gray-600 uppercase tracking-widest mb-3">Funcionária de IA</p>
               <div className="flex items-baseline justify-start gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-black tracking-tight">R$ 249</span>
+                <span className="text-5xl font-extrabold text-black tracking-tight">R$ 199</span>
                 <span className="text-xl text-gray-400 font-bold">/mês</span>
               </div>
               <p className="text-gray-600 font-medium mb-8 leading-relaxed">
@@ -295,7 +295,7 @@ export function LandingSections() {
               </div>
               <p className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-3">Empresarial</p>
               <div className="flex items-baseline justify-start gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 499</span>
+                <span className="text-5xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 299</span>
                 <span className="text-xl text-gray-400 font-bold">/mês</span>
               </div>
               <p className="text-gray-600 font-medium mb-8 leading-relaxed">

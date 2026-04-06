@@ -176,7 +176,7 @@ export async function POST(req: Request) {
             const variationsAI = [
                 {
                     part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Floripa.`,
-                    part2: `Como funciona o sistema de agendamento de vocês atualmente?`
+                    part2: `Vocês trabalham com algum sistema de agendamento atualmente?`
                 },
                 {
                     part1: `${saudacao} pessoal, tudo certo? Me chamo Denis, sou desenvolvedor aqui da Lagoa da Conceição.`,
@@ -188,7 +188,11 @@ export async function POST(req: Request) {
                 },
                 {
                     part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tranquilo?`,
-                    part2: `Vocês já cogitaram ter um sistema de agendamento automático 24/7 aqui pelo WhatsApp?`
+                    part2: `Vocês já cogitaram ter um sistema de agendamento automático aqui pelo WhatsApp?`
+                },
+                {
+                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Floripa.`,
+                    part2: `Como funciona o sistema de agendamento de vocês atualmente?`
                 }
             ];
 
