@@ -20,20 +20,20 @@ function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange:
       role="switch"
       aria-checked={enabled}
       initial={false}
-      animate={{ 
+      animate={{
         backgroundColor: enabled ? '#34C759' : '#FF3B30',
         opacity: loading ? 0.6 : 1
       }}
       onClick={() => !loading && onChange()}
       className={`relative w-[58px] h-[32px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
     >
-      <motion.span 
+      <motion.span
         layout
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={`
-          absolute top-[2px] left-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md flex items-center justify-center
-          ${enabled ? 'translate-x-[26px]' : 'translate-x-0'}
-        `} 
+                    absolute top-[2px] left-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md flex items-center justify-center
+                    ${enabled ? 'translate-x-[26px]' : 'translate-x-0'}
+                `}
       >
         {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
       </motion.span>
@@ -78,7 +78,7 @@ export function SystemHealthCard({ initialIsAiActive, instanceName }: SystemHeal
           </p>
         </div>
       </div>
-      
+
       <div className="flex items-center justify-between sm:justify-end gap-6 px-4 py-3 bg-gray-50 rounded-2xl sm:bg-transparent sm:p-0">
         <div className="flex flex-col sm:items-end justify-center">
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] leading-none mb-1.5">Controle da Secretária</span>
@@ -88,10 +88,10 @@ export function SystemHealthCard({ initialIsAiActive, instanceName }: SystemHeal
         </div>
 
         {/* REPLACED WITH USER'S iOS TOGGLE */}
-        <IosToggle 
-          enabled={isAiActive} 
-          onChange={toggleAiStatus} 
-          loading={togglingAi} 
+        <IosToggle
+          enabled={isAiActive}
+          onChange={toggleAiStatus}
+          loading={togglingAi}
         />
       </div>
     </div>
