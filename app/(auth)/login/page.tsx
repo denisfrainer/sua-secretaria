@@ -28,39 +28,19 @@ export default async function LoginPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                            Welcome back
+                            Bem-vindo de volta
                         </h1>
                         <p className="text-base font-medium text-slate-500">
-                            Acesse a sua conta para continuar
+                            Faça login para gerenciar sua IA.
                         </p>
                     </div>
                 </div>
 
                 {/* LOGIN FORM CARD */}
-                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100/60">
+                <div className="bg-white rounded-[32px] p-8 shadow-md border border-slate-100/60">
                     <div className="flex flex-col gap-6">
                         <div className="w-full">
-                            <GoogleLoginButton />
-                        </div>
-                        
-                        <div className="relative flex items-center justify-center">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-slate-100"></div>
-                            </div>
-                            <div className="relative bg-white px-4 text-xs font-bold uppercase tracking-widest text-slate-400">
-                                OR EMAIL
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-5">
-                            <div className="group relative">
-                                <input
-                                    type="email"
-                                    disabled
-                                    className="w-full bg-slate-50/50 border border-slate-100 rounded-2xl py-4 px-4 text-base font-medium text-slate-700 cursor-not-allowed placeholder:text-slate-400"
-                                    placeholder="seu@email.com (Em breve)"
-                                />
-                            </div>
+                            <GoogleLoginButton text="Continuar com o Google" />
                         </div>
                     </div>
                 </div>
