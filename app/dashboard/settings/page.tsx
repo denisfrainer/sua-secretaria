@@ -96,9 +96,6 @@ export default function SettingsPage() {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [isAiActive, setIsAiActive] = useState<boolean>(true);
-    const [togglingAi, setTogglingAi] = useState<boolean>(false);
-
     // FETCH DATA
     const fetchData = async () => {
         console.log(`📡 [SETTINGS] Fetching business_config and system_settings...`);
@@ -110,9 +107,8 @@ export default function SettingsPage() {
             return;
         }
 
-        const [configRes, settingsRes] = await Promise.all([
-            supabase.from('business_config').select('*').eq('owner_id', user.id).single(),
-            supabase.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle()
+        const [configRes] = await Promise.all([
+            supabase.from('business_config').select('*').eq('owner_id', user.id).single()
         ]);
 
         if (configRes.error) {
@@ -123,28 +119,10 @@ export default function SettingsPage() {
             setConfig(configRes.data);
         }
 
-        if (settingsRes.data) {
-            const enabled = (settingsRes.data.value as any)?.enabled;
-            setIsAiActive(enabled ?? true);
-        }
-
         setLoading(false);
     };
 
-    // Kill Switch Toggle Function
-    const toggleAiStatus = async () => {
-        setTogglingAi(true);
-        const newState = !isAiActive;
 
-        const { error } = await supabase
-            .from('system_settings')
-            .upsert({ key: 'eliza_active', value: { enabled: newState } });
-
-        if (!error) {
-            setIsAiActive(newState);
-        }
-        setTogglingAi(false);
-    };
 
     useEffect(() => {
         fetchData();
@@ -371,29 +349,7 @@ export default function SettingsPage() {
                             <p className="text-sm font-normal text-black/40 truncate">Ajuste o comportamento da sua IA</p>
                         </div>
                     </div>
-
-                    <div className="flex items-center gap-6 ml-auto">
-                        <div className="flex items-center">
-                            <button
-                                type="button"
-                                onClick={toggleAiStatus}
-                                disabled={togglingAi}
-                                title={isAiActive ? 'IA Ativada' : 'IA Pausada'}
-                                className={`
-                                    relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none
-                                    ${isAiActive ? 'bg-[#34C759]' : 'bg-[#FF3B30]'}
-                                    disabled:opacity-50
-                                `}
-                            >
-                                <div
-                                    className={`
-                                        absolute top-0.5 left-0.5 bg-white w-6 h-6 rounded-full shadow-lg transition-transform duration-200
-                                        ${isAiActive ? 'translate-x-5' : 'translate-x-0'}
-                                    `}
-                                />
-                            </button>
-                        </div>
-
+                    <div className="flex items-center ml-auto">
                         <button
                             onClick={handleLogout}
                             className="w-10 h-10 rounded-xl flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
