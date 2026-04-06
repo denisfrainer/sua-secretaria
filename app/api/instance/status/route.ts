@@ -52,17 +52,20 @@ export async function GET(request: Request) {
 
     // 2. If instance is not fully 'open' (Connected), fetch from connect endpoint
     if (currentState !== 'open') {
+      // 1. Clean the number (REMOVES ALL NON-DIGITS)
       const cleanNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : null;
       
-      // Evolution v2 pairing via connect endpoint (GET) + cache-busting timestamp
+      // 2. Fetch with the number parameter (STRICT URL STRUCTURE)
+      // We explicitly include the number if available to force Pairing Code mode in Evolution v2
       const connectUrl = cleanNumber 
         ? `${baseUrl}/instance/connect/${instanceName}?number=${cleanNumber}&t=${Date.now()}`
         : `${baseUrl}/instance/connect/${instanceName}?t=${Date.now()}`;
 
-      console.log(`🔗 [API STATUS] Connecting via: ${connectUrl}`);
+      console.log(`🔗 [API STATUS] Forcing Connection via: ${connectUrl}`);
       
       const connectRes = await fetch(connectUrl, { 
-        headers: { 'apikey': evoKey }, 
+        method: 'GET',
+        headers: { 'apikey': evoKey, 'Content-Type': 'application/json' }, 
         signal: AbortSignal.timeout(10000),
         cache: 'no-store'
       });
@@ -75,15 +78,15 @@ export async function GET(request: Request) {
 
         qrCodeBase64 = connectData?.base64 || null; 
         
-        // Extraction logic for v2 pairing code
-        const rawCode = connectData?.code || connectData?.pairingCode || null;
-
-        // VALIDATION: Reject raw hashes (~60+ characters)
-        if (rawCode && rawCode.length < 15) {
-            pairingCode = rawCode;
-            console.log(`✅ [API STATUS] Valid pairing code detected: ${pairingCode}`);
-        } else if (rawCode) {
-            console.warn(`⚠️ [API STATUS] Evolution returned a HASH instead of a 8-char CODE.`);
+        // 3. Extraction logic for v2 pairing code
+        const code = connectData?.code || connectData?.pairingCode || null;
+        
+        // VALIDATION: Strict 8-character pairing code check
+        if (code && code.length === 8) {
+            pairingCode = code;
+            console.log(`✅ [API STATUS] Valid 8-char pairing code detected: ${pairingCode}`);
+        } else if (code) {
+            console.warn(`⚠️ [API STATUS] Evolution returned a non-standard code (length: ${code.length}). Treating as null.`);
         }
       } else {
         const errorData = await connectRes.text();
