@@ -1,21 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Source_Sans_3 } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { GoogleTagManager } from '@next/third-parties/google'
 import PwaRegistry from './components/PwaRegistry';
 
-const inter = Inter({
-    subsets: ["latin"],
-    weight: ["400", "500", "600", "700", "800", "900"],
-    variable: "--font-inter",
-    display: 'swap',
-});
 
-const sourceSans = Source_Sans_3({
+
+const jakarta = Plus_Jakarta_Sans({
     subsets: ["latin"],
-    weight: ["400", "500", "600", "700", "800", "900"],
-    variable: "--font-source-sans",
+    weight: ["400", "500", "600", "700", "800"],
+    variable: "--font-jakarta",
     display: 'swap',
 });
 
@@ -63,9 +58,8 @@ export default function RootLayout({
             </head>
             <body
                 className={cn(
-                    "antialiased bg-white text-black font-source",
-                    inter.variable,
-                    sourceSans.variable
+                    "antialiased bg-white text-black font-jakarta",
+                    jakarta.variable
                 )}
             >
                 <PwaRegistry />

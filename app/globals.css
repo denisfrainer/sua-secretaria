@@ -7,8 +7,7 @@
 
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-inter: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-source: var(--font-source-sans), sans-serif;
+  --font-jakarta: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-system: ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
@@ -17,17 +16,11 @@
    Forces every child within these containers to inherit the correct font family, 
    bypassing any browser or platform defaults for headers, labels, and inputs.
 */
-.font-source, .font-source * {
-  font-family: var(--font-source-sans), sans-serif !important;
+.font-jakarta, .font-jakarta * {
+  font-family: var(--font-jakarta), sans-serif !important;
 }
 
-.font-inter, .font-inter * {
-  font-family: var(--font-inter), sans-serif !important;
-}
 
-.font-source h1, .font-source h2, .font-source h3, .font-source h4, .font-source h5, .font-source h6 {
-  font-family: var(--font-inter), sans-serif !important;
-}
 
 .font-system, .font-system * {
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
@@ -58,7 +51,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-source-sans), sans-serif !important;
+  font-family: var(--font-jakarta), sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
