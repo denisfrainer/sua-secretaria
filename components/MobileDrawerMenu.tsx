@@ -64,7 +64,7 @@ export function MobileDrawerMenu({ email }: { email: string }) {
 
       {/* DRAWER */}
       <div 
-        className={`fixed inset-y-0 right-0 w-[280px] bg-white z-[100] shadow-2xl transform transition-transform duration-500 ease-in-out flex flex-col md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 w-[280px] h-fit max-h-screen bg-white z-[100] shadow-2xl rounded-bl-3xl transform transition-transform duration-[750ms] ease-in-out flex flex-col md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* HEADER */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-black/5 shrink-0">
