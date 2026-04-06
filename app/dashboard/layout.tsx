@@ -21,7 +21,10 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col font-source">
       {/* Protected minimal header */}
-      <header className="w-full h-16 bg-[#fafafa]/90 backdrop-blur-md border-b border-black/5 flex items-center justify-between px-6 sticky top-0 z-50">
+      <header className="w-full h-16 flex items-center justify-between px-6 sticky top-0 z-50">
+        {/* Background layer for glassmorphism - separated to avoid opacity inheritance for children */}
+        <div className="absolute inset-0 bg-[#fafafa]/90 backdrop-blur-md border-b border-black/5 -z-10 pointer-events-none" />
+        
         <Link 
           href="/" 
           className="flex items-center gap-2 text-black text-lg font-bold tracking-tight hover:opacity-80 transition-opacity"
