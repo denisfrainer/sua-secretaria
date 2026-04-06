@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Building2, Sparkles } from 'lucide-react';
+import { Building2, Settings, Bot } from 'lucide-react';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 
 export default async function DashboardPage() {
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full max-w-4xl px-4 py-8 sm:py-16 flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
           <p className="text-base text-gray-500 font-medium tracking-wide">
@@ -41,9 +41,9 @@ export default async function DashboardPage() {
         </div>
         <a 
           href="/dashboard/settings"
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-black/5 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-black/5 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shrink-0"
         >
-          <Sparkles size={16} className="text-blue-600" />
+          <Settings size={16} className="text-blue-600" />
           Configurações
         </a>
       </div>
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
 
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-black/5 flex flex-col gap-4">
             <div className="flex items-center gap-3 border-b border-black/5 pb-4">
-              <Sparkles size={24} className="text-blue-600" />
+              <Bot size={24} className="text-blue-600" />
               <h2 className="text-lg font-bold text-black/80">Status da Secretária</h2>
             </div>
             <div className="flex flex-col gap-3 mt-2">

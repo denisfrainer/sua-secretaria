@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default async function DashboardLayout({
   children,
@@ -18,13 +20,26 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-[#fafafa] flex flex-col font-source">
       {/* Protected minimal header */}
       <header className="w-full h-16 bg-[#fafafa]/90 backdrop-blur-md border-b border-black/5 flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-4 text-black text-lg font-bold tracking-tight">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 text-black text-lg font-bold tracking-tight hover:opacity-80 transition-opacity"
+        >
+          <Image 
+            src="/assets/robot.png" 
+            width={24} 
+            height={24} 
+            alt="Robot Logo" 
+            className="object-contain"
+          />
           meatende.ai
-        </div>
+        </Link>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-black/50 hidden sm:block">
+          <span className="text-sm font-medium text-black/50 hidden md:block">
             {user.email}
           </span>
+          <button className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+            <Menu size={20} className="text-black/70" />
+          </button>
         </div>
       </header>
 
