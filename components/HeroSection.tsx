@@ -62,7 +62,7 @@ export function HeroSection() {
               <>
                 <a
                   href="#precos"
-                  className="flex items-center justify-center w-full sm:w-1/2 px-4 py-2 bg-[#533AFD] text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#533AFD]"
+                  className="flex items-center justify-center w-full sm:w-1/2 px-4 h-12 bg-[#533AFD] text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#533AFD]"
                 >
                   Contratar Agora
                 </a>
