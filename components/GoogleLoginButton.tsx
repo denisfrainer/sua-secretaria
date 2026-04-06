@@ -52,7 +52,7 @@ export default function GoogleLoginButton({ text, variant = 'default' }: GoogleL
       className={isNavbar ? 
         `text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors ${isLoading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}` 
         : 
-        `flex items-center justify-center w-full px-4 py-3 bg-white border border-gray-200 rounded-md shadow-sm text-base font-medium text-slate-900 transition-all duration-200 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-100 peer-hover:border-gray-300 hover:scale-[1.01] active:scale-[0.99] ${isLoading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`
+        `flex items-center justify-center w-[328px] h-[48px] bg-white border border-gray-200 rounded-md shadow-sm text-base font-medium text-slate-900 transition-all duration-200 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-100 peer-hover:border-gray-300 hover:scale-[1.01] active:scale-[0.99] ${isLoading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`
       }
     >
       {isLoading ? (

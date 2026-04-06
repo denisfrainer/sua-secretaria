@@ -18,17 +18,17 @@ export default async function LoginPage() {
                 {/* BRAND HEADER */}
                 <div className="flex flex-col items-center text-center gap-6">
                     <div className="w-16 h-16 rounded-3xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-                        <Image 
-                            src="/assets/robot.png" 
-                            width={40} 
-                            height={40} 
-                            alt="meatende.ai" 
+                        <Image
+                            src="/assets/robot.png"
+                            width={40}
+                            height={40}
+                            alt="meatende.ai"
                             className="object-contain"
                         />
                     </div>
                     <div className="flex flex-col gap-2">
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                            Bem-vindo de volta
+                            Acesse sua conta
                         </h1>
                         <p className="text-base font-medium text-slate-500">
                             Faça login para gerenciar sua IA.
