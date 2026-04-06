@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const instanceName = searchParams.get('instance');
-    const phoneNumber = searchParams.get('number'); // Used for Pairing Code generation
+    // REMOVED: phoneNumber parameter for Pairing Code
 
     if (!instanceName) {
       return NextResponse.json({ error: 'Missing instance name' }, { status: 400 });
@@ -48,20 +48,12 @@ export async function GET(request: Request) {
     const currentState = stateData?.instance?.state || 'DISCONNECTED';
 
     let qrCodeBase64 = null;
-    let pairingCode = null;
 
-    // 2. If instance is not fully 'open' (Connected), fetch from connect endpoint
+    // 2. If instance is not fully 'open' (Connected), fetch from connect endpoint (QR ONLY)
     if (currentState !== 'open') {
-      // 1. Clean the number (REMOVES ALL NON-DIGITS)
-      const cleanNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : null;
-      
-      // 2. Fetch with the number parameter (STRICT URL STRUCTURE)
-      // We explicitly include the number if available to force Pairing Code mode in Evolution v2
-      const connectUrl = cleanNumber 
-        ? `${baseUrl}/instance/connect/${instanceName}?number=${cleanNumber}&t=${Date.now()}`
-        : `${baseUrl}/instance/connect/${instanceName}?t=${Date.now()}`;
+      const connectUrl = `${baseUrl}/instance/connect/${instanceName}?t=${Date.now()}`;
 
-      console.log(`🔗 [API STATUS] Forcing Connection via: ${connectUrl}`);
+      console.log(`🔗 [API STATUS] Fetching QR via: ${connectUrl}`);
       
       const connectRes = await fetch(connectUrl, { 
         method: 'GET',
@@ -72,22 +64,7 @@ export async function GET(request: Request) {
       
       if (connectRes.ok) {
         const connectData = await connectRes.json();
-        
-        // --- OBSERVABILITY BLOCK ---
-        console.log(`[EVOLUTION CONNECT RESPONSE]`, JSON.stringify(connectData, null, 2));
-
         qrCodeBase64 = connectData?.base64 || null; 
-        
-        // 3. Extraction logic for v2 pairing code
-        const code = connectData?.code || connectData?.pairingCode || null;
-        
-        // VALIDATION: Strict 8-character pairing code check
-        if (code && code.length === 8) {
-            pairingCode = code;
-            console.log(`✅ [API STATUS] Valid 8-char pairing code detected: ${pairingCode}`);
-        } else if (code) {
-            console.warn(`⚠️ [API STATUS] Evolution returned a non-standard code (length: ${code.length}). Treating as null.`);
-        }
       } else {
         const errorData = await connectRes.text();
         console.warn(`⚠️ [API STATUS] Evolution connect failed:`, errorData);
@@ -99,7 +76,6 @@ export async function GET(request: Request) {
       instance: instanceName,
       state: currentState,
       qr: qrCodeBase64,
-      pairingCode: pairingCode, 
     });
 
   } catch (error: any) {
