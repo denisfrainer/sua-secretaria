@@ -128,13 +128,6 @@ export default function SettingsPage() {
         fetchData();
     }, []);
 
-    // LOGOUT
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.refresh();
-        router.push('/admin/login');
-    };
-
     // UPDATE STATE HELPERS
     const updateBusinessInfo = (field: string, value: string) => {
         if (!config) return;
@@ -349,14 +342,7 @@ export default function SettingsPage() {
                             <p className="text-sm font-normal text-black/40 truncate">Ajuste o comportamento da sua IA</p>
                         </div>
                     </div>
-                    <div className="flex items-center ml-auto">
-                        <button
-                            onClick={handleLogout}
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                        >
-                            <LogOut size={22} strokeWidth={1.5} />
-                        </button>
-                    </div>
+
                 </div>
             </header>
 

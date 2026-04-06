@@ -26,13 +26,13 @@ function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange:
       className="group flex items-center cursor-pointer select-none outline-none focus:outline-none"
     >
       <div className={`
-        relative w-14 h-8 rounded-full transition-colors duration-300 ease-in-out shadow-inner
+        relative w-[68px] h-8 rounded-full transition-colors duration-300 ease-in-out shadow-inner
         ${enabled ? 'bg-[#34C759]' : 'bg-[#FF3B30]'}
         ${loading ? 'cursor-wait' : 'cursor-pointer'}
       `}>
         <motion.div
           className="absolute top-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md"
-          animate={{ left: enabled ? '28px' : '2px' }}
+          animate={{ left: enabled ? '38px' : '2px' }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
       </div>
