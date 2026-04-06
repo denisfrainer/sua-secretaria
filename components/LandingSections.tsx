@@ -309,7 +309,7 @@ export function LandingSections() {
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Até 3 alterações de contexto no mês</span>
+                  <span className="text-gray-900">Alterações de contexto ilimitadas</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -318,11 +318,11 @@ export function LandingSections() {
                 {/* Code-specific features */}
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Handoff Silencioso / Intervenção Nativa do Vendedor</span>
+                  <span className="text-gray-900">Intervenção silenciosa do Vendedor</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Dashboard próprio via infraestrutura Supabase Leads</span>
+                  <span className="text-gray-900">Dashboard próprio com as métricas do seu negócio</span>
                 </li>
               </ul>
 
