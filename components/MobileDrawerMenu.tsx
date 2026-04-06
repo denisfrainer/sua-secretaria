@@ -63,9 +63,11 @@ export function MobileDrawerMenu({ email }: { email: string }) {
       )}
 
       {/* DRAWER */}
-      <div className={`fixed top-0 right-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out flex flex-col md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div 
+        className={`fixed inset-y-0 right-0 w-[280px] bg-white z-[100] shadow-2xl transform transition-transform duration-300 ease-out flex flex-col md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         {/* HEADER */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-black/5">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-black/5 shrink-0">
           <span className="font-bold text-lg text-black">Menu</span>
           <button 
             onClick={() => setIsOpen(false)}
@@ -76,37 +78,39 @@ export function MobileDrawerMenu({ email }: { email: string }) {
         </div>
 
         {/* NAVIGATION LINKS */}
-        <nav className="flex-1 px-4 py-6 flex flex-col gap-2">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                <link.icon size={20} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex-1 overflow-y-auto px-4 py-6">
+          <nav className="flex flex-col gap-2">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                >
+                  <link.icon size={20} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* STICKY FOOTER (User Info & Logout) */}
-        <div className="mt-auto border-t border-black/5 p-6 bg-gray-50/50">
+        <div className="border-t border-black/5 p-6 bg-gray-50/50 shrink-0">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
               {initial}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-bold text-gray-900 truncate">{email}</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Admin</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Admin</span>
             </div>
           </div>
           
           <button 
             onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white border border-red-100 rounded-xl text-red-600 font-bold text-sm shadow-sm hover:bg-red-50 transition-all border-b-2 active:translate-y-0.5 active:border-b-0"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-xl text-red-600 font-bold text-sm shadow-sm hover:bg-red-50 transition-all active:scale-[0.98]"
           >
             <LogOut size={18} />
             Sair da Conta

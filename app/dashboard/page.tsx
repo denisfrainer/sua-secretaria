@@ -86,32 +86,32 @@ export default async function DashboardPage() {
 
       {/* KPI GRID */}
       {isConnected && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 animate-in fade-in duration-500 delay-150 fill-mode-both w-full">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-black/5 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-gray-500 mb-1">
-              <MessageSquare size={16} />
-              <h3 className="text-sm font-bold uppercase tracking-wider">Atendimentos Hoje</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 animate-in fade-in duration-500 delay-150 fill-mode-both w-full">
+          <div className="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-black/5 flex flex-col gap-1 sm:gap-2">
+            <div className="flex items-center gap-2 text-gray-500 mb-0.5 sm:mb-1">
+              <MessageSquare size={14} className="sm:size-[16px]" />
+              <h3 className="text-[10px] sm:text-sm font-bold uppercase tracking-wider">Atendimentos</h3>
             </div>
-            <span className="text-3xl font-extrabold text-gray-900">12</span>
-            <span className="text-xs font-semibold text-green-600">+3 desde ontem</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">12</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-green-600 truncate">+3 hoje</span>
           </div>
           
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-black/5 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-gray-500 mb-1">
-              <Clock size={16} />
-              <h3 className="text-sm font-bold uppercase tracking-wider">Agendamentos</h3>
+          <div className="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-black/5 flex flex-col gap-1 sm:gap-2">
+            <div className="flex items-center gap-2 text-gray-500 mb-0.5 sm:mb-1">
+              <Clock size={14} className="sm:size-[16px]" />
+              <h3 className="text-[10px] sm:text-sm font-bold uppercase tracking-wider">Agendas</h3>
             </div>
-            <span className="text-3xl font-extrabold text-gray-900">4</span>
-            <span className="text-xs font-semibold text-gray-400">Próximo às 14:00</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">4</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">às 14:00</span>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-black/5 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-gray-500 mb-1">
-              <Users size={16} />
-              <h3 className="text-sm font-bold uppercase tracking-wider">Fila do Humano</h3>
+          <div className="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-black/5 flex flex-col gap-1 sm:gap-2">
+            <div className="flex items-center gap-2 text-gray-500 mb-0.5 sm:mb-1">
+              <Users size={14} className="sm:size-[16px]" />
+              <h3 className="text-[10px] sm:text-sm font-bold uppercase tracking-wider">Fila</h3>
             </div>
-            <span className="text-3xl font-extrabold text-gray-900">1</span>
-            <span className="text-xs font-semibold text-orange-500">Aguardando intervenção</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">1</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-orange-500 truncate">Aguardando</span>
           </div>
         </div>
       )}
