@@ -31,18 +31,21 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const searchParams = request.nextUrl.searchParams;
-  const hasCode = searchParams.has('code');
+  const hasCode = searchParams.has('code') || searchParams.has('access_token');
   const isAuthCallback = pathname.startsWith('/auth/callback');
+
+  console.log(`📡 [MIDDLEWARE] Path: ${pathname} | Auth: ${!!user} | HasCode: ${hasCode}`);
 
   // GRACE PERIOD: Never redirect to login if we are in the middle of an auth exchange
   if (isAuthCallback || hasCode) {
+    console.log('🔒 [MIDDLEWARE] Auth exchange detected. Allowing request to proceed.');
     return supabaseResponse;
   }
 
   const isProtectedRoute = pathname.startsWith('/dashboard')
   
   if (isProtectedRoute && !user) {
-    // Se não há usuário autenticado nas rotas privadas, jogue para o login
+    console.log('🚫 [MIDDLEWARE] Unauthorized access to protected route. Redirecting to /login.');
     const url = request.nextUrl.clone()
     url.pathname = '/login' 
     return NextResponse.redirect(url)
@@ -50,8 +53,9 @@ export async function middleware(request: NextRequest) {
 
   // Prevenir que usuário logado veja a tela de login
   if ((pathname.startsWith('/login')) && user) {
+    console.log('✅ [MIDDLEWARE] Authenticated user on login page without code. Redirecting to /dashboard/agenda.');
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/dashboard/agenda'
     return NextResponse.redirect(url)
   }
 

@@ -13,6 +13,23 @@ export function LoginLoadingState() {
   const [message, setMessage] = useState('Finalizando seu acesso...');
 
   useEffect(() => {
+    // 0. IMMEDIATE SESSION CHECK (Non-OAuth Flow)
+    // If we land here and we ALREADY have a session BUT no code in the URL,
+    // we should not be showing the loader at all. Redirect to dashboard.
+    const checkActiveSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const code = searchParams.get('code');
+      const accessToken = searchParams.get('access_token');
+      
+      if (session && !code && !accessToken) {
+        console.log('⚡ [AUTH_STATE] Active session found without OAuth code. Breaking hang...');
+        window.location.href = '/dashboard/agenda';
+      }
+    };
+    checkActiveSession();
+  }, []);
+
+  useEffect(() => {
     const code = searchParams.get('code');
     const accessToken = searchParams.get('access_token');
     const next = searchParams.get('next') || '';
