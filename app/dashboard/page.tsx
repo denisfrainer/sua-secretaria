@@ -18,17 +18,7 @@ export default async function DashboardPage() {
     .eq('owner_id', user.id)
     .maybeSingle();
 
-  if (!businessConfig) {
-    redirect('/dashboard/onboarding');
-  }
-
-  const { data: settingsRes } = await supabase
-    .from('system_settings')
-    .select('value')
-    .eq('key', 'eliza_active')
-    .maybeSingle();
-  
-  const isConnected = businessConfig.context_json?.connection_status === 'CONNECTED';
+  const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   const userName = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Bebel';
 
   return (
