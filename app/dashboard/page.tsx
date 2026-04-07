@@ -2,18 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { 
   Settings, 
-  Users, 
   Calendar, 
   ClipboardList, 
-  Link as LinkIcon, 
   ChevronRight, 
-  Sparkles 
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
-import { SystemHealthCard } from '@/components/SystemHealthCard';
 import { AppointmentLinkButton } from '@/components/dashboard/AppointmentLinkButton';
+import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments';
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -39,52 +36,17 @@ export default async function DashboardPage() {
     .eq('key', 'eliza_active')
     .maybeSingle();
   
-  const isAiActive = (settingsRes?.value as any)?.enabled ?? true;
   const isConnected = businessConfig.context_json?.connection_status === 'CONNECTED';
-
-  // Mock Next Appointments matching the screenshot
-  const nextAppointments = [
-    { time: '09:00', client: 'Maria', service: 'Buço' },
-    { time: '10:30', client: 'Ana', service: 'Axila' },
-    { time: '14:00', client: 'Juliana', service: 'Virilha' },
-  ];
+  const userName = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Bebel';
 
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
       
-      {/* Welcome Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-          Olá, {user.email?.split('@')[0] || 'Bebel'}, bom dia!
-        </h1>
-      </div>
+      {/* Dynamic Welcome Header */}
+      <DashboardGreeting userName={userName} />
 
-      {/* Next Appointments Section (from screenshot) */}
-      <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden">
-        <div className="p-6 pb-2">
-            <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest px-1">Próximos Atendimentos</h2>
-        </div>
-        <div className="flex flex-col divide-y divide-black/5">
-          {nextAppointments.map((app, i) => (
-            <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-black text-gray-900">{app.time}</span>
-                <span className="text-gray-300">|</span>
-                <span className="text-sm font-bold text-gray-500">
-                    {app.client} <span className="text-gray-400 font-medium">({app.service})</span>
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Link 
-          href="/dashboard/agenda"
-          className="w-full py-4 flex items-center justify-center gap-2 text-xs font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50/50 transition-all border-t border-black/5"
-        >
-          Ver agenda completa
-          <ChevronRight size={14} />
-        </Link>
-      </div>
+      {/* Real-time Next Appointments Section */}
+      <UpcomingAppointments />
 
       {/* Main Action Grid (The 4 Modules) */}
       <div className="grid grid-cols-2 gap-4">
