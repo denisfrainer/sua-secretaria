@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
 import { createClient } from '@/lib/supabase/server';
+import { LoginLoadingState } from '@/components/auth/LoginLoadingState';
 
 export default async function LoginPage() {
     // Server-side check to prevent logged-in users from seeing the login page
@@ -14,6 +15,9 @@ export default async function LoginPage() {
 
     return (
         <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 antialiased selection:bg-indigo-100 font-outfit">
+            {/* Show loading state if processing code exchange */}
+            <LoginLoadingState />
+
             <div className="w-full max-w-sm flex flex-col gap-10">
                 {/* BRAND HEADER */}
                 <div className="flex flex-col items-center text-center gap-6">
