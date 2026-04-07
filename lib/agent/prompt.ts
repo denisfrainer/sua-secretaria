@@ -23,10 +23,16 @@ If the user wants to speak to a human, schedule a meeting, or shows high buying 
 - You must write your entire response as a single, continuous paragraph.
 `;
 
-export function generatePrompt(businessName: string, customInstructions: string) {
+export function generatePrompt(businessName: string, customInstructions: string, services: any[], ownerId: string) {
     const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    
+    // Format services for the prompt
+    const servicesList = services.map(s => `- ${s.name}: R$ ${s.price} (${s.duration})`).join('\n');
+
     return DEFAULT_SYSTEM_PROMPT
         .replace(/{business_name}/g, businessName)
         .replace(/{custom_instructions}/g, customInstructions)
-        .replace("[INJETAR_HORA]", `Agora são exatamente: ${now}`);
+        .replace("[INJETAR_HORA]", `Agora são exatamente: ${now}`)
+        .replace("[INJETAR_SERVICOS]", `Aqui estão os serviços disponíveis:\n${servicesList}`)
+        .replace("[INJETAR_CONTEXTO_DONO]", `O ID do dono deste negócio para ferramentas de agendamento é: ${ownerId}`);
 }

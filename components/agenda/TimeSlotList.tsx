@@ -12,7 +12,7 @@ const MOCK_BOOKED = [
   { time: '14:00', client: 'Juliana', service: 'Virilha', status: 'confirmed' },
 ];
 
-export function TimeSlotList({ date, onSlotClick, loading }: { date: Date; onSlotClick: (slot: any) => void; loading: boolean }) {
+export function TimeSlotList({ date, onSlotClick, loading, agenda = [] }: { date: Date; onSlotClick: (slot: any) => void; loading: boolean; agenda?: any[] }) {
   const today = startOfToday();
   const isTodaySelected = isSameDay(date, today);
 
@@ -23,12 +23,22 @@ export function TimeSlotList({ date, onSlotClick, loading }: { date: Date; onSlo
     const minutes = totalMinutes % 60;
     const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     
-    // Check if booked
-    const booked = MOCK_BOOKED.find(b => b.time === timeStr && isTodaySelected);
+    // Check if booked in the REAL agenda (Google Calendar)
+    const googleEvent = agenda.find(event => {
+        const start = new Date(event.start);
+        return format(start, 'HH:mm') === timeStr;
+    });
+
+    const bookedData = googleEvent ? {
+        client: googleEvent.title || 'Compromisso',
+        service: googleEvent.description || 'Google Calendar',
+        status: 'confirmed'
+    } : null;
+
     return {
       time: timeStr,
-      booked: booked || null,
-      type: booked ? 'booked' : 'free',
+      booked: bookedData,
+      type: bookedData ? 'booked' : 'free',
       isPast: isTodaySelected && totalMinutes < (new Date().getHours() * 60 + new Date().getMinutes()),
     };
   });

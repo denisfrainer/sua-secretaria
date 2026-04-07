@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Settings, ChevronLeft, ChevronRight, Calendar, Loader2, ArrowLeft } from 'lucide-react';
-import { DateStrip } from '@/components/agenda/DateStrip';
-import { TimeSlotList } from '@/components/agenda/TimeSlotList';
-import { AgendaDrawer } from '@/components/agenda/AgendaDrawer';
-import { AgendaSettingsModal } from '@/components/agenda/AgendaSettingsModal';
+import { DateStrip } from '../../../components/agenda/DateStrip';
+import { TimeSlotList } from '../../../components/agenda/TimeSlotList';
+import { AgendaDrawer } from '../../../components/agenda/AgendaDrawer';
+import { AgendaSettingsModal } from '../../../components/agenda/AgendaSettingsModal';
 import Link from 'next/link';
 import { format, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,14 +17,34 @@ export default function AgendaPage() {
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  const [agenda, setAgenda] = useState<any[]>([]);
+
   useEffect(() => {
-    console.log('📡 [AGENDA] Fetching slots for:', format(selectedDate, 'yyyy-MM-dd'));
-    setLoading(true);
-    // Simulate API fetch delay
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    async function fetchAgenda() {
+      // Only fetch from API if today is selected
+      const today = new Date();
+      if (!isSameDay(selectedDate, today)) {
+        setLoading(false);
+        setAgenda([]);
+        return;
+      }
+
+      console.log('📡 [AGENDA] Fetching real-time Google Calendar agenda...');
+      setLoading(true);
+      try {
+        const res = await fetch('/api/agenda/today');
+        const data = await res.json();
+        if (data.agenda) {
+          setAgenda(data.agenda);
+        }
+      } catch (error) {
+        console.error('[AGENDA] Failed to fetch agenda:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAgenda();
   }, [selectedDate]);
 
   const handleSlotClick = (slot: any) => {
@@ -84,6 +104,7 @@ export default function AgendaPage() {
           <TimeSlotList 
             date={selectedDate} 
             loading={loading}
+            agenda={agenda}
             onSlotClick={handleSlotClick} 
           />
         </div>

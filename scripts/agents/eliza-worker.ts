@@ -17,20 +17,13 @@ const ai = new GoogleGenAI({
 process.env.TZ = 'America/Sao_Paulo';
 
 // ==============================================================
-// 📅 GOOGLE CALENDAR SETUP
+// 📅 MULTI-TENANT GOOGLE CALENDAR SETUP (OAuth 2.0)
 // ==============================================================
-let calendarAuth: any;
-try {
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
-    calendarAuth = new google.auth.JWT({
-        email: credentials.client_email,
-        key: credentials.private_key,
-        scopes: ['https://www.googleapis.com/auth/calendar']
-    });
-} catch (error) {
-    console.error("⚠️ [CALENDAR] Aviso: GOOGLE_CREDENTIALS não configurado ou inválido no .env");
-}
-const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
+const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.NEXT_PUBLIC_SITE_URL + '/api/auth/google/callback'
+);
 
 // ==============================================================
 // 🔧 FUNCTION DECLARATIONS (Tools)
@@ -104,8 +97,8 @@ const functionDeclarations: any[] = [
     }
 ];
 
-async function executeToolCall(name: string, args: any, clientPhone: string): Promise<any> {
-    console.log(`🔧 [TOOL EXECUTION]: ${name}`);
+async function executeToolCall(name: string, args: any, clientPhone: string, googleTokens?: any): Promise<any> {
+    console.log(`🔧 [TOOL EXECUTION]: ${name} ${googleTokens ? '(Dynamic Auth)' : '(No Auth)'}`);
     console.log(`➡️  [TOOL ARGS]:`, JSON.stringify(args));
 
     if (name === 'save_lead_data') {
@@ -159,45 +152,36 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
         console.log(`\n================= 👁️ CONSOLE.GOD (CALENDAR CHECK) 👁️ =================`);
         console.log(`📅 Leitura de agenda acionada para a data: ${args.date}`);
 
+        if (!googleTokens || !googleTokens.refresh_token) {
+            console.error("❌ [CALENDAR ERROR]: Google Calendar not integrated for this tenant.");
+            return { status: 'error', message: 'Este negócio ainda não conectou a agenda do Google.' };
+        }
+
         try {
-            // Ajuste: Permite definir o ID da agenda via variável de ambiente. 
-            // Se usar 'primary', certifique-se de que o evento de teste foi criado na agenda da conta autenticada.
-            const targetCalendarId = process.env.GOOGLE_CALENDAR_ID || 'denisfrainer93@gmail.com';
+            oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
+            const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
             const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
             const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
 
             const requestParams = {
-                calendarId: targetCalendarId,
+                calendarId: 'primary',
                 timeMin: startOfDay.toISOString(),
                 timeMax: endOfDay.toISOString(),
-                singleEvents: true, // CRÍTICO: Garante o retorno de todos os eventos expandidos
+                singleEvents: true,
                 orderBy: 'startTime'
             };
 
-            console.log(`➡️ Payload da requisição enviada ao Google:`, JSON.stringify(requestParams, null, 2));
-
             const response = await calendar.events.list(requestParams);
-
             const events = response.data.items || [];
 
             console.log(`⬅️ Payload recebido do Google (Total itens encontrados: ${events.length})`);
 
-            if (events.length > 0) {
-                events.forEach((ev: any) => console.log(`   - Evento: ${ev.summary} | Início: ${ev.start?.dateTime}`));
-            } else {
-                console.log(`   - Nenhum evento retornado pelo Google. A lista está vazia.`);
-                console.log(`   - ATENÇÃO: Se existe evento nesta data, o erro é de permissão/compartilhamento do Calendar ID.`);
-            }
-            console.log(`=======================================================================\n`);
-
             const busySlots = events.map((ev: any) => {
-                if (ev.start?.dateTime) {
-                    return new Date(ev.start.dateTime).toLocaleTimeString('pt-BR', {
-                        hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
-                    });
-                }
-                return 'Hora indefinida';
+                const start = ev.start?.dateTime || ev.start?.date;
+                return start ? new Date(start).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+                }) : 'Hora indefinida';
             });
 
             return {
@@ -217,22 +201,27 @@ async function executeToolCall(name: string, args: any, clientPhone: string): Pr
 
     if (name === 'schedule_appointment') {
         console.log(`📅 [CALENDAR] Iniciando agendamento para ${args.client_name}`);
+        
+        if (!googleTokens || !googleTokens.refresh_token) {
+            console.error("❌ [CALENDAR ERROR]: Google Calendar not integrated.");
+            return { status: 'error', message: 'Integração com Google Calendar pendente para este negócio.' };
+        }
+
         try {
+            oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
+            const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
             const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
-
-            // Extract duration from args or default to 60 minutes
             const durationInMinutes = args.duration_minutes ? Number(args.duration_minutes) : 60;
-
-            // Calculate end time based on actual service duration
             const endTime = new Date(startTime.getTime() + (durationInMinutes * 60 * 1000));
 
             console.log(`➡️ [API REQUEST] Event: ${startTime.toISOString()} to ${endTime.toISOString()} (Duration: ${durationInMinutes}m)`);
 
             await calendar.events.insert({
-                calendarId: process.env.GOOGLE_CALENDAR_ID || 'denisfrainer93@gmail.com',
+                calendarId: 'primary',
                 requestBody: {
                     summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
-                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}\nDuração Padrão: ${durationInMinutes}m`,
+                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}\nDuração: ${durationInMinutes}m\n(Agendado via Eliza)`,
                     start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                     end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
                 }
@@ -322,23 +311,25 @@ async function processLead(lead: any) {
         // 1. Lock lead status
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
-        // 2. Load context and history
-        console.log(`📡 [DB] Buscando business_context atualizado no Supabase...`);
+        // 2. Load context and history (DYNAMIC MULTI-TENANT)
+        console.log(`📡 [DB] Buscando business_config para instância: ${instanceToUse}`);
 
         const { data: configData, error: configError } = await supabaseAdmin
             .from('business_config')
-            .select('context_json')
-            .eq('id', 1)
+            .select('id, context_json')
+            .eq('instance_name', instanceToUse)
             .single();
 
         let businessContext = "";
+        let googleTokens = null;
+
         if (configError || !configData) {
-            console.error(`❌ [DB ERROR] Falha ao carregar o cérebro da clínica:`, configError?.message);
-            // Fallback de segurança mínimo caso o banco caia
+            console.error(`❌ [DB ERROR] Falha ao carregar configuração para ${instanceToUse}:`, configError?.message);
             businessContext = JSON.stringify({ servicos: [], aviso: "Sistema em manutenção" });
         } else {
             businessContext = JSON.stringify(configData.context_json);
-            console.log(`✅ [DB] Contexto de negócio carregado com sucesso (${businessContext.length} bytes).`);
+            googleTokens = (configData.context_json as any)?.google_calendar || null;
+            console.log(`✅ [DB] Config carga: ${businessContext.length} bytes. Google Auth: ${googleTokens ? 'Sim' : 'Não'}`);
         }
 
         const { data: rawHistory } = await supabaseAdmin
@@ -485,7 +476,7 @@ ${businessContext}
             const functionResponseParts: any[] = [];
 
             for (const call of result.functionCalls) {
-                const output = await executeToolCall(call.name || '', call.args, clientNumber);
+                const output = await executeToolCall(call.name || '', call.args, clientNumber, googleTokens);
 
                 functionResponseParts.push({
                     functionResponse: {
