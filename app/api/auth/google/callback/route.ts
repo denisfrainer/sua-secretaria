@@ -34,24 +34,59 @@ export async function GET(req: NextRequest) {
     if (providerRefreshToken) {
       console.log('✅ [AUTH] Google Refresh Token grabbed. Bypassing RLS to save...');
 
-      // 3. PERSISTENCE: Bypass RLS using supabaseAdmin (Service Role)
-      // This guarantees the save happens even if the session hasn't fully propagated to the DB level for RLS
-      const { data, error: dbError } = await supabaseAdmin
+      // 3. DEFENSIVE WRITE: Check if business_config exists (Race Condition Shield)
+      const { data: existingRow } = await supabaseAdmin
         .from('business_config')
-        .update({ google_refresh_token: providerRefreshToken })
+        .select('id')
         .eq('owner_id', session.user.id)
-        .select();
+        .single();
 
-      if (dbError) {
-        console.error('❌ [DB ERROR] Failed to save token:', dbError.message);
-      } else if (!data || data.length === 0) {
-        console.warn('⚠️ [DB WARNING] Token NOT saved: No record found in business_config for owner_id:', session.user.id);
+      if (existingRow) {
+        // CASE A: User already exists -> UPDATE
+        const { data, error } = await supabaseAdmin
+          .from('business_config')
+          .update({ google_refresh_token: providerRefreshToken })
+          .eq('owner_id', session.user.id)
+          .select();
+
+        if (error) console.error('❌ [DB UPDATE ERROR]:', error.message);
+        else console.log('✅ [DB UPDATE SUCCESS]: Token persisted for returning user.');
       } else {
-        console.log('✅ [DB] Token successfully saved and verified for user:', session.user.id);
-        console.log('➡️ [DB UPDATE RESULT]:', JSON.stringify(data[0], null, 2));
+        // CASE B: New Signup Race Condition -> INSERT
+        console.log('🆕 [DB] New user detected. Creating business_config row...');
+        
+        const defaultContext = {
+          business_info: { name: 'Meu Studio', address: '', parking: '', handoff_phone: '' },
+          operating_hours: {
+            weekdays: { open: '09:00', close: '18:00', is_closed: false },
+            saturday: { open: '09:00', close: '13:00', is_closed: false },
+            sunday: { open: '09:00', close: '18:00', is_closed: true },
+            observations: ''
+          },
+          services: [],
+          scheduling_rules: [],
+          restrictions: [],
+          tone_of_voice: { base_style: 'Profissional', custom_instructions: '' },
+          payment_info: { pix_type: '', pix_key: '', owner_name: '' },
+          booking_policies: { minimum_advance_notice: '2 horas', buffer_time_minutes: '15' },
+          faq: [],
+          updated_at: new Date().toISOString()
+        };
+
+        const { error: insertError } = await supabaseAdmin
+          .from('business_config')
+          .insert({ 
+            owner_id: session.user.id, 
+            google_refresh_token: providerRefreshToken,
+            context_json: defaultContext
+          });
+
+        if (insertError) console.error('❌ [DB INSERT ERROR]:', insertError.message);
+        else console.log('✅ [DB INSERT SUCCESS]: Business config created with token.');
       }
+
     } else {
-      console.warn('⚠️ [AUTH] No provider_refresh_token found in session. Ensure "prompt=consent" and "access_type=offline" are used.');
+      console.warn('⚠️ [AUTH] No provider_refresh_token found in session.');
     }
 
     // 4. Redirect to the intended destination (typically /dashboard/agenda)
