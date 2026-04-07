@@ -48,11 +48,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Prevenir que usuário logado veja a tela de login, EXCETO se houver um código de troca
-  // (útil para Fluxo de Autenticação Incremental / Google Calendar)
-  const hasAccessToken = searchParams.has('access_token');
-  
-  if ((pathname.startsWith('/login')) && user && !hasCode && !hasAccessToken) {
+  // Prevenir que usuário logado veja a tela de login
+  if ((pathname.startsWith('/login')) && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
