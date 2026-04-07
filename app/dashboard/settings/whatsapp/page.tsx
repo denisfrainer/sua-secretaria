@@ -28,7 +28,7 @@ export default function WhatsAppSettingsPage() {
         .from('business_config')
         .select('*')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
       setConfig(data);
     }
     setLoading(false);
@@ -37,6 +37,59 @@ export default function WhatsAppSettingsPage() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  const handleInitializeInstance = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const businessName = user.user_metadata?.business_name || 'Minha Empresa';
+      const slug = businessName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+      const instanceName = `${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // 1. Initialize instance via Evolution wrapper
+      const initRes = await fetch('/api/instance/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instanceName })
+      });
+      
+      if (!initRes.ok) throw new Error("Erro ao inicializar IA.");
+
+      // 2. Update or Insert business_config
+      if (config) {
+        await supabase
+          .from('business_config')
+          .update({ instance_name: instanceName })
+          .eq('id', config.id);
+      } else {
+        await supabase
+          .from('business_config')
+          .insert({
+            owner_id: user.id,
+            instance_name: instanceName,
+            context_json: {
+              connection_status: "DISCONNECTED",
+              business_info: { name: businessName, address: "", parking: "", handoff_phone: "" },
+              operating_hours: {
+                weekdays: { open: "09:00", close: "18:00", is_closed: false },
+                saturday: { open: "09:00", close: "13:00", is_closed: false },
+                sunday: { open: "00:00", close: "00:00", is_closed: true },
+                observations: ""
+              },
+              services: [], faq: []
+            }
+          });
+      }
+      
+      await fetchStatus();
+    } catch (error) {
+      console.error('Failed to initialize instance:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDisconnect = async () => {
     if (!config?.instance_name) return;
@@ -126,6 +179,30 @@ export default function WhatsAppSettingsPage() {
                </div>
             </div>
           </motion.div>
+        ) : !config?.instance_name ? (
+          <motion.div 
+            key="no-instance"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="w-full max-w-sm mx-auto bg-white rounded-[2.5rem] border border-dashed border-gray-200 p-10 flex flex-col items-center text-center gap-6"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-300">
+              <RefreshCw size={32} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-lg font-black text-gray-900 tracking-tight">Infraestrutura Pendente</h3>
+              <p className="text-sm font-medium text-gray-400">
+                Você ainda não gerou sua instância de IA. Clique abaixo para construir seu terminal exclusivo.
+              </p>
+            </div>
+            <button 
+              onClick={handleInitializeInstance}
+              className="w-full h-14 bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+            >
+              Gerar Terminal de IA
+            </button>
+          </motion.div>
         ) : (
           <motion.div 
             key="qr"
@@ -134,7 +211,7 @@ export default function WhatsAppSettingsPage() {
             exit={{ opacity: 0, y: -20 }}
           >
             <QRCodeDisplay 
-              instanceName={config?.instance_name || 'studio_art'} 
+              instanceName={config.instance_name} 
               onConnected={fetchStatus}
             />
           </motion.div>

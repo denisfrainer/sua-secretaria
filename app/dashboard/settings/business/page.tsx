@@ -104,12 +104,33 @@ export default function BusinessSettingsPage() {
         .from('business_config')
         .select('*')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        setError('Falha ao carregar dados do negócio.');
-      } else {
+      if (data) {
         setConfig(data);
+      } else {
+        // Initialize local state for a NEW business profile
+        setConfig({
+          id: 0, // Temporary ID
+          owner_id: user.id,
+          context_json: {
+            business_info: { name: '', address: '', parking: '', handoff_phone: '' },
+            operating_hours: {
+              weekdays: { open: "09:00", close: "18:00", is_closed: false },
+              saturday: { open: "09:00", close: "13:00", is_closed: false },
+              sunday: { open: "00:00", close: "00:00", is_closed: true },
+              observations: ""
+            },
+            services: [],
+            scheduling_rules: [],
+            restrictions: [],
+            tone_of_voice: { base_style: "Amigável e profissional", custom_instructions: "Responda de forma natural." },
+            payment_info: { pix_type: "", pix_key: "", owner_name: "" },
+            booking_policies: { minimum_advance_notice: "2 horas", buffer_time_minutes: "15" },
+            faq: [],
+            updated_at: new Date().toISOString()
+          }
+        } as any);
       }
       setLoading(false);
     }
@@ -162,26 +183,84 @@ export default function BusinessSettingsPage() {
     });
   };
 
+  const generateInstanceName = (name: string) => {
+    const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
+    return `${slug || 'studio'}-${randomSuffix}`;
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!config) return;
 
-    setSaving(true);
-    const { error: updateError } = await supabase
-      .from('business_config')
-      .update({
-        context_json: config.context_json,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', config.id);
+    if (!config.context_json.business_info.name.trim()) {
+      setError("O nome da empresa é obrigatório para começar.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
-    if (updateError) {
-      setError(`Erro ao salvar: ${updateError.message}`);
-    } else {
+    setSaving(true);
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      let finalConfig = config;
+
+      // 1. If ID is 0, this is a NEW business -> Initial Setup Flow
+      if (config.id === 0) {
+        console.log('🚀 [SETUP] Initializing new business config...');
+        const instanceName = generateInstanceName(config.context_json.business_info.name);
+
+        // a. Initialize instance via Evolution wrapper
+        const initRes = await fetch('/api/instance/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instanceName })
+        });
+        
+        const initData = await initRes.json();
+        if (!initRes.ok) throw new Error(initData.error || "Erro ao inicializar IA.");
+
+        // b. Insert into Supabase
+        const { data: insertedData, error: insertError } = await supabase
+          .from('business_config')
+          .insert({
+              owner_id: user.id,
+              instance_name: instanceName,
+              context_json: config.context_json
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        if (insertedData) setConfig(insertedData);
+
+      } else {
+        // 2. Existing business -> Standard Update Flow
+        const { error: updateError } = await supabase
+          .from('business_config')
+          .update({
+            context_json: config.context_json,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', config.id);
+
+        if (updateError) throw updateError;
+      }
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+      router.refresh();
+      
+    } catch (err: any) {
+      console.error(err);
+      setError(`Erro ao salvar: ${err.message}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;

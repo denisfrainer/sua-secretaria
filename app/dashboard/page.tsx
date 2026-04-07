@@ -19,13 +19,18 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
-  const userName = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Bebel';
+  
+  // Robust name fallbacks
+  const displayName = user.user_metadata?.full_name?.split(' ')[0] 
+    || user.user_metadata?.name?.split(' ')[0]
+    || user.email?.split('@')[0] 
+    || 'Bebel';
 
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
       
       {/* Dynamic Welcome Header */}
-      <DashboardGreeting userName={userName} />
+      <DashboardGreeting userName={displayName} />
 
       {/* Real-time Next Appointments Section */}
       <UpcomingAppointments />
