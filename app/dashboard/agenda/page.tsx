@@ -47,7 +47,10 @@ export default function AgendaPage() {
         }
 
         const data = await res.json();
-        if (data.agenda) {
+        if (data.integrated === false) {
+          setIsIntegrated(false);
+          setAgenda([]);
+        } else if (data.agenda) {
           setAgenda(data.agenda);
           setIsIntegrated(true);
         }

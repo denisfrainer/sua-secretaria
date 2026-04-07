@@ -5,11 +5,10 @@ export async function getGoogleAuthClient(businessConfigId: number, contextJson:
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/google/callback`
+    `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
   );
 
   // 1. Fetch the central profile to get the most up-to-date refresh token
-  // This is better than relying on the contextJson which might be stale
   const { data: config } = await supabaseAdmin
     .from('business_config')
     .select('owner_id')
@@ -24,35 +23,39 @@ export async function getGoogleAuthClient(businessConfigId: number, contextJson:
     .eq('id', config.owner_id)
     .single();
 
-  const googleCal = contextJson.google_calendar;
+  const googleCal = contextJson?.google_calendar || {};
   const refreshToken = profile?.google_refresh_token || googleCal?.refresh_token;
 
-  if (!googleCal || !googleCal.access_token) {
+  // CRITICAL: If we have a refresh token but no access token, or vice versa, 
+  // we must normalize the client state.
+  if (!refreshToken) {
     throw new Error('Google Calendar not integrated');
   }
 
   oauth2Client.setCredentials({
-    access_token: googleCal.access_token,
+    access_token: googleCal.access_token || undefined,
     refresh_token: refreshToken,
-    expiry_date: googleCal.expiry_date,
+    expiry_date: googleCal.expiry_date || undefined,
   });
 
   // Check if token is expired (or close to it)
-  const isExpired = googleCal.expiry_date ? Date.now() >= googleCal.expiry_date : true;
+  // If we don't have an access token at all, we consider it expired to trigger a refresh
+  const isExpired = !googleCal.access_token || (googleCal.expiry_date ? Date.now() >= googleCal.expiry_date : true);
 
   if (isExpired && refreshToken) {
-    console.log('[GCAL_SYNC] Access token expired, attempting refresh...');
+    console.log('[GCAL_SYNC] Access token missing or expired. Attempting refresh with Profile token...');
     try {
       const { credentials } = await oauth2Client.refreshAccessToken();
-      console.log('[GCAL_SYNC] Access token refreshed successfully');
+      console.log('[GCAL_SYNC] Access token refreshed successfully using central profile token');
 
-      // Update BOTH the profile (central) and business_config context (instance-local)
+      // Update BOTH the profile (central) and business_config context (instance-local cache)
+      const updatedAt = new Date().toISOString();
       await Promise.all([
         supabaseAdmin
           .from('profiles')
           .update({ 
             google_refresh_token: credentials.refresh_token || refreshToken,
-            updated_at: new Date().toISOString()
+            updated_at: updatedAt
           })
           .eq('id', config.owner_id),
         
@@ -66,7 +69,7 @@ export async function getGoogleAuthClient(businessConfigId: number, contextJson:
                 access_token: credentials.access_token,
                 refresh_token: credentials.refresh_token || refreshToken,
                 expiry_date: credentials.expiry_date,
-                updated_at: new Date().toISOString(),
+                updated_at: updatedAt,
               },
             }
           })
@@ -74,8 +77,12 @@ export async function getGoogleAuthClient(businessConfigId: number, contextJson:
       ]);
 
       oauth2Client.setCredentials(credentials);
-    } catch (error) {
-      console.error('[GCAL_SYNC] Error refreshing token:', error);
+    } catch (error: any) {
+      console.error('[GCAL_SYNC] Error refreshing token:', error.message);
+      // If the refresh token itself is invalid/revoked, we should treat as not integrated
+      if (error.message.includes('invalid_grant')) {
+        throw new Error('Google Calendar not integrated');
+      }
       throw error;
     }
   }

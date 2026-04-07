@@ -80,7 +80,13 @@ export async function GET() {
   } catch (error: any) {
     console.error('[GCAL_SYNC] Error fetching today\'s agenda:', error.message);
     
-    if (error.message.includes('not integrated')) {
+    // If it's an integration error (missing token, invalid grant, etc.), return 200 with integrated: false
+    const isIntegrationError = 
+      error.message.includes('not integrated') || 
+      error.message.includes('invalid_grant') || 
+      error.message.includes('No refresh token is set');
+
+    if (isIntegrationError) {
       return NextResponse.json({ integrated: false, agenda: [] });
     }
     
