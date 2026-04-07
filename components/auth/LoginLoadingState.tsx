@@ -1,13 +1,13 @@
-'use client';
-
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2, Sparkles } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export function LoginLoadingState() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const supabase = createClient();
   const [isProcessing, setIsProcessing] = useState(false);
-
   const [message, setMessage] = useState('Finalizando seu acesso...');
 
   useEffect(() => {
@@ -24,8 +24,20 @@ export function LoginLoadingState() {
       } else {
         setMessage('Finalizando seu acesso...');
       }
+
+      // CLIENT-SIDE SAFETY NET:
+      // In case of a "Redirect Loop" or Cookie Propagation Delay, 
+      // the moment the client-side Supabase instance sees the session, force a navigate.
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          console.log('⚡ [AUTH SAFETY NET] Session detected. Breaking potential loop...');
+          window.location.href = next || '/dashboard';
+        }
+      });
+
+      return () => subscription.unsubscribe();
     }
-  }, [searchParams]);
+  }, [searchParams, supabase, router]);
 
   if (!isProcessing) return null;
 

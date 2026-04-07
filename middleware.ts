@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, { ...options, path: '/' })
           )
         },
       },
@@ -30,6 +30,15 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname;
+  const searchParams = request.nextUrl.searchParams;
+  const hasCode = searchParams.has('code');
+  const isAuthCallback = pathname.startsWith('/auth/callback');
+
+  // GRACE PERIOD: Never redirect to login if we are in the middle of an auth exchange
+  if (isAuthCallback || hasCode) {
+    return supabaseResponse;
+  }
+
   const isProtectedRoute = pathname.startsWith('/dashboard')
   
   if (isProtectedRoute && !user) {
