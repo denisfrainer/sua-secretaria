@@ -48,8 +48,8 @@ export default function QuickActions() {
       icon: <LinkIcon className="w-5 h-5" />,
       colorClass: 'text-orange-600 bg-orange-50 ring-orange-100',
       action: () => {
-        console.log('[NAVIGATION] Navigating to /dashboard/settings/business (Services)');
-        router.push('/dashboard/settings/business');
+        console.log('[NAV] Going to catalog');
+        router.push('/dashboard/settings/catalog');
       },
     },
     {
@@ -57,8 +57,8 @@ export default function QuickActions() {
       icon: <Settings className="w-5 h-5" />,
       colorClass: 'text-emerald-600 bg-emerald-50 ring-emerald-100',
       action: () => {
-        console.log('[NAVIGATION] Navigating to /dashboard/settings');
-        router.push('/dashboard/settings');
+        console.log('[NAV] Going to business settings');
+        router.push('/dashboard/settings/business');
       },
     },
   ];
