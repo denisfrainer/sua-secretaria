@@ -54,7 +54,18 @@ export function LoginLoadingState() {
         }
       });
 
-      return () => subscription.unsubscribe();
+      // 3. FALLBACK TIMEOUT (Force Redirect after 5s)
+      // If none of the above trigger (e.g. slow network or listener fail), 
+      // just push the user to the destination anyway after 5 seconds.
+      const timeout = setTimeout(() => {
+        console.warn('🕒 [AUTH SAFETY NET] Timeout reached. Forcing navigation...');
+        window.location.href = next || '/dashboard/agenda';
+      }, 5000);
+
+      return () => {
+        subscription.unsubscribe();
+        clearTimeout(timeout);
+      };
     }
   }, [searchParams, supabase, router]);
 
