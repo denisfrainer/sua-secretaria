@@ -92,12 +92,10 @@ export default function IntegrationsSettingsPage() {
           <div className="flex items-start justify-between z-10">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center border border-black/5 p-3 group-hover:scale-105 transition-transform duration-500">
-                <Image 
-                  src="/assets/google-calendar.png" 
-                  width={48} 
-                  height={48} 
+                <img 
+                  src="/assets/agenda-logo.svg" 
                   alt="Google Calendar" 
-                  className="object-contain"
+                  className="w-12 h-12 object-contain"
                 />
               </div>
               <div className="flex flex-col">
@@ -140,8 +138,14 @@ export default function IntegrationsSettingsPage() {
                 onClick={handleGoogleAuth}
                 className="group/btn relative h-12 px-8 rounded-2xl bg-white border border-black/10 text-gray-700 font-black text-xs uppercase tracking-widest flex items-center gap-3 overflow-hidden transition-all hover:border-gray-900 active:scale-95"
               >
-                <div className="absolute inset-0 bg-gray-900 opacity-0 group-hover/btn:opacity-[0.02] transition-opacity" />
-                <Image src="/assets/google.png" width={18} height={18} alt="Google" />
+                <div className="flex items-center justify-center p-0.5">
+                  <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.64 9.20455C17.64 8.56636 17.5827 7.95273 17.4764 7.36364H9V10.845H13.8436C13.635 11.97 13.0009 12.9232 12.0477 13.5614V15.8195H14.9564C16.6582 14.2527 17.64 11.9455 17.64 9.20455Z" fill="#4285F4"/>
+                    <path d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.5614C11.2418 14.1014 10.2109 14.4205 9 14.4205C6.65591 14.4205 4.67182 12.8373 3.96409 10.71H0.957273V13.0418C2.43818 15.9832 5.48182 18 9 18Z" fill="#34A853"/>
+                    <path d="M5.03591 10.71C4.85591 10.17 4.75364 9.59318 4.75364 9C4.75364 8.40682 4.85591 7.83 5.03591 7.29V4.95818H1.02682C0.413182 6.17318 0.0545455 7.54773 0.0545455 9C0.0545455 10.4523 0.413182 11.8268 1.02682 13.0418L5.03591 10.71Z" fill="#FBBC05"/>
+                    <path d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4405 4.92545L15.0218 2.34409C13.4632 0.891818 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957273 4.95818L5.03591 7.29C5.74364 5.16273 7.72773 3.57955 9 3.57955Z" fill="#EA4335"/>
+                  </svg>
+                </div>
                 Conectar Agenda do Google
               </button>
             )}

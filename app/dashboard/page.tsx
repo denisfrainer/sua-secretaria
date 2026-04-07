@@ -1,16 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { 
-  Settings, 
-  Calendar, 
-  ClipboardList, 
-  ChevronRight, 
-} from 'lucide-react';
-import Link from 'next/link';
-import QRCodeDisplay from '@/components/QRCodeDisplay';
-import { AppointmentLinkButton } from '@/components/dashboard/AppointmentLinkButton';
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
+import QuickActions from '@/components/dashboard/QuickActions';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -48,44 +40,8 @@ export default async function DashboardPage() {
       {/* Real-time Next Appointments Section */}
       <UpcomingAppointments />
 
-      {/* Main Action Grid (The 4 Modules) */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Module 1: Agenda */}
-        <Link 
-          href="/dashboard/agenda"
-          className="aspect-square bg-blue-500 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all group"
-        >
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
-            <Calendar size={32} />
-          </div>
-          <span className="text-sm font-black text-white uppercase tracking-wider">Agenda</span>
-        </Link>
-
-        {/* Module 2: Serviços */}
-        <Link 
-          href="/dashboard/services"
-          className="aspect-square bg-orange-400 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-orange-400/20 hover:scale-[1.02] active:scale-95 transition-all group"
-        >
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
-            <ClipboardList size={32} />
-          </div>
-          <span className="text-sm font-black text-white uppercase tracking-wider">Serviços</span>
-        </Link>
-
-        {/* Module 3: Link de Agendamento */}
-        <AppointmentLinkButton businessId={businessConfig.id} />
-
-        {/* Module 4: Configurações */}
-        <Link 
-          href="/dashboard/settings"
-          className="aspect-square bg-emerald-400 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-emerald-400/20 hover:scale-[1.02] active:scale-95 transition-all group"
-        >
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
-            <Settings size={32} />
-          </div>
-          <span className="text-sm font-black text-white uppercase tracking-wider">Configurações</span>
-        </Link>
-      </div>
+      {/* Main Action Grid (Premium Silicon Valley Aesthetic) */}
+      <QuickActions />
 
       {/* System Status Section (Subtle) */}
       <div className="mt-4 flex flex-col gap-4">
