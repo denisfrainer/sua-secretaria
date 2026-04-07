@@ -13,12 +13,12 @@ export function AgendaEmptyState() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        scopes: 'https://www.googleapis.com/auth/calendar',
+        scopes: 'openid email profile https://www.googleapis.com/auth/calendar',
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
         },
-        redirectTo: `${window.location.origin}/dashboard/agenda` 
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/agenda` 
       }
     });
 

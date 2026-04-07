@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/dashboard';
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/?error=no_code`);
+    return NextResponse.redirect(`${origin}/admin/login?error=no_code`);
   }
 
   const cookieStore = await cookies();
@@ -35,19 +35,27 @@ export async function GET(request: Request) {
     }
   );
 
-  const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  
-  if (exchangeError) {
-    console.error(`❌ [AUTH CALLBACK] Exchange Failed: ${exchangeError.message}`);
-    return NextResponse.redirect(`${origin}/admin/login?error=exchange_failed`);
-  }
+  try {
+    const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (exchangeError) {
+      console.error(`❌ [AUTH CALLBACK] Exchange Failed: ${exchangeError.message}`);
+      return NextResponse.redirect(`${origin}/admin/login?error=exchange_failed`);
+    }
 
     if (session?.user) {
       console.log('✅ [AUTH CALLBACK] Session established. Persisting Profile Identity...');
-
+      
       const providerRefreshToken = session.provider_refresh_token;
 
+      if (!providerRefreshToken) {
+        console.warn('⚠️ [AUTH CALLBACK] provider_refresh_token missing! Ensure Scopes include Calendar and prompt=consent.');
+      } else {
+        console.log('🔑 [AUTH CALLBACK] Google Refresh Token captured.');
+      }
+
       // 2. DEFENSIVE IDENTITY WRITE (Profiles Table)
+      // We run this in the background but wait for it to ensure stability
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .upsert({
@@ -104,7 +112,11 @@ export async function GET(request: Request) {
         else console.log('✅ [DB INSERT SUCCESS]: Business config created for user:', session.user.id);
       }
     }
-
-  // The browser now has the session cookies. Redirect to intended destination.
-  return NextResponse.redirect(`${origin}${next}`);
+  } catch (error: any) {
+    console.error('💥 [AUTH CALLBACK] Unexpected error:', error.message);
+  } finally {
+    console.log('🏁 [AUTH CALLBACK] Finalizing request. Redirecting to:', next);
+    // The browser now has the session cookies. Redirect to intended destination.
+    return NextResponse.redirect(`${origin}${next}`);
+  }
 }
