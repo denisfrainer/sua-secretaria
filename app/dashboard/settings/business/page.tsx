@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Save, Plus, Trash2, 
   Building2, Clock, 
-  CheckCircle2, AlertTriangle, Loader2, Scissors,
+  CheckCircle2, AlertTriangle, Loader2,
   MapPin, ParkingCircle, Smile, Wallet, ShieldAlert,
   MessageCircleQuestion
 } from 'lucide-react';
@@ -20,10 +20,12 @@ import { AutoResizeTextarea } from '@/components/dashboard/settings/AutoResizeTe
 // ==============================================================
 
 interface Service {
+  id: string;
   name: string;
-  price: string;
-  duration: string;
+  price: number;
+  duration: number;
   description: string;
+  status: 'active' | 'inactive';
 }
 
 interface FAQItem {
@@ -160,16 +162,6 @@ export default function BusinessSettingsPage() {
           [day]: { ...(config.context_json.operating_hours[day]), [field]: value }
         }
       }
-    });
-  };
-
-  const updateService = (index: number, field: keyof Service, value: string) => {
-    if (!config) return;
-    const newServices = [...config.context_json.services];
-    newServices[index] = { ...newServices[index], [field]: value };
-    setConfig({
-      ...config,
-      context_json: { ...config.context_json, services: newServices }
     });
   };
 
@@ -313,44 +305,6 @@ export default function BusinessSettingsPage() {
         </div>
       </motion.section>
 
-      {/* SECTION 3: SERVICES */}
-      <motion.section variants={itemVariants} className="flex flex-col gap-6">
-        <div className="flex items-center justify-between border-b border-black/5 pb-3">
-          <div className="flex items-center gap-3">
-            <Scissors size={20} className="text-blue-600 shrink-0" />
-            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Procedimentos</h2>
-          </div>
-          <button 
-            type="button" 
-            onClick={() => setConfig({
-              ...config!,
-              context_json: { ...config!.context_json, services: [...config!.context_json.services, { name: '', price: '', duration: '', description: '' }] }
-            })}
-            className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200"
-          >
-            <Plus size={20} />
-          </button>
-        </div>
-        <div className="flex flex-col gap-4">
-          <AnimatePresence mode="popLayout">
-            {config?.context_json.services.map((service, index) => (
-              <motion.div key={index} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col gap-4">
-                <StudioInput label="Serviço" value={service.name} onChange={(v) => updateService(index, 'name', v)} />
-                <AutoResizeTextarea label="Descrição" value={service.description} onChange={(v) => updateService(index, 'description', v)} className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-600 focus:ring-0 placeholder:text-gray-300" />
-                <div className="flex gap-4 pt-2 border-t border-black/5">
-                  <StudioInput label="Preço" value={service.price} onChange={(v) => updateService(index, 'price', v)} />
-                  <StudioInput label="Duração" value={service.duration} onChange={(v) => updateService(index, 'duration', v)} />
-                  <button type="button" onClick={() => {
-                    const newServices = [...config!.context_json.services];
-                    newServices.splice(index, 1);
-                    setConfig({ ...config!, context_json: { ...config!.context_json, services: newServices } });
-                  }} className="mt-6 w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0"><Trash2 size={18} /></button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </motion.section>
 
       {/* FLOAT SAVE BUTTON */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-lg px-6 z-50">
