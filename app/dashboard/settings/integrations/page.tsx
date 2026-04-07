@@ -91,11 +91,11 @@ export default function IntegrationsSettingsPage() {
         <div className="bg-white rounded-[2.5rem] border border-black/5 shadow-sm p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden group hover:shadow-xl hover:shadow-blue-500/5 transition-all">
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 z-10 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-24 h-24 rounded-3xl bg-gray-50 flex items-center justify-center border border-black/5 p-4 group-hover:scale-105 transition-transform duration-500 shadow-inner">
+              <div className="w-24 h-24 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                 <img 
                   src="/assets/agenda-logo.svg" 
                   alt="Google Calendar" 
-                  className="w-16 h-16 object-contain"
+                  className="w-24 h-24 object-contain"
                 />
               </div>
               <div className="flex flex-col">
