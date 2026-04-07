@@ -11,7 +11,17 @@ interface SlotData {
   type: 'booked' | 'free';
 }
 
-export function AgendaDrawer({ isOpen, onClose, slot }: { isOpen: boolean; onClose: () => void; slot?: SlotData | null }) {
+export function AgendaDrawer({ 
+  isOpen, 
+  onClose, 
+  slot,
+  onNewBooking 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  slot?: SlotData | null;
+  onNewBooking?: () => void;
+}) {
   if (!slot) return null;
   const isBooked = !!slot.booked;
 
@@ -20,7 +30,9 @@ export function AgendaDrawer({ isOpen, onClose, slot }: { isOpen: boolean; onClo
     if (type === 'whatsapp') {
       window.open('https://wa.me/5500000000000', '_blank');
     }
-    // onClose();
+    if (type === 'new_booking' && onNewBooking) {
+      onNewBooking();
+    }
   };
 
   return (
@@ -29,6 +41,8 @@ export function AgendaDrawer({ isOpen, onClose, slot }: { isOpen: boolean; onClo
         <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]" />
         <Drawer.Content className="fixed bottom-0 left-0 right-0 max-h-[90%] bg-white rounded-t-[3rem] z-[101] flex flex-col outline-none shadow-2xl">
           <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-200 my-4" />
+          <Drawer.Title className="sr-only italic">Detalhes do Horário</Drawer.Title>
+          <Drawer.Description className="sr-only">Visualize e gerencie os detalhes deste horário na sua agenda.</Drawer.Description>
           
           <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-8 scroll-smooth">
             {/* Header Slot Info */}

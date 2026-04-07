@@ -19,8 +19,12 @@ export async function GET() {
     .eq('owner_id', user.id)
     .single();
 
-  if (!businessConfig || !(businessConfig.context_json as any).google_calendar) {
-    return NextResponse.json({ error: 'Google Calendar not integrated' }, { status: 400 });
+  if (!businessConfig) {
+    return NextResponse.json({ error: 'Business configuration not found' }, { status: 404 });
+  }
+
+  if (!(businessConfig.context_json as any).google_calendar) {
+    return NextResponse.json({ error: 'Google Calendar not integrated' }, { status: 404 });
   }
 
   try {

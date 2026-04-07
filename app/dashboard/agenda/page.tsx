@@ -6,9 +6,11 @@ import { DateStrip } from '../../../components/agenda/DateStrip';
 import { TimeSlotList } from '../../../components/agenda/TimeSlotList';
 import { AgendaDrawer } from '../../../components/agenda/AgendaDrawer';
 import { AgendaSettingsModal } from '../../../components/agenda/AgendaSettingsModal';
+import { NewAppointmentDrawer } from '../../../components/agenda/NewAppointmentDrawer';
 import Link from 'next/link';
 import { format, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -16,6 +18,8 @@ export default function AgendaPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
 
   const [agenda, setAgenda] = useState<any[]>([]);
 
@@ -46,6 +50,26 @@ export default function AgendaPage() {
 
     fetchAgenda();
   }, [selectedDate]);
+
+  useEffect(() => {
+    async function fetchServices() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: configData } = await supabase
+        .from('business_config')
+        .select('context_json')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (configData?.context_json) {
+        setServices((configData.context_json as any).services || []);
+      }
+    }
+
+    fetchServices();
+  }, []);
 
   const handleSlotClick = (slot: any) => {
     console.log('🖱️ [AGENDA] Slot clicked:', slot.time);
@@ -115,6 +139,21 @@ export default function AgendaPage() {
         isOpen={isDrawerOpen} 
         onClose={() => setIsDrawerOpen(false)} 
         slot={selectedSlot} 
+        onNewBooking={() => {
+          setIsDrawerOpen(false);
+          setIsBookingOpen(true);
+        }}
+      />
+
+      <NewAppointmentDrawer
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        selectedTime={selectedSlot?.time || ''}
+        services={services}
+        onSuccess={() => {
+          // Trigger refresh
+          setSelectedDate(new Date(selectedDate));
+        }}
       />
 
       <AgendaSettingsModal 
