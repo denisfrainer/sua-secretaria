@@ -12,16 +12,16 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
   useEffect(() => {
     function getGreeting(): string {
       const hour = parseInt(
-        new Intl.DateTimeFormat('pt-BR', { 
-          timeZone: 'America/Sao_Paulo', 
-          hour: 'numeric', 
-          hour12: false 
+        new Intl.DateTimeFormat('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          hour: 'numeric',
+          hour12: false
         }).format(new Date())
       );
-      
-      if (hour >= 5 && hour < 12) return 'bom dia';
-      if (hour >= 12 && hour < 18) return 'boa tarde';
-      return 'boa noite';
+
+      if (hour >= 5 && hour < 12) return 'Bom dia';
+      if (hour >= 12 && hour < 18) return 'Boa tarde';
+      return 'Boa noite';
     }
 
     setGreeting(getGreeting());
@@ -30,7 +30,7 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
   return (
     <div className="flex flex-col gap-1">
       <h1 className="text-2xl font-black text-gray-900 tracking-tight animate-in fade-in duration-700">
-        Olá, {userName}, {greeting || '...'}!
+        {greeting || '...'}, {userName}
       </h1>
     </div>
   );

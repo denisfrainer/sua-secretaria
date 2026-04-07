@@ -94,26 +94,12 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                      {isConnected ? 'WhatsApp Conectado' : 'Aguardando QR Code'}
+                      {isConnected ? 'WhatsApp Conectado' : 'Aguardando Configuração'}
                   </span>
               </div>
           </div>
-          
-          <Link 
-            href="/dashboard/agenda"
-            className="w-full py-5 bg-white border border-black/5 rounded-3xl flex items-center justify-center gap-3 text-sm font-black text-gray-900 shadow-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
-          >
-            Testar meu atendimento
-            <ChevronRight size={18} className="text-blue-600" />
-          </Link>
       </div>
 
-      {/* Connection Logic Rendering */}
-      {!isConnected && (
-        <div className="mt-8">
-            <QRCodeDisplay instanceName={businessConfig.instance_name} />
-        </div>
-      )}
     </div>
   );
 }
