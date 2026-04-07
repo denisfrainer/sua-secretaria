@@ -47,11 +47,14 @@ export default function AgendaPage() {
         }
 
         const data = await res.json();
+        console.log('📡 [AGENDA] API Response:', { integrated: data.integrated, eventsCount: data.agenda?.length });
+
         if (data.integrated === false) {
+          console.warn('⚠️ [AGENDA] Calendar not integrated according to API');
           setIsIntegrated(false);
           setAgenda([]);
-        } else if (data.agenda) {
-          setAgenda(data.agenda);
+        } else {
+          setAgenda(data.agenda || []);
           setIsIntegrated(true);
         }
       } catch (error) {

@@ -27,6 +27,16 @@ export function LoginLoadingState() {
         setMessage('Finalizando seu acesso...');
       }
 
+      // 1. URL CLEANUP (Stop the Double Exchange)
+      // Immediately strip the 'code' and 'next' from the URL to prevent the 
+      // client-side Supabase SDK from trying to re-exchange an already used code.
+      if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('code');
+        url.searchParams.delete('next');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+      }
+
       // CLIENT-SIDE SAFETY NET:
       // 1. Check for immediate session (cookie already present)
       supabase.auth.getSession().then(({ data: { session } }) => {
