@@ -39,10 +39,13 @@ export function AgendaDrawer({
     <Drawer.Root open={isOpen} onOpenChange={onClose}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 max-h-[90%] bg-white rounded-t-[3rem] z-[101] flex flex-col outline-none shadow-2xl">
+        <Drawer.Content 
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="fixed bottom-0 left-0 right-0 max-h-[90%] bg-white rounded-t-[3rem] z-[101] flex flex-col outline-none shadow-2xl"
+        >
           <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-200 my-4" />
-          <Drawer.Title className="sr-only italic">Detalhes do Horário</Drawer.Title>
-          <Drawer.Description className="sr-only">Visualize e gerencie os detalhes deste horário na sua agenda.</Drawer.Description>
+          <Drawer.Title className="sr-only">Detalhes do Agendamento</Drawer.Title>
+          <Drawer.Description className="sr-only">Visualize e gerencie os detalhes do serviço selecionado para este horário.</Drawer.Description>
           
           <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-8 scroll-smooth">
             {/* Header Slot Info */}

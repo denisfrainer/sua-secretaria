@@ -13,6 +13,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { SystemHealthCard } from '@/components/SystemHealthCard';
+import { AppointmentLinkButton } from '@/components/dashboard/AppointmentLinkButton';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -110,12 +111,7 @@ export default async function DashboardPage() {
         </Link>
 
         {/* Module 3: Link de Agendamento */}
-        <button className="aspect-square bg-rose-400 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-rose-400/20 hover:scale-[1.02] active:scale-95 transition-all group">
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
-            <LinkIcon size={32} />
-          </div>
-          <span className="text-sm font-black text-white uppercase tracking-wider leading-tight">Link de Agendamento</span>
-        </button>
+        <AppointmentLinkButton businessId={businessConfig.id} />
 
         {/* Module 4: Configurações */}
         <Link 

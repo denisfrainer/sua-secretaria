@@ -7,6 +7,7 @@ import { TimeSlotList } from '../../../components/agenda/TimeSlotList';
 import { AgendaDrawer } from '../../../components/agenda/AgendaDrawer';
 import { AgendaSettingsModal } from '../../../components/agenda/AgendaSettingsModal';
 import { NewAppointmentDrawer } from '../../../components/agenda/NewAppointmentDrawer';
+import { AgendaEmptyState } from '../../../components/agenda/AgendaEmptyState';
 import Link from 'next/link';
 import { format, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,6 +21,7 @@ export default function AgendaPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [services, setServices] = useState<any[]>([]);
+  const [isIntegrated, setIsIntegrated] = useState(true);
 
   const [agenda, setAgenda] = useState<any[]>([]);
 
@@ -37,9 +39,17 @@ export default function AgendaPage() {
       setLoading(true);
       try {
         const res = await fetch('/api/agenda/today');
+        
+        if (res.status === 404 || res.status === 401) {
+          setIsIntegrated(false);
+          setLoading(false);
+          return;
+        }
+
         const data = await res.json();
         if (data.agenda) {
           setAgenda(data.agenda);
+          setIsIntegrated(true);
         }
       } catch (error) {
         console.error('[AGENDA] Failed to fetch agenda:', error);
@@ -109,57 +119,69 @@ export default function AgendaPage() {
       </div>
 
       {/* Date Navigation Strip */}
-      <DateStrip 
-        selectedDate={selectedDate} 
-        onDateChange={handleDateChange} 
-      />
+      {isIntegrated && (
+        <DateStrip 
+          selectedDate={selectedDate} 
+          onDateChange={handleDateChange} 
+        />
+      )}
 
-      {/* Main Schedule Area */}
-      <div className="flex-1 bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between bg-gray-50/50">
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-blue-600" />
-            <span className="text-xs font-black uppercase tracking-widest text-gray-400">Horários do Dia</span>
-          </div>
-          {loading && <Loader2 className="animate-spin text-blue-600" size={16} />}
-        </div>
-        
-        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-400px)] scrollbar-hide">
-          <TimeSlotList 
-            date={selectedDate} 
-            loading={loading}
-            agenda={agenda}
-            onSlotClick={handleSlotClick} 
-          />
-        </div>
+      {/* Main Schedule Area / Empty State */}
+      <div className="flex-1 bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+        {!isIntegrated ? (
+          <AgendaEmptyState />
+        ) : (
+          <>
+            <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="text-blue-600" />
+                <span className="text-xs font-black uppercase tracking-widest text-gray-400">Horários do Dia</span>
+              </div>
+              {loading && <Loader2 className="animate-spin text-blue-600" size={16} />}
+            </div>
+            
+            <div className="flex-1 overflow-y-auto max-h-[calc(100vh-400px)] scrollbar-hide">
+              <TimeSlotList 
+                date={selectedDate} 
+                loading={loading}
+                agenda={agenda}
+                onSlotClick={handleSlotClick} 
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Drawers & Modals */}
-      <AgendaDrawer 
-        isOpen={isDrawerOpen} 
-        onClose={() => setIsDrawerOpen(false)} 
-        slot={selectedSlot} 
-        onNewBooking={() => {
-          setIsDrawerOpen(false);
-          setIsBookingOpen(true);
-        }}
-      />
+      {isIntegrated && (
+        <>
+          <AgendaDrawer 
+            isOpen={isDrawerOpen} 
+            onClose={() => setIsDrawerOpen(false)} 
+            slot={selectedSlot} 
+            onNewBooking={() => {
+              setIsDrawerOpen(false);
+              setIsBookingOpen(true);
+            }}
+          />
 
-      <NewAppointmentDrawer
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        selectedTime={selectedSlot?.time || ''}
-        services={services}
-        onSuccess={() => {
-          // Trigger refresh
-          setSelectedDate(new Date(selectedDate));
-        }}
-      />
+          <NewAppointmentDrawer
+            isOpen={isBookingOpen}
+            onClose={() => setIsBookingOpen(false)}
+            selectedTime={selectedSlot?.time || ''}
+            services={services}
+            onSuccess={() => {
+              // Trigger refresh
+              setSelectedDate(new Date(selectedDate));
+            }}
+          />
 
-      <AgendaSettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-      />
+          <AgendaSettingsModal 
+            isOpen={isSettingsOpen} 
+            onClose={() => setIsSettingsOpen(false)} 
+          />
+        </>
+      )}
     </div>
   );
 }

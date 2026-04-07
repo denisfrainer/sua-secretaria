@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       calendarId: 'primary',
       requestBody: {
         summary: `[AGENDADO] ${clientName} - ${serviceName}`,
-        description: `Serviço: ${serviceName}\nCliente: ${clientName}\n(Agendamento manual via Dashboard)`,
+        description: `Serviço: ${serviceName}\nCliente: ${clientName}\nDuração: ${durationMinutes}min\n(Agendamento manual via Dashboard)`,
         start: {
           dateTime: startDateTime.toISOString(),
           timeZone: 'America/Sao_Paulo',
@@ -64,6 +64,11 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[GCAL_BOOK] Error booking appointment:', error.message);
-    return NextResponse.json({ error: 'Failed to book appointment' }, { status: 500 });
+    const status = error.code === 401 || error.code === 404 ? error.code : 500;
+    return NextResponse.json({ 
+      error: 'Failed to book appointment',
+      details: error.message,
+      code: status
+    }, { status });
   }
 }

@@ -75,8 +75,15 @@ export function ServiceDrawer({
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]" />
         <Drawer.Content 
+          onOpenAutoFocus={(e) => e.preventDefault()}
           className="fixed top-0 right-0 bottom-0 w-full max-w-[420px] bg-white border-l border-black/5 z-[101] shadow-2xl flex flex-col outline-none"
         >
+          <Drawer.Title className="sr-only">
+            {service ? 'Editar Serviço' : 'Novo Serviço'}
+          </Drawer.Title>
+          <Drawer.Description className="sr-only">
+            Formulário para {service ? 'atualizar' : 'cadastrar'} informações do serviço, incluindo preço, duração e status.
+          </Drawer.Description>
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-black/5">
             <div className="flex flex-col">
