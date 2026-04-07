@@ -23,7 +23,7 @@ export function LoginLoadingState() {
       
       if (session && !hasCode && !hasToken) {
         console.log('⚡ [AUTH_STATE] Already logged in (Basic). Redirecting to Dashboard...');
-        window.location.href = '/dashboard/agenda';
+        window.location.href = '/dashboard';
       }
     };
     checkSession();
@@ -59,7 +59,7 @@ export function LoginLoadingState() {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
           console.log('⚡ [AUTH SAFETY NET] Immediate session found. Redirecting...');
-          window.location.href = next || '/dashboard/agenda';
+          window.location.href = next || '/dashboard';
         }
       });
 
@@ -67,7 +67,7 @@ export function LoginLoadingState() {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
           console.log('⚡ [AUTH SAFETY NET] SIGNED_IN event detected. Breaking potential loop...');
-          window.location.href = next || '/dashboard/agenda';
+          window.location.href = next || '/dashboard';
         }
       });
 
@@ -76,7 +76,7 @@ export function LoginLoadingState() {
       // just push the user to the destination anyway after 5 seconds.
       const timeout = setTimeout(() => {
         console.warn('🕒 [AUTH SAFETY NET] Timeout reached. Forcing navigation...');
-        window.location.href = next || '/dashboard/agenda';
+        window.location.href = next || '/dashboard';
       }, 5000);
 
       return () => {

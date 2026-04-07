@@ -53,9 +53,9 @@ export async function middleware(request: NextRequest) {
 
   // Prevenir que usuário logado veja a tela de login
   if ((pathname.startsWith('/login')) && user) {
-    console.log('✅ [MIDDLEWARE] Authenticated user on login page without code. Redirecting to /dashboard/agenda.');
+    console.log('✅ [MIDDLEWARE] Authenticated user on login page without code. Redirecting to /dashboard.');
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard/agenda'
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
