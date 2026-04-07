@@ -99,7 +99,7 @@ export default function SettingsPage() {
 
     // FETCH DATA
     const fetchData = async () => {
-        console.log(`📡 [SETTINGS] Fetching business_config and system_settings...`);
+        console.log(`📡 [SETTINGS] Fetching business_config and profiles...`);
         setLoading(true);
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -108,16 +108,22 @@ export default function SettingsPage() {
             return;
         }
 
-        const [configRes] = await Promise.all([
-            supabase.from('business_config').select('*, google_refresh_token').eq('owner_id', user.id).single()
+        const [configRes, profileRes] = await Promise.all([
+            supabase.from('business_config').select('*').eq('owner_id', user.id).single(),
+            supabase.from('profiles').select('google_refresh_token').eq('id', user.id).single()
         ]);
 
         if (configRes.error) {
             console.error(`❌ [SETTINGS ERROR] Config fetch failed:`, configRes.error);
             setError('Falha ao sincronizar dados do seu negócio.');
         } else {
-            console.log(`✅ [SETTINGS] Config loaded for user:`, user.id);
-            setConfig(configRes.data);
+            console.log(`✅ [SETTINGS] Config and Profile loaded for user:`, user.id);
+            // Merge token into config object for internal UI state compatibility
+            const enrichedConfig = {
+                ...configRes.data,
+                google_refresh_token: profileRes.data?.google_refresh_token || null
+            };
+            setConfig(enrichedConfig);
         }
 
         setLoading(false);

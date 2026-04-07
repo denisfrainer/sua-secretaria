@@ -42,62 +42,68 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/admin/login?error=exchange_failed`);
   }
 
-  if (session?.user && session.provider_refresh_token) {
-    console.log("✅ [AUTH CALLBACK] Session verified. Token grabbed. Bypassing RLS...");
+    if (session?.user) {
+      console.log('✅ [AUTH CALLBACK] Session established. Persisting Profile Identity...');
 
-    // 2. DEFENSIVE WRITE: Check if business_config exists (Race Condition Shield)
-    // We use session.provider_refresh_token directly from the exchange
-    const { data: existingRow } = await supabaseAdmin
-      .from('business_config')
-      .select('id')
-      .eq('owner_id', session.user.id)
-      .single();
+      const providerRefreshToken = session.provider_refresh_token;
 
-    const providerRefreshToken = session.provider_refresh_token;
+      // 2. DEFENSIVE IDENTITY WRITE (Profiles Table)
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: session.user.id,
+          email: session.user.email,
+          full_name: session.user.user_metadata?.full_name || '',
+          google_refresh_token: providerRefreshToken || undefined,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
 
-    if (existingRow) {
-      // Row exists -> UPDATE
-      const { error: updateError } = await supabaseAdmin
+      if (profileError) {
+        console.error('❌ [PROFILES ERROR]:', profileError.message);
+      } else {
+        console.log('✅ [PROFILES SUCCESS]: Identity persisted for user:', session.user.id);
+      }
+
+      // 3. DEFENSIVE INSTANCE WRITE (Still needed for WhatsApp context)
+      const { data: existingRow } = await supabaseAdmin
         .from('business_config')
-        .update({ google_refresh_token: providerRefreshToken })
-        .eq('owner_id', session.user.id);
-      
-      if (updateError) console.error('❌ [DB UPDATE ERROR]:', updateError.message);
-      else console.log('✅ [DB UPDATE SUCCESS]: Token persisted for user:', session.user.id);
-    } else {
-      // New Signup -> INSERT
-      console.log('🆕 [DB] New user detected. Creating business_config row...');
-      
-      const defaultContext = {
-        business_info: { name: 'Meu Studio', address: '', parking: '', handoff_phone: '' },
-        operating_hours: {
-          weekdays: { open: '09:00', close: '18:00', is_closed: false },
-          saturday: { open: '09:00', close: '13:00', is_closed: false },
-          sunday: { open: '09:00', close: '18:00', is_closed: true },
-          observations: ''
-        },
-        services: [],
-        scheduling_rules: [],
-        restrictions: [],
-        tone_of_voice: { base_style: 'Profissional', custom_instructions: '' },
-        payment_info: { pix_type: '', pix_key: '', owner_name: '' },
-        booking_policies: { minimum_advance_notice: '2 horas', buffer_time_minutes: '15' },
-        faq: [],
-        updated_at: new Date().toISOString()
-      };
+        .select('id')
+        .eq('owner_id', session.user.id)
+        .single();
 
-      const { error: insertError } = await supabaseAdmin
-        .from('business_config')
-        .insert({ 
-          owner_id: session.user.id, 
-          google_refresh_token: providerRefreshToken,
-          context_json: defaultContext
-        });
+      if (!existingRow) {
+        // New Signup -> INSERT
+        console.log('🆕 [DB] New user detected. Creating business_config row...');
+      
+        const defaultContext = {
+          business_info: { name: 'Meu Studio', address: '', parking: '', handoff_phone: '' },
+          operating_hours: {
+            weekdays: { open: '09:00', close: '18:00', is_closed: false },
+            saturday: { open: '09:00', close: '13:00', is_closed: false },
+            sunday: { open: '09:00', close: '18:00', is_closed: true },
+            observations: ''
+          },
+          services: [],
+          scheduling_rules: [],
+          restrictions: [],
+          tone_of_voice: { base_style: 'Profissional', custom_instructions: '' },
+          payment_info: { pix_type: '', pix_key: '', owner_name: '' },
+          booking_policies: { minimum_advance_notice: '2 horas', buffer_time_minutes: '15' },
+          faq: [],
+          updated_at: new Date().toISOString()
+        };
 
-      if (insertError) console.error('❌ [DB INSERT ERROR]:', insertError.message);
-      else console.log('✅ [DB INSERT SUCCESS]: Business config created for user:', session.user.id);
+        const { error: insertError } = await supabaseAdmin
+          .from('business_config')
+          .insert({ 
+            owner_id: session.user.id, 
+            context_json: defaultContext
+          });
+
+        if (insertError) console.error('❌ [DB INSERT ERROR]:', insertError.message);
+        else console.log('✅ [DB INSERT SUCCESS]: Business config created for user:', session.user.id);
+      }
     }
-  }
 
   // The browser now has the session cookies. Redirect to intended destination.
   return NextResponse.redirect(`${origin}${next}`);

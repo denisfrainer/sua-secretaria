@@ -12,10 +12,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Fetch business_config
+  // Fetch business_config and join/get profiles for the token
   const { data: businessConfig } = await supabase
     .from('business_config')
-    .select('id, context_json, google_refresh_token')
+    .select('id, owner_id, context_json')
     .eq('owner_id', user.id)
     .single();
 
@@ -23,8 +23,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Business configuration not found' }, { status: 404 });
   }
 
-  // Token prioritized from the dedicated column
-  const refreshToken = businessConfig.google_refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token;
+  // Fetch the centralized refresh token from the profiles table
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('google_refresh_token')
+    .eq('id', user.id)
+    .single();
+
+  const refreshToken = profile?.google_refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token;
 
   if (!refreshToken) {
     return NextResponse.json({ error: 'Google Calendar not integrated' }, { status: 404 });
