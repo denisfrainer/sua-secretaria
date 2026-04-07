@@ -227,21 +227,22 @@ export default function CatalogPage() {
         <div className="flex items-center justify-between">
           <button 
             onClick={() => router.push('/dashboard')}
-            className="p-2 -ml-2 text-gray-400 hover:text-black transition-colors"
+            className="w-10 h-10 rounded-xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-colors"
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft size={18} className="text-gray-900" />
           </button>
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full border border-blue-100">
+          
+          <div className="flex items-center gap-2 px-4 py-2 bg-white shadow-sm border border-black/5 rounded-2xl">
             <LayoutGrid size={14} className="text-blue-600" />
-            <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest">
+            <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
               {config.context_json.services.length} Serviços
             </span>
           </div>
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tighter">Catálogo de Serviços</h1>
-          <p className="text-sm font-medium text-gray-500">Gerencie o que seus clientes podem agendar.</p>
+          <h1 className="text-4xl font-black text-gray-950 tracking-tight">Catálogo de Serviços</h1>
+          <p className="text-base font-medium text-gray-500">Gerencie os procedimentos e valores do seu negócio.</p>
         </div>
 
         {/* Search & Action Bar */}
