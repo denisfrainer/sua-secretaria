@@ -77,7 +77,7 @@ export default function AgendaPage() {
         .from('business_config')
         .select('context_json')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (configData?.context_json) {
         setServices((configData.context_json as any).services || []);

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const origin = request.nextUrl.origin;
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard/agenda';
+  const next = searchParams.get('next') ?? '/dashboard';
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=no_code`);
@@ -78,13 +78,13 @@ export async function GET(request: NextRequest) {
       }
 
       // 3. DEFENSIVE INSTANCE WRITE (Still needed for WhatsApp context)
-      const { data: existingRow } = await supabaseAdmin
+      const { data: configData } = await supabase
         .from('business_config')
-        .select('id')
+        .select('context_json')
         .eq('owner_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (!existingRow) {
+      if (!configData) {
         // New Signup -> INSERT
         console.log('🆕 [DB] New user detected. Creating business_config row...');
       
