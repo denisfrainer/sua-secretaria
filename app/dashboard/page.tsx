@@ -1,34 +1,37 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Building2, Settings, Bot, MessageSquare, Users, Clock, History, Phone, CheckCircle2, Calendar, AlertCircle } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { 
+  Settings, 
+  Users, 
+  Calendar, 
+  ClipboardList, 
+  Link as LinkIcon, 
+  ChevronRight, 
+  Sparkles 
+} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { SystemHealthCard } from '@/components/SystemHealthCard';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  
-  // Guard clause is handled by layout, but we fetch safely
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/admin/login');
   }
 
-  // Check if owner has a business config setup
   const { data: businessConfig } = await supabase
     .from('business_config')
     .select('*')
     .eq('owner_id', user.id)
     .maybeSingle();
 
-  // Route them to onboarding if no profile exists
   if (!businessConfig) {
     redirect('/dashboard/onboarding');
   }
 
-  // Fetch AI status from system_settings
   const { data: settingsRes } = await supabase
     .from('system_settings')
     .select('value')
@@ -36,128 +39,121 @@ export default async function DashboardPage() {
     .maybeSingle();
   
   const isAiActive = (settingsRes?.value as any)?.enabled ?? true;
-
-  // Detect connection status injected during initialization or updated by polling
   const isConnected = businessConfig.context_json?.connection_status === 'CONNECTED';
 
-  // Fetch recent activity using Supabase server client
-  const { data: recentLeads } = await supabase
-    .from('leads_lobo')
-    .select('id, phone, status, updated_at')
-    .eq('instance_name', businessConfig.instance_name)
-    .order('updated_at', { ascending: false })
-    .limit(5);
+  // Mock Next Appointments matching the screenshot
+  const nextAppointments = [
+    { time: '09:00', client: 'Maria', service: 'Buço' },
+    { time: '10:30', client: 'Ana', service: 'Axila' },
+    { time: '14:00', client: 'Juliana', service: 'Virilha' },
+  ];
 
   return (
-    <div className="w-full max-w-4xl px-4 py-8 sm:py-16 flex flex-col gap-8 mx-auto overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
-          <p className="text-base text-gray-500 font-medium tracking-wide">
-            {isConnected 
-              ? 'Bem-vindo, sua IA está configurada e operando.' 
-              : `Instância ${businessConfig.instance_name} provisionada. Conclua a conexão do WhatsApp.`}
-          </p>
-        </div>
-        <a 
-          href="/dashboard/settings"
-          className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-black/5 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shrink-0"
-        >
-          <Settings size={16} className="text-blue-600" />
-          Configurações
-        </a>
+    <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
+      
+      {/* Welcome Header */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          Olá, {user.email?.split('@')[0] || 'Bebel'}, bom dia!
+        </h1>
       </div>
 
-      {!isConnected ? (
-        <QRCodeDisplay instanceName={businessConfig.instance_name} />
-      ) : (
-        <SystemHealthCard initialIsAiActive={isAiActive} instanceName={businessConfig.instance_name} />
-      )}
-
-      {/* KPI GRID - REFACTORED FOR VERTICAL STACKING ON MOBILE */}
-      {isConnected && (
-        <div className="flex flex-col md:flex-row gap-4 sm:gap-6 animate-in fade-in duration-500 delay-150 fill-mode-both w-full">
-          {/* Card 1: Contatados Hoje */}
-          <div className="flex-1 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-gray-400">
-              <CheckCircle2 size={18} className="text-green-500" />
-              <h3 className="text-xs font-black uppercase tracking-widest">Contatados Hoje</h3>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-gray-900">12</span>
-              <span className="text-xs font-bold text-green-600">+3 hoje</span>
-            </div>
-          </div>
-          
-          {/* Card 2: Agendamentos Feitos */}
-          <div className="flex-1 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-gray-400">
-              <Calendar size={18} className="text-blue-600" />
-              <h3 className="text-xs font-black uppercase tracking-widest">Agendamentos Feitos</h3>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-gray-900">4</span>
-              <span className="text-xs font-bold text-gray-400">Próximo às 14:00</span>
-            </div>
-          </div>
-
-          {/* Card 3: Aguardando Humano */}
-          <div className="flex-1 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-black/5 flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-gray-400">
-              <AlertCircle size={18} className="text-orange-500" />
-              <h3 className="text-xs font-black uppercase tracking-widest">Aguardando Humano</h3>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-gray-900">1</span>
-              <span className="text-xs font-bold text-orange-500">Aguardando</span>
-            </div>
-          </div>
+      {/* Next Appointments Section (from screenshot) */}
+      <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden">
+        <div className="p-6 pb-2">
+            <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest px-1">Próximos Atendimentos</h2>
         </div>
-      )}
-
-      {/* ACTIVITY FEED */}
-      {isConnected && (
-        <div className="bg-white rounded-2xl shadow-sm border border-black/5 flex flex-col animate-in fade-in duration-500 delay-300 fill-mode-both overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-black/5">
-            <div className="flex items-center gap-2">
-              <History size={20} className="text-blue-600" />
-              <h2 className="text-lg font-bold text-black/80">Atividade Recente</h2>
+        <div className="flex flex-col divide-y divide-black/5">
+          {nextAppointments.map((app, i) => (
+            <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-black text-gray-900">{app.time}</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-sm font-bold text-gray-500">
+                    {app.client} <span className="text-gray-400 font-medium">({app.service})</span>
+                </span>
+              </div>
             </div>
+          ))}
+        </div>
+        <Link 
+          href="/dashboard/agenda"
+          className="w-full py-4 flex items-center justify-center gap-2 text-xs font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50/50 transition-all border-t border-black/5"
+        >
+          Ver agenda completa
+          <ChevronRight size={14} />
+        </Link>
+      </div>
+
+      {/* Main Action Grid (The 4 Modules) */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Module 1: Agenda */}
+        <Link 
+          href="/dashboard/agenda"
+          className="aspect-square bg-blue-500 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all group"
+        >
+          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
+            <Calendar size={32} />
+          </div>
+          <span className="text-sm font-black text-white uppercase tracking-wider">Agenda</span>
+        </Link>
+
+        {/* Module 2: Serviços */}
+        <Link 
+          href="/dashboard/services"
+          className="aspect-square bg-orange-400 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-orange-400/20 hover:scale-[1.02] active:scale-95 transition-all group"
+        >
+          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
+            <ClipboardList size={32} />
+          </div>
+          <span className="text-sm font-black text-white uppercase tracking-wider">Serviços</span>
+        </Link>
+
+        {/* Module 3: Link de Agendamento */}
+        <button className="aspect-square bg-rose-400 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-rose-400/20 hover:scale-[1.02] active:scale-95 transition-all group">
+          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
+            <LinkIcon size={32} />
+          </div>
+          <span className="text-sm font-black text-white uppercase tracking-wider leading-tight">Link de Agendamento</span>
+        </button>
+
+        {/* Module 4: Configurações */}
+        <Link 
+          href="/dashboard/settings"
+          className="aspect-square bg-emerald-400 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-3 shadow-lg shadow-emerald-400/20 hover:scale-[1.02] active:scale-95 transition-all group"
+        >
+          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/30 transition-all">
+            <Settings size={32} />
+          </div>
+          <span className="text-sm font-black text-white uppercase tracking-wider">Configurações</span>
+        </Link>
+      </div>
+
+      {/* System Status Section (Subtle) */}
+      <div className="mt-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between px-2">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status do Sistema</h3>
+              <div className="flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      {isConnected ? 'WhatsApp Conectado' : 'Aguardando QR Code'}
+                  </span>
+              </div>
           </div>
           
-          <div className="flex flex-col divide-y divide-black/5">
-            {!recentLeads || recentLeads.length === 0 ? (
-              <div className="p-8 text-center flex flex-col items-center justify-center gap-2 text-gray-400">
-                <Users size={32} className="opacity-50" />
-                <p className="text-sm font-medium">Nenhum atendimento registrado ainda.</p>
-              </div>
-            ) : (
-              recentLeads.map((lead) => (
-                <div key={lead.id} className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50 transition min-w-0">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                      <Phone size={18} className="text-blue-600" />
-                    </div>
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <span className="font-bold text-gray-900 truncate">
-                        {lead.phone || 'Número Desconhecido'}
-                      </span>
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider truncate">
-                        Status: <span className="text-gray-600">{lead.status || 'NOVO'}</span>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span className="text-xs font-semibold text-gray-400 whitespace-nowrap">
-                      {lead.updated_at 
-                        ? formatDistanceToNow(new Date(lead.updated_at), { addSuffix: true, locale: ptBR }) 
-                        : 'agora'}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <Link 
+            href="/dashboard/test"
+            className="w-full py-5 bg-white border border-black/5 rounded-3xl flex items-center justify-center gap-3 text-sm font-black text-gray-900 shadow-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
+          >
+            Testar meu atendimento
+            <ChevronRight size={18} className="text-blue-600" />
+          </Link>
+      </div>
+
+      {/* Connection Logic Rendering */}
+      {!isConnected && (
+        <div className="mt-8">
+            <QRCodeDisplay instanceName={businessConfig.instance_name} />
         </div>
       )}
     </div>

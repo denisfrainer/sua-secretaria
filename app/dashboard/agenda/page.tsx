@@ -1,0 +1,105 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Settings, ChevronLeft, ChevronRight, Calendar, Loader2, ArrowLeft } from 'lucide-react';
+import { DateStrip } from '@/components/agenda/DateStrip';
+import { TimeSlotList } from '@/components/agenda/TimeSlotList';
+import { AgendaDrawer } from '@/components/agenda/AgendaDrawer';
+import { AgendaSettingsModal } from '@/components/agenda/AgendaSettingsModal';
+import Link from 'next/link';
+import { format, addDays, isSameDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+export default function AgendaPage() {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    console.log('📡 [AGENDA] Fetching slots for:', format(selectedDate, 'yyyy-MM-dd'));
+    setLoading(true);
+    // Simulate API fetch delay
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [selectedDate]);
+
+  const handleSlotClick = (slot: any) => {
+    console.log('🖱️ [AGENDA] Slot clicked:', slot.time);
+    setSelectedSlot(slot);
+    setIsDrawerOpen(true);
+  };
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  return (
+    <div className="w-full max-w-4xl px-4 py-8 flex flex-col gap-6 mx-auto animate-in fade-in duration-500 overflow-hidden">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <Link 
+          href="/dashboard" 
+          className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-black transition-colors w-fit"
+        >
+          <ArrowLeft size={16} />
+          Voltar ao Dashboard
+        </Link>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-black tracking-tight text-gray-900">Agenda</h1>
+            <p className="text-gray-500 font-medium capitalize">
+              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+            </p>
+          </div>
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-3 bg-white border border-black/5 rounded-2xl shadow-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-95"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Date Navigation Strip */}
+      <DateStrip 
+        selectedDate={selectedDate} 
+        onDateChange={handleDateChange} 
+      />
+
+      {/* Main Schedule Area */}
+      <div className="flex-1 bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+        <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between bg-gray-50/50">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-blue-600" />
+            <span className="text-xs font-black uppercase tracking-widest text-gray-400">Horários do Dia</span>
+          </div>
+          {loading && <Loader2 className="animate-spin text-blue-600" size={16} />}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-400px)] scrollbar-hide">
+          <TimeSlotList 
+            date={selectedDate} 
+            loading={loading}
+            onSlotClick={handleSlotClick} 
+          />
+        </div>
+      </div>
+
+      {/* Drawers & Modals */}
+      <AgendaDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        slot={selectedSlot} 
+      />
+
+      <AgendaSettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
+    </div>
+  );
+}
