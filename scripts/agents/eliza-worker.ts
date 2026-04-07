@@ -327,9 +327,20 @@ async function processLead(lead: any) {
             console.error(`❌ [DB ERROR] Falha ao carregar configuração para ${instanceToUse}:`, configError?.message);
             businessContext = JSON.stringify({ servicos: [], aviso: "Sistema em manutenção" });
         } else {
-            businessContext = JSON.stringify(configData.context_json);
-            googleTokens = (configData.context_json as any)?.google_calendar || null;
-            console.log(`✅ [DB] Config carga: ${businessContext.length} bytes. Google Auth: ${googleTokens ? 'Sim' : 'Não'}`);
+            const fullConfig = configData.context_json as any;
+            const allServices = fullConfig?.services || [];
+            
+            // Filter out inactive services for the bot
+            const activeServices = allServices.filter((s: any) => s.status !== 'inactive');
+            
+            const filteredConfig = {
+                ...fullConfig,
+                services: activeServices
+            };
+
+            businessContext = JSON.stringify(filteredConfig);
+            googleTokens = fullConfig?.google_calendar || null;
+            console.log(`✅ [DB] Config carga: ${businessContext.length} bytes (Active Services: ${activeServices.length}). Google Auth: ${googleTokens ? 'Sim' : 'Não'}`);
         }
 
         const { data: rawHistory } = await supabaseAdmin

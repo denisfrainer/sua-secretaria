@@ -2,33 +2,132 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Loader2, ArrowLeft } from 'lucide-react';
-import { ServiceCard } from '@/components/services/ServiceCard';
-import { ServiceDrawer } from '@/components/services/ServiceDrawer';
+import { ServiceCard } from '../../../components/services/ServiceCard';
+import { ServiceDrawer } from '../../../components/services/ServiceDrawer';
 import Link from 'next/link';
 
-// Mock Data for MVP
-const MOCK_SERVICES = [
-  { id: '1', name: 'Corte de Cabelo Masculino', description: 'Corte degradê moderno com finalização.', price: 50, duration: 30, status: 'active' },
-  { id: '2', name: 'Barba Completa', description: 'Barba com toalha quente e óleos essenciais.', price: 40, duration: 30, status: 'active' },
-  { id: '3', name: 'Combo Corte + Barba', description: 'Corte e barba com desconto especial.', price: 80, duration: 60, status: 'active' },
-  { id: '4', name: 'Luzes / Mechas', description: 'Coloração profissional.', price: 150, duration: 120, status: 'inactive' },
-];
+import { createClient } from '@/lib/supabase/client';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>([]);
+  const [configId, setConfigId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: configData, error: configError } = await supabase
+        .from('business_config')
+        .select('id, context_json')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (configError) throw configError;
+
+      if (configData) {
+        setConfigId(configData.id);
+        const servicesList = (configData.context_json as any).services || [];
+        setServices(servicesList);
+      }
+    } catch (err: any) {
+      console.error('❌ [SERVICES] Fetch error:', err.message);
+      setError('Falha ao carregar serviços.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    console.log('📡 [SERVICES] Fetching services list...');
-    // Simulate API fetch
-    const timer = setTimeout(() => {
-      setServices(MOCK_SERVICES);
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    fetchServices();
   }, []);
+
+  const handleSave = async (formData: any) => {
+    if (!configId) return;
+    setSaving(true);
+    try {
+      let updatedServices = [...services];
+      
+      if (editingService) {
+        // Update existing
+        updatedServices = updatedServices.map(s => 
+          s.id === editingService.id ? { ...formData, id: s.id } : s
+        );
+      } else {
+        // Create new
+        const newService = {
+          ...formData,
+          id: crypto.randomUUID()
+        };
+        updatedServices.push(newService);
+      }
+
+      const { data: currentConfig } = await supabase
+        .from('business_config')
+        .select('context_json')
+        .eq('id', configId)
+        .single();
+
+      const newContext = {
+        ...(currentConfig?.context_json as any),
+        services: updatedServices
+      };
+
+      const { error: updateError } = await supabase
+        .from('business_config')
+        .update({ context_json: newContext })
+        .eq('id', configId);
+
+      if (updateError) throw updateError;
+
+      setServices(updatedServices);
+      setIsDrawerOpen(false);
+    } catch (err: any) {
+      console.error('❌ [SERVICES] Save error:', err.message);
+      setError('Falha ao salvar serviço.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (serviceId: string) => {
+    if (!configId) return;
+    try {
+      const updatedServices = services.filter(s => s.id !== serviceId);
+      
+      const { data: currentConfig } = await supabase
+        .from('business_config')
+        .select('context_json')
+        .eq('id', configId)
+        .single();
+
+      const newContext = {
+        ...(currentConfig?.context_json as any),
+        services: updatedServices
+      };
+
+      const { error: updateError } = await supabase
+        .from('business_config')
+        .update({ context_json: newContext })
+        .eq('id', configId);
+
+      if (updateError) throw updateError;
+
+      setServices(updatedServices);
+      setIsDrawerOpen(false);
+    } catch (err: any) {
+      console.error('❌ [SERVICES] Delete error:', err.message);
+      setError('Falha ao excluir serviço.');
+    }
+  };
 
   const handleCreate = () => {
     console.log('➕ [SERVICES] Opening create drawer');
@@ -112,6 +211,9 @@ export default function ServicesPage() {
         isOpen={isDrawerOpen} 
         onClose={() => setIsDrawerOpen(false)} 
         service={editingService} 
+        onSave={handleSave}
+        onDelete={handleDelete}
+        saving={saving}
       />
     </div>
   );

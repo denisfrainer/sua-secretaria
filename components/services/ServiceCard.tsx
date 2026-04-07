@@ -8,8 +8,8 @@ interface Service {
   id: string;
   name: string;
   description: string;
-  price: number;
-  duration: number;
+  price: number | string;
+  duration: number | string;
   status: 'active' | 'inactive';
 }
 

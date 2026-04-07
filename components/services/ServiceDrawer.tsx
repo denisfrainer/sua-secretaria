@@ -14,7 +14,21 @@ interface Service {
   status: 'active' | 'inactive';
 }
 
-export function ServiceDrawer({ isOpen, onClose, service }: { isOpen: boolean; onClose: () => void; service?: Service | null }) {
+export function ServiceDrawer({ 
+  isOpen, 
+  onClose, 
+  service,
+  onSave,
+  onDelete,
+  saving: externalSaving
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  service?: Service | null;
+  onSave: (data: any) => void;
+  onDelete: (id: string) => void;
+  saving?: boolean;
+}) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -23,7 +37,6 @@ export function ServiceDrawer({ isOpen, onClose, service }: { isOpen: boolean; o
     status: 'active' as 'active' | 'inactive',
   });
 
-  const [saving, setSaving] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -47,18 +60,14 @@ export function ServiceDrawer({ isOpen, onClose, service }: { isOpen: boolean; o
   }, [service, isOpen]);
 
   const handleSave = () => {
-    setSaving(true);
-    console.log('💾 [SERVICES] Saving service:', { id: service?.id, ...formData });
-    // Simulate API delay
-    setTimeout(() => {
-      setSaving(false);
-      onClose();
-    }, 1000);
+    onSave(formData);
   };
 
   const handleDelete = () => {
-    console.log('🗑️ [SERVICES] Deleting service:', service?.id);
-    onClose();
+    if (service?.id) {
+      onDelete(service.id);
+    }
+    setShowConfirmDelete(false);
   };
 
   return (
@@ -196,10 +205,10 @@ export function ServiceDrawer({ isOpen, onClose, service }: { isOpen: boolean; o
           <div className="p-6 border-t border-black/5 bg-gray-50/50 group">
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={externalSaving}
               className="w-full flex items-center justify-center gap-3 py-4 bg-black text-white rounded-2xl shadow-xl shadow-black/10 text-sm font-black active:scale-[0.98] transition-all hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
             >
-              {saving ? (
+              {externalSaving ? (
                 <>
                   <motion.div 
                     animate={{ rotate: 360 }}

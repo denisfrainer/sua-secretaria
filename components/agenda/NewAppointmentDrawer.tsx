@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Drawer } from 'vaul';
 import { X, Clock, User, Scissors, Check, Loader2, Sparkles } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface Service {
+  id: string;
   name: string;
-  duration: string;
-  price: string;
+  duration: string | number;
+  price: string | number;
+  status: 'active' | 'inactive';
 }
 
 interface NewAppointmentDrawerProps {
@@ -18,11 +21,40 @@ interface NewAppointmentDrawerProps {
   onSuccess: () => void;
 }
 
-export function NewAppointmentDrawer({ isOpen, onClose, selectedTime, services, onSuccess }: NewAppointmentDrawerProps) {
+export function NewAppointmentDrawer({ isOpen, onClose, selectedTime, services: initialServices, onSuccess }: NewAppointmentDrawerProps) {
   const [clientName, setClientName] = useState('');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [services, setServices] = useState<any[]>(initialServices || []);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function fetchServices() {
+      if (!isOpen) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: configData } = await supabase
+          .from('business_config')
+          .select('context_json')
+          .eq('owner_id', user.id)
+          .single();
+
+        if (configData?.context_json) {
+          const list = (configData.context_json as any).services || [];
+          // Filter out inactive services
+          setServices(list.filter((s: any) => s.status !== 'inactive'));
+        }
+      } catch (err: any) {
+        console.error('❌ [NEW_APP_DRAWER] Fetch services error:', err.message);
+      }
+    }
+
+    fetchServices();
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +64,10 @@ export function NewAppointmentDrawer({ isOpen, onClose, selectedTime, services, 
     setError(null);
 
     try {
+      // Extract numeric duration
+      const durationStr = String(selectedService.duration);
+      const durationMinutes = parseInt(durationStr.replace(/[^0-9]/g, '')) || 30;
+
       const response = await fetch('/api/agenda/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,7 +75,7 @@ export function NewAppointmentDrawer({ isOpen, onClose, selectedTime, services, 
           clientName,
           serviceName: selectedService.name,
           startTime: selectedTime,
-          duration: selectedService.duration
+          duration: durationMinutes // Send as number
         }),
       });
 
