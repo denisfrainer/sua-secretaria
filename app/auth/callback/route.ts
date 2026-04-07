@@ -1,17 +1,18 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const origin = request.nextUrl.origin;
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/admin/login?error=no_code`);
+    return NextResponse.redirect(`${origin}/login?error=no_code`);
   }
 
   const cookieStore = await cookies();
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
     
     if (exchangeError) {
       console.error(`❌ [AUTH CALLBACK] Exchange Failed: ${exchangeError.message}`);
-      redirectTo = `${origin}/admin/login?error=exchange_failed`;
+      redirectTo = `${origin}/login?error=exchange_failed`;
     } else if (session?.user) {
       console.log('✅ [AUTH CALLBACK] Session established. Persisting Profile Identity...');
       

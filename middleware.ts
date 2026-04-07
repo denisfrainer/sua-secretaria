@@ -49,7 +49,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Prevenir que usuário logado veja a tela de login
-  if ((pathname.startsWith('/login') || pathname.startsWith('/admin/login')) && user) {
+  if ((pathname.startsWith('/login')) && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)

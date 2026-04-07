@@ -158,7 +158,7 @@ export default function AdminDashboard() {
     }, [authorized, fetchLeads]);
 
     const handleLogout = () => {
-        window.location.href = '/admin/login';
+        window.location.href = '/login';
     };
 
     // ---- LOADING ----

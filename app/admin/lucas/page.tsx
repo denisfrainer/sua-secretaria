@@ -446,7 +446,7 @@ export default function CabinDashboard() {
 
                         {/* LOGOUT BUTTON */}
                         <button
-                            onClick={() => window.location.href = '/admin/login'}
+                            onClick={() => window.location.href = '/login'}
                             className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
                             aria-label="Sair"
                         >

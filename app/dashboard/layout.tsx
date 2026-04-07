@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/admin/login'); // Defaulting to the existing /admin/login endpoint
+    redirect('/login'); // Defaulting to the existing /login endpoint
   }
 
   return (
