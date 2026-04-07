@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getGoogleAuthClient } from '@/lib/calendar/google';
 import { startOfDay, endOfDay } from 'date-fns';
 
@@ -12,8 +13,20 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Fetch business_config and join/get profiles for the token
-  const { data: businessConfig } = await supabase
+  // 1. Fetch the centralized refresh token from the profiles table using ADMIN client
+  // Using Admin client bypasses RLS which is safer during background/API operations.
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('google_refresh_token')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError) {
+    console.warn('[GCAL_SYNC] Profile lookup warning:', profileError.message);
+  }
+
+  // 2. Fetch business_config (context_json used as secondary cache)
+  const { data: businessConfig } = await supabaseAdmin
     .from('business_config')
     .select('id, owner_id, context_json')
     .eq('owner_id', user.id)
@@ -22,13 +35,6 @@ export async function GET() {
   if (!businessConfig) {
     return NextResponse.json({ error: 'Business configuration not found' }, { status: 404 });
   }
-
-  // Fetch the centralized refresh token from the profiles table
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('google_refresh_token')
-    .eq('id', user.id)
-    .single();
 
   const refreshToken = profile?.google_refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token;
 
@@ -78,15 +84,23 @@ export async function GET() {
     });
 
   } catch (error: any) {
-    console.error('[GCAL_SYNC] Error fetching today\'s agenda:', error.message);
+    console.error('💥 [GCAL_SYNC] CRITICAL ERROR FETCHING AGENDA:', {
+      message: error.message,
+      stack: error.stack,
+      user_id: user.id
+    });
     
-    // If it's an integration error (missing token, invalid grant, etc.), return 200 with integrated: false
+    // DETAILED INTEGRATION ERROR DETECTION:
+    // If it's an integration error (missing token, invalid grant, 401, etc.), return 200 with integrated: false
     const isIntegrationError = 
       error.message.includes('not integrated') || 
       error.message.includes('invalid_grant') || 
-      error.message.includes('No refresh token is set');
+      error.message.includes('No refresh token is set') ||
+      error.message.includes('invalid_request') ||
+      (error.code === 401);
 
     if (isIntegrationError) {
+      console.warn('⚠️ [GCAL_SYNC] Non-critical integration failure. Showing reconnect UI.');
       return NextResponse.json({ integrated: false, agenda: [] });
     }
     
