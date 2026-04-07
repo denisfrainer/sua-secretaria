@@ -35,27 +35,26 @@ export async function GET(request: Request) {
     }
   );
 
+  let redirectTo = `${origin}${next}`;
+
   try {
     const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     
     if (exchangeError) {
       console.error(`❌ [AUTH CALLBACK] Exchange Failed: ${exchangeError.message}`);
-      return NextResponse.redirect(`${origin}/admin/login?error=exchange_failed`);
-    }
-
-    if (session?.user) {
+      redirectTo = `${origin}/admin/login?error=exchange_failed`;
+    } else if (session?.user) {
       console.log('✅ [AUTH CALLBACK] Session established. Persisting Profile Identity...');
       
       const providerRefreshToken = session.provider_refresh_token;
 
       if (!providerRefreshToken) {
-        console.warn('⚠️ [AUTH CALLBACK] provider_refresh_token missing! Ensure Scopes include Calendar and prompt=consent.');
+        console.warn('⚠️ [AUTH CALLBACK] provider_refresh_token missing! (Normal for basic login)');
       } else {
         console.log('🔑 [AUTH CALLBACK] Google Refresh Token captured.');
       }
 
       // 2. DEFENSIVE IDENTITY WRITE (Profiles Table)
-      // Only include google_refresh_token in the upsert if we actually received one
       const profileData: any = {
         id: session.user.id,
         email: session.user.email,
@@ -120,8 +119,7 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error('💥 [AUTH CALLBACK] Unexpected error:', error.message);
   } finally {
-    console.log('🏁 [AUTH CALLBACK] Finalizing request. Redirecting to:', next);
-    // The browser now has the session cookies. Redirect to intended destination.
-    return NextResponse.redirect(`${origin}${next}`);
+    console.log('🏁 [AUTH CALLBACK] Finalizing request. Redirecting to:', redirectTo);
+    return NextResponse.redirect(redirectTo);
   }
 }

@@ -8,12 +8,22 @@ export function LoginLoadingState() {
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const [message, setMessage] = useState('Finalizando seu acesso...');
+
   useEffect(() => {
     const code = searchParams.get('code');
     const accessToken = searchParams.get('access_token');
+    const next = searchParams.get('next') || '';
     
     if (code || accessToken) {
       setIsProcessing(true);
+      
+      // If the redirect path is agenda, we are specifically connecting the calendar
+      if (next.includes('agenda')) {
+        setMessage('Sincronizando sua agenda...');
+      } else {
+        setMessage('Finalizando seu acesso...');
+      }
     }
   }, [searchParams]);
 
@@ -31,12 +41,12 @@ export function LoginLoadingState() {
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-            Concluindo login
+            Aguarde um momento
           </h2>
           <Sparkles size={18} className="text-blue-500" />
         </div>
         <p className="text-sm font-bold text-gray-400 uppercase tracking-widest animate-pulse">
-          Sincronizando sua agenda...
+          {message}
         </p>
       </div>
 
