@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const origin = request.nextUrl.origin;
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = searchParams.get('next') ?? '/dashboard/agenda';
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=no_code`);
