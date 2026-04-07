@@ -138,7 +138,7 @@ export default async function DashboardPage() {
           </div>
           
           <Link 
-            href="/dashboard/test"
+            href="/dashboard/agenda"
             className="w-full py-5 bg-white border border-black/5 rounded-3xl flex items-center justify-center gap-3 text-sm font-black text-gray-900 shadow-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
           >
             Testar meu atendimento

@@ -33,7 +33,8 @@ export async function GET() {
   const refreshToken = profile?.google_refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token;
 
   if (!refreshToken) {
-    return NextResponse.json({ error: 'Google Calendar not integrated' }, { status: 404 });
+    console.warn('[GCAL_SYNC] Google Calendar not integrated for user:', user.id);
+    return NextResponse.json({ integrated: false, agenda: [] });
   }
 
   try {
@@ -71,10 +72,21 @@ export async function GET() {
       description: event.description || '',
     }));
 
-    return NextResponse.json({ agenda });
+    return NextResponse.json({ 
+      integrated: true, 
+      agenda 
+    });
 
   } catch (error: any) {
     console.error('[GCAL_SYNC] Error fetching today\'s agenda:', error.message);
-    return NextResponse.json({ error: 'Failed to fetch calendar events' }, { status: 500 });
+    
+    if (error.message.includes('not integrated')) {
+      return NextResponse.json({ integrated: false, agenda: [] });
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to fetch calendar events',
+      details: error.message 
+    }, { status: 500 });
   }
 }
