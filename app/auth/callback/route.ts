@@ -55,16 +55,21 @@ export async function GET(request: Request) {
       }
 
       // 2. DEFENSIVE IDENTITY WRITE (Profiles Table)
-      // We run this in the background but wait for it to ensure stability
+      // Only include google_refresh_token in the upsert if we actually received one
+      const profileData: any = {
+        id: session.user.id,
+        email: session.user.email,
+        full_name: session.user.user_metadata?.full_name || '',
+        updated_at: new Date().toISOString()
+      };
+
+      if (providerRefreshToken) {
+        profileData.google_refresh_token = providerRefreshToken;
+      }
+
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .upsert({
-          id: session.user.id,
-          email: session.user.email,
-          full_name: session.user.user_metadata?.full_name || '',
-          google_refresh_token: providerRefreshToken || undefined,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+        .upsert(profileData, { onConflict: 'id' });
 
       if (profileError) {
         console.error('❌ [PROFILES ERROR]:', profileError.message);
