@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
@@ -16,7 +17,9 @@ export default async function LoginPage() {
     return (
         <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 antialiased selection:bg-indigo-100 font-outfit">
             {/* Show loading state if processing code exchange */}
-            <LoginLoadingState />
+            <Suspense fallback={null}>
+                <LoginLoadingState />
+            </Suspense>
 
             <div className="w-full max-w-sm flex flex-col gap-10">
                 {/* BRAND HEADER */}
