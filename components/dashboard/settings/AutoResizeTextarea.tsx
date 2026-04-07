@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 
 interface AutoResizeTextareaProps {
+  label?: string;
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
@@ -11,6 +12,7 @@ interface AutoResizeTextareaProps {
 }
 
 export function AutoResizeTextarea({
+  label,
   value,
   onChange,
   placeholder,
@@ -34,17 +36,24 @@ export function AutoResizeTextarea({
   }, [value, adjustHeight]);
 
   return (
-    <textarea
-      ref={textareaRef}
-      value={value}
-      onChange={(e) => {
-        onChange(e.target.value);
-        adjustHeight();
-      }}
-      placeholder={placeholder}
-      className={className}
-      rows={rows}
-      style={{ overflow: 'hidden', resize: 'none' }}
-    />
+    <div className="w-full flex flex-col gap-2 font-source">
+      {label && (
+        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+          {label}
+        </label>
+      )}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          adjustHeight();
+        }}
+        placeholder={placeholder}
+        className={className}
+        rows={rows}
+        style={{ overflow: 'hidden', resize: 'none' }}
+      />
+    </div>
   );
 }

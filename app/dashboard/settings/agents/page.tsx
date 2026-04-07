@@ -123,16 +123,14 @@ export default function AgentsSettingsPage() {
               placeholder="Ex: Profissional e amigável, Luxo e formal, etc."
             />
 
-            <div className="space-y-2">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Instruções Dinâmicas</label>
-              <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
-                <AutoResizeTextarea 
-                  value={config?.context_json.tone_of_voice?.custom_instructions || ''} 
-                  onChange={(val) => updateToneOfVoice('custom_instructions', val)}
-                  placeholder="Ex: Use emojis de brilho ✨. Chame de 'flor'. Evite usar gírias muito pesadas."
-                  className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
-                />
-              </div>
+            <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
+              <AutoResizeTextarea 
+                label="Instruções Dinâmicas"
+                value={config?.context_json.tone_of_voice?.custom_instructions || ''} 
+                onChange={(val) => updateToneOfVoice('custom_instructions', val)}
+                placeholder="Ex: Use emojis de brilho ✨. Chame de 'flor'. Evite usar gírias muito pesadas."
+                className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
+              />
             </div>
           </div>
         </div>
@@ -146,6 +144,7 @@ export default function AgentsSettingsPage() {
           
           <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
             <AutoResizeTextarea 
+              label="Regras de Agendamento"
               value={config?.context_json.scheduling_rules.join('\n') || ''} 
               onChange={updateRules}
               placeholder="Ex: Cancelamento com 1h de antecedência. Não aceitamos menores sem autorização."
