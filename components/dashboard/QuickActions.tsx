@@ -57,8 +57,8 @@ export default function QuickActions() {
       icon: <Settings className="w-5 h-5" />,
       colorClass: 'text-emerald-600 bg-emerald-50 ring-emerald-100',
       action: () => {
-        console.log('[NAV] Going to business settings');
-        router.push('/dashboard/settings/business');
+        console.log('[NAV] Going to settings hub');
+        router.push('/dashboard/settings');
       },
     },
   ];
