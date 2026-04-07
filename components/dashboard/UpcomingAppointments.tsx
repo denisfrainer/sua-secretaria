@@ -58,7 +58,7 @@ export function UpcomingAppointments() {
     return (
       <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-3">
         <Loader2 className="animate-spin text-blue-600" size={24} />
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Carregando agenda...</p>
+        <p className="text-base font-medium text-gray-600">Carregando agenda...</p>
       </div>
     );
   }
@@ -70,12 +70,12 @@ export function UpcomingAppointments() {
           <CalendarOff size={24} />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-bold text-gray-900">Agenda não conectada</p>
-          <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest">Conecte o Google Calendar nas configurações</p>
+          <p className="text-base font-bold text-gray-950">Agenda não conectada</p>
+          <p className="text-base font-medium text-gray-600">Conecte o Google Calendar nas configurações</p>
         </div>
         <Link 
           href="/dashboard/settings"
-          className="text-xs font-black text-blue-600 uppercase tracking-widest hover:underline"
+          className="text-base font-bold text-blue-600 hover:underline"
         >
           Configurar agora
         </Link>
@@ -90,12 +90,12 @@ export function UpcomingAppointments() {
           <CalendarCheck size={24} />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-bold text-gray-900 tracking-tight">Nenhum atendimento para hoje</p>
-          <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest">Sua tarde está livre!</p>
+          <p className="text-base font-bold text-gray-950 tracking-tight">Nenhum atendimento para hoje</p>
+          <p className="text-base font-medium text-gray-600">Sua tarde está livre!</p>
         </div>
         <Link 
           href="/dashboard/agenda"
-          className="text-xs font-black text-blue-600 uppercase tracking-widest hover:underline"
+          className="text-base font-bold text-blue-600 hover:underline"
         >
           Ver agenda completa
         </Link>
@@ -106,21 +106,21 @@ export function UpcomingAppointments() {
   return (
     <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="p-6 pb-2 flex items-center justify-between">
-          <h2 className="text-sm font-black text-blue-600 uppercase tracking-widest px-1">Próximos Atendimentos</h2>
-          <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-tighter">Hoje</span>
+          <h2 className="text-base font-bold text-gray-950 px-1">Próximos atendimentos</h2>
+          <span className="bg-blue-50 text-blue-600 text-base font-bold px-3 py-1 rounded-full">Hoje</span>
       </div>
       <div className="flex flex-col divide-y divide-black/5">
         {appointments.map((app) => (
           <div key={app.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-black text-gray-900">{format(parseISO(app.start), 'HH:mm')}</span>
-              <span className="text-gray-300">|</span>
+              <span className="text-base font-bold text-gray-950">{format(parseISO(app.start), 'HH:mm')}</span>
+              <span className="text-gray-200">|</span>
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-gray-700 group-hover:text-blue-600 transition-colors">
+                <span className="text-base font-bold text-gray-950 group-hover:text-blue-600 transition-colors">
                   {app.title}
                 </span>
                 {app.description && (
-                  <span className="text-[10px] text-gray-400 font-medium truncate max-w-[180px]">
+                  <span className="text-base text-gray-600 font-medium truncate max-w-[180px]">
                     {app.description}
                   </span>
                 )}
@@ -132,10 +132,10 @@ export function UpcomingAppointments() {
       </div>
       <Link 
         href="/dashboard/agenda"
-        className="w-full py-4 flex items-center justify-center gap-2 text-xs font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50/50 transition-all border-t border-black/5"
+        className="w-full py-4 flex items-center justify-center gap-2 text-base font-bold text-blue-600 hover:bg-blue-50/50 transition-all border-t border-black/5"
       >
         Ver agenda completa
-        <ChevronRight size={14} />
+        <ChevronRight size={18} />
       </Link>
     </div>
   );

@@ -22,7 +22,7 @@ export default function QuickActions() {
 
   const actions = [
     {
-      title: 'Agenda do Dia',
+      title: 'Agenda',
       icon: <Calendar className="w-5 h-5" />,
       colorClass: 'text-blue-600 bg-blue-50 ring-blue-100',
       action: () => {
@@ -31,9 +31,9 @@ export default function QuickActions() {
       },
     },
     {
-      title: 'Link de Agendamento',
+      title: 'Link de agendamento',
       icon: <Link2 className="w-5 h-5" />,
-      colorClass: 'text-orange-600 bg-orange-50 ring-orange-100',
+      colorClass: 'text-rose-600 bg-rose-50 ring-rose-100',
       action: () => {
         if (userId) {
           console.log('[NAVIGATION] Routing to public schedule:', userId);
@@ -44,9 +44,9 @@ export default function QuickActions() {
       },
     },
     {
-      title: 'Serviços e Preços',
+      title: 'Serviços',
       icon: <LinkIcon className="w-5 h-5" />,
-      colorClass: 'text-rose-600 bg-rose-50 ring-rose-100',
+      colorClass: 'text-orange-600 bg-orange-50 ring-orange-100',
       action: () => {
         console.log('[NAVIGATION] Navigating to /dashboard/settings/business (Services)');
         router.push('/dashboard/settings/business');
@@ -76,7 +76,7 @@ export default function QuickActions() {
           >
             {item.icon}
           </div>
-          <span className="font-medium text-gray-900 text-sm tracking-tight text-nowrap">
+          <span className="font-semibold text-gray-950 text-base tracking-tight">
             {item.title}
           </span>
         </button>

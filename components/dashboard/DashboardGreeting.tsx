@@ -29,7 +29,7 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="text-2xl font-black text-gray-900 tracking-tight animate-in fade-in duration-700">
+      <h1 className="text-3xl font-bold text-gray-950 tracking-tight animate-in fade-in duration-700">
         {greeting || '...'}, {userName}
       </h1>
     </div>

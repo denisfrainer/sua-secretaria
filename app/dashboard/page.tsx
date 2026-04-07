@@ -43,14 +43,14 @@ export default async function DashboardPage() {
       {/* Main Action Grid (Premium Silicon Valley Aesthetic) */}
       <QuickActions />
 
-      {/* System Status Section (Subtle) */}
+      {/* System status section */}
       <div className="mt-4 flex flex-col gap-4">
           <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status do Sistema</h3>
-              <div className="flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                      {isConnected ? 'WhatsApp Conectado' : 'Aguardando Configuração'}
+              <h3 className="text-base font-semibold text-gray-600 tracking-tight">Status do sistema</h3>
+              <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                  <span className="text-base font-medium text-gray-600 tracking-tight">
+                      {isConnected ? 'WhatsApp conectado' : 'Aguardando configuração'}
                   </span>
               </div>
           </div>
