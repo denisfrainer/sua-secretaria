@@ -36,15 +36,19 @@ export async function GET(req: NextRequest) {
 
       // 3. PERSISTENCE: Bypass RLS using supabaseAdmin (Service Role)
       // This guarantees the save happens even if the session hasn't fully propagated to the DB level for RLS
-      const { error: dbError } = await supabaseAdmin
+      const { data, error: dbError } = await supabaseAdmin
         .from('business_config')
         .update({ google_refresh_token: providerRefreshToken })
-        .eq('owner_id', session.user.id);
+        .eq('owner_id', session.user.id)
+        .select();
 
       if (dbError) {
         console.error('❌ [DB ERROR] Failed to save token:', dbError.message);
+      } else if (!data || data.length === 0) {
+        console.warn('⚠️ [DB WARNING] Token NOT saved: No record found in business_config for owner_id:', session.user.id);
       } else {
-        console.log('✅ [DB] Token successfully saved to business_config for user:', session.user.id);
+        console.log('✅ [DB] Token successfully saved and verified for user:', session.user.id);
+        console.log('➡️ [DB UPDATE RESULT]:', JSON.stringify(data[0], null, 2));
       }
     } else {
       console.warn('⚠️ [AUTH] No provider_refresh_token found in session. Ensure "prompt=consent" and "access_type=offline" are used.');
