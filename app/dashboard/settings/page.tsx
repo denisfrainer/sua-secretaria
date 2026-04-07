@@ -62,7 +62,8 @@ interface BusinessConfig {
         };
         faq: FAQItem[];
         updated_at: string;
-    }
+    };
+    google_refresh_token: string | null;
 }
 
 // ==============================================================
@@ -108,7 +109,7 @@ export default function SettingsPage() {
         }
 
         const [configRes] = await Promise.all([
-            supabase.from('business_config').select('*').eq('owner_id', user.id).single()
+            supabase.from('business_config').select('*, google_refresh_token').eq('owner_id', user.id).single()
         ]);
 
         if (configRes.error) {

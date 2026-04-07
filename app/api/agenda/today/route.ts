@@ -15,7 +15,7 @@ export async function GET() {
   // Fetch business_config
   const { data: businessConfig } = await supabase
     .from('business_config')
-    .select('id, context_json')
+    .select('id, context_json, google_refresh_token')
     .eq('owner_id', user.id)
     .single();
 
@@ -23,13 +23,22 @@ export async function GET() {
     return NextResponse.json({ error: 'Business configuration not found' }, { status: 404 });
   }
 
-  if (!(businessConfig.context_json as any).google_calendar) {
+  // Token prioritized from the dedicated column
+  const refreshToken = businessConfig.google_refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token;
+
+  if (!refreshToken) {
     return NextResponse.json({ error: 'Google Calendar not integrated' }, { status: 404 });
   }
 
   try {
     console.log('[GCAL_SYNC] Fetching today\'s agenda for user:', user.id);
-    const authClient = await getGoogleAuthClient(businessConfig.id, businessConfig.context_json);
+    const authClient = await getGoogleAuthClient(businessConfig.id, {
+      ...businessConfig.context_json,
+      google_calendar: {
+        ...(businessConfig.context_json as any).google_calendar,
+        refresh_token: refreshToken
+      }
+    });
     const calendar = google.calendar({ version: 'v3', auth: authClient });
 
     const now = new Date();

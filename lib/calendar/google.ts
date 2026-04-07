@@ -29,20 +29,22 @@ export async function getGoogleAuthClient(businessConfigId: number, contextJson:
       const { credentials } = await oauth2Client.refreshAccessToken();
       console.log('[GCAL_SYNC] Access token refreshed successfully');
 
-      // Update Supabase with new tokens
-      const updatedContext = {
-        ...contextJson,
-        google_calendar: {
-          ...googleCal,
-          access_token: credentials.access_token,
-          expiry_date: credentials.expiry_date,
-          updated_at: new Date().toISOString(),
-        },
-      };
-
+      // Update Supabase with new tokens in both JSON and dedicated column
       await supabaseAdmin
         .from('business_config')
-        .update({ context_json: updatedContext })
+        .update({ 
+          google_refresh_token: credentials.refresh_token || googleCal.refresh_token,
+          context_json: {
+            ...contextJson,
+            google_calendar: {
+              ...googleCal,
+              access_token: credentials.access_token,
+              refresh_token: credentials.refresh_token || googleCal.refresh_token,
+              expiry_date: credentials.expiry_date,
+              updated_at: new Date().toISOString(),
+            },
+          }
+        })
         .eq('id', businessConfigId);
 
       oauth2Client.setCredentials(credentials);

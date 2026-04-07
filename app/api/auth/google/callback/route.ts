@@ -42,20 +42,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Business configuration not found' }, { status: 404 });
     }
 
-    // Merge tokens into context_json.google_calendar
-    const updatedContext = {
-      ...businessConfig.context_json,
-      google_calendar: {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token,
-        expiry_date: tokens.expiry_date,
-        updated_at: new Date().toISOString(),
-      },
-    };
-
+    // Save tokens and explicitly persist the refresh_token in the dedicated column
     const { error: updateError } = await supabaseAdmin
       .from('business_config')
-      .update({ context_json: updatedContext })
+      .update({ 
+        google_refresh_token: tokens.refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token,
+        context_json: {
+          ...businessConfig.context_json,
+          google_calendar: {
+            access_token: tokens.access_token,
+            expiry_date: tokens.expiry_date,
+            updated_at: new Date().toISOString(),
+          }
+        }
+      })
       .eq('id', businessConfig.id);
 
     if (updateError) {

@@ -1,4 +1,4 @@
-﻿import type { NextConfig } from "next";
+import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const nextConfig: NextConfig = {
 
   // Recomendado para melhor compatibilidade com rotas estáticas e next-intl
-  trailingSlash: true,
+  trailingSlash: false,
 
   // Opcional: Configuração de imagens para Static Export
   images: {
