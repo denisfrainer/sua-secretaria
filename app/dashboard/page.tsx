@@ -44,15 +44,18 @@ export default async function DashboardPage() {
   // However, we at least want a name to show.
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   
-  // Robust name fallbacks (Profile > Metadata > Email > EMPTY)
+  // Extract email prefix safely
+  const emailPrefix = user?.email ? user.email.split('@')[0] : '';
+  const formattedPrefix = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+
+  // Robust name fallbacks (Profile > Metadata > Email Prefix > NULL)
   const displayName = profile?.full_name?.split(' ')[0]
     || user?.user_metadata?.full_name?.split(' ')[0] 
     || user?.user_metadata?.name?.split(' ')[0]
-    || user?.email?.split('@')[0] 
-    || 'Parceiro'; // Safe default to prevent infinite skeleton
+    || formattedPrefix;
 
-  // If even the email is missing (impossible for logged in), keep it in skeleton
-  if (!displayName) {
+  // We only show skeleton if we have NO user data at all (auth failure)
+  if (!user) {
     return <DashboardSkeleton />;
   }
 

@@ -36,7 +36,7 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
         transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
         className="text-3xl font-bold text-gray-950 tracking-tight"
       >
-        {greeting || '...'}, {userName}
+        {greeting || '...'}{userName ? `, ${userName}` : ''}
       </motion.h1>
     </div>
   );
