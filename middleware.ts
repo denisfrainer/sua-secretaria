@@ -43,8 +43,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const isProtectedRoute = pathname.startsWith('/dashboard')
+  const isApiRoute = pathname.startsWith('/api/')
   
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute && !user && !isApiRoute) {
     console.log('🚫 [MIDDLEWARE] Unauthorized access to protected route. Redirecting to /login.');
     const url = request.nextUrl.clone()
     url.pathname = '/login' 

@@ -122,6 +122,7 @@ export async function GET(request: NextRequest) {
     console.error('💥 [AUTH CALLBACK] Unexpected error:', error.message);
   } finally {
     console.log('🏁 [AUTH CALLBACK] Finalizing request. Redirecting to:', redirectTo);
-    return NextResponse.redirect(redirectTo);
+    const finalUrl = new URL('/dashboard', origin);
+    return NextResponse.redirect(finalUrl);
   }
 }
