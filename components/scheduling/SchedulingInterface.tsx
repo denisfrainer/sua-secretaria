@@ -28,6 +28,7 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
 
 interface SchedulingInterfaceProps {
   profile: any;
@@ -35,16 +36,13 @@ interface SchedulingInterfaceProps {
 
 type BookingStep = 'calendar' | 'time' | 'form' | 'success';
 
-const MOCK_TIMES = [
-  "09:00", "09:45", "10:30", "11:15", 
-  "14:00", "14:45", "15:30", "16:15", "17:00"
-];
-
 export default function SchedulingInterface({ profile }: SchedulingInterfaceProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [step, setStep] = useState<BookingStep>('calendar');
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -52,6 +50,36 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
   });
 
   const businessName = profile.business_name || profile.full_name || 'Nossa Empresa';
+
+  // Fetch Available Slots
+  useEffect(() => {
+    async function fetchSlots() {
+      if (!selectedDate) return;
+
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      console.log('[SCHEDULING_UI] Fetching slots for date:', formattedDate);
+      
+      setIsLoadingSlots(true);
+      try {
+        const response = await fetch(`/api/calendar/availability?profileId=${profile.id}&date=${formattedDate}`);
+        const data = await response.json();
+        
+        if (data.availableSlots) {
+          console.log('[SCHEDULING_UI] Received slots:', data.availableSlots);
+          setAvailableSlots(data.availableSlots);
+        } else {
+          setAvailableSlots([]);
+        }
+      } catch (error) {
+        console.error('[SCHEDULING_UI] Error fetching slots:', error);
+        setAvailableSlots([]);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    }
+
+    fetchSlots();
+  }, [selectedDate, profile.id]);
 
   // Calendar Helpers
   const renderHeader = () => {
@@ -242,19 +270,36 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">
                           {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                         </p>
+                        
                         <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                          {MOCK_TIMES.map((time) => (
-                            <button
-                              key={time}
-                              onClick={() => {
-                                setSelectedTime(time);
-                                setStep('form');
-                              }}
-                              className="py-3 px-4 rounded-xl border border-gray-100 font-bold text-gray-700 hover:border-blue-600 hover:bg-blue-50/50 hover:text-blue-600 transition-all text-center"
-                            >
-                              {time}
-                            </button>
-                          ))}
+                          {isLoadingSlots ? (
+                            // Pulsing Skeleton Loader
+                            Array.from({ length: 6 }).map((_, i) => (
+                              <div 
+                                key={`skeleton-${i}`}
+                                className="h-[46px] w-full bg-gray-100 rounded-xl animate-pulse"
+                              />
+                            ))
+                          ) : availableSlots.length > 0 ? (
+                            availableSlots.map((time) => (
+                              <button
+                                key={time}
+                                onClick={() => {
+                                  setSelectedTime(time);
+                                  setStep('form');
+                                }}
+                                className="py-3 px-4 rounded-xl border border-gray-100 font-bold text-gray-700 hover:border-blue-600 hover:bg-blue-50/50 hover:text-blue-600 transition-all text-center"
+                              >
+                                {time}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="py-8 px-4 text-center">
+                              <p className="text-sm font-bold text-gray-400">
+                                Nenhum horário disponível nesta data.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </>
                     ) : (
