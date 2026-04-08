@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         }
 
         // Trava os leads no banco imediatamente
-        const leadIds = leadsToLock.map(l => l.id);
+        const leadIds = leadsToLock.map((l: any) => l.id);
         await supabaseAdmin
             .from('leads_lobo')
             .update({ status: 'processing_ghost' })
