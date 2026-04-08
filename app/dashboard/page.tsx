@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   // Defensive data fetching with Admin fallback to Standard client
   let businessConfig = null;
   let profile = null;
-  let initialAgenda = [];
+  let initialAgenda: any[] = [];
   let isIntegrated = false;
 
   try {
