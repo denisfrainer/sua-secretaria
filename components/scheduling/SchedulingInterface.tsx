@@ -10,7 +10,8 @@ import {
   User,
   MessageCircle,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { 
   format, 
@@ -43,6 +44,7 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
   const [step, setStep] = useState<BookingStep>('calendar');
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -174,9 +176,41 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
     return <div className="flex flex-col gap-1">{calendarRows}</div>;
   };
 
-  const handleBooking = (e: React.FormEvent) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('success');
+    if (!selectedDate || !selectedTime) return;
+
+    setIsBooking(true);
+    try {
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      
+      const response = await fetch('/api/calendar/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          profileId: profile.id,
+          date: formattedDate,
+          time: selectedTime,
+          clientName: formData.name,
+          clientPhone: formData.phone,
+          serviceName: 'Consultoria Especializada' // Match mock
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao agendar horário.');
+      }
+
+      setStep('success');
+    } catch (error: any) {
+      console.error('[SCHEDULING_UI] Booking error:', error);
+      alert(error.message || 'Ocorreu um erro ao realizar o agendamento. Tente novamente.');
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   return (
@@ -368,10 +402,20 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
 
                   <button 
                     type="submit"
-                    className="mt-4 h-14 bg-blue-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
+                    disabled={isBooking}
+                    className={`mt-4 h-14 w-full bg-blue-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group ${isBooking ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    Confirmar agendamento
-                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    {isBooking ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} />
+                        Agendando...
+                      </>
+                    ) : (
+                      <>
+                        Confirmar agendamento
+                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
                   </button>
                 </form>
               </motion.div>
