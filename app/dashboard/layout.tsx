@@ -14,10 +14,6 @@ export default async function DashboardLayout({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/login'); // Defaulting to the existing /login endpoint
-  }
-
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col font-source">
       {/* Protected minimal header */}
@@ -40,10 +36,10 @@ export default async function DashboardLayout({
         </Link>
         <div className="flex items-center gap-4">
           <div className="hidden md:block">
-            <DashboardHeaderMenu email={user.email || 'Admin'} />
+            <DashboardHeaderMenu email={user?.email || 'Admin'} />
           </div>
           <div className="md:hidden">
-            <MobileDrawerMenu email={user.email || 'Admin'} />
+            <MobileDrawerMenu email={user?.email || 'Admin'} />
           </div>
         </div>
       </header>

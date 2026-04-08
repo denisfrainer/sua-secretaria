@@ -22,8 +22,11 @@ export function LoginLoadingState() {
       const hasToken = new URLSearchParams(window.location.search).has('access_token');
       
       if (session && !hasCode && !hasToken) {
-        console.log('⚡ [AUTH_STATE] Already logged in (Basic). Redirecting to Dashboard...');
-        window.location.href = '/dashboard';
+        console.log('⚡ [AUTH_STATE] Session found, syncing cookies before redirect...');
+        setTimeout(() => {
+          console.log('🚀 [AUTH_STATE] Sync complete. Redirecting to Dashboard.');
+          window.location.href = '/dashboard';
+        }, 500);
       }
     };
     checkSession();
@@ -58,16 +61,22 @@ export function LoginLoadingState() {
       // 1. Check for immediate session (cookie already present)
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-          console.log('⚡ [AUTH SAFETY NET] Immediate session found. Redirecting...');
-          window.location.href = next || '/dashboard';
+          console.log('⚡ [AUTH SAFETY NET] Session found, syncing cookies before redirect...');
+          setTimeout(() => {
+            console.log('🚀 [AUTH SAFETY NET] Sync complete. Redirecting...');
+            window.location.href = next || '/dashboard';
+          }, 500);
         }
       });
 
       // 2. Listen for session event (standard flow)
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          console.log('⚡ [AUTH SAFETY NET] SIGNED_IN event detected. Breaking potential loop...');
-          window.location.href = next || '/dashboard';
+          console.log('⚡ [AUTH SAFETY NET] SIGNED_IN event. Syncing cookies...');
+          setTimeout(() => {
+            console.log('🚀 [AUTH SAFETY NET] Sync complete. Breaking potential loop...');
+            window.location.href = next || '/dashboard';
+          }, 500);
         }
       });
 

@@ -8,22 +8,18 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/login');
-  }
-
   const { data: businessConfig } = await supabase
     .from('business_config')
     .select('*')
-    .eq('owner_id', user.id)
+    .eq('owner_id', user?.id)
     .maybeSingle();
 
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   
   // Robust name fallbacks
-  const displayName = user.user_metadata?.full_name?.split(' ')[0] 
-    || user.user_metadata?.name?.split(' ')[0]
-    || user.email?.split('@')[0] 
+  const displayName = user?.user_metadata?.full_name?.split(' ')[0] 
+    || user?.user_metadata?.name?.split(' ')[0]
+    || user?.email?.split('@')[0] 
     || 'Bebel';
 
   return (
