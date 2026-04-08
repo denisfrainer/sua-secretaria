@@ -5,6 +5,7 @@ import { ChevronRight, Loader2, CalendarOff, CalendarCheck } from 'lucide-react'
 import Link from 'next/link';
 import { format, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 
 interface Appointment {
   id: string;
@@ -17,7 +18,7 @@ interface Appointment {
 export function UpcomingAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isIntegrated, setIsIntegrated] = useState(true);
+  const [isIntegrated, setIsIntegrated] = useState<boolean | null>(null); // Use null for initial indeterminate state
 
   useEffect(() => {
     async function fetchUpcoming() {
@@ -33,6 +34,8 @@ export function UpcomingAppointments() {
           setIsIntegrated(false);
           return;
         }
+
+        setIsIntegrated(true); // Explicitly set to true on successful data return
 
         if (data.agenda) {
           const now = new Date();
@@ -54,18 +57,29 @@ export function UpcomingAppointments() {
     fetchUpcoming();
   }, []);
 
-  if (loading) {
+  if (loading || isIntegrated === null) {
     return (
-      <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="animate-spin text-blue-600" size={24} />
-        <p className="text-base font-medium text-gray-600">Carregando agenda...</p>
+      <div 
+        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-3 min-h-[220px]"
+      >
+        <Loader2 className="animate-spin text-blue-600 opacity-20" size={24} />
+        <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Carregando agenda...</p>
       </div>
     );
   }
 
-  if (!isIntegrated) {
+  if (isIntegrated === false) {
     return (
-      <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center">
+      <motion.div 
+        initial={{ opacity: 0, y: 12 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ 
+          duration: 0.3, 
+          ease: [0.25, 0.1, 0.25, 1],
+          delay: 0.1
+        }}
+        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[220px]"
+      >
         <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
           <CalendarOff size={24} />
         </div>
@@ -79,13 +93,22 @@ export function UpcomingAppointments() {
         >
           Configurar agora
         </Link>
-      </div>
+      </motion.div>
     );
   }
 
   if (appointments.length === 0) {
     return (
-      <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center">
+      <motion.div 
+        initial={{ opacity: 0, y: 12 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ 
+          duration: 0.3, 
+          ease: [0.25, 0.1, 0.25, 1],
+          delay: 0.1
+        }}
+        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[220px]"
+      >
         <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
           <CalendarCheck size={24} />
         </div>
@@ -99,12 +122,21 @@ export function UpcomingAppointments() {
         >
           Ver agenda completa
         </Link>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <motion.div 
+      initial={{ opacity: 0, y: 12 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ 
+        duration: 0.3, 
+        ease: [0.25, 0.1, 0.25, 1],
+        delay: 0.1
+      }}
+      className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden min-h-[220px]"
+    >
       <div className="p-6 pb-2 flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-950 px-1">Próximos atendimentos</h2>
           <span className="bg-blue-50 text-blue-600 text-base font-bold px-3 py-1 rounded-full">Hoje</span>
@@ -137,6 +169,6 @@ export function UpcomingAppointments() {
         Ver agenda completa
         <ChevronRight size={18} />
       </Link>
-    </div>
+    </motion.div>
   );
 }

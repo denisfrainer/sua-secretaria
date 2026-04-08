@@ -78,8 +78,15 @@ export default function QuickActions() {
     <div className="relative">
       <div className="grid grid-cols-2 gap-3 mt-6">
         {actions.map((item, index) => (
-          <button
+          <motion.button
             key={index}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              duration: 0.3, 
+              ease: [0.25, 0.1, 0.25, 1],
+              delay: 0.05 * index
+            }}
             onClick={item.action}
             className="flex flex-col items-start p-4 w-full bg-white border border-gray-100 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-sm hover:border-gray-200 active:scale-[0.98] transition-all duration-200 group text-left"
           >
@@ -91,7 +98,7 @@ export default function QuickActions() {
             <span className="font-semibold text-gray-950 text-base tracking-tight">
               {item.title}
             </span>
-          </button>
+          </motion.button>
         ))}
       </div>
 

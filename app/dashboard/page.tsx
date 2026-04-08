@@ -3,30 +3,52 @@ import { redirect } from 'next/navigation';
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import QuickActions from '@/components/dashboard/QuickActions';
+import { motion } from 'framer-motion';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: businessConfig } = await supabase
-    .from('business_config')
-    .select('*')
-    .eq('owner_id', user?.id)
-    .maybeSingle();
+  // Use Admin client to bypass RLS and ensure the owner always gets their data
+  const [
+    { data: businessConfig },
+    { data: profile }
+  ] = await Promise.all([
+    supabaseAdmin
+      .from('business_config')
+      .select('*')
+      .eq('owner_id', user?.id)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user?.id)
+      .single()
+  ]);
 
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   
-  // Robust name fallbacks
-  const displayName = user?.user_metadata?.full_name?.split(' ')[0] 
+  // Robust name fallbacks (Profile > Metadata > Email > Default)
+  const displayName = profile?.full_name?.split(' ')[0]
+    || user?.user_metadata?.full_name?.split(' ')[0] 
     || user?.user_metadata?.name?.split(' ')[0]
     || user?.email?.split('@')[0] 
-    || 'Bebel';
+    || 'Empresa';
 
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
       
       {/* Dynamic Welcome Header */}
-      <DashboardGreeting userName={displayName} />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        <DashboardGreeting userName={displayName} />
+      </motion.div>
 
       {/* Real-time Next Appointments Section */}
       <UpcomingAppointments />
@@ -35,7 +57,12 @@ export default async function DashboardPage() {
       <QuickActions />
 
       {/* System status section */}
-      <div className="mt-4 flex flex-col gap-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1], delay: 0.25 }}
+        className="mt-4 flex flex-col gap-4"
+      >
           <div className="flex items-center justify-between px-2">
               <h3 className="text-base font-semibold text-gray-600 tracking-tight">Status do sistema</h3>
               <div className="flex items-center gap-2">
@@ -45,7 +72,7 @@ export default async function DashboardPage() {
                   </span>
               </div>
           </div>
-      </div>
+      </motion.div>
 
     </div>
   );
