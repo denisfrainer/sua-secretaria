@@ -44,7 +44,7 @@ export function UpcomingAppointments() {
             .filter((app: Appointment) => isAfter(parseISO(app.start), now))
             .sort((a: Appointment, b: Appointment) => parseISO(a.start).getTime() - parseISO(b.start).getTime())
             .slice(0, 3);
-          
+
           setAppointments(upcoming);
         }
       } catch (error) {
@@ -60,8 +60,8 @@ export function UpcomingAppointments() {
 
   if (loading || isIntegrated === null) {
     return (
-      <div 
-        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-3 min-h-[220px]"
+      <div
+        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-3 min-h-[235px]"
       >
         <Loader2 className="animate-spin text-blue-600 opacity-20" size={24} />
         <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Carregando agenda...</p>
@@ -71,15 +71,15 @@ export function UpcomingAppointments() {
 
   if (isIntegrated === false) {
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: 12 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ 
-          duration: 0.3, 
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.3,
           ease: [0.25, 0.1, 0.25, 1],
           delay: 0.1
         }}
-        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[220px]"
+        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[235px]"
       >
         <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
           <CalendarOff size={24} />
@@ -88,7 +88,7 @@ export function UpcomingAppointments() {
           <p className="text-base font-bold text-gray-950">Agenda não conectada</p>
           <p className="text-base font-medium text-gray-600">Conecte o Google Calendar nas configurações</p>
         </div>
-        <Link 
+        <Link
           href="/dashboard/settings"
           className="text-base font-bold text-blue-600 hover:underline"
         >
@@ -100,15 +100,15 @@ export function UpcomingAppointments() {
 
   if (appointments.length === 0) {
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: 12 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ 
-          duration: 0.3, 
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.3,
           ease: [0.25, 0.1, 0.25, 1],
           delay: 0.1
         }}
-        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[220px]"
+        className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[235px]"
       >
         <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
           <CalendarCheck size={24} />
@@ -117,7 +117,7 @@ export function UpcomingAppointments() {
           <p className="text-base font-bold text-gray-950 tracking-tight">Nenhum atendimento para hoje</p>
           <p className="text-base font-medium text-gray-600">Sua tarde está livre!</p>
         </div>
-        <Link 
+        <Link
           href="/dashboard/agenda"
           className="text-base font-bold text-blue-600 hover:underline"
         >
@@ -128,19 +128,19 @@ export function UpcomingAppointments() {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 12 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ 
-        duration: 0.3, 
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.3,
         ease: [0.25, 0.1, 0.25, 1],
         delay: 0.1
       }}
-      className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden min-h-[220px]"
+      className="bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden min-h-[235px]"
     >
       <div className="p-6 pb-2 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-950 px-1">Próximos atendimentos</h2>
-          <span className="bg-blue-50 text-blue-600 text-base font-bold px-3 py-1 rounded-full">Hoje</span>
+        <h2 className="text-base font-bold text-gray-950 px-1">Próximos atendimentos</h2>
+        <span className="bg-blue-50 text-blue-600 text-base font-bold px-3 py-1 rounded-full">Hoje</span>
       </div>
       <div className="flex flex-col divide-y divide-black/5">
         {appointments.map((app) => (
@@ -163,7 +163,7 @@ export function UpcomingAppointments() {
           </div>
         ))}
       </div>
-      <Link 
+      <Link
         href="/dashboard/agenda"
         className="w-full py-4 flex items-center justify-center gap-2 text-base font-bold text-blue-600 hover:bg-blue-50/50 transition-all border-t border-black/5"
       >
