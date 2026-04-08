@@ -49,7 +49,7 @@ export default async function DashboardPage() {
     || user?.user_metadata?.full_name?.split(' ')[0] 
     || user?.user_metadata?.name?.split(' ')[0]
     || user?.email?.split('@')[0] 
-    || ''; // No generic fallback word
+    || 'Parceiro'; // Safe default to prevent infinite skeleton
 
   // If even the email is missing (impossible for logged in), keep it in skeleton
   if (!displayName) {

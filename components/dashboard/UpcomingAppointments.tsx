@@ -49,6 +49,7 @@ export function UpcomingAppointments() {
         }
       } catch (error) {
         console.error('[DASHBOARD] Error fetching upcoming appointments:', error);
+        setIsIntegrated(false); // Stop indeterminate loading on error
       } finally {
         setLoading(false);
       }
