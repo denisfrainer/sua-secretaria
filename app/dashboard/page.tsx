@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    return null;
   }
 
   // Defensive data fetching with Admin fallback to Standard client

@@ -67,7 +67,6 @@ export default function CatalogPage() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login');
         return;
       }
 

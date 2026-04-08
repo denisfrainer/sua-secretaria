@@ -31,7 +31,6 @@ export default function AgentsSettingsPage() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login');
         return;
       }
 
