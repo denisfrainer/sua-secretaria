@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, ClipboardList, Link as LinkIcon, Settings, Link2, CheckCircle2 } from 'lucide-react';
+import { Calendar, Link as LinkIcon, Settings, Link2, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +32,7 @@ export default function QuickActions() {
       await navigator.clipboard.writeText(bookingUrl);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
+      console.log('[UI_ACTION] Scheduling link successfully copied to clipboard');
       console.log('[CLIPBOARD] Link copied:', bookingUrl);
     } catch (err) {
       console.error('[CLIPBOARD] Failed to copy:', err);
@@ -106,15 +107,13 @@ export default function QuickActions() {
       <AnimatePresence>
         {showToast && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-2xl shadow-2xl shadow-black/20 border border-white/10"
+            initial={{ opacity: 0, y: 20, x: '-50%', scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: 10, x: '-50%', scale: 0.95 }}
+            className="fixed bottom-10 left-1/2 z-50 flex items-center gap-2 px-5 py-3 bg-white text-gray-900 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100"
           >
-            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-              <CheckCircle2 size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-sm tracking-tight">Link de agendamento copiado!</span>
+            <Check size={16} className="text-green-500" />
+            <span className="text-sm font-medium tracking-tight">Link copiado!</span>
           </motion.div>
         )}
       </AnimatePresence>
