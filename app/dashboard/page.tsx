@@ -6,6 +6,9 @@ import { SystemStatus } from '@/components/dashboard/SystemStatus';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { redirect } from 'next/navigation';
+import { google } from 'googleapis';
+import { getGoogleAuthClient } from '@/lib/calendar/google';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +20,8 @@ export default async function DashboardPage() {
   // Defensive data fetching with Admin fallback to Standard client
   let businessConfig = null;
   let profile = null;
+  let initialAgenda = [];
+  let isIntegrated = false;
 
   try {
     // Try Admin first for reliability (bypasses RLS issues)
@@ -30,18 +35,48 @@ export default async function DashboardPage() {
       profile = profileRes.data;
     } 
     
-    // Fallback if admin failed or returned nothing
-    if (!businessConfig) {
-      const { data } = await supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle();
-      businessConfig = data;
-    }
-
-    if (!profile) {
-      const { data } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
-      profile = data;
-    }
-
     console.log('[DASHBOARD_FETCH] Profile:', profile);
+
+    // 2. FETCH AGENDA SERVER-SIDE (To eliminate 401 race conditions)
+    const refreshToken = profile?.google_refresh_token || (businessConfig?.context_json as any)?.google_calendar?.refresh_token;
+
+    if (refreshToken && businessConfig) {
+      try {
+        const authClient = await getGoogleAuthClient(businessConfig.id, {
+          ...businessConfig.context_json,
+          google_calendar: {
+            ...(businessConfig.context_json as any).google_calendar,
+            refresh_token: refreshToken
+          }
+        });
+        const calendar = google.calendar({ version: 'v3', auth: authClient });
+        const now = new Date();
+        const timeMin = startOfDay(now).toISOString();
+        const timeMax = endOfDay(now).toISOString();
+
+        const response = await calendar.events.list({
+          calendarId: 'primary',
+          timeMin,
+          timeMax,
+          singleEvents: true,
+          orderBy: 'startTime',
+        });
+
+        const events = response.data.items || [];
+        initialAgenda = events.map(event => ({
+          id: event.id,
+          title: event.summary,
+          start: event.start?.dateTime || event.start?.date,
+          end: event.end?.dateTime || event.end?.date,
+          description: event.description || '',
+        }));
+        isIntegrated = true;
+        console.log(`[DASHBOARD_FETCH] Agenda fetched: ${initialAgenda.length} events`);
+      } catch (gCalError: any) {
+        console.warn('[DASHBOARD_FETCH] GCal fetch error:', gCalError.message);
+        isIntegrated = false;
+      }
+    }
   } catch (error) {
     console.warn('⚠️ [DASHBOARD] Fetching error, attempting fallback...', error);
     // Final fallback attempt with standard client for both config and profile
@@ -77,7 +112,7 @@ export default async function DashboardPage() {
       <DashboardGreeting userName={displayName} />
 
       {/* Real-time Next Appointments Section (Motion inside) */}
-      <UpcomingAppointments />
+      <UpcomingAppointments initialAgenda={initialAgenda} initialIntegrated={isIntegrated} />
 
       {/* Main Action Grid (Motion inside) */}
       <QuickActions />

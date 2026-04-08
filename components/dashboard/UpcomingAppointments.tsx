@@ -15,14 +15,29 @@ interface Appointment {
   description: string;
 }
 
-export function UpcomingAppointments() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isIntegrated, setIsIntegrated] = useState<boolean | null>(null); // Use null for initial indeterminate state
+import { createClient } from '@/lib/supabase/client';
+
+interface UpcomingAppointmentsProps {
+  initialAgenda?: Appointment[];
+  initialIntegrated?: boolean | null;
+}
+
+export function UpcomingAppointments({ initialAgenda = [], initialIntegrated = null }: UpcomingAppointmentsProps) {
+  const [appointments, setAppointments] = useState<Appointment[]>(initialAgenda);
+  const [loading, setLoading] = useState(initialAgenda.length === 0 && initialIntegrated === null);
+  const [isIntegrated, setIsIntegrated] = useState<boolean | null>(initialIntegrated); 
 
   useEffect(() => {
     async function fetchUpcoming() {
       try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log('[DASHBOARD] Fetch deferred: No session yet.');
+          return;
+        }
+
         const res = await fetch('/api/agenda/today');
         if (res.status === 401 || res.status === 404) {
           setIsIntegrated(false);
