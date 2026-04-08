@@ -64,7 +64,8 @@ export function LoginLoadingState() {
           console.log('⚡ [AUTH SAFETY NET] Session found, syncing cookies before redirect...');
           setTimeout(() => {
             console.log('🚀 [AUTH SAFETY NET] Sync complete. Redirecting...');
-            window.location.href = next || '/dashboard';
+            const target = (next && next !== '/') ? next : '/dashboard';
+        window.location.href = target;
           }, 500);
         }
       });
@@ -75,7 +76,8 @@ export function LoginLoadingState() {
           console.log('⚡ [AUTH SAFETY NET] SIGNED_IN event. Syncing cookies...');
           setTimeout(() => {
             console.log('🚀 [AUTH SAFETY NET] Sync complete. Breaking potential loop...');
-            window.location.href = next || '/dashboard';
+            const target = (next && next !== '/') ? next : '/dashboard';
+        window.location.href = target;
           }, 500);
         }
       });
@@ -85,7 +87,8 @@ export function LoginLoadingState() {
       // just push the user to the destination anyway after 5 seconds.
       const timeout = setTimeout(() => {
         console.warn('🕒 [AUTH SAFETY NET] Timeout reached. Forcing navigation...');
-        window.location.href = next || '/dashboard';
+        const target = (next && next !== '/') ? next : '/dashboard';
+        window.location.href = target;
       }, 5000);
 
       return () => {

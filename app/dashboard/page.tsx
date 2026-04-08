@@ -5,12 +5,17 @@ import QuickActions from '@/components/dashboard/QuickActions';
 import { SystemStatus } from '@/components/dashboard/SystemStatus';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
 
   // Defensive data fetching with Admin fallback to Standard client
   let businessConfig = null;
@@ -48,16 +53,11 @@ export default async function DashboardPage() {
   const emailPrefix = user?.email ? user.email.split('@')[0] : '';
   const formattedPrefix = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
 
-  // Robust name fallbacks (Profile > Metadata > Email Prefix > NULL)
   const displayName = profile?.full_name?.split(' ')[0]
     || user?.user_metadata?.full_name?.split(' ')[0] 
     || user?.user_metadata?.name?.split(' ')[0]
-    || formattedPrefix;
-
-  // We only show skeleton if we have NO user data at all (auth failure)
-  if (!user) {
-    return <DashboardSkeleton />;
-  }
+    || formattedPrefix
+    || 'Visitante';
 
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">

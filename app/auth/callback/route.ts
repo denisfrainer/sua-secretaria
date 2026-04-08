@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const origin = request.nextUrl.origin;
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = searchParams.get('next');
+  const nextPath = (next && next !== '/') ? next : '/dashboard';
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=no_code`);
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  let redirectTo = `${origin}${next}`;
+  let redirectTo = `${origin}${nextPath}`;
 
   try {
     const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
