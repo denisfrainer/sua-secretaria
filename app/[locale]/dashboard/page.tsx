@@ -10,7 +10,7 @@ export default async function AgentDashboard() {
         .select('*, organizations(name)');
 
     const agentesReais = agents || [];
-    const agentesAtivos = agentesReais.filter(a => a.is_active).length;
+    const agentesAtivos = agentesReais.filter((a: any) => a.is_active).length;
     // Assuming 499 per agent
     const mrrCalculado = agentesAtivos * 499;
 
@@ -80,7 +80,7 @@ export default async function AgentDashboard() {
                             Nenhum agente configurado ainda.
                         </div>
                     ) : (
-                        agentesReais.map((agent) => (
+                        agentesReais.map((agent: any) => (
                             <div key={agent.id} className="flex justify-between items-center p-4">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-none ${agent.is_active ? 'bg-[#00E676]' : 'bg-[#888888]'}`} />
