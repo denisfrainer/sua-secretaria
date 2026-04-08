@@ -35,11 +35,24 @@ export default async function DashboardPage() {
       const { data } = await supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle();
       businessConfig = data;
     }
+
+    if (!profile) {
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      profile = data;
+    }
+
+    console.log('[DASHBOARD_FETCH] Profile:', profile);
   } catch (error) {
     console.warn('⚠️ [DASHBOARD] Fetching error, attempting fallback...', error);
-    // Final fallback attempt with standard client
-    const { data } = await supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle();
-    businessConfig = data;
+    // Final fallback attempt with standard client for both config and profile
+    const [{ data: configData }, { data: profileData }] = await Promise.all([
+      supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
+      supabase.from('profiles').select('full_name').eq('id', user?.id).single()
+    ]);
+    businessConfig = configData;
+    profile = profileData;
+    
+    console.log('[DASHBOARD_FETCH] Fallback Profile:', profile);
   }
 
   // Strict Gating: If user exists but essential registration data is missing, we might still show skeleton
