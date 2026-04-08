@@ -146,11 +146,17 @@ export default function AdminDashboard() {
         setLoading(true);
         try {
             const res = await fetch(`/api/admin/leads?token=${encodeURIComponent(adminKey)}`);
-            if (!res.ok) { setAuthorized(false); return; }
+            if (!res.ok) { 
+                setAuthorized(false); 
+                return; 
+            }
             const { leads: data } = await res.json();
             setLeads(data || []);
-        } catch (err) { console.error('❌', err); }
-        finally { setLoading(false); }
+        } catch (err) { 
+            console.error('❌', err); 
+        } finally { 
+            setLoading(false); 
+        }
     }, [adminKey]);
 
     useEffect(() => {

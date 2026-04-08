@@ -238,7 +238,6 @@ export default function CabinDashboard() {
             if (fetchError) {
                 console.error('❌ [DB ERROR] Supabase fetch failed:', fetchError.message, fetchError.code);
                 setError(fetchError.message);
-                setIsLoading(false);
                 return;
             }
 
@@ -269,14 +268,13 @@ export default function CabinDashboard() {
             } else {
                 console.log('⚠️ [DB] No context_json found in row. Using defaults.');
             }
-
-            setIsLoading(false);
         } catch (err: any) {
             console.error('❌ [DB FATAL] Unhandled exception during fetch:', err);
             setError(err?.message || 'Erro desconhecido');
+        } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [supabase]);
 
     useEffect(() => {
         fetchConfig();
@@ -371,19 +369,18 @@ export default function CabinDashboard() {
 
             if (updateError) {
                 console.error('❌ [DB ERROR] Failed to save config:', updateError.message);
-                setSaving(false);
                 return;
             }
 
             console.log('✅ [SAVE] Config persisted successfully in business_config (id: 2).');
-            setSaving(false);
             setSaved(true);
             setTimeout(() => setSaved(false), 2500);
         } catch (err: any) {
             console.error('❌ [SAVE FATAL] Unhandled exception during save:', err);
+        } finally {
             setSaving(false);
         }
-    }, [config]);
+    }, [config, supabase]);
 
 
 
