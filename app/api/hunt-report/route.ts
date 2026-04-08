@@ -94,7 +94,7 @@ export async function POST(req: Request) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${recentLeads.map(lead => `
+                    ${recentLeads.map((lead: any) => `
                         <tr>
                             <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 14px;">${lead.name || 'Desconhecido'}</td>
                             <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 14px;">${lead.phone || '-'}</td>
