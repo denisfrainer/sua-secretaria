@@ -13,9 +13,6 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return null;
-  }
 
   // Defensive data fetching with Admin fallback to Standard client
   let businessConfig = null;
