@@ -12,22 +12,34 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Use Admin client to bypass RLS and ensure the owner always gets their data
-  const [
-    { data: businessConfig },
-    { data: profile }
-  ] = await Promise.all([
-    supabaseAdmin
-      .from('business_config')
-      .select('*')
-      .eq('owner_id', user?.id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user?.id)
-      .single()
-  ]);
+  // Defensive data fetching with Admin-to-Standard fallback
+  let businessConfig = null;
+  let profile = null;
+
+  try {
+    // 1. Try fetching with Admin client first for higher reliability (bypasses RLS)
+    if (supabaseAdmin) {
+      const [adminConfig, adminProfile] = await Promise.all([
+        supabaseAdmin.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
+        supabaseAdmin.from('profiles').select('full_name').eq('id', user?.id).maybeSingle()
+      ]);
+
+      businessConfig = adminConfig.data;
+      profile = adminProfile.data;
+    }
+
+    // 2. Fallback to standard client for business_config if Admin failed or is missing
+    if (!businessConfig) {
+      const { data } = await supabase
+        .from('business_config')
+        .select('*')
+        .eq('owner_id', user?.id)
+        .maybeSingle();
+      businessConfig = data;
+    }
+  } catch (err) {
+    console.error('❌ [DASHBOARD_FETCH] Error during data fetching:', err);
+  }
 
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   

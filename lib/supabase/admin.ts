@@ -10,8 +10,9 @@ if (!supabaseUrl) {
 }
 
 if (!supabaseServiceKey) {
-    console.error("❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY missing. Cannot bypass RLS.");
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required to prevent 42501 limits.')
+  console.warn("⚠️ [SUPABASE_ADMIN] SUPABASE_SERVICE_ROLE_KEY missing. Admin actions will be disabled.");
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey) 
+  : null;
