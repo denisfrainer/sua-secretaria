@@ -38,10 +38,10 @@ export default async function DashboardLayout({
         </Link>
         <div className="flex items-center gap-4">
           <div className="hidden md:block">
-            <DashboardHeaderMenu email={user?.email || 'Admin'} />
+            <DashboardHeaderMenu email={user?.email || ''} />
           </div>
           <div className="md:hidden">
-            <MobileDrawerMenu email={user?.email || 'Admin'} />
+            <MobileDrawerMenu email={user?.email || ''} />
           </div>
         </div>
       </header>

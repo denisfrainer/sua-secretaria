@@ -4,6 +4,7 @@ import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { SystemStatus } from '@/components/dashboard/SystemStatus';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,14 +40,21 @@ export default async function DashboardPage() {
     businessConfig = data;
   }
 
+  // Strict Gating: If user exists but essential registration data is missing, we might still show skeleton
+  // However, we at least want a name to show.
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   
-  // Robust name fallbacks (Profile > Metadata > Email > Default)
+  // Robust name fallbacks (Profile > Metadata > Email > EMPTY)
   const displayName = profile?.full_name?.split(' ')[0]
     || user?.user_metadata?.full_name?.split(' ')[0] 
     || user?.user_metadata?.name?.split(' ')[0]
     || user?.email?.split('@')[0] 
-    || 'Empresa';
+    || ''; // No generic fallback word
+
+  // If even the email is missing (impossible for logged in), keep it in skeleton
+  if (!displayName) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
