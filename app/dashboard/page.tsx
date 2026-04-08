@@ -46,14 +46,15 @@ export default async function DashboardPage() {
   // However, we at least want a name to show.
   const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
   
-  // Extract email prefix safely
-  const emailPrefix = user?.email ? user.email.split('@')[0] : '';
-  const formattedPrefix = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+  // Safely extract email prefix
+  const userEmail = user?.email || '';
+  const emailPrefix = userEmail ? userEmail.split('@')[0] : '';
+  const formattedPrefix = emailPrefix ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) : '';
 
-  const displayName = profile?.full_name?.split(' ')[0]
-    || user?.user_metadata?.full_name?.split(' ')[0] 
-    || user?.user_metadata?.name?.split(' ')[0]
-    || formattedPrefix
+  // Determine final display name
+  const displayName = profile?.full_name?.split(' ')[0] 
+    || user?.user_metadata?.full_name?.split(' ')[0]
+    || formattedPrefix 
     || 'Visitante';
 
   return (
