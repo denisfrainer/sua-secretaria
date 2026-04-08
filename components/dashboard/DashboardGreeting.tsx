@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface DashboardGreetingProps {
   userName: string;
@@ -29,9 +30,14 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="text-3xl font-bold text-gray-950 tracking-tight animate-in fade-in duration-700">
+      <motion.h1 
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        className="text-3xl font-bold text-gray-950 tracking-tight"
+      >
         {greeting || '...'}, {userName}
-      </h1>
+      </motion.h1>
     </div>
   );
 }

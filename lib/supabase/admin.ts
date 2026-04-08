@@ -10,9 +10,9 @@ if (!supabaseUrl) {
 }
 
 if (!supabaseServiceKey) {
-  console.warn("⚠️ [SUPABASE_ADMIN] SUPABASE_SERVICE_ROLE_KEY missing. Admin actions will be disabled.");
+    console.warn("⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY missing. Admin operations will fallback to standard client.");
 }
 
 export const supabaseAdmin = supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey) 
-  : null;
+    ? createClient(supabaseUrl, supabaseServiceKey)
+    : (null as any);
