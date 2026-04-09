@@ -96,8 +96,12 @@ export function UpcomingAppointments({ initialAgenda = [], initialIntegrated = n
         }}
         className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[235px]"
       >
-        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-          <CalendarOff size={24} />
+        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+          <img 
+            src="/assets/google-calendar-logo.svg" 
+            alt="Google Calendar" 
+            className="w-7 h-7 object-contain"
+          />
         </div>
         <div className="space-y-1">
           <p className="text-base font-bold text-gray-950">Agenda não conectada</p>
