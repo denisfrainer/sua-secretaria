@@ -32,9 +32,18 @@ const SETTINGS_OPTIONS = [
     locked: false,
   },
   {
+    id: 'pagamentos',
+    title: 'Pagamentos',
+    description: 'Configure seu Stripe ou Mercado Pago.',
+    icon: CreditCard,
+    iconColor: 'text-emerald-600',
+    href: '#',
+    locked: true,
+  },
+  {
     id: 'whatsapp',
     title: 'Conexão WhatsApp',
-    description: 'Vincule seu número para o agente de IA responder.',
+    description: 'Vincule seu número para o agente.',
     image: '/assets/whatsapp.svg',
     href: '#',
     locked: true,
@@ -42,18 +51,9 @@ const SETTINGS_OPTIONS = [
   {
     id: 'ai',
     title: 'Inteligência artificial',
-    description: 'Treine o comportamento e as regras da sua IA.',
+    description: 'Treine o comportamento da sua IA.',
     icon: Bot,
     iconColor: 'text-indigo-600',
-    href: '#',
-    locked: true,
-  },
-  {
-    id: 'pagamentos',
-    title: 'Pagamentos',
-    description: 'Configure seu Stripe ou Mercado Pago e receba pagamentos por IA.',
-    icon: CreditCard,
-    iconColor: 'text-emerald-600',
     href: '#',
     locked: true,
   }
@@ -85,41 +85,41 @@ export default function SettingsHubPage() {
       {SETTINGS_OPTIONS.map((option) => {
         const CardContent = (
           <div className={`
-            group relative flex items-center gap-6 p-8 rounded-[2rem] border transition-all w-full
+            group relative flex items-center gap-4 p-5 rounded-3xl border transition-all w-full
             ${option.locked 
               ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-not-allowed pointer-events-none' 
               : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm'}
           `}>
             {/* Icon Wrapper */}
-            <div className="w-16 h-16 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 flex items-center justify-center shrink-0">
               {option.image ? (
-                <img src={option.image} alt={option.title} className="w-16 h-16 object-contain" />
+                <img src={option.image} alt={option.title} className="w-12 h-12 object-contain" />
               ) : option.icon ? (
-                <option.icon size={56} className={option.iconColor} />
+                <option.icon size={48} className={option.iconColor} />
               ) : null}
             </div>
 
             {/* Text Content */}
-            <div className="flex-1 min-w-0">
-              <h3 className="text-[18px] font-bold text-gray-950 leading-tight">
+            <div className="flex-1 min-w-0 pr-2">
+              <h3 className="text-lg font-bold text-gray-900 leading-tight">
                 {option.title}
               </h3>
-              <p className="text-[16px] font-medium text-gray-500 mt-1.5 line-clamp-1">
+              <p className="text-base font-medium text-gray-500 mt-0.5 line-clamp-1">
                 {option.description}
               </p>
             </div>
 
             {/* Status Indicator */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 shrink-0 ml-auto">
               {option.locked ? (
                 <div className="flex items-center gap-2">
-                  <span className="bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
+                  <span className="hidden xs:inline-block bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
                     Plano IA
                   </span>
-                  <Lock size={20} className="text-gray-400" />
+                  <Lock size={18} className="text-gray-400" />
                 </div>
               ) : (
-                <ChevronRight size={24} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                <ChevronRight size={20} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
               )}
             </div>
           </div>
