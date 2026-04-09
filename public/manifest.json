@@ -2,7 +2,7 @@
   "name": "meatende.ai",
   "short_name": "meatende.ai",
   "description": "Painel de Controle da Inteligência Artificial",
-  "start_url": "/admin/lucas",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563EB",
