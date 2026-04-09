@@ -149,31 +149,34 @@ export async function POST(req: Request) {
         for (const lead of leads) {
             if (!lead.phone || !lead.name) continue;
 
-            const instanceName = lead.instance_name || 'agente-lobo';
+            // Force the global instance for this specific asynchronous worker
+            const instanceName = 'agente-lobo'; 
 
-            // --- 🛡️ TIER ACCESS CONTROL (L3 GATE) ---
-            const { data: config } = await supabaseAdmin
-                .from('business_config')
-                .select('plan_tier')
-                .eq('instance_name', instanceName)
-                .single();
+            // --- 🛡️ TIER ACCESS CONTROL BYPASS ---
+            // Skip the database lookup for the master internal bot to save latency and ignore dirty lead data
+            const isGlobalAgent = instanceName === 'agente-lobo';
 
-            const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
-
-            // --- 🛡️ TIER ACCESS CONTROL (L3 GATE) ---
-            if (!hasAccess(currentTier, 'WOLF_AGENT_OUTBOUND')) {
-                console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Plan ${currentTier} lacks ELITE permission.`);
-                // Move lead back to waiting or mark as unauthorized to avoid infinite skips
-                await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
-                continue;
+            if (!isGlobalAgent) {
+                // Keep this only if you plan to allow SaaS clients to have their own Wolf Agents later
+                const { data: config } = await supabaseAdmin
+                    .from('business_config')
+                    .select('plan_tier')
+                    .eq('instance_name', instanceName)
+                    .single();
+                    
+                const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
+                
+                if (!hasAccess(currentTier, 'WOLF_AGENT_OUTBOUND')) {
+                    console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Plan ${currentTier} lacks ELITE permission.`);
+                    await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
+                    continue;
+                }
             }
 
             const safePhone = normalizePhone(lead.phone);
 
             // 2. Verificação Silenciosa (Number Check)
-            // Você precisará criar esta função no seu arquivo sender.ts
-            // 2. Verificação Silenciosa (Number Check)
-            const hasWhatsApp = await checkWhatsAppNumber(safePhone);
+            const hasWhatsApp = await checkWhatsAppNumber(safePhone, instanceName);
 
             if (!hasWhatsApp) {
                 console.log(`🚫 [${cronId}] O número ${safePhone} (${lead.name}) não possui WhatsApp ativo. Descartado.`);
@@ -234,12 +237,12 @@ export async function POST(req: Request) {
             try {
                 console.log(`📤 [${cronId}] Tentando enviar (2 bubbles) para ${lead.name} (${safePhone})...`);
 
-                await sendWhatsAppMessage(safePhone, msg1);
+                await sendWhatsAppMessage(safePhone, msg1, 1200, instanceName);
                 console.log(`[${cronId}] Bolha 1 enviada para ${lead.phone}`);
 
                 await sleep(2500); // Simulate human typing
 
-                await sendWhatsAppMessage(safePhone, msg2);
+                await sendWhatsAppMessage(safePhone, msg2, 1200, instanceName);
                 console.log(`[${cronId}] Bolha 2 enviada para ${lead.phone}`);
 
                 // --- SUCCESSFUL KILL ---

@@ -73,10 +73,10 @@ export async function sendWhatsAppPresence(phone: string, presence: 'composing' 
     }
 }
 
-export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
-    const instanceName = process.env.EVOLUTION_INSTANCE_NAME;
+export async function checkWhatsAppNumber(phone: string, instanceName?: string): Promise<boolean> {
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || 'agente-lobo';
     const apikey = process.env.EVOLUTION_API_KEY;
-    const url = `${getBaseUrl()}/chat/whatsappNumbers/${instanceName}`;
+    const url = `${getBaseUrl()}/chat/whatsappNumbers/${targetInstance}`;
 
     try {
         const res = await axios.post(url, { numbers: [phone] }, {
