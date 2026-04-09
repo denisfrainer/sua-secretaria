@@ -33,6 +33,7 @@ export type Database = {
           email: string;
           full_name: string;
           plan_tier: PlanTier;
+          slug: string | null;
           // Add other fields
         };
       };

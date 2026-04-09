@@ -42,7 +42,7 @@ export default async function LoginPage() {
                             Acesse sua conta
                         </h1>
                         <p className="text-base font-medium text-slate-500">
-                            Login unificado via Google ou Magic Link.
+                            Faça login com o Google ou cadastre-se
                         </p>
                     </div>
                 </div>

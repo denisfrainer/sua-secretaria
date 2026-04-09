@@ -92,6 +92,8 @@ export default function BusinessSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [slug, setSlug] = useState('');
+  const [originalSlug, setOriginalSlug] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -134,6 +136,18 @@ export default function BusinessSettingsPage() {
         } as any);
       }
       setLoading(false);
+
+      // 3. Fetch Slug from Profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('slug')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.slug) {
+        setSlug(profile.slug);
+        setOriginalSlug(profile.slug);
+      }
     }
     fetchData();
   }, [supabase, router]);
@@ -239,6 +253,31 @@ export default function BusinessSettingsPage() {
           .eq('id', config.id);
 
         if (updateError) throw updateError;
+
+        // 3. Update Slug in Profiles (only if changed)
+        if (slug !== originalSlug) {
+            console.log(`[SLUG_UPDATE] Attempting to update slug:`, {
+                userId: user.id,
+                newSlug: slug,
+                timestamp: new Date().toISOString()
+            });
+
+            // Clean slug again just in case
+            const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '').trim();
+
+            const { error: slugError } = await supabase
+                .from('profiles')
+                .update({ slug: cleanSlug || null })
+                .eq('id', user.id);
+            
+            if (slugError) {
+                if (slugError.code === '23505') {
+                    throw new Error("Este link já está sendo usado por outro profissional.");
+                }
+                throw slugError;
+            }
+            setOriginalSlug(cleanSlug);
+        }
       }
 
       setSuccess(true);
@@ -288,6 +327,30 @@ export default function BusinessSettingsPage() {
             onChange={(val) => updateBusinessInfo('parking', val)}
             icon={<ParkingCircle size={16} />}
           />
+          <div className="flex flex-col gap-2">
+            <StudioInput 
+              label="Link de Agendamento Personalizado" 
+              placeholder="ex: rubia-beauty"
+              value={slug} 
+              onChange={(val) => setSlug(val.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              icon={<Smile size={16} />}
+            />
+            <div className="px-1 flex items-center justify-between">
+              <p className="text-[11px] font-bold text-gray-400">
+                Seu link público: <span className="text-blue-600">meatende.ai/{slug || 'seu-nome'}</span>
+              </p>
+              {slug && (
+                <a 
+                  href={`/${slug}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline"
+                >
+                  Testar Link
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       </motion.section>
 

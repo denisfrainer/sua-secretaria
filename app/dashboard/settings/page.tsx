@@ -59,7 +59,7 @@ export default function SettingsHubPage() {
       image: '/assets/google-calendar-logo.svg',
       href: '/dashboard/settings/integrations',
       locked: !hasAccess(tier, 'GOOGLE_SHEETS_SYNC'),
-      requiredTier: 'PRO',
+      requiredTier: 'STARTER',
     },
     {
       id: 'pagamentos',
@@ -69,7 +69,7 @@ export default function SettingsHubPage() {
       iconColor: 'text-emerald-600',
       href: '/dashboard/settings/payments',
       locked: !hasAccess(tier, 'AUTOMATED_PAYMENTS_PIX'),
-      requiredTier: 'PRO',
+      requiredTier: 'STARTER',
     },
     {
       id: 'whatsapp',

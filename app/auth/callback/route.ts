@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  // Default to dashboard, but ensure we strip any auth-related query params
   const next = searchParams.get('next') ?? '/dashboard';
 
   if (code) {
@@ -32,38 +31,28 @@ export async function GET(request: Request) {
       }
     );
 
-    try {
-      const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      
-      if (exchangeError) {
-        console.error('[AUTH_CALLBACK_ERROR] PKCE Exchange failed:', exchangeError.message);
-        return NextResponse.redirect(new URL('/login?error=exchange_failed', origin));
+    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (!error && session?.user) {
+      console.log('[AUTH_CALLBACK] Code exchanged successfully.');
+
+      // Persist Google Refresh Token if available (for future calendar syncs)
+      const providerRefreshToken = session.provider_refresh_token;
+      if (providerRefreshToken) {
+        console.log('[AUTH_CALLBACK] Capturing Google Refresh Token...');
+        await supabaseAdmin
+          .from('profiles')
+          .update({ google_refresh_token: providerRefreshToken })
+          .eq('id', session.user.id);
       }
 
-      if (session?.user) {
-        console.log('✅ [AUTH CALLBACK] Session established. Provisioning handled by DB Trigger.');
-
-        // 1. PROVIDER TOKEN PERSISTENCE (Only if present)
-        // Note: The database trigger creates the profile, we only update the refresh token here
-        // as it is only available during the OAuth handshake.
-        const providerRefreshToken = session.provider_refresh_token;
-        if (providerRefreshToken) {
-          console.log('🔑 [AUTH CALLBACK] Capturing Google Refresh Token...');
-          await supabaseAdmin
-            .from('profiles')
-            .update({ google_refresh_token: providerRefreshToken })
-            .eq('id', session.user.id);
-        }
-      }
-
-      // CRITICAL: We redirect to a clean URL without the ?code parameter.
+      // Return NextResponse.redirect to ensure cookies are attached to the browser response.
       return NextResponse.redirect(new URL(next, origin));
-
-    } catch (err: any) {
-      console.error('💥 [AUTH CALLBACK] Unexpected error:', err.message);
     }
+    
+    console.error('[AUTH_CALLBACK_ERROR] Exchange failed:', error?.message);
   }
 
-  // Fallback if no code or error caught
+  // Fallback to error page if something went wrong
   return NextResponse.redirect(new URL('/login?error=auth_failed', origin));
 }

@@ -86,7 +86,7 @@ export async function POST(req: Request) {
         let currentStats = statsData;
 
         if (!currentStats) {
-            const randomDailyLimit = Math.floor(Math.random() * (50 - 45 + 1)) + 45; // 45 to 50
+            const randomDailyLimit = Math.floor(Math.random() * (90 - 60 + 1)) + 60;
             const { data: newStats, error: insertError } = await supabaseAdmin
                 .from('lobo_daily_stats')
                 .insert([{ date_id: todayStr, sent_count: 0, daily_limit: randomDailyLimit }])
@@ -150,16 +150,16 @@ export async function POST(req: Request) {
             if (!lead.phone || !lead.name) continue;
 
             const instanceName = lead.instance_name || 'agente-lobo';
-            
+
             // --- 🛡️ TIER ACCESS CONTROL (L3 GATE) ---
             const { data: config } = await supabaseAdmin
                 .from('business_config')
                 .select('plan_tier')
                 .eq('instance_name', instanceName)
                 .single();
-                
+
             const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
-            
+
             // --- 🛡️ TIER ACCESS CONTROL (L3 GATE) ---
             if (!hasAccess(currentTier, 'WOLF_AGENT_OUTBOUND')) {
                 console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Plan ${currentTier} lacks ELITE permission.`);
