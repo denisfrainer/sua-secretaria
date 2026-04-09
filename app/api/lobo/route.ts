@@ -3,7 +3,7 @@ import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { checkWhatsAppNumber } from '../../../lib/whatsapp/sender';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import { normalizePhone } from '../../../lib/utils/phone';
-import { checkAccess, FEATURE_REQUIREMENTS } from '../../../lib/auth/access-control';
+import { hasAccess } from '../../../lib/auth/access-control';
 import { PlanTier } from '../../../lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
@@ -159,10 +159,10 @@ export async function POST(req: Request) {
                 .single();
                 
             const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
-            const access = checkAccess(instanceName, currentTier, FEATURE_REQUIREMENTS.WOLF_AGENT);
-
-            if (!access.granted) {
-                console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Reason: ${access.error}`);
+            
+            // --- 🛡️ TIER ACCESS CONTROL (L3 GATE) ---
+            if (!hasAccess(currentTier, 'WOLF_AGENT_OUTBOUND')) {
+                console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Plan ${currentTier} lacks ELITE permission.`);
                 // Move lead back to waiting or mark as unauthorized to avoid infinite skips
                 await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
                 continue;

@@ -7,7 +7,7 @@ import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI } from '@google/genai';
 import { normalizePhone } from '../../../lib/utils/phone';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
-import { checkAccess, FEATURE_REQUIREMENTS } from '../../../lib/auth/access-control';
+import { hasAccess } from '../../../lib/auth/access-control';
 import { PlanTier } from '../../../lib/supabase/types';
 import path from 'path';
 import fs from 'fs';
@@ -60,11 +60,9 @@ export async function POST(req: Request) {
             .single();
 
         const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
-        const access = checkAccess(instanceName, currentTier, FEATURE_REQUIREMENTS.ELIZA_AGENT);
-
-        if (!access.granted) {
-            console.warn(`[AUDIO_ABORT] Access denied for ${instanceName}. Reason: ${access.error}`);
-            return NextResponse.json({ error: access.error }, { status: 403 });
+        if (!hasAccess(currentTier, 'AI_CONFIGURATION')) {
+            console.warn(`[AUTH_ABORT] Access denied for ${instanceName}. Plan ${currentTier} fails AI check.`);
+            return new NextResponse('Access required PRO tier', { status: 403 });
         }
 
         const audioMsg = dataObj.message?.audioMessage;

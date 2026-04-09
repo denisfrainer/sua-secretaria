@@ -14,8 +14,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { createClient } from '../../../lib/supabase/client';
-import { checkAccess, FEATURE_REQUIREMENTS } from '../../../lib/auth/access-control';
+import { hasAccess } from '../../../lib/auth/access-control';
 import { PlanTier } from '../../../lib/supabase/types';
 
 export default function SettingsHubPage() {
@@ -58,7 +57,8 @@ export default function SettingsHubPage() {
       description: 'Conecte seu Google Calendar.',
       image: '/assets/google-calendar-logo.svg',
       href: '/dashboard/settings/integrations',
-      locked: false,
+      locked: !hasAccess(tier, 'GOOGLE_SHEETS_SYNC'),
+      requiredTier: 'PRO',
     },
     {
       id: 'pagamentos',
@@ -67,7 +67,8 @@ export default function SettingsHubPage() {
       icon: CreditCard,
       iconColor: 'text-emerald-600',
       href: '/dashboard/settings/payments',
-      locked: false,
+      locked: !hasAccess(tier, 'AUTOMATED_PAYMENTS_PIX'),
+      requiredTier: 'PRO',
     },
     {
       id: 'whatsapp',
@@ -75,7 +76,8 @@ export default function SettingsHubPage() {
       description: 'Vincule seu número para o agente.',
       image: '/assets/whatsapp.svg',
       href: '/dashboard/settings/whatsapp',
-      locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.WHATSAPP_CONNECT).granted,
+      locked: !hasAccess(tier, 'WHATSAPP_CONNECT'),
+      requiredTier: 'PRO',
     },
     {
       id: 'ai',
@@ -84,8 +86,8 @@ export default function SettingsHubPage() {
       icon: Bot,
       iconColor: 'text-indigo-600',
       href: '/dashboard/settings/agents',
-      locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.ELIZA_AGENT).granted,
-      requiredTier: FEATURE_REQUIREMENTS.ELIZA_AGENT,
+      locked: !hasAccess(tier, 'AI_CONFIGURATION'),
+      requiredTier: 'PRO',
     },
     {
       id: 'elite-outbound',
@@ -94,8 +96,8 @@ export default function SettingsHubPage() {
       icon: TrendingUp,
       iconColor: 'text-rose-600',
       href: '/dashboard/settings/agents?tab=outbound', // Wolf Agent tab
-      locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.OUTBOUND_PROSPECTING).granted,
-      requiredTier: FEATURE_REQUIREMENTS.OUTBOUND_PROSPECTING,
+      locked: !hasAccess(tier, 'WOLF_AGENT_OUTBOUND'),
+      requiredTier: 'ELITE',
     }
   ];
   return (
