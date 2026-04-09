@@ -73,7 +73,7 @@ export default function SettingsHubPage() {
       title: 'Conexão WhatsApp',
       description: 'Vincule seu número para o agente.',
       image: '/assets/whatsapp.svg',
-      href: '#',
+      href: '/dashboard/settings/whatsapp',
       locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.WHATSAPP_CONNECT).granted,
     },
     {
@@ -82,7 +82,7 @@ export default function SettingsHubPage() {
       description: 'Treine o comportamento da sua IA.',
       icon: Bot,
       iconColor: 'text-indigo-600',
-      href: '#',
+      href: '/dashboard/settings/agents',
       locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.ELIZA_AGENT).granted,
     }
   ];
