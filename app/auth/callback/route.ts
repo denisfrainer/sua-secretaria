@@ -41,62 +41,22 @@ export async function GET(request: Request) {
       }
 
       if (session?.user) {
-        console.log('✅ [AUTH CALLBACK] Session established. Persisting Identity/Config...');
+        console.log('✅ [AUTH CALLBACK] Session established. Provisioning handled by DB Trigger.');
 
-        // 1. IDENTITY PERSISTENCE (Profiles)
-        const profileData = {
-          id: session.user.id,
-          email: session.user.email,
-          full_name: session.user.user_metadata?.full_name || '',
-          updated_at: new Date().toISOString(),
-          google_refresh_token: session.provider_refresh_token || null
-        };
-
-        const { error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .upsert(profileData, { onConflict: 'id' });
-
-        if (profileError) console.error('❌ [PROFILES ERROR]:', profileError.message);
-
-        // 2. BUSINESS CONFIG Gating
-        const { data: configData } = await supabaseAdmin
-          .from('business_config')
-          .select('id')
-          .eq('owner_id', session.user.id)
-          .maybeSingle();
-
-        if (!configData) {
-          console.log('🆕 [DB] New user detected. Creating initial business_config...');
-          
-          const defaultContext = {
-            business_info: { name: 'Meu Studio', address: '', parking: '', handoff_phone: '' },
-            operating_hours: {
-              weekdays: { open: '09:00', close: '18:00', is_closed: false },
-              saturday: { open: '09:00', close: '13:00', is_closed: false },
-              sunday: { open: '09:00', close: '18:00', is_closed: true },
-              observations: ''
-            },
-            services: [],
-            scheduling_rules: [],
-            restrictions: [],
-            tone_of_voice: { base_style: 'Profissional', custom_instructions: '' },
-            payment_info: { pix_type: '', pix_key: '', owner_name: '' },
-            booking_policies: { minimum_advance_notice: '2 horas', buffer_time_minutes: '15' },
-            faq: [],
-            updated_at: new Date().toISOString()
-          };
-
+        // 1. PROVIDER TOKEN PERSISTENCE (Only if present)
+        // Note: The database trigger creates the profile, we only update the refresh token here
+        // as it is only available during the OAuth handshake.
+        const providerRefreshToken = session.provider_refresh_token;
+        if (providerRefreshToken) {
+          console.log('🔑 [AUTH CALLBACK] Capturing Google Refresh Token...');
           await supabaseAdmin
-            .from('business_config')
-            .insert({ 
-              owner_id: session.user.id, 
-              context_json: defaultContext
-            });
+            .from('profiles')
+            .update({ google_refresh_token: providerRefreshToken })
+            .eq('id', session.user.id);
         }
       }
 
       // CRITICAL: We redirect to a clean URL without the ?code parameter.
-      // This prevents the client-side Supabase library from triggering a duplicate PKCE exchange.
       return NextResponse.redirect(new URL(next, origin));
 
     } catch (err: any) {
