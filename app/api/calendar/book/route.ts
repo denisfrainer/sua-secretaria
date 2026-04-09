@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getGoogleAuthClient } from '@/lib/calendar/google';
-import { parseISO, addMinutes } from 'date-fns';
+import { parseISO, addMinutes, format } from 'date-fns';
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,11 +40,11 @@ export async function POST(req: NextRequest) {
       summary: `Agendamento: ${clientName} - ${serviceName || 'Consultoria'}`,
       description: `Telefone: ${clientPhone}`,
       start: {
-        dateTime: startDateTime.toISOString(),
+        dateTime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
         timeZone: 'America/Sao_Paulo', // Or handle dynamically based on business config
       },
       end: {
-        dateTime: endDateTime.toISOString(),
+        dateTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
         timeZone: 'America/Sao_Paulo',
       },
       reminders: {
@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
     };
 
     // 4. Insert event into Google Calendar
+    console.log('[API_BOOKING] Sending to Google:', { start: event.start, end: event.end });
+
     const response = await calendar.events.insert({
       calendarId: 'primary',
       requestBody: event,

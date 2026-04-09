@@ -42,7 +42,12 @@ export async function POST(req: NextRequest) {
     const durationMinutes = parseInt(duration.replace(/[^0-9]/g, '')) || 60;
     const endDateTime = addMinutes(startDateTime, durationMinutes);
 
-    console.log(`[GCAL_BOOK] Booking ${serviceName} for ${clientName} at ${startDateTime.toISOString()}`);
+    console.log(`[GCAL_BOOK] Booking ${serviceName} for ${clientName} at ${format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss")}`);
+
+    console.log('[API_BOOKING] Sending to Google:', { 
+      start: { dateTime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"), timeZone: 'America/Sao_Paulo' },
+      end: { dateTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"), timeZone: 'America/Sao_Paulo' }
+    });
 
     await calendar.events.insert({
       calendarId: 'primary',
@@ -50,11 +55,11 @@ export async function POST(req: NextRequest) {
         summary: `[AGENDADO] ${clientName} - ${serviceName}`,
         description: `Serviço: ${serviceName}\nCliente: ${clientName}\nDuração: ${durationMinutes}min\n(Agendamento manual via Dashboard)`,
         start: {
-          dateTime: startDateTime.toISOString(),
+          dateTime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
           timeZone: 'America/Sao_Paulo',
         },
         end: {
-          dateTime: endDateTime.toISOString(),
+          dateTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
           timeZone: 'America/Sao_Paulo',
         },
       },
