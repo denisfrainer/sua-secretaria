@@ -93,7 +93,7 @@ export default function IntegrationsSettingsPage() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="w-32 h-32 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                 <img
-                  src="/assets/agenda-logo.svg"
+                  src="/assets/google-calendar-logo.svg"
                   alt="Google Calendar"
                   className="w-32 h-32 object-contain"
                 />

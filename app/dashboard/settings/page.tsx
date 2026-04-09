@@ -37,8 +37,8 @@ const SETTINGS_OPTIONS = [
     description: 'Configure seu Stripe ou Mercado Pago.',
     icon: CreditCard,
     iconColor: 'text-emerald-600',
-    href: '#',
-    locked: true,
+    href: '/dashboard/settings/payments',
+    locked: false,
   },
   {
     id: 'whatsapp',
