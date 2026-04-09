@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Lock,
   Bot,
-  CreditCard
+  CreditCard,
+  TrendingUp
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -84,6 +85,17 @@ export default function SettingsHubPage() {
       iconColor: 'text-indigo-600',
       href: '/dashboard/settings/agents',
       locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.ELIZA_AGENT).granted,
+      requiredTier: FEATURE_REQUIREMENTS.ELIZA_AGENT,
+    },
+    {
+      id: 'elite-outbound',
+      title: 'Recuperação de Vendas',
+      description: 'Reative clientes inativos automaticamente e encha sua agenda.',
+      icon: TrendingUp,
+      iconColor: 'text-rose-600',
+      href: '/dashboard/settings/agents?tab=outbound', // Wolf Agent tab
+      locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.OUTBOUND_PROSPECTING).granted,
+      requiredTier: FEATURE_REQUIREMENTS.OUTBOUND_PROSPECTING,
     }
   ];
   return (
@@ -94,11 +106,14 @@ export default function SettingsHubPage() {
       className="flex flex-col gap-3"
     >
       {SETTINGS_OPTIONS.map((option) => {
+        // Funnel Logic: If locked, everything redirects to payments/billing
+        const destination = option.locked ? '/dashboard/settings/payments' : option.href;
+
         const CardContent = (
           <div className={`
             group relative flex items-center gap-4 p-5 rounded-3xl border transition-all w-full
             ${option.locked 
-              ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-not-allowed pointer-events-none' 
+              ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-pointer' 
               : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm'}
           `}>
             {/* Icon Wrapper */}
@@ -106,16 +121,16 @@ export default function SettingsHubPage() {
               {option.image ? (
                 <img src={option.image} alt={option.title} className="w-12 h-12 object-contain" />
               ) : option.icon ? (
-                <option.icon size={48} className={option.iconColor} />
+                <option.icon size={32} className={option.iconColor} />
               ) : null}
             </div>
 
             {/* Text Content */}
-            <div className="flex-1 min-w-0 pr-2">
+            <div className={`flex-1 min-w-0 pr-2 ${option.locked ? 'pointer-events-none' : ''}`}>
               <h3 className="text-lg font-bold text-gray-900 leading-tight">
                 {option.title}
               </h3>
-              <p className="text-base font-medium text-gray-500 mt-0.5">
+              <p className="text-base font-medium text-gray-500 mt-0.5 whitespace-normal">
                 {option.description}
               </p>
             </div>
@@ -124,8 +139,8 @@ export default function SettingsHubPage() {
             <div className="flex items-center gap-3 shrink-0 ml-auto">
               {option.locked ? (
                 <div className="flex items-center gap-2">
-                  <span className="hidden xs:inline-block bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
-                    {option.id === 'ai' ? 'Plano PRO' : 'Restrito'}
+                  <span className="hidden xs:inline-block bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md whitespace-nowrap">
+                    {option.requiredTier === 'ELITE' ? 'Plano ELITE' : 'Plano PRO'}
                   </span>
                   <Lock size={18} className="text-gray-400" />
                 </div>
@@ -136,17 +151,9 @@ export default function SettingsHubPage() {
           </div>
         );
 
-        if (option.locked) {
-          return (
-            <motion.div key={option.id} variants={itemVariants}>
-              {CardContent}
-            </motion.div>
-          );
-        }
-
         return (
           <motion.div key={option.id} variants={itemVariants}>
-            <Link href={option.href}>
+            <Link href={destination}>
               {CardContent}
             </Link>
           </motion.div>

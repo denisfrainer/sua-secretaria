@@ -5,7 +5,7 @@ import { PlanTier } from '../supabase/types';
  */
 export const FEATURE_REQUIREMENTS = {
   ELIZA_AGENT: 'PRO' as PlanTier,
-  WOLF_AGENT: 'ELITE' as PlanTier,
+  OUTBOUND_PROSPECTING: 'ELITE' as PlanTier, // Wolf Agent / Sales Recovery
   WHATSAPP_CONNECT: 'PRO' as PlanTier,
   AUTO_SCHEDULING: 'PRO' as PlanTier,
 };
