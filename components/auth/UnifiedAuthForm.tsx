@@ -78,7 +78,7 @@ export default function UnifiedAuthForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Seu melhor e-mail"
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
                 />
               </div>
 
@@ -91,7 +91,8 @@ export default function UnifiedAuthForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-slate-900 text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+                style={{ backgroundColor: '#533AFD' }}
+                className="w-full h-[64px] text-white rounded-md font-bold text-base font-jakarta flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
               >
                 {isLoading ? (
                   <>

@@ -48,7 +48,7 @@ export default async function LoginPage() {
                 </div>
 
                 {/* LOGIN FORM CARD */}
-                <div className="bg-white rounded-[32px] p-8 shadow-md border border-slate-100/60">
+                <div className="bg-white rounded-md p-8 shadow-md border border-slate-100/60">
                     <UnifiedAuthForm />
                 </div>
 
