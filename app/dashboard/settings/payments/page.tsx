@@ -131,5 +131,6 @@ export default function PaymentsPricingPage() {
           Pagamento processado via Stripe
         </div>
       </div>
+    </div>
   );
 }
