@@ -6,7 +6,7 @@ import { PlanTier } from '../supabase/types';
 export const FEATURE_REQUIREMENTS = {
   ELIZA_AGENT: 'PRO' as PlanTier,
   WOLF_AGENT: 'ELITE' as PlanTier,
-  WHATSAPP_CONNECT: 'STARTER' as PlanTier, // Basic connection allowed on all tiers
+  WHATSAPP_CONNECT: 'PRO' as PlanTier,
   AUTO_SCHEDULING: 'PRO' as PlanTier,
 };
 
