@@ -11,8 +11,19 @@ import { getGoogleAuthClient } from '@/lib/calendar/google';
 import { startOfDay, endOfDay } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+import { cookies } from 'next/headers';
 
 export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const hasSupabaseCookie = cookieStore.getAll().some(c => c.name.includes('supabase'));
+
+  console.log('[DASHBOARD_RENDER] Auth State Check:', {
+    hasSupabaseCookie,
+    cookieNames: cookieStore.getAll().map(c => c.name),
+    timestamp: new Date().toISOString()
+  });
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -51,27 +62,33 @@ export default async function DashboardPage() {
         });
         const calendar = google.calendar({ version: 'v3', auth: authClient });
         const now = new Date();
-        const timeMin = startOfDay(now).toISOString();
         const timeMax = endOfDay(now).toISOString();
 
         const response = await calendar.events.list({
           calendarId: 'primary',
-          timeMin,
+          timeMin: now.toISOString(), // Start from now to avoid fetching past events
           timeMax,
           singleEvents: true,
           orderBy: 'startTime',
         });
 
         const events = response.data.items || [];
-        initialAgenda = events.map(event => ({
-          id: event.id,
-          title: event.summary,
-          start: event.start?.dateTime || event.start?.date,
-          end: event.end?.dateTime || event.end?.date,
-          description: event.description || '',
-        }));
+        initialAgenda = events
+          .map(event => ({
+            id: event.id,
+            title: event.summary,
+            start: event.start?.dateTime || event.start?.date,
+            end: event.end?.dateTime || event.end?.date,
+            description: event.description || '',
+          }))
+          .filter(app => {
+            const appStart = app.start ? new Date(app.start) : null;
+            return appStart && appStart > now;
+          })
+          .slice(0, 3); // Match the client-side slice of 3
+        
         isIntegrated = true;
-        console.log(`[DASHBOARD_FETCH] Agenda fetched: ${initialAgenda.length} events`);
+        console.log(`[DASHBOARD_FETCH] Agenda fetched and filtered: ${initialAgenda.length} events`);
       } catch (gCalError: any) {
         console.warn('[DASHBOARD_FETCH] GCal fetch error:', gCalError.message);
         isIntegrated = false;

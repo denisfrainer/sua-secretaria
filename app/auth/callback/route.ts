@@ -16,47 +16,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=no_code`);
   }
 
-  const cookieStore = await cookies();
-  
-  // 1. Exchange the code for a session (This sets the local browser cookies)
+  // 1. Create the redirect response object first
+  let redirectTo = `${origin}${nextPath}`;
+  const response = NextResponse.redirect(redirectTo);
+
+  // 2. Initialize Supabase client with the response object context
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options, path: '/' });
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options, path: '/', maxAge: 0 });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
   );
-
-  let redirectTo = `${origin}${nextPath}`;
 
   try {
     const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     
     if (exchangeError) {
       console.error(`❌ [AUTH CALLBACK] Exchange Failed: ${exchangeError.message}`);
-      redirectTo = `${origin}/login?error=exchange_failed`;
+      return NextResponse.redirect(`${origin}/login?error=exchange_failed`);
     } else if (session?.user) {
       console.log('✅ [AUTH CALLBACK] Session established. Persisting Profile Identity...');
       
       const providerRefreshToken = session.provider_refresh_token;
 
-      if (!providerRefreshToken) {
-        console.warn('⚠️ [AUTH CALLBACK] provider_refresh_token missing! (Normal for basic login)');
-      } else {
-        console.log('🔑 [AUTH CALLBACK] Google Refresh Token captured.');
-      }
-
-      // 2. DEFENSIVE IDENTITY WRITE (Profiles Table)
+      // 3. DEFENSIVE IDENTITY WRITE (Profiles Table)
       const profileData: any = {
         id: session.user.id,
         email: session.user.email,
@@ -78,15 +71,14 @@ export async function GET(request: NextRequest) {
         console.log('✅ [PROFILES SUCCESS]: Identity persisted for user:', session.user.id);
       }
 
-      // 3. DEFENSIVE INSTANCE WRITE (Still needed for WhatsApp context)
-      const { data: configData } = await supabase
+      // 4. DEFENSIVE INSTANCE WRITE (Still needed for WhatsApp context)
+      const { data: configData } = await supabaseAdmin // Use admin for reliable fetch
         .from('business_config')
         .select('context_json')
         .eq('owner_id', session.user.id)
         .maybeSingle();
 
       if (!configData) {
-        // New Signup -> INSERT
         console.log('🆕 [DB] New user detected. Creating business_config row...');
       
         const defaultContext = {
@@ -107,22 +99,18 @@ export async function GET(request: NextRequest) {
           updated_at: new Date().toISOString()
         };
 
-        const { error: insertError } = await supabaseAdmin
+        await supabaseAdmin
           .from('business_config')
           .insert({ 
             owner_id: session.user.id, 
             context_json: defaultContext
           });
-
-        if (insertError) console.error('❌ [DB INSERT ERROR]:', insertError.message);
-        else console.log('✅ [DB INSERT SUCCESS]: Business config created for user:', session.user.id);
       }
     }
   } catch (error: any) {
     console.error('💥 [AUTH CALLBACK] Unexpected error:', error.message);
-  } finally {
-    console.log('🏁 [AUTH CALLBACK] Finalizing request. Redirecting to:', redirectTo);
-    const finalUrl = new URL('/dashboard', origin);
-    return NextResponse.redirect(finalUrl);
   }
+
+  console.log('🏁 [AUTH CALLBACK] Finalizing request. Redirecting with cookies.');
+  return response;
 }
