@@ -213,6 +213,33 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
     }
   };
 
+  const resetBooking = () => {
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setStep('calendar');
+    setFormData({ name: '', phone: '' });
+  };
+
+  const getGoogleCalendarUrl = () => {
+    if (!selectedDate || !selectedTime) return '';
+    
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const start = new Date(selectedDate);
+    start.setHours(hours, minutes, 0);
+    
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + 45);
+    
+    const formatDate = (date: Date) => {
+      return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    };
+
+    const details = encodeURIComponent(`Agendamento realizado via Meatende.ai\nCliente: ${formData.name}\nWhatsApp: ${formData.phone}`);
+    const summary = encodeURIComponent(`Agendamento: ${businessName}`);
+    
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${summary}&dates=${formatDate(start)}/${formatDate(end)}&details=${details}`;
+  };
+
   return (
     <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-gray-100 overflow-hidden flex flex-col md:flex-row">
@@ -437,13 +464,31 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
                 <p className="text-lg text-gray-500 font-medium max-w-sm mb-10 leading-relaxed">
                   Tudo certo, <strong>{formData.name}</strong>! Enviamos uma confirmação para seu WhatsApp.
                 </p>
-                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 w-full max-w-sm">
+                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 w-full max-w-sm mb-8">
                   <div className="flex flex-col gap-2">
                     <p className="text-sm font-black uppercase tracking-widest text-gray-400">Resumo</p>
                     <p className="text-base font-bold text-gray-700">
                       {selectedDate && format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedTime}
                     </p>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-3 w-full max-w-sm">
+                  <a 
+                    href={getGoogleCalendarUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-3 w-full h-14 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-500/10 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    <CalendarIcon size={20} />
+                    Adicionar ao calendário
+                  </a>
+                  <button 
+                    onClick={resetBooking}
+                    className="flex items-center justify-center gap-3 w-full h-14 bg-white text-gray-600 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
+                  >
+                    Fazer novo agendamento
+                  </button>
                 </div>
               </motion.div>
             )}

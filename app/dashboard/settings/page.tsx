@@ -7,7 +7,8 @@ import {
   MessageSquare, 
   Sparkles, 
   ChevronRight,
-  Lock
+  Lock,
+  Bot
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -26,9 +27,8 @@ const SETTINGS_OPTIONS = [
     id: 'integracoes',
     title: 'Integrações',
     description: 'Conecte seu Google Calendar.',
-    icon: Calendar,
-    iconColor: 'text-emerald-600',
-    iconBg: 'bg-emerald-50',
+    image: '/assets/google-calendar-logo.svg',
+    iconBg: 'bg-white border border-gray-200',
     href: '/dashboard/settings/integrations',
     locked: false,
   },
@@ -36,8 +36,7 @@ const SETTINGS_OPTIONS = [
     id: 'whatsapp',
     title: 'Conexão WhatsApp',
     description: 'Vincule seu número para o agente de IA responder.',
-    icon: MessageSquare,
-    iconColor: 'text-gray-400',
+    image: '/assets/whatsapp.svg',
     iconBg: 'bg-gray-50',
     href: '#',
     locked: true,
@@ -46,7 +45,7 @@ const SETTINGS_OPTIONS = [
     id: 'ai',
     title: 'Inteligência artificial',
     description: 'Treine o comportamento e as regras da sua IA.',
-    icon: Sparkles,
+    icon: Bot,
     iconColor: 'text-gray-400',
     iconBg: 'bg-gray-50',
     href: '#',
@@ -80,14 +79,18 @@ export default function SettingsHubPage() {
       {SETTINGS_OPTIONS.map((option) => {
         const CardContent = (
           <div className={`
-            group relative flex items-center gap-4 p-4 rounded-2xl border transition-all
+            group relative flex items-center gap-4 p-6 rounded-2xl border transition-all w-full
             ${option.locked 
-              ? 'bg-gray-50/50 border-gray-100 opacity-75 cursor-not-allowed' 
-              : 'bg-white border-gray-100 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)]'}
+              ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-not-allowed pointer-events-none' 
+              : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm'}
           `}>
             {/* Icon Wrapper */}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${option.iconBg}`}>
-              <option.icon size={22} className={option.iconColor} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${option.iconBg} ${(option.locked && option.image) ? 'grayscale' : ''}`}>
+              {option.image ? (
+                <img src={option.image} alt={option.title} className="w-6 h-6 object-contain" />
+              ) : option.icon ? (
+                <option.icon size={22} className={option.iconColor} />
+              ) : null}
             </div>
 
             {/* Text Content */}
