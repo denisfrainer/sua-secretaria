@@ -11,6 +11,10 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      auth: {
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -28,20 +32,33 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // 2. Refresh the session (Crititcal for Server Components auth sync)
-  const { data: { user } } = await supabase.auth.getUser()
-
+  // 2. Session-First & Refresh check
   const pathname = request.nextUrl.pathname;
   const searchParams = request.nextUrl.searchParams;
   const isAuthCallback = pathname.startsWith('/auth/callback');
+  
+  // Optimization: Only getUser() if we are in a protected area AND have a session cookie
+  // This prevents hitting Supabase API unnecessarily for static assets or landing pages
+  const allCookies = request.cookies.getAll();
+  const hasAuthToken = allCookies.some(c => c.name.includes('-auth-token'));
 
-  console.log(`📡 [MIDDLEWARE_CHECK] Path: ${pathname} | Auth: ${!!user} | Timestamp: ${new Date().toISOString()}`);
+  let user = null;
+  if (hasAuthToken || pathname.startsWith('/dashboard') || isAuthCallback) {
+     const { data } = await supabase.auth.getUser();
+     user = data.user;
+  }
+
+  console.log(`📡 [MIDDLEWARE_CHECK] Path: ${pathname} | AuthToken: ${hasAuthToken} | User: ${!!user}`);
 
   // 3. Authorization Logic
   
   // Protect /dashboard routes
   if (pathname.startsWith('/dashboard') && !user && !isAuthCallback) {
-    console.log('🚫 [MIDDLEWARE] Unauthorized access. Redirecting to /login.');
+    console.error('[AUTH_REDIRECT_TRIGGERED] No user found. Redirecting to login.', {
+      cookiesPresent: hasAuthToken,
+      path: pathname,
+      timestamp: new Date().toISOString()
+    });
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -86,6 +103,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
+  runtime: 'edge',
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

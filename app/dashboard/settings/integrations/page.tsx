@@ -173,7 +173,7 @@ export default function IntegrationsSettingsPage() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="w-32 h-32 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
                 <img
-                  src="/assets/sheets-logo.svg"
+                  src="/assets/google-sheets-logo.svg"
                   alt="Google Sheets"
                   className="w-32 h-32 object-contain"
                 />
@@ -201,9 +201,17 @@ export default function IntegrationsSettingsPage() {
           <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row items-center gap-4 z-10">
             {hasSheetsAccess ? (
               <button
-                className="w-full md:w-auto h-14 px-8 rounded-2xl bg-white border border-black/10 text-gray-900 font-bold text-base flex items-center justify-center gap-4 transition-all hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/10 active:scale-95 shadow-sm"
+                className="w-full md:w-auto group/btn relative h-14 px-8 rounded-2xl bg-white border border-black/10 text-gray-900 font-bold text-base flex items-center justify-center gap-4 overflow-hidden transition-all hover:border-green-500 hover:shadow-lg hover:shadow-green-500/10 active:scale-95 shadow-sm"
               >
-                Configurar Sincronização
+                <div className="flex items-center justify-center transition-transform group-hover/btn:scale-110">
+                  <svg width="24" height="24" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.64 9.20455C17.64 8.56636 17.5827 7.95273 17.4764 7.36364H9V10.845H13.8436C13.635 11.97 13.0009 12.9232 12.0477 13.5614V15.8195H14.9564C16.6582 14.2527 17.64 11.9455 17.64 9.20455Z" fill="#4285F4" />
+                    <path d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.5614C11.2418 14.1014 10.2109 14.4205 9 14.4205C6.65591 14.4205 4.67182 12.8373 3.96409 10.71H0.957273V13.0418C2.43818 15.9832 5.48182 18 9 18Z" fill="#34A853" />
+                    <path d="M5.03591 10.71C4.85591 10.17 4.75364 9.59318 4.75364 9C4.75364 8.40682 4.85591 7.83 5.03591 7.29V4.95818H1.02682C0.413182 6.17318 0.0545455 7.54773 0.0545455 9C0.0545455 10.4523 0.413182 11.8268 1.02682 13.0418L5.03591 10.71Z" fill="#FBBC05" />
+                    <path d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4405 4.92545L15.0218 2.34409C13.4632 0.891818 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957273 4.95818L5.03591 7.29C5.74364 5.16273 7.72773 3.57955 9 3.57955Z" fill="#EA4335" />
+                  </svg>
+                </div>
+                Conectar planilhas do Google
               </button>
             ) : (
               <button
