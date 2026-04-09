@@ -91,11 +91,11 @@ export default function IntegrationsSettingsPage() {
         <div className="bg-white rounded-[2.5rem] border border-black/5 shadow-sm p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden group hover:shadow-xl hover:shadow-blue-500/5 transition-all">
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 z-10 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-24 h-24 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+              <div className="w-32 h-32 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                 <img 
                   src="/assets/agenda-logo.svg" 
                   alt="Google Calendar" 
-                  className="w-24 h-24 object-contain"
+                  className="w-32 h-32 object-contain"
                 />
               </div>
               <div className="flex flex-col">
@@ -157,6 +157,48 @@ export default function IntegrationsSettingsPage() {
 
           {/* Decor */}
           <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl -z-10 group-hover:bg-blue-500/10 transition-colors duration-700" />
+        </div>
+
+        {/* GOOGLE SHEETS CARD (BLOCKED) */}
+        <div className="bg-gray-50/50 rounded-[2.5rem] border border-gray-200 p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden opacity-70 grayscale">
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 z-10 text-center md:text-left">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-32 h-32 flex items-center justify-center">
+                <img 
+                  src="/assets/sheets-logo.svg" 
+                  alt="Google Sheets" 
+                  className="w-32 h-32 object-contain"
+                />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-2xl font-black text-gray-950 tracking-tight">Google Sheets</h3>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Exportação de dados</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-black uppercase tracking-widest z-10">
+              <span className="w-2 h-2 bg-purple-500 rounded-full" />
+              Plano IA
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-6 z-10 text-center md:text-left">
+            <p className="text-base font-medium text-gray-500 leading-relaxed max-w-lg mx-auto md:mx-0">
+              Exporte seus leads e históricos de conversas automaticamente para planilhas do Google para análises avançadas e CRM.
+            </p>
+          </div>
+
+          <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row items-center gap-4 z-10">
+            <button
+              disabled
+              className="w-full md:w-auto h-14 px-8 rounded-2xl bg-gray-100 text-gray-400 font-bold text-base flex items-center justify-center gap-3 cursor-not-allowed"
+            >
+              Indisponível no seu plano
+            </button>
+          </div>
+
+          {/* Decor */}
+          <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl -z-10" />
         </div>
       </div>
     </div>
