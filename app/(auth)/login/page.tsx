@@ -5,6 +5,7 @@ import GoogleLoginButton from '@/components/GoogleLoginButton';
 import { createClient } from '@/lib/supabase/server';
 import { LoginLoadingState } from '@/components/auth/LoginLoadingState';
 import Link from 'next/link';
+import UnifiedAuthForm from '@/components/auth/UnifiedAuthForm';
 
 export default async function LoginPage() {
     // Server-side check to prevent logged-in users from seeing the login page
@@ -41,18 +42,14 @@ export default async function LoginPage() {
                             Acesse sua conta
                         </h1>
                         <p className="text-base font-medium text-slate-500">
-                            Faça login para gerenciar sua IA.
+                            Login unificado via Google ou Magic Link.
                         </p>
                     </div>
                 </div>
 
                 {/* LOGIN FORM CARD */}
                 <div className="bg-white rounded-[32px] p-8 shadow-md border border-slate-100/60">
-                    <div className="flex flex-col gap-6">
-                        <div className="w-full">
-                            <GoogleLoginButton text="Continuar com o Google" />
-                        </div>
-                    </div>
+                    <UnifiedAuthForm />
                 </div>
 
                 <div className="flex flex-col items-center gap-2 text-center opacity-40 mt-4">
