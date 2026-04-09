@@ -104,7 +104,7 @@ export default function SettingsHubPage() {
               <h3 className="text-lg font-bold text-gray-900 leading-tight">
                 {option.title}
               </h3>
-              <p className="text-base font-medium text-gray-500 mt-0.5 line-clamp-1">
+              <p className="text-base font-medium text-gray-500 mt-0.5">
                 {option.description}
               </p>
             </div>

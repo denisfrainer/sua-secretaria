@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { 
   MessageCircle, 
   Sparkles, 
@@ -16,6 +17,7 @@ const PLANOS = [
     level: 1,
     name: 'Digital',
     description: 'Bot menu e agendamento manual.',
+    price: '39,90',
     icon: MessageCircle,
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
@@ -25,6 +27,7 @@ const PLANOS = [
     level: 2,
     name: 'Profissional',
     description: 'IA Eliza e agendamento automático.',
+    price: '149',
     icon: Sparkles,
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
@@ -34,6 +37,7 @@ const PLANOS = [
     level: 3,
     name: 'Elite',
     description: 'Customização total e financeiro.',
+    price: '299',
     icon: Bot,
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-50',
@@ -100,7 +104,7 @@ export default function PaymentsPricingPage() {
                 <h3 className="text-lg font-bold text-gray-900 leading-tight">
                   {plano.name}
                 </h3>
-                <p className="text-base font-medium text-gray-500 mt-0.5 line-clamp-1">
+                <p className="text-base font-medium text-gray-500 mt-0.5">
                   {plano.description}
                 </p>
               </div>
@@ -123,9 +127,12 @@ export default function PaymentsPricingPage() {
 
       {/* Final Call to Action */}
       <div className="flex flex-col gap-4 mt-4 px-1">
-        <button className="w-full h-16 rounded-3xl bg-gray-950 text-white font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-black/10 hover:bg-black active:scale-[0.98] transition-all">
+        <Link 
+          href={`/checkout?plan=${selectedPlan}`}
+          className="w-full h-16 rounded-3xl bg-gray-950 text-white font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-black/10 hover:bg-black active:scale-[0.98] transition-all"
+        >
           Confirmar Assinatura
-        </button>
+        </Link>
         <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
           <CreditCard size={14} />
           Pagamento processado via Stripe
