@@ -94,7 +94,10 @@ export default function UnifiedAuthForm() {
                 className="w-full bg-slate-900 text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
               >
                 {isLoading ? (
-                  <Loader2 className="animate-spin" size={20} />
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    <span>Enviando...</span>
+                  </>
                 ) : (
                   <>
                     Continuar com E-mail
