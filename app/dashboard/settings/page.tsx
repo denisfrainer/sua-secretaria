@@ -19,7 +19,6 @@ const SETTINGS_OPTIONS = [
     description: 'Dados básicos, endereço e horário de funcionamento.',
     icon: User,
     iconColor: 'text-blue-600',
-    iconBg: 'bg-blue-50',
     href: '/dashboard/settings/business',
     locked: false,
   },
@@ -28,7 +27,6 @@ const SETTINGS_OPTIONS = [
     title: 'Integrações',
     description: 'Conecte seu Google Calendar.',
     image: '/assets/google-calendar-logo.svg',
-    iconBg: 'bg-white border border-gray-200',
     href: '/dashboard/settings/integrations',
     locked: false,
   },
@@ -37,7 +35,6 @@ const SETTINGS_OPTIONS = [
     title: 'Conexão WhatsApp',
     description: 'Vincule seu número para o agente de IA responder.',
     image: '/assets/whatsapp.svg',
-    iconBg: 'bg-gray-50',
     href: '#',
     locked: true,
   },
@@ -46,8 +43,7 @@ const SETTINGS_OPTIONS = [
     title: 'Inteligência artificial',
     description: 'Treine o comportamento e as regras da sua IA.',
     icon: Bot,
-    iconColor: 'text-gray-400',
-    iconBg: 'bg-gray-50',
+    iconColor: 'text-indigo-600',
     href: '#',
     locked: true,
   }
@@ -85,11 +81,11 @@ export default function SettingsHubPage() {
               : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm'}
           `}>
             {/* Icon Wrapper */}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${option.iconBg} ${(option.locked && option.image) ? 'grayscale' : ''}`}>
+            <div className="w-12 h-12 flex items-center justify-center shrink-0">
               {option.image ? (
-                <img src={option.image} alt={option.title} className="w-6 h-6 object-contain" />
+                <img src={option.image} alt={option.title} className="w-12 h-12 object-contain" />
               ) : option.icon ? (
-                <option.icon size={22} className={option.iconColor} />
+                <option.icon size={48} className={option.iconColor} />
               ) : null}
             </div>
 
