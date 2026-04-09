@@ -34,27 +34,23 @@ export default function SettingsLayout({
   const backLink = isSettingsRoot ? '/dashboard' : '/dashboard/settings';
 
   return (
-    <div className="w-full min-h-screen bg-[#F2F2F7] flex flex-col font-sans antialiased">
+    <div className="w-full min-h-screen bg-[#fafafa] flex flex-col font-source antialiased">
       {/* Settings Header - Simplified silicon valley style */}
       {!isCatalog && (
-        <header className="h-16 w-full sticky top-0 bg-[#F2F2F7]/80 backdrop-blur-lg z-40 border-b border-black/5">
-          <div className="w-full max-w-lg h-full px-4 mx-auto flex items-center justify-between">
-            {!isSettingsRoot && (
-              <Link 
-                href={backLink}
-                className="flex items-center gap-1 text-[#007AFF] font-medium"
-              >
-                <ArrowLeft size={20} />
-                <span>Voltar</span>
-              </Link>
-            )}
-            <div className={`flex flex-col items-center flex-1 ${isSettingsRoot ? 'text-center' : ''}`}>
-               {/* Small title for sticky header when scrolling, but we can also use it as main for subpages */}
-               <h1 className="text-base font-semibold tracking-tight text-gray-900 leading-none">
-                 {isSettingsRoot ? '' : (pathname.includes('/business') ? 'Perfil' : (pathname.includes('/integrations') ? 'Integrações' : (pathname.includes('/payments') ? 'Pagamentos' : 'Configurações')))}
-               </h1>
+        <header className="h-20 w-full sticky top-0 bg-[#fafafa]/80 backdrop-blur-md z-40 border-b border-black/5">
+          <div className="w-full max-w-3xl h-full px-6 mx-auto flex items-center gap-4">
+            <Link 
+              href={backLink}
+              className="w-10 h-10 rounded-xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft size={18} className="text-gray-900" />
+            </Link>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-black tracking-tight text-gray-900 leading-none">Configurações</h1>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                {isSettingsRoot ? 'Central de Ajustes' : 'Ajuste seu studio'}
+              </p>
             </div>
-            <div className="w-10 h-10" /> {/* Spacer */}
           </div>
         </header>
       )}
@@ -62,7 +58,7 @@ export default function SettingsLayout({
       {/* Tabs removed in favor of central Settings Hub index */}
 
       {/* Settings Content */}
-      <main className={`w-full max-w-lg mx-auto flex-1 ${isCatalog ? 'px-4 py-4' : 'px-4 pb-20'}`}>
+      <main className={`w-full max-w-3xl mx-auto flex-1 ${isCatalog ? 'px-6 py-6' : 'px-6 py-8'}`}>
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {children}
         </div>
