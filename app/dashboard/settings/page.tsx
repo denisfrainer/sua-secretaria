@@ -8,7 +8,8 @@ import {
   Sparkles, 
   ChevronRight,
   Lock,
-  Bot
+  Bot,
+  CreditCard
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -46,6 +47,15 @@ const SETTINGS_OPTIONS = [
     iconColor: 'text-indigo-600',
     href: '#',
     locked: true,
+  },
+  {
+    id: 'pagamentos',
+    title: 'Pagamentos',
+    description: 'Configure seu Stripe ou Mercado Pago e receba pagamentos por IA.',
+    icon: CreditCard,
+    iconColor: 'text-emerald-600',
+    href: '#',
+    locked: true,
   }
 ];
 
@@ -75,26 +85,26 @@ export default function SettingsHubPage() {
       {SETTINGS_OPTIONS.map((option) => {
         const CardContent = (
           <div className={`
-            group relative flex items-center gap-4 p-6 rounded-2xl border transition-all w-full
+            group relative flex items-center gap-6 p-8 rounded-[2rem] border transition-all w-full
             ${option.locked 
               ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-not-allowed pointer-events-none' 
               : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm'}
           `}>
             {/* Icon Wrapper */}
-            <div className="w-12 h-12 flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 flex items-center justify-center shrink-0">
               {option.image ? (
-                <img src={option.image} alt={option.title} className="w-12 h-12 object-contain" />
+                <img src={option.image} alt={option.title} className="w-16 h-16 object-contain" />
               ) : option.icon ? (
-                <option.icon size={48} className={option.iconColor} />
+                <option.icon size={56} className={option.iconColor} />
               ) : null}
             </div>
 
             {/* Text Content */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-gray-900 leading-tight">
+              <h3 className="text-[18px] font-bold text-gray-950 leading-tight">
                 {option.title}
               </h3>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+              <p className="text-[16px] font-medium text-gray-500 mt-1.5 line-clamp-1">
                 {option.description}
               </p>
             </div>
@@ -106,10 +116,10 @@ export default function SettingsHubPage() {
                   <span className="bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
                     Plano IA
                   </span>
-                  <Lock size={14} className="text-gray-400" />
+                  <Lock size={20} className="text-gray-400" />
                 </div>
               ) : (
-                <ChevronRight size={20} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                <ChevronRight size={24} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
               )}
             </div>
           </div>
