@@ -12,69 +12,80 @@ import {
   CreditCard
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const SETTINGS_OPTIONS = [
-  {
-    id: 'perfil',
-    title: 'Perfil do estabelecimento',
-    description: 'Dados básicos, endereço e horário de funcionamento.',
-    icon: User,
-    iconColor: 'text-blue-600',
-    href: '/dashboard/settings/business',
-    locked: false,
-  },
-  {
-    id: 'integracoes',
-    title: 'Integrações',
-    description: 'Conecte seu Google Calendar.',
-    image: '/assets/google-calendar-logo.svg',
-    href: '/dashboard/settings/integrations',
-    locked: false,
-  },
-  {
-    id: 'pagamentos',
-    title: 'Pagamentos',
-    description: 'Configure seu Stripe ou Mercado Pago.',
-    icon: CreditCard,
-    iconColor: 'text-emerald-600',
-    href: '/dashboard/settings/payments',
-    locked: false,
-  },
-  {
-    id: 'whatsapp',
-    title: 'Conexão WhatsApp',
-    description: 'Vincule seu número para o agente.',
-    image: '/assets/whatsapp.svg',
-    href: '#',
-    locked: true,
-  },
-  {
-    id: 'ai',
-    title: 'Inteligência artificial',
-    description: 'Treine o comportamento da sua IA.',
-    icon: Bot,
-    iconColor: 'text-indigo-600',
-    href: '#',
-    locked: true,
-  }
-];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
+import { useEffect, useState } from 'react';
+import { createClient } from '../../../lib/supabase/client';
+import { checkAccess, FEATURE_REQUIREMENTS } from '../../../lib/auth/access-control';
+import { PlanTier } from '../../../lib/supabase/types';
 
 export default function SettingsHubPage() {
+  const [tier, setTier] = useState<PlanTier>('STARTER');
+
+  useEffect(() => {
+    async function getTier() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch from profile or business_config. 
+        // We'll prioritize profiles as it's the standard for user-level tiers.
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('plan_tier')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.plan_tier) {
+          setTier(profile.plan_tier as PlanTier);
+        }
+      }
+    }
+    getTier();
+  }, []);
+
+  const SETTINGS_OPTIONS = [
+    {
+      id: 'perfil',
+      title: 'Perfil do estabelecimento',
+      description: 'Dados básicos, endereço e horário de funcionamento.',
+      icon: User,
+      iconColor: 'text-blue-600',
+      href: '/dashboard/settings/business',
+      locked: false,
+    },
+    {
+      id: 'integracoes',
+      title: 'Integrações',
+      description: 'Conecte seu Google Calendar.',
+      image: '/assets/google-calendar-logo.svg',
+      href: '/dashboard/settings/integrations',
+      locked: false,
+    },
+    {
+      id: 'pagamentos',
+      title: 'Pagamentos',
+      description: 'Configure seu Stripe ou Mercado Pago.',
+      icon: CreditCard,
+      iconColor: 'text-emerald-600',
+      href: '/dashboard/settings/payments',
+      locked: false,
+    },
+    {
+      id: 'whatsapp',
+      title: 'Conexão WhatsApp',
+      description: 'Vincule seu número para o agente.',
+      image: '/assets/whatsapp.svg',
+      href: '#',
+      locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.WHATSAPP_CONNECT).granted,
+    },
+    {
+      id: 'ai',
+      title: 'Inteligência artificial',
+      description: 'Treine o comportamento da sua IA.',
+      icon: Bot,
+      iconColor: 'text-indigo-600',
+      href: '#',
+      locked: !checkAccess('ui', tier, FEATURE_REQUIREMENTS.ELIZA_AGENT).granted,
+    }
+  ];
   return (
     <motion.div 
       variants={containerVariants}
@@ -114,7 +125,7 @@ export default function SettingsHubPage() {
               {option.locked ? (
                 <div className="flex items-center gap-2">
                   <span className="hidden xs:inline-block bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
-                    Plano IA
+                    {option.id === 'ai' ? 'Plano PRO' : 'Restrito'}
                   </span>
                   <Lock size={18} className="text-gray-400" />
                 </div>
@@ -144,3 +155,18 @@ export default function SettingsHubPage() {
     </motion.div>
   );
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};

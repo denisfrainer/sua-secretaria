@@ -4,6 +4,7 @@ import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/se
 import { normalizePhone } from '../../lib/utils/phone';
 import { google } from 'googleapis';
 import http from 'http';
+import { checkAccess, FEATURE_REQUIREMENTS } from '../../lib/auth/access-control';
 
 /**
  * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
@@ -316,12 +317,28 @@ async function processLead(lead: any) {
 
         const { data: configData, error: configError } = await supabaseAdmin
             .from('business_config')
-            .select('id, context_json')
+            .select('id, context_json, plan_tier')
             .eq('instance_name', instanceToUse)
             .single();
 
         let businessContext = "";
         let googleTokens = null;
+        const currentTier = configData?.plan_tier || 'STARTER';
+
+        // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
+        const access = checkAccess(instanceToUse, currentTier, FEATURE_REQUIREMENTS.ELIZA_AGENT);
+        
+        if (!access.granted) {
+            console.warn(`[ELIZA_ABORT] Access denied for ${instanceToUse}. Reason: ${access.error}`);
+            
+            // Revert status to avoid constant polling of an unauthorized lead
+            await supabaseAdmin.from('leads_lobo').update({ 
+                status: 'waiting_reply',
+                needs_human: true 
+            }).eq('id', lead.id);
+
+            return;
+        }
 
         if (configError || !configData) {
             console.error(`❌ [DB ERROR] Falha ao carregar configuração para ${instanceToUse}:`, configError?.message);

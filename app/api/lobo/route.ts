@@ -3,6 +3,8 @@ import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { checkWhatsAppNumber } from '../../../lib/whatsapp/sender';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
 import { normalizePhone } from '../../../lib/utils/phone';
+import { checkAccess, FEATURE_REQUIREMENTS } from '../../../lib/auth/access-control';
+import { PlanTier } from '../../../lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -146,6 +148,25 @@ export async function POST(req: Request) {
 
         for (const lead of leads) {
             if (!lead.phone || !lead.name) continue;
+
+            const instanceName = lead.instance_name || 'agente-lobo';
+            
+            // --- 🛡️ TIER ACCESS CONTROL (L3 GATE) ---
+            const { data: config } = await supabaseAdmin
+                .from('business_config')
+                .select('plan_tier')
+                .eq('instance_name', instanceName)
+                .single();
+                
+            const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
+            const access = checkAccess(instanceName, currentTier, FEATURE_REQUIREMENTS.WOLF_AGENT);
+
+            if (!access.granted) {
+                console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Reason: ${access.error}`);
+                // Move lead back to waiting or mark as unauthorized to avoid infinite skips
+                await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
+                continue;
+            }
 
             const safePhone = normalizePhone(lead.phone);
 

@@ -7,6 +7,8 @@ import { sendWhatsAppMessage } from '../../../lib/whatsapp/sender';
 import { GoogleGenAI } from '@google/genai';
 import { normalizePhone } from '../../../lib/utils/phone';
 import { supabaseAdmin } from '../../../lib/supabase/admin';
+import { checkAccess, FEATURE_REQUIREMENTS } from '../../../lib/auth/access-control';
+import { PlanTier } from '../../../lib/supabase/types';
 import path from 'path';
 import fs from 'fs';
 
@@ -39,13 +41,30 @@ export async function POST(req: Request) {
         // 🛡️ SILICON TWEAK DOUBLE LOCK: Check if AI is paused or needs human before processing audio
         const { data: lead } = await supabaseAdmin
             .from('leads_lobo')
-            .select('ai_paused, needs_human')
+            .select('ai_paused, needs_human, instance_name')
             .eq('phone', clientNumber)
             .maybeSingle();
 
         if (lead && (lead.ai_paused === true || lead.needs_human === true)) {
             console.log(`🛑 [SILICON TWEAK] Eliza silenciada para áudio em background de ${clientNumber} (AI Pausada ou Needs Human).`);
             return NextResponse.json({ status: 'ignored', reason: 'ai_paused_or_needs_human' }, { status: 200 });
+        }
+
+        const instanceName = lead?.instance_name || body.instance || 'agente-lobo';
+
+        // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
+        const { data: config } = await supabaseAdmin
+            .from('business_config')
+            .select('plan_tier')
+            .eq('instance_name', instanceName)
+            .single();
+
+        const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
+        const access = checkAccess(instanceName, currentTier, FEATURE_REQUIREMENTS.ELIZA_AGENT);
+
+        if (!access.granted) {
+            console.warn(`[AUDIO_ABORT] Access denied for ${instanceName}. Reason: ${access.error}`);
+            return NextResponse.json({ error: access.error }, { status: 403 });
         }
 
         const audioMsg = dataObj.message?.audioMessage;
