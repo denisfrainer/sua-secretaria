@@ -4,7 +4,7 @@ import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/se
 import { normalizePhone } from '../../lib/utils/phone';
 import { google } from 'googleapis';
 import http from 'http';
-import { checkAccess, FEATURE_REQUIREMENTS } from '../../lib/auth/access-control';
+import { hasAccess } from '../../lib/auth/access-control';
 
 /**
  * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
@@ -326,10 +326,8 @@ async function processLead(lead: any) {
         const currentTier = configData?.plan_tier || 'STARTER';
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
-        const access = checkAccess(instanceToUse, currentTier, FEATURE_REQUIREMENTS.ELIZA_AGENT);
-        
-        if (!access.granted) {
-            console.warn(`[ELIZA_ABORT] Access denied for ${instanceToUse}. Reason: ${access.error}`);
+        if (!hasAccess(currentTier, 'AI_CONFIGURATION')) {
+            console.warn(`[ELIZA_ABORT] Access denied for ${instanceToUse}. Plan ${currentTier} fails AI check.`);
             
             // Revert status to avoid constant polling of an unauthorized lead
             await supabaseAdmin.from('leads_lobo').update({ 
