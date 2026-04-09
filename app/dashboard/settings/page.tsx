@@ -55,21 +55,19 @@ export default function SettingsHubPage() {
     {
       id: 'integracoes',
       title: 'Integrações',
-      description: 'Conecte seu Google Calendar.',
+      description: 'Google Calendar e Sheets Sync.',
       image: '/assets/google-calendar-logo.svg',
       href: '/dashboard/settings/integrations',
-      locked: !hasAccess(tier, 'GOOGLE_SHEETS_SYNC'),
-      requiredTier: 'STARTER',
+      locked: false, // Gating inside the page for Sheets
     },
     {
       id: 'pagamentos',
       title: 'Pagamentos',
-      description: 'Configure seu Stripe ou Mercado Pago.',
+      description: 'Configure PIX Automático e faturamento.',
       icon: CreditCard,
       iconColor: 'text-emerald-600',
       href: '/dashboard/settings/payments',
-      locked: !hasAccess(tier, 'AUTOMATED_PAYMENTS_PIX'),
-      requiredTier: 'STARTER',
+      locked: false, // Gating inside the page for PIX
     },
     {
       id: 'whatsapp',
@@ -93,10 +91,10 @@ export default function SettingsHubPage() {
     {
       id: 'elite-outbound',
       title: 'Recuperação de Vendas',
-      description: 'Reative clientes inativos automaticamente e encha sua agenda.',
+      description: 'Reative clientes inativos (Wolf Agent).',
       icon: TrendingUp,
       iconColor: 'text-rose-600',
-      href: '/dashboard/settings/agents?tab=outbound', // Wolf Agent tab
+      href: '/dashboard/settings/agents?tab=outbound',
       locked: !hasAccess(tier, 'WOLF_AGENT_OUTBOUND'),
       requiredTier: 'ELITE',
     }

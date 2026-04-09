@@ -45,6 +45,35 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  // Tier-based route protection for Settings
+  if (pathname.startsWith('/dashboard/settings') && user) {
+     const { data: profile } = await supabase
+       .from('profiles')
+       .select('plan_tier')
+       .eq('id', user.id)
+       .maybeSingle();
+     
+     const tier = profile?.plan_tier || 'STARTER';
+
+     // Gate WhatsApp and AI (PRO+)
+     const isProPath = pathname.startsWith('/dashboard/settings/whatsapp') || 
+                      pathname.startsWith('/dashboard/settings/agents');
+     
+     if (isProPath && tier === 'STARTER') {
+       console.log(`🚫 [MIDDLEWARE] Tier mismatch. STARTER user tried to access PRO path: ${pathname}`);
+       return NextResponse.redirect(new URL('/dashboard/settings/payments', request.url));
+     }
+
+     // Gate Wolf Agent (ELITE only)
+     const isElitePath = pathname.startsWith('/dashboard/settings/agents') && 
+                        searchParams.get('tab') === 'outbound';
+     
+     if (isElitePath && tier !== 'ELITE') {
+       console.log(`🚫 [MIDDLEWARE] Tier mismatch. ${tier} user tried to access ELITE path: ${pathname}`);
+       return NextResponse.redirect(new URL('/dashboard/settings/payments', request.url));
+     }
+  }
+
   // Prevent logged users from seeing login/home
   const isLandingOrLogin = pathname === '/' || pathname.startsWith('/login')
   if (isLandingOrLogin && user) {

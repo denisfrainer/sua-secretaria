@@ -7,8 +7,8 @@ export type PlanTier = 'STARTER' | 'PRO' | 'ELITE';
 export const FeatureGates = {
   // Level 1: Core Infrastructure
   SMART_MENU_CONFIG: ['STARTER', 'PRO', 'ELITE'] as PlanTier[],
-  AUTOMATED_PAYMENTS_PIX: ['STARTER', 'PRO', 'ELITE'] as PlanTier[],
-  GOOGLE_SHEETS_SYNC: ['STARTER', 'PRO', 'ELITE'] as PlanTier[],
+  AUTOMATED_PAYMENTS_PIX: ['PRO', 'ELITE'] as PlanTier[],
+  GOOGLE_SHEETS_SYNC: ['PRO', 'ELITE'] as PlanTier[],
   
   // Level 2: Efficiency & Stability (PRO+)
   WHATSAPP_CONNECT: ['PRO', 'ELITE'] as PlanTier[],

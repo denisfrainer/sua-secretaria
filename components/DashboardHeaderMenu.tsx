@@ -13,6 +13,40 @@ export function DashboardHeaderMenu({ email }: { email: string }) {
 
   const initial = email ? email[0].toUpperCase() : 'U';
 
+  const [tier, setTier] = useState<string>('STARTER');
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchTier() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (profileData) {
+          setProfile(profileData);
+          setTier(profileData.plan_tier || 'STARTER');
+        }
+      }
+    }
+    fetchTier();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (profile) {
+      console.log('[MENU_RENDER] Displaying plan tier (Desktop):', {
+        email: profile.email || email,
+        tier: profile.plan_tier,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [profile, email]);
+
+  // Capitalize helper
+  const formatTier = (t: string) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,7 +77,7 @@ export function DashboardHeaderMenu({ email }: { email: string }) {
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-2 border-b border-gray-100 flex flex-col mb-1">
             <span className="text-sm font-semibold truncate text-gray-800">{email}</span>
-            <span className="text-xs text-gray-400">Admin</span>
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Plano {formatTier(tier)}</span>
           </div>
 
           <button 

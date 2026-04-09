@@ -40,7 +40,42 @@ export function MobileDrawerMenu({ email }: { email: string }) {
     { label: 'Configurações', href: '/dashboard/settings', icon: Settings },
   ];
 
+  const [tier, setTier] = useState<string>('STARTER');
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchTier = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile(profileData);
+          setTier(profileData.plan_tier || 'STARTER');
+        }
+      }
+    };
+    fetchTier();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (profile) {
+      console.log('[MENU_RENDER] Displaying plan tier:', {
+        email: profile.email || email,
+        tier: profile.plan_tier,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [profile, email]);
+
   const initial = email ? email[0].toUpperCase() : 'U';
+
+  // Capitalize helper
+  const formatTier = (t: string) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 
   return (
     <>
@@ -103,7 +138,9 @@ export function MobileDrawerMenu({ email }: { email: string }) {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-bold text-gray-900 truncate">{email}</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Admin</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+                Plano {formatTier(tier)}
+              </span>
             </div>
           </div>
           

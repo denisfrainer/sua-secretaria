@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { hasAccess, PlanTier } from '@/lib/auth/access-control';
 
 export default function IntegrationsSettingsPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -69,6 +70,8 @@ export default function IntegrationsSettingsPage() {
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
 
   const isGoogleConnected = !!profile?.google_refresh_token;
+  const tier = (profile?.plan_tier as PlanTier) || 'STARTER';
+  const hasSheetsAccess = hasAccess(tier, 'GOOGLE_SHEETS_SYNC');
 
   return (
     <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -159,11 +162,16 @@ export default function IntegrationsSettingsPage() {
           <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl -z-10 group-hover:bg-blue-500/10 transition-colors duration-700" />
         </div>
 
-        {/* GOOGLE SHEETS CARD (BLOCKED) */}
-        <div className="bg-gray-50/50 rounded-[2.5rem] border border-gray-200 p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden opacity-70 grayscale">
+        {/* GOOGLE SHEETS CARD */}
+        <div className={`
+          rounded-[2.5rem] border p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden transition-all
+          ${hasSheetsAccess 
+            ? 'bg-white border-black/5 shadow-sm group hover:shadow-xl hover:shadow-purple-500/5' 
+            : 'bg-gray-50/50 border-gray-200 opacity-70 grayscale'}
+        `}>
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 z-10 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-32 h-32 flex items-center justify-center">
+              <div className="w-32 h-32 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
                 <img
                   src="/assets/sheets-logo.svg"
                   alt="Google Sheets"
@@ -176,10 +184,12 @@ export default function IntegrationsSettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-black uppercase tracking-widest z-10">
-              <span className="w-2 h-2 bg-purple-500 rounded-full" />
-              Plano IA
-            </div>
+            {!hasSheetsAccess && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-black uppercase tracking-widest z-10">
+                <span className="w-2 h-2 bg-purple-500 rounded-full" />
+                Plano PRO
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-6 z-10 text-center md:text-left">
@@ -189,16 +199,27 @@ export default function IntegrationsSettingsPage() {
           </div>
 
           <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row items-center gap-4 z-10">
-            <button
-              disabled
-              className="w-full md:w-auto h-14 px-8 rounded-2xl bg-gray-100 text-gray-400 font-bold text-base flex items-center justify-center gap-3 cursor-not-allowed"
-            >
-              Indisponível no seu plano
-            </button>
+            {hasSheetsAccess ? (
+              <button
+                className="w-full md:w-auto h-14 px-8 rounded-2xl bg-white border border-black/10 text-gray-900 font-bold text-base flex items-center justify-center gap-4 transition-all hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/10 active:scale-95 shadow-sm"
+              >
+                Configurar Sincronização
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  console.log(`[UPSELL_TRACK] User on ${tier} clicked gated feature: GOOGLE_SHEETS_SYNC`);
+                  router.push('/dashboard/settings/payments');
+                }}
+                className="w-full md:w-auto h-14 px-8 rounded-2xl bg-gray-100 text-gray-400 font-bold text-base flex items-center justify-center gap-3 hover:bg-gray-200 hover:text-gray-600 transition-all"
+              >
+                Indisponível no seu plano
+              </button>
+            )}
           </div>
 
           {/* Decor */}
-          <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl -z-10" />
+          <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl -z-10 group-hover:bg-purple-500/10 transition-colors duration-700" />
         </div>
       </div>
     </div>

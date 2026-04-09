@@ -10,13 +10,25 @@ export default function QuickActions() {
   const router = useRouter();
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        setUserId(data.session.user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserId(session.user.id);
+        
+        // Fetch slug from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('slug')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile?.slug) {
+          setSlug(profile.slug);
+        }
       }
     };
     fetchUser();
@@ -26,7 +38,10 @@ export default function QuickActions() {
     if (!userId) return;
     
     const baseUrl = window.location.origin;
-    const bookingUrl = `${baseUrl}/agendar/${userId}`;
+    // Prefer SLUG link, fallback to legacy UUID/s/ link
+    const bookingUrl = slug 
+      ? `${baseUrl}/s/${slug}` 
+      : `${baseUrl}/s/${userId}`;
     
     try {
       await navigator.clipboard.writeText(bookingUrl);

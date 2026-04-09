@@ -13,11 +13,20 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
+import { StudioInput } from '@/components/dashboard/settings/StudioInput';
+import { Link2, PhoneForwarded, Save } from 'lucide-react';
 
 export default function WhatsAppSettingsPage() {
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [savingBehavior, setSavingBehavior] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // Behavior fields
+  const [handoffNumber, setHandoffNumber] = useState('');
+  const [schedulingLink, setSchedulingLink] = useState('');
+  
   const supabase = createClient();
 
   const fetchStatus = useCallback(async () => {
@@ -29,7 +38,12 @@ export default function WhatsAppSettingsPage() {
         .select('*')
         .eq('owner_id', user.id)
         .maybeSingle();
-      setConfig(data);
+      if (data) {
+        setConfig(data);
+        const info = data.context_json?.business_info;
+        setHandoffNumber(info?.handoff_phone || '');
+        setSchedulingLink(info?.scheduling_link || '');
+      }
     }
     setLoading(false);
   }, [supabase]);
@@ -88,6 +102,36 @@ export default function WhatsAppSettingsPage() {
       console.error('Failed to initialize instance:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveBehavior = async () => {
+    if (!config) return;
+    setSavingBehavior(true);
+    setSaveSuccess(false);
+
+    try {
+      const newContext = {
+        ...config.context_json,
+        business_info: {
+          ...config.context_json.business_info,
+          handoff_phone: handoffNumber,
+          scheduling_link: schedulingLink
+        }
+      };
+
+      const { error } = await supabase
+        .from('business_config')
+        .update({ context_json: newContext })
+        .eq('id', config.id);
+
+      if (error) throw error;
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to save behavior:', err);
+    } finally {
+      setSavingBehavior(false);
     }
   };
 
@@ -230,6 +274,52 @@ export default function WhatsAppSettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Behavior Configuration Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-[2.5rem] border border-black/5 shadow-sm p-8 flex flex-col gap-8 group"
+      >
+        <div className="flex flex-col gap-1">
+          <h3 className="text-lg font-black text-gray-900 tracking-tight">Comportamento do Menu (L1)</h3>
+          <p className="text-sm font-medium text-gray-400">
+            Defina para onde o agente deve direcionar seus clientes no primeiro contato.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StudioInput 
+            label="Link de Agendamento" 
+            placeholder="ex: meatende.ai/s/seustudio"
+            icon={<Link2 size={18} />}
+            value={schedulingLink}
+            onChange={setSchedulingLink}
+          />
+          <StudioInput 
+            label="Número de Transbordo (WhatsApp)" 
+            placeholder="ex: 5511999999999"
+            icon={<PhoneForwarded size={18} />}
+            value={handoffNumber}
+            onChange={setHandoffNumber}
+          />
+        </div>
+
+        <button
+          onClick={handleSaveBehavior}
+          disabled={savingBehavior || !config}
+          className={`
+            h-14 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98]
+            ${saveSuccess 
+              ? 'bg-green-500 text-white' 
+              : 'bg-gray-950 text-white hover:bg-black disabled:opacity-50'}
+          `}
+        >
+          {savingBehavior ? <Loader2 className="animate-spin" size={16} /> : saveSuccess ? <CheckCircle2 size={16} /> : <Save size={16} />}
+          {saveSuccess ? 'Configurações Salvas!' : 'Salvar Alterações de Comportamento'}
+        </button>
+      </motion.div>
     </div>
   );
 }
