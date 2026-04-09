@@ -254,30 +254,31 @@ export default function BusinessSettingsPage() {
 
         if (updateError) throw updateError;
 
-        // 3. Update Slug in Profiles (only if changed)
-        if (slug !== originalSlug) {
-            console.log(`[SLUG_UPDATE] Attempting to update slug:`, {
-                userId: user.id,
-                newSlug: slug,
-                timestamp: new Date().toISOString()
-            });
+      }
 
-            // Clean slug again just in case
-            const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '').trim();
+      // 3. Update Slug in Profiles (only if changed)
+      if (slug && slug !== originalSlug) {
+          console.log(`[SLUG_UPDATE] Attempting to update slug:`, {
+              userId: user.id,
+              newSlug: slug,
+              timestamp: new Date().toISOString()
+          });
 
-            const { error: slugError } = await supabase
-                .from('profiles')
-                .update({ slug: cleanSlug || null })
-                .eq('id', user.id);
-            
-            if (slugError) {
-                if (slugError.code === '23505') {
-                    throw new Error("Este link já está sendo usado por outro profissional.");
-                }
-                throw slugError;
-            }
-            setOriginalSlug(cleanSlug);
-        }
+          // Clean slug again just in case
+          const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '').trim();
+
+          const { error: slugError } = await supabase
+              .from('profiles')
+              .update({ slug: cleanSlug || null })
+              .eq('id', user.id);
+          
+          if (slugError) {
+              if (slugError.code === '23505') {
+                  throw new Error("Este link já está sendo usado por outro profissional.");
+              }
+              throw slugError;
+          }
+          setOriginalSlug(cleanSlug);
       }
 
       setSuccess(true);
@@ -339,7 +340,7 @@ export default function BusinessSettingsPage() {
               <p className="text-[11px] font-bold text-gray-400">
                 Seu link público: <span className="text-blue-600">meatende.ai/s/{slug || 'seu-nome'}</span>
               </p>
-              {slug && (
+              {slug && slug === originalSlug ? (
                 <a 
                   href={`/s/${slug}`} 
                   target="_blank" 
@@ -348,7 +349,11 @@ export default function BusinessSettingsPage() {
                 >
                   Testar Link
                 </a>
-              )}
+              ) : slug ? (
+                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                  Salve para ativar
+                </span>
+              ) : null}
             </div>
           </div>
         </div>

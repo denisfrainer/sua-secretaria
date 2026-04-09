@@ -17,11 +17,20 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
   const decodedSlug = decodeURIComponent(slug);
 
   // 1. Try resolving by SLUG first
-  let { data: profile } = await supabaseAdmin
+  if (!supabaseAdmin) {
+    console.error('[SLUG_RESOLVER] Critical: supabaseAdmin is not configured.');
+    return <div className="p-8 text-center text-red-500 font-bold">Erro: Conexão com o banco de dados falhou. Verifique as chaves administrativas.</div>;
+  }
+
+  let { data: profile, error: slugError } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('slug', decodedSlug)
     .maybeSingle();
+
+  if (slugError) {
+    console.error('[SLUG_RESOLVER] DB Error (Slug):', slugError.message);
+  }
 
   // 2. FALLBACK: Check if slug is a valid UUID (Legacy ID support)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
