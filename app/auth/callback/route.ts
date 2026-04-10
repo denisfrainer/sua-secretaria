@@ -72,8 +72,7 @@ export async function GET(request: Request) {
             updated_at: new Date().toISOString()
           }
         }, { 
-          onConflict: 'owner_id',
-          ignoreDuplicates: true // Only insert if it doesn't exist
+          onConflict: 'owner_id'
         });
 
       // Return NextResponse.redirect to ensure cookies are attached to the browser response.

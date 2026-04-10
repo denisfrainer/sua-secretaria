@@ -40,12 +40,12 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!businessConfig) {
-      console.error(`❌ [${requestId}] Business configuration NOT FOUND for user ID: ${user.id}. Ensure business_config exists with owner_id matching the user ID.`);
+      console.warn(`⚠️ [${requestId}] Business configuration not found for user ID: ${user.id}. Returning isIntegrated: false.`);
       return NextResponse.json({ 
-        error: 'Business configuration not found',
-        userId: user.id,
-        hint: 'Check if business_config table has a record with this owner_id'
-      }, { status: 404 });
+        isIntegrated: false, 
+        appointments: [],
+        message: 'Business configuration not provisioned yet'
+      }, { status: 200 });
     }
 
     const refreshToken = profile?.google_refresh_token || (businessConfig.context_json as any).google_calendar?.refresh_token;

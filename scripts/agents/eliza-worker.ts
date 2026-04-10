@@ -344,6 +344,15 @@ async function processLead(lead: any) {
             businessContext = JSON.stringify({ servicos: [], aviso: "Sistema em manutenção" });
         } else {
             const fullConfig = configData.context_json as any;
+
+            // --- 🚦 TENANT-LEVEL KILL SWITCH ---
+            const isAiEnabled = fullConfig?.is_ai_enabled ?? true;
+            if (!isAiEnabled) {
+                console.warn(`[ELIZA_PAUSED] IA desativada pelo usuário para instância: ${instanceToUse}. Abortando processamento.`);
+                await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
+                return;
+            }
+
             const allServices = fullConfig?.services || [];
             
             // Filter out inactive services for the bot
@@ -671,7 +680,12 @@ http.createServer((req, res) => {
         return;
     }
 
-    if (req.method === 'POST' && req.url === '/webhook') {
+    // 🌐 WEBHOOK ROUTER (Evolution API & Z-API Support)
+    const isPost = req.method === 'POST';
+    const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+    const isWebhookPath = parsedUrl.pathname === '/webhook' || parsedUrl.pathname === '/api/webhook/evolution';
+
+    if (isPost && isWebhookPath) {
         let bodyStr = '';
         req.on('data', chunk => { bodyStr += chunk.toString(); });
 
@@ -685,10 +699,12 @@ http.createServer((req, res) => {
                 const isMessageEvent = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
                 const isConnectionEvent = body.event === 'CONNECTION_UPDATE' || body.event === 'connection.update';
 
-                if (!isMessageEvent && !isConnectionEvent) return;
+                if (!isMessageEvent && !isConnectionEvent) {
+                    console.log(`🔇 [ROUTER] Ignored event: ${body.event}`);
+                    return;
+                }
 
                 const instanceName = body.instance || 'demo-agente';
-                const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
                 const tenantId = parsedUrl.searchParams.get('tenantId');
 
                 console.log(`🚦 [ROUTER] Event: ${body.event} | Instance: ${instanceName} | Tenant: ${tenantId}`);

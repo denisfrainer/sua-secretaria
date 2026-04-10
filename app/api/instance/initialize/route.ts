@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
     try {
@@ -18,6 +19,49 @@ export async function POST(request: Request) {
         if (!instanceName) {
             return NextResponse.json({ error: 'instanceName is required' }, { status: 400 });
         }
+
+        // 1.5 AUTO-PROVISIONING & SYNC: Ensure business_config exists and is synced with the instance_name
+        console.log(`📡 [EVOLUTION] Ensuring business_config for ${tenantId}...`);
+        
+        const { data: existingConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('context_json')
+            .eq('owner_id', tenantId)
+            .maybeSingle();
+
+        const defaultContext = {
+            is_ai_enabled: true,
+            connection_status: 'DISCONNECTED',
+            business_info: { name: '', handoff_phone: '', scheduling_link: '' },
+            operating_hours: {
+                weekdays: { open: "09:00", close: "18:00", is_closed: false },
+                saturday: { open: "09:00", close: "13:00", is_closed: false },
+                sunday: { open: "00:00", close: "00:00", is_closed: true }
+            },
+            services: [],
+            faq: []
+        };
+
+        const { error: upsertError } = await supabaseAdmin
+            .from('business_config')
+            .upsert({
+                owner_id: tenantId,
+                instance_name: instanceName,
+                plan_tier: 'ELITE', // Default to ELITE as requested
+                context_json: existingConfig?.context_json 
+                    ? { ...defaultContext, ...existingConfig.context_json, is_ai_enabled: true } 
+                    : defaultContext,
+                updated_at: new Date().toISOString()
+            }, { 
+                onConflict: 'owner_id' 
+            });
+
+        if (upsertError) {
+            console.error('❌ [EVOLUTION] Failed to sync business_config:', upsertError);
+            return NextResponse.json({ error: 'Failed to provision account configuration' }, { status: 500 });
+        }
+
+        console.log(`✅ [EVOLUTION] business_config synced for ${tenantId} with instance ${instanceName}`);
 
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
