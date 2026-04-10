@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
     try {
-        const { instanceName, tenantId } = await request.json();
+        const { instanceName } = await request.json();
+
+        // 1. Recover the Tenant ID directly from the server-side session
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const tenantId = user?.id;
+
+        if (!tenantId) {
+            console.error('🚫 [EVOLUTION] Unauthorized: No session found for instance initialization.');
+            return NextResponse.json({ error: 'Unauthorized: Session required' }, { status: 401 });
+        }
 
         if (!instanceName) {
             return NextResponse.json({ error: 'instanceName is required' }, { status: 400 });
@@ -10,14 +21,18 @@ export async function POST(request: Request) {
 
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
-        const webhookUrl = process.env.WEBHOOK_URL;
+        const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, ""); // Ensure no trailing slash
 
         if (!baseUrl || !apiKey || !webhookUrl) {
            console.error('🚨 [EVOLUTION] Missing env credentials (EVOLUTION_API_URL, EVOLUTION_API_KEY or WEBHOOK_URL).');
            return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
         }
 
-        console.log(`🚀 [EVOLUTION] Initiating instance creation for: ${instanceName} | Tenant: ${tenantId}`);
+        // 2. Build the exact webhook path required for the Eliza architecture
+        const webhookFullUrl = `${webhookUrl}/api/webhook/evolution?tenantId=${tenantId}`;
+
+        console.log(`🚀 [EVOLUTION] Initiating instance: ${instanceName} | Tenant: ${tenantId}`);
+        console.log(`🔗 [EVOLUTION] Target Webhook: ${webhookFullUrl}`);
 
         // 1. Create the Instance
         const createRes = await fetch(`${baseUrl}/instance/create`, {
@@ -43,8 +58,6 @@ export async function POST(request: Request) {
         console.log(`✅ [EVOLUTION] Instance ${instanceName} created successfully.`);
 
         // 2. Set the Webhook for the Worker
-        const webhookFullUrl = `${webhookUrl}/api/webhook/evolution${tenantId ? `?tenantId=${tenantId}` : ''}`;
-        
         const webhookRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
             method: 'POST',
             headers: {
