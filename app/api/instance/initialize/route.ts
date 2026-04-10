@@ -46,7 +46,13 @@ export async function POST(request: Request) {
 
         if (existingConfig) {
             // UPDATE existing record — preserve user data, sync instance_name
-            const mergedContext = { ...defaultContext, ...existingConfig.context_json, is_ai_enabled: (existingConfig.context_json as any)?.is_ai_enabled ?? true };
+            // CRITICAL: Force connection_status to DISCONNECTED to prevent ghost state
+            const mergedContext = {
+                ...defaultContext,
+                ...existingConfig.context_json,
+                is_ai_enabled: (existingConfig.context_json as any)?.is_ai_enabled ?? true,
+                connection_status: 'DISCONNECTED' // Hard reset — new instance starts fresh
+            };
             const { error } = await supabaseAdmin
                 .from('business_config')
                 .update({

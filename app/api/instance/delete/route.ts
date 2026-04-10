@@ -68,25 +68,28 @@ export async function POST(request: Request) {
             .eq('owner_id', user.id)
             .maybeSingle();
 
-        if (existingConfig) {
-            const cleanedContext = {
-                ...(existingConfig.context_json as object),
-                connection_status: 'DISCONNECTED'
-            };
+        // Build cleaned context — preserve business data, nuke all connection state
+        const currentContext = (existingConfig?.context_json && typeof existingConfig.context_json === 'object')
+            ? existingConfig.context_json
+            : {};
 
-            const { error: updateError } = await supabaseAdmin
-                .from('business_config')
-                .update({
-                    instance_name: null,
-                    context_json: cleanedContext,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('owner_id', user.id);
+        const cleanedContext = {
+            ...currentContext,
+            connection_status: 'DISCONNECTED',
+        };
 
-            if (updateError) {
-                console.error(`${tag} DB update failed:`, updateError);
-                return NextResponse.json({ error: 'Failed to clear database record' }, { status: 500 });
-            }
+        const { error: updateError } = await supabaseAdmin
+            .from('business_config')
+            .update({
+                instance_name: null,
+                context_json: cleanedContext,
+                updated_at: new Date().toISOString()
+            })
+            .eq('owner_id', user.id);
+
+        if (updateError) {
+            console.error(`${tag} DB update failed:`, updateError);
+            return NextResponse.json({ error: 'Failed to clear database record' }, { status: 500 });
         }
 
         console.log(`${tag} ✅ Instance ${instanceName} fully deleted for user ${user.id}`);

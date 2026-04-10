@@ -113,7 +113,8 @@ export default async function DashboardPage() {
 
   // Strict Gating: If user exists but essential registration data is missing, we might still show skeleton
   // However, we at least want a name to show.
-  const isConnected = businessConfig?.context_json?.connection_status === 'CONNECTED';
+  const hasInstance = Boolean(businessConfig?.instance_name);
+  const isConnected = hasInstance && businessConfig?.context_json?.connection_status === 'CONNECTED';
   
   // Safely extract email prefix
   const userEmail = user?.email || '';

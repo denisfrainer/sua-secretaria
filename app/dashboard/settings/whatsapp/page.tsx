@@ -139,8 +139,9 @@ export default function WhatsAppSettingsPage() {
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
 
-  const isConnected = config?.context_json?.connection_status === 'CONNECTED';
   const hasInstance = Boolean(config?.instance_name && config.instance_name.trim().length > 0);
+  // STRICT: Can't be "connected" without an actual instance — prevents ghost state
+  const isConnected = hasInstance && config?.context_json?.connection_status === 'CONNECTED';
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
