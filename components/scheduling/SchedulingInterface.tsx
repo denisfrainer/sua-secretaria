@@ -11,7 +11,9 @@ import {
   MessageCircle,
   CheckCircle2,
   ArrowRight,
-  Loader2
+  Loader2,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { 
   format, 
@@ -54,10 +56,22 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
   
   const services = businessConfig?.context_json?.services || [];
   const activeServices = services.filter((s: any) => s.status === 'active');
-  const mainService = activeServices[0] || { 
+  
+  const [selectedService, setSelectedService] = useState<any>(activeServices[0] || { 
     name: 'Consultoria Especializada', 
     price: 150, 
     duration: 45 
+  });
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+
+  const handleServiceChange = (service: any) => {
+    setSelectedService(service);
+    setIsSelectorOpen(false);
+    console.log('[SCHEDULING_UI] Service changed by user:', { 
+      id: service.id, 
+      name: service.name, 
+      price: service.price 
+    });
   };
 
   const businessName = profile.display_name || profile.full_name || 'Nossa Empresa';
@@ -204,7 +218,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
           time: selectedTime,
           clientName: formData.name,
           clientPhone: formData.phone,
-          serviceName: mainService.name
+          serviceName: selectedService.name
         }),
       });
 
@@ -237,7 +251,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
     start.setHours(hours, minutes, 0);
     
     const end = new Date(start);
-    end.setMinutes(end.getMinutes() + 45);
+    end.setMinutes(end.getMinutes() + (selectedService.duration || 45));
     
     const formatDate = (date: Date) => {
       return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
@@ -268,30 +282,80 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
             </div>
 
             {/* Info Block */}
-            <div className="flex flex-col gap-2 w-full">
-              <h1 className="text-xl font-black text-gray-950 tracking-tight leading-tight">
-                {businessName}
-              </h1>
-              <h2 className="text-lg font-bold text-gray-600">
-                {mainService.name}
-              </h2>
-            </div>
+               {activeServices.length > 1 ? (
+                 <div className="relative w-full">
+                   <button 
+                     type="button"
+                     onClick={() => setIsSelectorOpen(!isSelectorOpen)}
+                     className="w-full text-left group -ml-3 p-3 rounded-2xl hover:bg-white hover:shadow-sm transition-all flex items-center justify-between border border-transparent hover:border-gray-100"
+                   >
+                     <div className="flex flex-col gap-1">
+                       <h2 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
+                         {selectedService.name}
+                       </h2>
+                       <p className="text-xs font-bold text-blue-600/50 uppercase tracking-widest">Toque para trocar</p>
+                     </div>
+                     <ChevronDown className={`text-gray-300 transition-transform duration-300 ${isSelectorOpen ? 'rotate-180' : ''}`} size={20} />
+                   </button>
+
+                   <AnimatePresence>
+                     {isSelectorOpen && (
+                       <motion.div 
+                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                         animate={{ opacity: 1, y: 0, scale: 1 }}
+                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                         className="absolute top-full left-[-12px] w-[calc(100%+24px)] mt-2 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[60] py-2"
+                       >
+                         {activeServices.map((srv: any) => (
+                           <button
+                             key={srv.id}
+                             type="button"
+                             onClick={() => handleServiceChange(srv)}
+                             className={`w-full p-4 text-left flex items-center justify-between hover:bg-blue-50/50 transition-colors group ${selectedService.id === srv.id ? 'bg-blue-50/30' : ''}`}
+                           >
+                             <div className="flex flex-col">
+                               <span className={`font-bold text-sm ${selectedService.id === srv.id ? 'text-blue-600' : 'text-gray-700'}`}>
+                                 {srv.name}
+                               </span>
+                               <span className="text-xs text-gray-400 font-medium">
+                                 {srv.duration} min • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(srv.price)}
+                               </span>
+                             </div>
+                             {selectedService.id === srv.id && (
+                               <Check size={16} className="text-blue-600" />
+                             )}
+                           </button>
+                         ))}
+                       </motion.div>
+                     )}
+                   </AnimatePresence>
+                 </div>
+               ) : (
+                 <div className="flex flex-col gap-2 w-full">
+                   <h1 className="text-xl font-black text-gray-950 tracking-tight leading-tight">
+                     {businessName}
+                   </h1>
+                   <h2 className="text-lg font-bold text-gray-600">
+                     {selectedService.name}
+                   </h2>
+                 </div>
+               )}
  
              {/* Details Tags */}
-             <div className="flex flex-col gap-3 w-full">
-               <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
-                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                   <Clock size={16} />
-                 </div>
-                 <span>{mainService.duration} min</span>
-               </div>
-               <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
-                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                   <CreditCard size={16} />
-                 </div>
-                 <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(mainService.price)}</span>
-               </div>
-             </div>
+              <div className="flex flex-col gap-3 w-full">
+                <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
+                    <Clock size={16} />
+                  </div>
+                  <span>{selectedService.duration} min</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
+                    <CreditCard size={16} />
+                  </div>
+                  <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedService.price)}</span>
+                </div>
+              </div>
 
             {/* Step Indicator (Desktop) */}
             <div className="hidden md:flex flex-col gap-4 mt-8 w-full border-t border-gray-100 pt-8">

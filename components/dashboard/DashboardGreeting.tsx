@@ -31,35 +31,43 @@ export function DashboardGreeting({ userName, isOnline, instanceName }: Dashboar
   }, []);
 
   return (
-    <div className="flex flex-col gap-1">
-      <motion.h1 
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-        className="text-3xl font-bold text-gray-950 tracking-tight"
-      >
-        {greeting || '...'}{userName ? `, ${userName}` : ''}
-      </motion.h1>
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-4">
+        <motion.h1 
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          className="text-3xl font-bold text-gray-950 tracking-tight"
+        >
+          {greeting || '...'}{userName ? `, ${userName}` : ''}
+        </motion.h1>
 
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-        className="flex items-center gap-2 mt-1"
-      >
-        <span className="relative flex h-2.5 w-2.5">
-          {isOnline && (
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+          className="relative flex items-center justify-center translate-y-0.5"
+        >
+          {isOnline ? (
+            <>
+              <div className="absolute w-4 h-4 bg-emerald-400 rounded-full animate-ping opacity-20" />
+              <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse" />
+            </>
+          ) : (
+            <div className="w-4 h-4 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.4)]" />
           )}
-          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
-        </span>
-        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
-          {isOnline ? 'IA Online' : 'IA Offline'}
-        </span>
-        {instanceName && (
-          <span className="text-[10px] text-slate-400 font-medium">[{instanceName}]</span>
-        )}
-      </motion.div>
+        </motion.div>
+      </div>
+
+      {instanceName && (
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] ml-0.5"
+        >
+          IA {isOnline ? 'Active' : 'Standby'} • {instanceName}
+        </motion.p>
+      )}
     </div>
   );
 }
