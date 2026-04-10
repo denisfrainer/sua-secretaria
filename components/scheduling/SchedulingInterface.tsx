@@ -263,6 +263,8 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${summary}&dates=${formatDate(start)}/${formatDate(end)}&details=${details}`;
   };
 
+  console.log('[SCHEDULING_UI] Rendering Profile Header:', { name: businessName, hasAvatar: !!profile.avatar_url });
+
   return (
     <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-gray-100 overflow-hidden flex flex-col md:flex-row">
@@ -285,7 +287,6 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
                 <h1 className="text-xl font-bold text-gray-900 leading-tight">
                   {businessName}
                 </h1>
-                {console.log('[SCHEDULING_UI] Rendering Profile Header:', { name: businessName, hasAvatar: !!profile.avatar_url })}
               </div>
             </div>
 

@@ -205,7 +205,7 @@ export default function CatalogPage() {
           </p>
         </div>
         <button 
-          onClick={() => router.push('/dashboard/settings/business')}
+          onClick={() => router.push('/dashboard/settings/studio')}
           className="px-8 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-black/10"
         >
           Configurar Empresa
