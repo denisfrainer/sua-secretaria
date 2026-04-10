@@ -8,6 +8,7 @@ interface StudioInputProps {
   onChange: (val: string) => void;
   placeholder?: string;
   icon?: React.ReactNode;
+  type?: string;
 }
 
 export function StudioInput({
@@ -15,7 +16,8 @@ export function StudioInput({
   value,
   onChange,
   placeholder,
-  icon
+  icon,
+  type = 'text'
 }: StudioInputProps) {
   return (
     <div className="w-full flex flex-col gap-2 font-source">
@@ -29,6 +31,7 @@ export function StudioInput({
           </div>
         )}
         <input
+          type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
