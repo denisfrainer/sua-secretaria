@@ -130,9 +130,7 @@ export async function POST(request: Request) {
                     base64: false,
                     events: [
                         "MESSAGES_UPSERT",
-                        "CONNECTION_UPDATE",
-                        "messages.upsert",
-                        "connection.update"
+                        "CONNECTION_UPDATE"
                     ]
                 }
             }),
@@ -163,9 +161,7 @@ export async function POST(request: Request) {
                         webhookBase64: false,
                         events: [
                             "MESSAGES_UPSERT",
-                            "CONNECTION_UPDATE",
-                            "messages.upsert",
-                            "connection.update"
+                            "CONNECTION_UPDATE"
                         ]
                     }
                 }),
