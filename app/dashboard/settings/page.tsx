@@ -10,7 +10,8 @@ import {
   Lock,
   Bot,
   CreditCard,
-  TrendingUp
+  TrendingUp,
+  Building2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -47,8 +48,8 @@ export default function SettingsHubPage() {
       id: 'studio',
       title: 'Configurações do Estúdio',
       description: 'Catálogo de serviços, horários e regras da IA.',
-      icon: Bot,
-      iconColor: 'text-indigo-600',
+      icon: Building2,
+      iconColor: 'text-blue-600',
       href: '/dashboard/settings/studio',
       locked: false,
     },
@@ -82,8 +83,8 @@ export default function SettingsHubPage() {
       id: 'ai',
       title: 'Personalidade da IA',
       description: 'Treine o comportamento da sua Eliza.',
-      icon: Sparkles,
-      iconColor: 'text-purple-600',
+      icon: Bot,
+      iconColor: 'text-indigo-600',
       href: '/dashboard/settings/agents',
       locked: !hasAccess(tier, 'AI_CONFIGURATION'),
       requiredTier: 'PRO',
