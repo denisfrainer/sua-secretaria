@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
     try {
-        const { instanceName } = await request.json();
+        const { instanceName, tenantId } = await request.json();
 
         if (!instanceName) {
             return NextResponse.json({ error: 'instanceName is required' }, { status: 400 });
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
            return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
         }
 
-        console.log(`🚀 [EVOLUTION] Initiating instance creation for: ${instanceName}`);
+        console.log(`🚀 [EVOLUTION] Initiating instance creation for: ${instanceName} | Tenant: ${tenantId}`);
 
         // 1. Create the Instance
         const createRes = await fetch(`${baseUrl}/instance/create`, {
@@ -43,6 +43,8 @@ export async function POST(request: Request) {
         console.log(`✅ [EVOLUTION] Instance ${instanceName} created successfully.`);
 
         // 2. Set the Webhook for the Worker
+        const webhookFullUrl = `${webhookUrl}/api/webhook/evolution${tenantId ? `?tenantId=${tenantId}` : ''}`;
+        
         const webhookRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
             method: 'POST',
             headers: {
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
             body: JSON.stringify({
                 webhook: {
                     enabled: true,
-                    url: `${webhookUrl}/webhook`,
+                    url: webhookFullUrl,
                     webhookByEvents: false,
                     webhookBase64: false,
                     events: [

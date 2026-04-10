@@ -228,7 +228,10 @@ export default function BusinessSettingsPage() {
         const initRes = await fetch('/api/instance/initialize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instanceName })
+            body: JSON.stringify({ 
+              instanceName,
+              tenantId: user.id 
+            })
         });
         
         const initData = await initRes.json();
