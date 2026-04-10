@@ -680,7 +680,7 @@ http.createServer((req, res) => {
         return;
     }
 
-    // 🌐 WEBHOOK ROUTER (Evolution API & Z-API Support)
+    // 🌐 WEBHOOK ROUTER (Evolution API v1/v2 & Z-API)
     const isPost = req.method === 'POST';
     const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
     const isWebhookPath = parsedUrl.pathname === '/webhook' || parsedUrl.pathname === '/api/webhook/evolution';
@@ -691,94 +691,130 @@ http.createServer((req, res) => {
 
         req.on('end', async () => {
             try {
-                // 1. Libera a Evolution API na hora (Fim do Timeout)
+                // 1. Immediate 200 — never let Evolution API timeout
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'received' }));
 
                 const body = JSON.parse(bodyStr);
-                const isMessageEvent = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
-                const isConnectionEvent = body.event === 'CONNECTION_UPDATE' || body.event === 'connection.update';
+
+                // 2. BULLETPROOF EVENT NORMALIZATION
+                //    Evolution v1: "MESSAGES_UPSERT", "CONNECTION_UPDATE"
+                //    Evolution v2: "messages.upsert", "connection.update"
+                const rawEvent = String(body.event || '');
+                const eventName = rawEvent.toUpperCase().replace(/\./g, '_');
+
+                const isMessageEvent = eventName === 'MESSAGES_UPSERT';
+                const isConnectionEvent = eventName === 'CONNECTION_UPDATE';
 
                 if (!isMessageEvent && !isConnectionEvent) {
-                    console.log(`🔇 [ROUTER] Ignored event: ${body.event}`);
+                    console.log(`🔇 [ROUTER] Dropped irrelevant event: "${rawEvent}"`);
                     return;
                 }
 
-                const instanceName = body.instance || 'demo-agente';
+                const instanceName = body.instance || body.instanceName || body.data?.instance || 'unknown';
                 const tenantId = parsedUrl.searchParams.get('tenantId');
 
-                console.log(`🚦 [ROUTER] Event: ${body.event} | Instance: ${instanceName} | Tenant: ${tenantId}`);
+                console.log(`🚦 [ROUTER] Event: ${rawEvent} (→${eventName}) | Instance: ${instanceName} | Tenant: ${tenantId}`);
 
-                // --- 🔌 CONNECTION UPDATE HANDLER ---
+                // ================================================================
+                // 🔌 CONNECTION UPDATE HANDLER — fail-fast, then hard return
+                // ================================================================
                 if (isConnectionEvent) {
-                    const state = body.data?.state || body.data?.connection;
-                    console.log(`🔌 [CONNECTION] Raw payload:`, JSON.stringify(body.data));
-                    console.log(`🔌 [CONNECTION] Resolved state: "${state}" for instance: "${instanceName}" | tenantId: "${tenantId}"`);
+                    // DEEP STATE EXTRACTION — cover every known Evolution API shape
+                    const candidates = [
+                        body.data?.state,            // v2 standard
+                        body.data?.connection,        // v1 variant
+                        body.data?.status,            // alternative
+                        body.status,                  // top-level variant
+                        body.data?.instance?.state,   // nested instance object
+                    ];
 
-                    const isOpen = state === 'open' || state === 'CONNECTED';
-                    const isClosed = state === 'close' || state === 'DISCONNECTED';
+                    const rawState = candidates.find(c => typeof c === 'string' && c.length > 0) || 'unknown';
+                    const normalizedState = rawState.toLowerCase().trim();
 
-                    if (isOpen || isClosed) {
-                        const newStatus = isOpen ? 'CONNECTED' : 'DISCONNECTED';
+                    console.log(`🔌 [CONNECTION] Raw data dump:`, JSON.stringify(body.data || body));
+                    console.log(`🔌 [CONNECTION] Extracted state: "${rawState}" → normalized: "${normalizedState}"`);
 
-                        try {
-                            // Strategy: Try to find the config by instance_name first, fallback to tenantId
-                            let matchQuery = supabaseAdmin
-                                .from('business_config')
-                                .select('id, context_json, instance_name, owner_id')
-                                .eq('instance_name', instanceName)
-                                .maybeSingle();
+                    // STATE CLASSIFICATION
+                    const CONNECTED_STATES = ['open', 'connected', 'connecting'];
+                    const DISCONNECTED_STATES = ['close', 'disconnected', 'refused', 'logout'];
 
-                            let { data: config, error: fetchError } = await matchQuery;
+                    const isOpen = CONNECTED_STATES.includes(normalizedState);
+                    const isClosed = DISCONNECTED_STATES.includes(normalizedState);
 
-                            // Fallback: if instance_name match fails but we have a tenantId, use that
-                            if (!config && tenantId) {
-                                console.log(`🔄 [CONNECTION] No match by instance_name, trying tenantId: ${tenantId}`);
-                                const fallback = await supabaseAdmin
-                                    .from('business_config')
-                                    .select('id, context_json, instance_name, owner_id')
-                                    .eq('owner_id', tenantId)
-                                    .maybeSingle();
-                                config = fallback.data;
-                                fetchError = fallback.error;
-                            }
-
-                            if (fetchError) {
-                                console.error(`❌ [CONNECTION] DB fetch error:`, fetchError.message);
-                                return;
-                            }
-
-                            if (!config) {
-                                console.warn(`⚠️ [CONNECTION] No business_config found for instance "${instanceName}" or tenant "${tenantId}". Cannot update status.`);
-                                return;
-                            }
-
-                            // Merge connection_status into context_json (preserving all other data)
-                            const updatedContext = {
-                                ...(config.context_json as object),
-                                connection_status: newStatus
-                            };
-
-                            const { error: updateError } = await supabaseAdmin
-                                .from('business_config')
-                                .update({
-                                    context_json: updatedContext,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', config.id);
-
-                            if (updateError) {
-                                console.error(`❌ [CONNECTION] DB update failed:`, updateError.message);
-                            } else {
-                                console.log(`✅ [CONNECTION] Instance "${instanceName}" (owner: ${config.owner_id}) → ${newStatus}`);
-                            }
-                        } catch (err: any) {
-                            console.error(`❌ [CONNECTION_DB_ERROR] Exception:`, err.message);
-                        }
-                    } else {
-                        console.log(`🔇 [CONNECTION] Unhandled state: "${state}" — ignoring.`);
+                    if (!isOpen && !isClosed) {
+                        console.log(`🔇 [CONNECTION] Unclassified state: "${rawState}" — no DB action taken.`);
+                        return; // HARD RETURN — don't bleed into message processing
                     }
-                    return; // Stop processing for connection events
+
+                    const newStatus = isOpen ? 'CONNECTED' : 'DISCONNECTED';
+                    console.log(`🔌 [CONNECTION] Resolved: "${rawState}" → ${newStatus}`);
+
+                    try {
+                        // DUAL-PATH DB LOOKUP: instance_name first, tenantId fallback
+                        let config: any = null;
+                        let dbError: any = null;
+
+                        // Path A: Match by instance_name
+                        const { data: byInstance, error: errA } = await supabaseAdmin
+                            .from('business_config')
+                            .select('id, context_json, owner_id')
+                            .eq('instance_name', instanceName)
+                            .maybeSingle();
+                        
+                        config = byInstance;
+                        dbError = errA;
+
+                        // Path B: Fallback to tenantId if Path A missed
+                        if (!config && tenantId) {
+                            console.log(`🔄 [CONNECTION] instance_name "${instanceName}" not found. Falling back to tenantId: ${tenantId}`);
+                            const { data: byTenant, error: errB } = await supabaseAdmin
+                                .from('business_config')
+                                .select('id, context_json, owner_id')
+                                .eq('owner_id', tenantId)
+                                .maybeSingle();
+                            config = byTenant;
+                            dbError = errB;
+                        }
+
+                        if (dbError) {
+                            console.error(`❌ [CONNECTION] DB lookup failed:`, dbError.message);
+                            return;
+                        }
+
+                        if (!config) {
+                            console.warn(`⚠️ [CONNECTION] No business_config for instance="${instanceName}" tenant="${tenantId}". Event dropped.`);
+                            return;
+                        }
+
+                        // ATOMIC UPDATE — merge connection_status into context_json
+                        const currentContext = (config.context_json && typeof config.context_json === 'object') 
+                            ? config.context_json 
+                            : {};
+
+                        const updatedContext = {
+                            ...currentContext,
+                            connection_status: newStatus,
+                        };
+
+                        const { error: updateError } = await supabaseAdmin
+                            .from('business_config')
+                            .update({
+                                context_json: updatedContext,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', config.id); // PK targeting — zero cross-tenant risk
+
+                        if (updateError) {
+                            console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
+                        } else {
+                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus}`);
+                        }
+                    } catch (err: any) {
+                        console.error(`💥 [CONNECTION] Unhandled exception:`, err.message, err.stack);
+                    }
+
+                    return; // HARD RETURN — connection events NEVER touch message logic
                 }
 
                 // --- 💬 MESSAGE PROCESSING ---
