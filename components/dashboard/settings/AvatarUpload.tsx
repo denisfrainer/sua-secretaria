@@ -26,7 +26,7 @@ export function AvatarUpload({ userId, currentUrl, onUploadComplete }: AvatarUpl
     setUploading(true);
 
     try {
-      console.log('[PROFILE_UPDATE] Uploading avatar for user:', userId);
+      console.log('[STORAGE_UPLOAD_START] Attempting to upload avatar for user:', userId);
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -40,18 +40,27 @@ export function AvatarUpload({ userId, currentUrl, onUploadComplete }: AvatarUpl
           contentType: file.type 
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('[STORAGE_UPLOAD_ERROR] Supabase returned an error:', {
+          message: uploadError.message,
+          name: uploadError.name,
+          details: uploadError
+        });
+        throw uploadError;
+      }
+
+      console.log('[STORAGE_UPLOAD_SUCCESS] File uploaded successfully:', data?.path);
 
       // 2. Get Public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log('[PROFILE_UPDATE] New avatar URL:', publicUrl);
+      console.log('[STORAGE_UPLOAD_URL_GENERATED] Public URL:', publicUrl);
       
       onUploadComplete(publicUrl);
-    } catch (error: any) {
-      console.error('[PROFILE_UPDATE] Error uploading avatar:', error.message);
+    } catch (err: any) {
+      console.error('[PROFILE_AVATAR_EXCEPTION] Execution halted during upload:', err);
       alert('Erro ao fazer upload da imagem. Verifique as permissões do bucket "avatars".');
     } finally {
       setUploading(false);
