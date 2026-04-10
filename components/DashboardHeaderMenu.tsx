@@ -11,10 +11,10 @@ export function DashboardHeaderMenu({ email }: { email: string }) {
   const router = useRouter();
   const supabase = createClient();
 
-  const initial = profile?.display_name ? profile.display_name[0].toUpperCase() : (email ? email[0].toUpperCase() : 'U');
-
   const [tier, setTier] = useState<string>('STARTER');
   const [profile, setProfile] = useState<any>(null);
+
+  const initial = profile?.display_name ? profile.display_name[0].toUpperCase() : (email ? email[0].toUpperCase() : 'U');
 
   useEffect(() => {
     async function fetchTier() {
