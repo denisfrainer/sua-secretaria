@@ -269,13 +269,13 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
         
         {/* Left Column: Business Info */}
         <div className="w-full md:w-[320px] p-8 md:p-10 bg-gray-50/50 border-r border-gray-100">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left gap-6">
+          <div className="flex flex-col items-start text-left gap-6">
             {/* Business Logo/Avatar */}
-            <div className="w-20 h-20 rounded-[2rem] bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-14 h-14 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt={businessName} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-2xl font-black">
+                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xl md:text-2xl font-black">
                   {businessName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -287,15 +287,14 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
                    <button 
                      type="button"
                      onClick={() => setIsSelectorOpen(!isSelectorOpen)}
-                     className="w-full text-left group -ml-3 p-3 rounded-2xl hover:bg-white hover:shadow-sm transition-all flex items-center justify-between border border-transparent hover:border-gray-100"
+                     className="w-full text-left group p-4 rounded-xl bg-white md:bg-transparent md:p-3 md:-ml-3 md:rounded-2xl hover:bg-white hover:shadow-sm transition-all flex items-center justify-between border border-gray-100 md:border-transparent hover:border-gray-100"
                    >
-                     <div className="flex flex-col gap-1">
-                       <h2 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
+                     <div className="flex flex-col gap-0.5">
+                       <h2 className="text-base md:text-lg font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
                          {selectedService.name}
                        </h2>
-                       <p className="text-xs font-bold text-blue-600/50 uppercase tracking-widest">Toque para trocar</p>
                      </div>
-                     <ChevronDown className={`text-gray-300 transition-transform duration-300 ${isSelectorOpen ? 'rotate-180' : ''}`} size={20} />
+                     <ChevronDown className={`text-gray-300 transition-transform duration-300 ${isSelectorOpen ? 'rotate-180' : ''}`} size={18} />
                    </button>
 
                    <AnimatePresence>
@@ -385,6 +384,8 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
                 exit={{ opacity: 0, x: -20 }}
                 className="flex flex-col h-full"
               >
+                <hr className="md:hidden border-gray-100 my-8 w-full" />
+
                 <h3 className="text-2xl font-black text-gray-950 tracking-tight mb-8">
                   Selecione o melhor horário
                 </h3>
