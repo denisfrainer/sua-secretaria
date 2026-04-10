@@ -20,7 +20,7 @@ export const ElizaRoiCard = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-6 w-full max-w-md">
+    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-6 w-full max-w-md mx-auto my-4">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>

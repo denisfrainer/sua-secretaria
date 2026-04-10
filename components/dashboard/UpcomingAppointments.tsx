@@ -28,6 +28,10 @@ export function UpcomingAppointments({ initialAgenda = [], initialIntegrated = n
   const [isIntegrated, setIsIntegrated] = useState<boolean | null>(initialIntegrated); 
 
   useEffect(() => {
+    console.log('[UPCOMING_APPOINTMENTS] Initial State:', { initialIntegrated, isIntegrated });
+  }, []);
+
+  useEffect(() => {
     async function fetchUpcoming() {
       try {
         const supabase = createClient();
@@ -108,7 +112,7 @@ export function UpcomingAppointments({ initialAgenda = [], initialIntegrated = n
           <p className="text-base font-medium text-gray-600">Conecte o Google Calendar nas configurações</p>
         </div>
         <Link
-          href="/dashboard/settings"
+          href="/dashboard/agenda"
           className="text-base font-bold text-blue-600 hover:underline"
         >
           Configurar agora

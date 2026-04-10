@@ -13,6 +13,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import { cookies } from 'next/headers';
+import { ElizaRoiCard } from '@/components/dashboard/eliza-roi-card';
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -88,11 +89,15 @@ export default async function DashboardPage() {
           .slice(0, 3); // Match the client-side slice of 3
         
         isIntegrated = true;
-        console.log(`[DASHBOARD_FETCH] Agenda fetched and filtered: ${initialAgenda.length} events`);
+        console.log(`[DASHBOARD_FETCH] Agenda fetched: ${initialAgenda.length} events`);
       } catch (gCalError: any) {
         console.warn('[DASHBOARD_FETCH] GCal fetch error:', gCalError.message);
-        isIntegrated = false;
+        // Fallback: If we have a token, consider it integrated but with empty initial agenda
+        // This allows the client-side component to try fetching again.
+        isIntegrated = true;
       }
+    } else {
+        console.log('[DASHBOARD_FETCH] No refresh token found. isIntegrated = false');
     }
   } catch (error) {
     console.warn('⚠️ [DASHBOARD] Fetching error, attempting fallback...', error);
@@ -133,6 +138,9 @@ export default async function DashboardPage() {
 
       {/* Main Action Grid (Motion inside) */}
       <QuickActions />
+
+      {/* ROI Dashboard (Mock) */}
+      <ElizaRoiCard />
 
       {/* System status section (Client Component with Motion) */}
       <SystemStatus isConnected={isConnected} />
