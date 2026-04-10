@@ -46,6 +46,36 @@ export async function GET(request: Request) {
           .eq('id', session.user.id);
       }
 
+      // 🛡️ GUARANTEE BUSINESS CONFIG EXISTS (Onboarding Safety)
+      console.log(`[AUTH_CALLBACK] Ensuring business_config exists for user: ${session.user.id}`);
+      await supabaseAdmin
+        .from('business_config')
+        .upsert({
+          owner_id: session.user.id,
+          plan_tier: 'STARTER',
+          instance_name: `inst-${session.user.id.substring(0, 8)}`,
+          context_json: {
+            business_info: { name: '', address: '', parking: '', handoff_phone: '' },
+            operating_hours: {
+              weekdays: { open: "09:00", close: "18:00", is_closed: false },
+              saturday: { open: "09:00", close: "13:00", is_closed: false },
+              sunday: { open: "00:00", close: "00:00", is_closed: true },
+              observations: ""
+            },
+            services: [],
+            scheduling_rules: [],
+            restrictions: [],
+            tone_of_voice: { base_style: "Amigável e profissional", custom_instructions: "Responda de forma natural." },
+            payment_info: { pix_type: "", pix_key: "", owner_name: "" },
+            booking_policies: { minimum_advance_notice: "2 horas", buffer_time_minutes: "15" },
+            faq: [],
+            updated_at: new Date().toISOString()
+          }
+        }, { 
+          onConflict: 'owner_id',
+          ignoreDuplicates: true // Only insert if it doesn't exist
+        });
+
       // Return NextResponse.redirect to ensure cookies are attached to the browser response.
       return NextResponse.redirect(new URL(next, origin));
     }
