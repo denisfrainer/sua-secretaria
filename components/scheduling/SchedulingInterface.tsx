@@ -269,19 +269,28 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
         
         {/* Left Column: Business Info */}
         <div className="w-full md:w-[320px] p-8 md:p-10 bg-gray-50/50 border-r border-gray-100">
-          <div className="flex flex-col items-start text-left gap-6">
-            {/* Business Logo/Avatar */}
-            <div className="w-14 h-14 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt={businessName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xl md:text-2xl font-black">
-                  {businessName.charAt(0).toUpperCase()}
-                </div>
-              )}
+          <div className="flex flex-col items-start text-left w-full">
+            {/* Standard Profile Header */}
+            <div className="flex flex-row items-center gap-4 mb-8 w-full">
+              <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xl md:text-2xl font-black">
+                    {businessName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                  {businessName}
+                </h1>
+                {console.log('[SCHEDULING_UI] Rendering Profile Header:', { name: businessName, hasAvatar: !!profile.avatar_url })}
+              </div>
             </div>
 
-            {/* Info Block */}
+            {/* Service & Details Block */}
+            <div className="flex flex-col gap-6 w-full">
                {activeServices.length > 1 ? (
                  <div className="relative w-full">
                    <button 
@@ -331,14 +340,12 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
                  </div>
                ) : (
                  <div className="flex flex-col gap-2 w-full">
-                   <h1 className="text-xl font-black text-gray-950 tracking-tight leading-tight">
-                     {businessName}
-                   </h1>
                    <h2 className="text-lg font-bold text-gray-600">
                      {selectedService.name}
                    </h2>
                  </div>
                )}
+            </div>
  
              {/* Details Tags */}
               <div className="flex flex-col gap-3 w-full">
