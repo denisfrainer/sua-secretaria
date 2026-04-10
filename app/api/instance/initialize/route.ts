@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         
         const { data: existingConfig } = await supabaseAdmin
             .from('business_config')
-            .select('context_json')
+            .select('id, context_json')
             .eq('owner_id', tenantId)
             .maybeSingle();
 
@@ -42,22 +42,37 @@ export async function POST(request: Request) {
             faq: []
         };
 
-        const { error: upsertError } = await supabaseAdmin
-            .from('business_config')
-            .upsert({
-                owner_id: tenantId,
-                instance_name: instanceName,
-                plan_tier: 'ELITE', // Default to ELITE as requested
-                context_json: existingConfig?.context_json 
-                    ? { ...defaultContext, ...existingConfig.context_json, is_ai_enabled: true } 
-                    : defaultContext,
-                updated_at: new Date().toISOString()
-            }, { 
-                onConflict: 'owner_id' 
-            });
+        let provisionError: any = null;
 
-        if (upsertError) {
-            console.error('❌ [EVOLUTION] Failed to sync business_config:', upsertError);
+        if (existingConfig) {
+            // UPDATE existing record — preserve user data, sync instance_name
+            const mergedContext = { ...defaultContext, ...existingConfig.context_json, is_ai_enabled: (existingConfig.context_json as any)?.is_ai_enabled ?? true };
+            const { error } = await supabaseAdmin
+                .from('business_config')
+                .update({
+                    instance_name: instanceName,
+                    plan_tier: 'ELITE',
+                    context_json: mergedContext,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('owner_id', tenantId);
+            provisionError = error;
+        } else {
+            // INSERT new record for first-time users
+            const { error } = await supabaseAdmin
+                .from('business_config')
+                .insert({
+                    owner_id: tenantId,
+                    instance_name: instanceName,
+                    plan_tier: 'ELITE',
+                    context_json: defaultContext,
+                    updated_at: new Date().toISOString()
+                });
+            provisionError = error;
+        }
+
+        if (provisionError) {
+            console.error('❌ [EVOLUTION] Failed to sync business_config:', provisionError);
             return NextResponse.json({ error: 'Failed to provision account configuration' }, { status: 500 });
         }
 

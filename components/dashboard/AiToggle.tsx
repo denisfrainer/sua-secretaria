@@ -32,7 +32,7 @@ export function AiToggle() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/dashboard/ai-toggle', {
+      const res = await fetch('/api/dashboard/system-toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: newState }),
