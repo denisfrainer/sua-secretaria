@@ -11,7 +11,7 @@ export function DashboardHeaderMenu({ email }: { email: string }) {
   const router = useRouter();
   const supabase = createClient();
 
-  const initial = email ? email[0].toUpperCase() : 'U';
+  const initial = profile?.display_name ? profile.display_name[0].toUpperCase() : (email ? email[0].toUpperCase() : 'U');
 
   const [tier, setTier] = useState<string>('STARTER');
   const [profile, setProfile] = useState<any>(null);
@@ -68,21 +68,31 @@ export function DashboardHeaderMenu({ email }: { email: string }) {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold shadow-sm hover:shadow-md transition-all active:scale-95"
+        className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 border border-white/20 text-white flex items-center justify-center font-bold shadow-sm hover:shadow-md transition-all active:scale-95 overflow-hidden"
       >
-        {initial}
+        {profile?.avatar_url ? (
+          <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+        ) : initial}
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="px-4 py-2 border-b border-gray-100 flex flex-col mb-1">
-            <span className="text-sm font-semibold truncate text-gray-800">{email}</span>
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Plano {formatTier(tier)}</span>
+          <div className="px-4 py-2 border-b border-gray-100 flex flex-col mb-1 max-w-[220px]">
+            <span className="text-sm font-bold truncate text-gray-900 leading-tight">
+              {profile?.display_name || 'Usuário'}
+            </span>
+            <span className="text-xs text-gray-400 truncate mb-1">{email}</span>
+            <span className="text-[10px] text-blue-600 font-black uppercase tracking-widest">
+              Plano {formatTier(tier)}
+            </span>
           </div>
 
           <button 
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+              router.push('/dashboard/settings/profile');
+            }}
           >
             <User size={16} className="text-gray-400" />
             Minha Conta

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, X, LayoutDashboard, Settings, LogOut, History } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Settings, LogOut, History, User } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
@@ -37,6 +37,7 @@ export function MobileDrawerMenu({ email }: { email: string }) {
 
   const navLinks = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Perfil', href: '/dashboard/settings/profile', icon: User },
     { label: 'Configurações', href: '/dashboard/settings', icon: Settings },
   ];
 
@@ -72,7 +73,7 @@ export function MobileDrawerMenu({ email }: { email: string }) {
     }
   }, [profile, email]);
 
-  const initial = email ? email[0].toUpperCase() : 'U';
+  const initial = profile?.display_name ? profile.display_name[0].toUpperCase() : (email ? email[0].toUpperCase() : 'U');
 
   // Capitalize helper
   const formatTier = (t: string) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
@@ -133,11 +134,15 @@ export function MobileDrawerMenu({ email }: { email: string }) {
         {/* STICKY FOOTER (User Info & Logout) */}
         <div className="border-t border-black/5 p-6 bg-gray-50/50 shrink-0">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
-              {initial}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 border border-white/20 text-white flex items-center justify-center font-bold shadow-sm shrink-0 overflow-hidden">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : initial}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-gray-900 truncate">{email}</span>
+              <span className="text-sm font-bold text-gray-900 truncate">
+                {profile?.display_name || 'Usuário'}
+              </span>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
                 Plano {formatTier(tier)}
               </span>

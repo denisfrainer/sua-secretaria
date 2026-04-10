@@ -46,17 +46,18 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
     profile = profileById;
   }
 
-  // 3. Final Check
-  if (!profile) {
-    console.warn(`[SLUG_RESOLVER] No profile found for slug/id: ${decodedSlug}`);
-    notFound();
-  }
+  // 3. Fetch Business Config
+  const { data: businessConfig } = await supabaseAdmin
+    .from('business_config')
+    .select('*')
+    .eq('owner_id', profile.id)
+    .maybeSingle();
 
-  console.log(`[SLUG_RESOLVER] Resolved profile for: ${decodedSlug} -> ${profile.full_name}`);
+  console.log(`[SLUG_RESOLVER] Resolved profile for: ${decodedSlug} -> ${profile.display_name || profile.full_name}`);
 
   return (
     <div className="min-h-screen bg-gray-50/50 flex flex-col items-center justify-center p-4 md:p-8">
-      <SchedulingInterface profile={profile} />
+      <SchedulingInterface profile={profile} businessConfig={businessConfig} />
     </div>
   );
 }

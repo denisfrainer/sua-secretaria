@@ -8,7 +8,8 @@ import {
   MessageSquare, 
   Sparkles, 
   Share2, 
-  ArrowLeft 
+  ArrowLeft,
+  User
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -20,7 +21,8 @@ export default function SettingsLayout({
   const pathname = usePathname();
 
   const navigation = [
-    { name: 'Perfil', href: '/dashboard/settings/business', icon: Building2 },
+    { name: 'Perfil', href: '/dashboard/settings/profile', icon: User },
+    { name: 'Estúdio', href: '/dashboard/settings/studio', icon: Building2 },
     { name: 'WhatsApp', href: '/dashboard/settings/whatsapp', icon: MessageSquare },
     { name: 'IA Eliza', href: '/dashboard/settings/agents', icon: Sparkles },
     { name: 'Integrações', href: '/dashboard/settings/integrations', icon: Share2 },

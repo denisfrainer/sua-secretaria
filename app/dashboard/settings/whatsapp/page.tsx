@@ -115,7 +115,7 @@ export default function WhatsAppSettingsPage() {
       const newContext = {
         ...config.context_json,
         business_info: {
-          ...config.context_json.business_info,
+          ...(config.context_json?.business_info || {}),
           handoff_phone: handoffNumber,
           scheduling_link: schedulingLink
         }

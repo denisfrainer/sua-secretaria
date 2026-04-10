@@ -5,9 +5,11 @@ import { motion } from 'framer-motion';
 
 interface DashboardGreetingProps {
   userName: string;
+  isOnline?: boolean;
+  instanceName?: string;
 }
 
-export function DashboardGreeting({ userName }: DashboardGreetingProps) {
+export function DashboardGreeting({ userName, isOnline, instanceName }: DashboardGreetingProps) {
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
@@ -38,6 +40,26 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
       >
         {greeting || '...'}{userName ? `, ${userName}` : ''}
       </motion.h1>
+
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="flex items-center gap-2 mt-1"
+      >
+        <span className="relative flex h-2.5 w-2.5">
+          {isOnline && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          )}
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+        </span>
+        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          {isOnline ? 'IA Online' : 'IA Offline'}
+        </span>
+        {instanceName && (
+          <span className="text-[10px] text-slate-400 font-medium">[{instanceName}]</span>
+        )}
+      </motion.div>
     </div>
   );
 }

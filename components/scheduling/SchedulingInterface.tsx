@@ -33,11 +33,12 @@ import { useEffect } from 'react';
 
 interface SchedulingInterfaceProps {
   profile: any;
+  businessConfig?: any;
 }
 
 type BookingStep = 'calendar' | 'time' | 'form' | 'success';
 
-export default function SchedulingInterface({ profile }: SchedulingInterfaceProps) {
+export default function SchedulingInterface({ profile, businessConfig }: SchedulingInterfaceProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -50,8 +51,16 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
     name: '',
     phone: ''
   });
+  
+  const services = businessConfig?.context_json?.services || [];
+  const activeServices = services.filter((s: any) => s.status === 'active');
+  const mainService = activeServices[0] || { 
+    name: 'Consultoria Especializada', 
+    price: 150, 
+    duration: 45 
+  };
 
-  const businessName = profile.business_name || profile.full_name || 'Nossa Empresa';
+  const businessName = profile.display_name || profile.full_name || 'Nossa Empresa';
 
   // Fetch Available Slots
   useEffect(() => {
@@ -195,7 +204,7 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
           time: selectedTime,
           clientName: formData.name,
           clientPhone: formData.phone,
-          serviceName: 'Consultoria Especializada' // Match mock
+          serviceName: mainService.name
         }),
       });
 
@@ -259,30 +268,30 @@ export default function SchedulingInterface({ profile }: SchedulingInterfaceProp
             </div>
 
             {/* Info Block */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full">
               <h1 className="text-xl font-black text-gray-950 tracking-tight leading-tight">
                 {businessName}
               </h1>
               <h2 className="text-lg font-bold text-gray-600">
-                Consultoria especializada
+                {mainService.name}
               </h2>
             </div>
-
-            {/* Details Tags */}
-            <div className="flex flex-col gap-3 w-full">
-              <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
-                <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                  <Clock size={16} />
-                </div>
-                <span>45 min</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
-                <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                  <CreditCard size={16} />
-                </div>
-                <span>R$ 150,00</span>
-              </div>
-            </div>
+ 
+             {/* Details Tags */}
+             <div className="flex flex-col gap-3 w-full">
+               <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
+                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
+                   <Clock size={16} />
+                 </div>
+                 <span>{mainService.duration} min</span>
+               </div>
+               <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
+                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
+                   <CreditCard size={16} />
+                 </div>
+                 <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(mainService.price)}</span>
+               </div>
+             </div>
 
             {/* Step Indicator (Desktop) */}
             <div className="hidden md:flex flex-col gap-4 mt-8 w-full border-t border-gray-100 pt-8">

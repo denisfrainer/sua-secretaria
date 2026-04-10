@@ -78,7 +78,7 @@ export default function CatalogPage() {
 
       if (data) {
         // Ensure services have IDs and proper types
-        const normalizedServices = (data.context_json.services || []).map((s: any) => ({
+        const normalizedServices = (data.context_json?.services || []).map((s: any) => ({
           id: s.id || crypto.randomUUID(),
           name: s.name || '',
           description: s.description || '',
@@ -90,7 +90,7 @@ export default function CatalogPage() {
         setConfig({
           ...data,
           context_json: {
-            ...data.context_json,
+            ...(data.context_json || {}),
             services: normalizedServices
           }
         });
@@ -105,7 +105,7 @@ export default function CatalogPage() {
     setSaving(true);
 
     try {
-      let newServices = [...(config.context_json.services || [])];
+      let newServices = [...(config.context_json?.services || [])];
       
       if (editingService) {
         // Update existing
@@ -234,7 +234,7 @@ export default function CatalogPage() {
           <div className="flex items-center gap-2 px-4 py-2 bg-white shadow-sm border border-black/5 rounded-2xl">
             <LayoutGrid size={14} className="text-blue-600" />
             <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
-              {config.context_json.services.length} Serviços
+              {config.context_json?.services?.length || 0} Serviços
             </span>
           </div>
         </div>

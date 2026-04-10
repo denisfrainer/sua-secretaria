@@ -9,7 +9,7 @@ import {
   Building2, Clock, 
   CheckCircle2, AlertTriangle, Loader2,
   MapPin, ParkingCircle, Smile, Wallet, ShieldAlert,
-  MessageCircleQuestion
+  MessageCircleQuestion, Link2
 } from 'lucide-react';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 import { OperatingHoursRow } from '@/components/dashboard/settings/OperatingHoursRow';
@@ -159,7 +159,7 @@ export default function BusinessSettingsPage() {
       ...config,
       context_json: {
         ...config.context_json,
-        business_info: { ...config.context_json.business_info, [field]: value }
+        business_info: { ...(config.context_json?.business_info || {}), [field]: value }
       }
     });
   };
@@ -171,8 +171,8 @@ export default function BusinessSettingsPage() {
       context_json: {
         ...config.context_json,
         operating_hours: {
-          ...config.context_json.operating_hours,
-          [day]: { ...(config.context_json.operating_hours[day]), [field]: value }
+          ...(config.context_json?.operating_hours || {}),
+          [day]: { ...(config.context_json?.operating_hours?.[day] || {}), [field]: value }
         }
       }
     });
@@ -180,11 +180,11 @@ export default function BusinessSettingsPage() {
 
   const updateFaq = (index: number, field: keyof FAQItem, value: string) => {
     if (!config) return;
-    const newFaq = [...(config.context_json.faq || [])];
-    newFaq[index] = { ...newFaq[index], [field]: value };
+    const newFaq = [...(config.context_json?.faq || [])];
+    newFaq[index] = { ...(newFaq[index] || {}), [field]: value } as any;
     setConfig({
       ...config,
-      context_json: { ...config.context_json, faq: newFaq }
+      context_json: { ...(config.context_json || {}), faq: newFaq } as any
     });
   };
 
@@ -198,7 +198,7 @@ export default function BusinessSettingsPage() {
     if (e) e.preventDefault();
     if (!config) return;
 
-    if (!config.context_json.business_info.name.trim()) {
+    if (!config?.context_json?.business_info?.name?.trim()) {
       setError("O nome da empresa é obrigatório para começar.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -216,7 +216,8 @@ export default function BusinessSettingsPage() {
       // 1. If ID is 0, this is a NEW business -> Initial Setup Flow
       if (config.id === 0) {
         console.log('🚀 [SETUP] Initializing new business config...');
-        const instanceName = generateInstanceName(config.context_json.business_info.name);
+        const businessName = config?.context_json?.business_info?.name || 'Minha Empresa';
+        const instanceName = generateInstanceName(businessName);
 
         // a. Initialize instance via Evolution wrapper
         const initRes = await fetch('/api/instance/initialize', {
@@ -281,6 +282,18 @@ export default function BusinessSettingsPage() {
           setOriginalSlug(cleanSlug);
       }
 
+      // 4. Update Profile Display Name & Avatar
+      if (userId) {
+          console.log('[PROFILE_UPDATE] Persisting profile data:', { displayName, avatarUrl });
+          await supabase
+              .from('profiles')
+              .update({ 
+                  display_name: displayName,
+                  avatar_url: avatarUrl 
+              })
+              .eq('id', userId);
+      }
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       router.refresh();
@@ -312,19 +325,19 @@ export default function BusinessSettingsPage() {
         <div className="grid grid-cols-1 gap-5">
           <StudioInput 
             label="Nome do Estabelecimento" 
-            value={config?.context_json.business_info.name || ''} 
+            value={config?.context_json?.business_info?.name || ''} 
             onChange={(val) => updateBusinessInfo('name', val)}
             icon={<Building2 size={16} />}
           />
           <StudioInput 
             label="Endereço" 
-            value={config?.context_json.business_info.address || ''} 
+            value={config?.context_json?.business_info?.address || ''} 
             onChange={(val) => updateBusinessInfo('address', val)}
             icon={<MapPin size={16} />}
           />
           <StudioInput 
             label="Acesso / Estacionamento" 
-            value={config?.context_json.business_info.parking || ''} 
+            value={config?.context_json?.business_info?.parking || ''} 
             onChange={(val) => updateBusinessInfo('parking', val)}
             icon={<ParkingCircle size={16} />}
           />
@@ -366,9 +379,9 @@ export default function BusinessSettingsPage() {
           <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Horário de Funcionamento</h2>
         </div>
         <div className="grid grid-cols-1 gap-4">
-          <OperatingHoursRow label="Segunda a Sexta" data={config?.context_json.operating_hours.weekdays} onChange={(f, v) => updateOperatingHours('weekdays', f, v)} />
-          <OperatingHoursRow label="Sábados" data={config?.context_json.operating_hours.saturday} onChange={(f, v) => updateOperatingHours('saturday', f, v)} />
-          <OperatingHoursRow label="Domingos" data={config?.context_json.operating_hours.sunday} onChange={(f, v) => updateOperatingHours('sunday', f, v)} />
+          <OperatingHoursRow label="Segunda a Sexta" data={config?.context_json?.operating_hours?.weekdays} onChange={(f, v) => updateOperatingHours('weekdays', f, v)} />
+          <OperatingHoursRow label="Sábados" data={config?.context_json?.operating_hours?.saturday} onChange={(f, v) => updateOperatingHours('saturday', f, v)} />
+          <OperatingHoursRow label="Domingos" data={config?.context_json?.operating_hours?.sunday} onChange={(f, v) => updateOperatingHours('sunday', f, v)} />
         </div>
       </motion.section>
 

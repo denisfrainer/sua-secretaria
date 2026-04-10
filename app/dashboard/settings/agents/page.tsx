@@ -51,8 +51,8 @@ export default function AgentsSettingsPage() {
     setConfig({
       ...config,
       context_json: {
-        ...config.context_json,
-        tone_of_voice: { ...config.context_json.tone_of_voice, [field]: value }
+        ...(config.context_json || {}),
+        tone_of_voice: { ...(config.context_json?.tone_of_voice || {}), [field]: value }
       }
     });
   };
@@ -62,7 +62,7 @@ export default function AgentsSettingsPage() {
     const lines = value.split('\n');
     setConfig({
       ...config,
-      context_json: { ...config.context_json, scheduling_rules: lines }
+      context_json: { ...(config.context_json || {}), scheduling_rules: lines }
     });
   };
 
@@ -117,7 +117,7 @@ export default function AgentsSettingsPage() {
           <div className="space-y-6">
             <StudioInput 
               label="Estilo Base de Atendimento" 
-              value={config?.context_json.tone_of_voice?.base_style || ''} 
+              value={config?.context_json?.tone_of_voice?.base_style || ''} 
               onChange={(val) => updateToneOfVoice('base_style', val)}
               placeholder="Ex: Profissional e amigável, Luxo e formal, etc."
             />
@@ -125,7 +125,7 @@ export default function AgentsSettingsPage() {
             <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
               <AutoResizeTextarea 
                 label="Instruções Dinâmicas"
-                value={config?.context_json.tone_of_voice?.custom_instructions || ''} 
+                value={config?.context_json?.tone_of_voice?.custom_instructions || ''} 
                 onChange={(val) => updateToneOfVoice('custom_instructions', val)}
                 placeholder="Ex: Use emojis de brilho ✨. Chame de 'flor'. Evite usar gírias muito pesadas."
                 className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
@@ -144,7 +144,7 @@ export default function AgentsSettingsPage() {
           <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
             <AutoResizeTextarea 
               label="Regras de Agendamento"
-              value={config?.context_json.scheduling_rules.join('\n') || ''} 
+              value={config?.context_json?.scheduling_rules?.join('\n') || ''} 
               onChange={updateRules}
               placeholder="Ex: Cancelamento com 1h de antecedência. Não aceitamos menores sem autorização."
               className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"

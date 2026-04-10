@@ -34,7 +34,8 @@ export type Database = {
           full_name: string;
           plan_tier: PlanTier;
           slug: string | null;
-          // Add other fields
+          display_name: string | null;
+          avatar_url: string | null;
         };
       };
       // ... more tables

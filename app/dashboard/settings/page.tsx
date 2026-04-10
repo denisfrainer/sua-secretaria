@@ -44,21 +44,21 @@ export default function SettingsHubPage() {
 
   const SETTINGS_OPTIONS = [
     {
-      id: 'perfil',
-      title: 'Perfil do estabelecimento',
-      description: 'Dados básicos, endereço e horário de funcionamento.',
-      icon: User,
-      iconColor: 'text-blue-600',
-      href: '/dashboard/settings/business',
+      id: 'studio',
+      title: 'Configurações do Estúdio',
+      description: 'Catálogo de serviços, horários e regras da IA.',
+      icon: Bot,
+      iconColor: 'text-indigo-600',
+      href: '/dashboard/settings/studio',
       locked: false,
     },
     {
       id: 'integracoes',
       title: 'Integrações',
-      description: 'Google Calendar e Sheets Sync.',
+      description: 'Conecte Google Calendar e Sheets.',
       image: '/assets/google-calendar-logo.svg',
       href: '/dashboard/settings/integrations',
-      locked: false, // Gating inside the page for Sheets
+      locked: false,
     },
     {
       id: 'pagamentos',
@@ -67,7 +67,7 @@ export default function SettingsHubPage() {
       icon: CreditCard,
       iconColor: 'text-emerald-600',
       href: '/dashboard/settings/payments',
-      locked: false, // Gating inside the page for PIX
+      locked: false,
     },
     {
       id: 'whatsapp',
@@ -80,10 +80,10 @@ export default function SettingsHubPage() {
     },
     {
       id: 'ai',
-      title: 'Inteligência artificial',
-      description: 'Treine o comportamento da sua IA.',
-      icon: Bot,
-      iconColor: 'text-indigo-600',
+      title: 'Personalidade da IA',
+      description: 'Treine o comportamento da sua Eliza.',
+      icon: Sparkles,
+      iconColor: 'text-purple-600',
       href: '/dashboard/settings/agents',
       locked: !hasAccess(tier, 'AI_CONFIGURATION'),
       requiredTier: 'PRO',
@@ -99,6 +99,7 @@ export default function SettingsHubPage() {
       requiredTier: 'ELITE',
     }
   ];
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -106,6 +107,19 @@ export default function SettingsHubPage() {
       animate="visible"
       className="flex flex-col gap-3"
     >
+      <Link href="/dashboard/settings/profile">
+        <div className="group relative flex items-center gap-4 p-5 rounded-3xl border border-gray-200 bg-white hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm transition-all mb-4">
+          <div className="w-12 h-12 flex items-center justify-center shrink-0">
+            <User size={32} className="text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">Perfil de Usuário</h3>
+            <p className="text-base font-medium text-gray-500 mt-0.5">Sua identidade, foto e troca de senha.</p>
+          </div>
+          <ChevronRight size={20} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+        </div>
+      </Link>
+
       {SETTINGS_OPTIONS.map((option) => {
         // Funnel Logic: If locked, everything redirects to payments/billing
         const destination = option.locked ? '/dashboard/settings/payments' : option.href;
