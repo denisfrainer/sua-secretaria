@@ -282,17 +282,6 @@ export default function BusinessSettingsPage() {
           setOriginalSlug(cleanSlug);
       }
 
-      // 4. Update Profile Display Name & Avatar
-      if (userId) {
-          console.log('[PROFILE_UPDATE] Persisting profile data:', { displayName, avatarUrl });
-          await supabase
-              .from('profiles')
-              .update({ 
-                  display_name: displayName,
-                  avatar_url: avatarUrl 
-              })
-              .eq('id', userId);
-      }
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
