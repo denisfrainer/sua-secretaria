@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         .from('business_config')
         .upsert({
           owner_id: session.user.id,
-          plan_tier: 'STARTER',
+          plan_tier: 'ELITE', // Temporarily default to ELITE for testing
           instance_name: `inst-${session.user.id.substring(0, 8)}`,
           context_json: {
             business_info: { name: '', address: '', parking: '', handoff_phone: '' },

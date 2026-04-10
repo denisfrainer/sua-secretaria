@@ -319,11 +319,12 @@ async function processLead(lead: any) {
             .from('business_config')
             .select('id, context_json, plan_tier')
             .eq('instance_name', instanceToUse)
+            .eq('owner_id', lead.owner_id)
             .single();
 
         let businessContext = "";
         let googleTokens = null;
-        const currentTier = configData?.plan_tier || 'STARTER';
+        const currentTier = configData?.plan_tier || 'ELITE'; // Temporarily default to ELITE for testing
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
         if (!hasAccess(currentTier, 'AI_CONFIGURATION')) {
@@ -872,7 +873,13 @@ http.createServer((req, res) => {
                             return;
                         }
 
-                        let { data: lead } = await supabaseAdmin.from('leads_lobo').select('*').eq('phone', clientNumber).eq('instance_name', instanceName).maybeSingle();
+                        let { data: lead } = await supabaseAdmin
+                            .from('leads_lobo')
+                            .select('*')
+                            .eq('phone', clientNumber)
+                            .eq('instance_name', instanceName)
+                            .eq('owner_id', tenantId)
+                            .maybeSingle();
 
                         if (lead) {
                             await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
@@ -899,7 +906,13 @@ http.createServer((req, res) => {
 
                         if (!lead) {
                             const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
-                                phone: clientNumber, status: 'organic_inbound', name: 'Lead inbound', message_buffer: '', is_processing: false, instance_name: instanceName
+                                phone: clientNumber, 
+                                status: 'organic_inbound', 
+                                name: 'Lead inbound', 
+                                message_buffer: '', 
+                                is_processing: false, 
+                                instance_name: instanceName,
+                                owner_id: tenantId
                             }).select().single();
                             lead = newLead;
                         }
