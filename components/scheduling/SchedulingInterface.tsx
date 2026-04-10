@@ -172,9 +172,9 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
               setStep('calendar'); // Just ensure we are on calendar step to show times
             }}
             className={`
-              relative h-12 flex items-center justify-center text-sm font-semibold transition-all rounded-full
+              relative w-10 h-10 mx-auto flex items-center justify-center text-sm font-semibold transition-all rounded-full aspect-square
               ${isDisabled ? 'text-gray-200 cursor-default' : 'hover:bg-blue-50 hover:text-blue-600 cursor-pointer'}
-              ${isSelected ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white shadow-lg shadow-blue-200' : 'text-gray-700'}
+              ${isSelected ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white shadow-xl shadow-blue-500/20 scale-110' : 'text-gray-700'}
             `}
           >
             {formattedDate}

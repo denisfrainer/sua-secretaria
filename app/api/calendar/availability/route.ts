@@ -32,9 +32,12 @@ export async function GET(req: NextRequest) {
 
   const today = startOfDay(new Date());
   const isToday = isSameDay(requestedDate, today);
-  const now = new Date();
+  
+  // Timezone hack for Brazil (GMT-3). 
+  // Standardizing 'now' to match the user's Brazil context even if server is UTC.
+  const now = new Date(new Date().getTime() - (3 * 60 * 60 * 1000)); 
 
-  console.log(`[API_AVAILABILITY] Fetching for profile: [${profileId}] on date: [${dateStr}] | Duration: ${duration}min | isToday: ${isToday}`);
+  console.log(`[API_AVAILABILITY] Fetching profile: [${profileId}] | Date: [${dateStr}] | isToday: ${isToday} | ServerTime: ${new Date().toISOString()} | BR_Time: ${now.toISOString()}`);
 
   try {
     // 1. Fetch profile and business configuration
@@ -73,11 +76,19 @@ export async function GET(req: NextRequest) {
       hours = operatingHours?.weekdays;
     }
 
-    if (!hours || hours.is_closed) {
+    // Failsafe: Default Working Hours (Silicon Valley Standard)
+    if (!hours) {
+      console.warn(`[ENGINE_DEBUG] No hours found for day ${dayOfWeek}. Using fallback 09:00-18:00`);
+      hours = { open: '09:00', close: '18:00', is_closed: false };
+    }
+
+    if (hours.is_closed) {
+      console.log(`[ENGINE_DEBUG] Business is closed on day ${dayOfWeek}`);
       return NextResponse.json({ availableSlots: [] });
     }
 
     const { open, close } = hours;
+    console.log(`[ENGINE_DEBUG] Working hours: ${open} to ${close}`);
 
     // 3. Generate slots based on operating hours and duration
     const slots: string[] = [];
@@ -99,6 +110,13 @@ export async function GET(req: NextRequest) {
         // If today, block past slots
         let isPast = false;
         if (isToday) {
+          // Compare only hours and minutes for strict local day matching
+          const currentHour = currentSlot.getHours();
+          const currentMin = currentSlot.getMinutes();
+          const nowHour = now.getUTCHours(); // Assuming server might be UTC but we want to compare with BR time
+          const nowMin = now.getUTCMinutes();
+
+          // Simpler: just use the isBefore with the adjusted 'now'
           isPast = isBefore(currentSlot, now);
         }
 
@@ -107,9 +125,10 @@ export async function GET(req: NextRequest) {
         }
       }
       
-      // Move to next slot based on duration (Gold Standard: start next slot right after previous)
       currentSlot = addMinutes(currentSlot, duration);
     }
+    
+    console.log(`[ENGINE_DEBUG] Slots generated before Google overlap filter:`, slots);
 
     // 4. Google API Integration (FreeBusy)
     let busyIntervals: { start: string; end: string }[] = [];
@@ -148,7 +167,6 @@ export async function GET(req: NextRequest) {
       
       const slotEnd = addMinutes(slotStart, duration);
 
-      // Overlap condition: (slotStart < busyEnd) AND (slotEnd > busyStart)
       const isBusy = busyIntervals.some(interval => {
         const busyStart = new Date(interval.start);
         const busyEnd = new Date(interval.end);
@@ -158,6 +176,7 @@ export async function GET(req: NextRequest) {
       return !isBusy;
     });
 
+    console.log(`[ENGINE_DEBUG] Final available slots:`, availableSlots);
     return NextResponse.json({ availableSlots });
 
   } catch (error: any) {
