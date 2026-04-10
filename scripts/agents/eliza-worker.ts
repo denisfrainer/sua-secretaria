@@ -681,12 +681,56 @@ http.createServer((req, res) => {
                 res.end(JSON.stringify({ status: 'received' }));
 
                 const body = JSON.parse(bodyStr);
-                const isEvolution = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
+                const isMessageEvent = body.event === 'MESSAGES_UPSERT' || body.event === 'messages.upsert';
+                const isConnectionEvent = body.event === 'CONNECTION_UPDATE' || body.event === 'connection.update';
 
-                if (!isEvolution) return;
+                if (!isMessageEvent && !isConnectionEvent) return;
 
                 const instanceName = body.instance || 'demo-agente';
-                console.log(`🚦 [ROUTER] Payload received from instance: ${instanceName}`);
+                const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+                const tenantId = parsedUrl.searchParams.get('tenantId');
+
+                console.log(`🚦 [ROUTER] Event: ${body.event} | Instance: ${instanceName} | Tenant: ${tenantId}`);
+
+                // --- 🔌 CONNECTION UPDATE HANDLER ---
+                if (isConnectionEvent) {
+                    const state = body.data?.state || body.data?.connection;
+                    console.log(`🔌 [CONNECTION] State: ${state} for ${instanceName}`);
+
+                    if (state === 'open' || state === 'CONNECTED') {
+                        try {
+                            // Fetch current config to avoid overwriting other fields in context_json
+                            const { data: config } = await supabaseAdmin
+                                .from('business_config')
+                                .select('context_json')
+                                .eq('instance_name', instanceName)
+                                .single();
+
+                            if (config) {
+                                const newContext = { 
+                                    ...config.context_json, 
+                                    connection_status: 'CONNECTED' 
+                                };
+
+                                const { error } = await supabaseAdmin
+                                    .from('business_config')
+                                    .update({ 
+                                        context_json: newContext,
+                                        updated_at: new Date().toISOString()
+                                    })
+                                    .eq('instance_name', instanceName);
+
+                                if (error) throw error;
+                                console.log(`✅ [DB_UPDATE] Instance ${instanceName} marked as CONNECTED.`);
+                            }
+                        } catch (err: any) {
+                            console.error(`❌ [CONNECTION_DB_ERROR] Failed to update status:`, err.message);
+                        }
+                    }
+                    return; // Stop processing for connection events
+                }
+
+                // --- 💬 MESSAGE PROCESSING ---
 
                 let dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
                 if (!dataObj) return;
