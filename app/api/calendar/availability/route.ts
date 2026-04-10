@@ -189,25 +189,33 @@ export async function GET(req: NextRequest) {
       return !isBusy;
     });
 
-    // 6. Smart Scarcity Implementation (Silicon Valley standard deterministic filter)
-    if (isScarcityEnabled) {
-      const SCARCITY_THRESHOLD = 0.35; // Hide 35% of slots
+    // 6. Smart Scarcity Guardrail Approach
+    if (isScarcityEnabled && availableSlots.length > 3) {
+      // 1. Define strict limits: Hide max 40% of slots, but always keep at least 3 slots visible.
+      const hideCount = Math.floor(availableSlots.length * 0.4);
+      
+      // 2. Simple deterministic seed based on the date string (e.g., '2026-04-10' -> sum of char codes)
+      const dateSeed = dateStr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+      // 3. Select which indexes to remove deterministically
+      const indexesToRemove = new Set<number>();
+      let step = 0;
+      
+      while (indexesToRemove.size < hideCount) {
+        // Predictable jumping through the array based on the seed
+        const targetIndex = (dateSeed + step * 7) % availableSlots.length;
+        indexesToRemove.add(targetIndex);
+        step++;
+
+        // Failsafe to prevent infinite loop (though mathematically unlikely with % length)
+        if (step > 100) break;
+      }
+
+      // 4. Apply the filter
       const initialCount = availableSlots.length;
-      
-      availableSlots = availableSlots.filter(slotTime => {
-        // Deterministic pseudo-random based on profile, date and slot
-        const seedString = `${profileId}-${dateStr}-${slotTime}`;
-        let hash = 0;
-        for (let i = 0; i < seedString.length; i++) {
-          hash = Math.imul(31, hash) + seedString.charCodeAt(i) | 0;
-        }
-        const pseudoRandom = Math.abs(hash) / 2147483647;
-        
-        // Return true (keep) if > threshold
-        return pseudoRandom > SCARCITY_THRESHOLD;
-      });
-      
-      console.log(`[ENGINE_DEBUG] Smart Scarcity applied: ${initialCount} -> ${availableSlots.length} slots (-${initialCount - availableSlots.length})`);
+      availableSlots = availableSlots.filter((_, index) => !indexesToRemove.has(index));
+
+      console.log(`[ENGINE_DEBUG] Smart Scarcity Guardrail: ${initialCount} -> ${availableSlots.length} slots kept.`);
     }
 
     console.log(`[ENGINE_DEBUG] Final available slots:`, availableSlots);

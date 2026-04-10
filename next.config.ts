@@ -17,9 +17,7 @@ const nextConfig: NextConfig = {
   },
 
   // Experimental: Otimização de CSS para PageSpeed
-  experimental: {
-    optimizeCss: true,
-  },
+  experimental: {},
 };
 
 export default withNextIntl(nextConfig);
