@@ -86,7 +86,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
       
       setIsLoadingSlots(true);
       try {
-        const response = await fetch(`/api/calendar/availability?profileId=${profile.id}&date=${formattedDate}`);
+        const response = await fetch(`/api/calendar/availability?profileId=${profile.id}&date=${formattedDate}&duration=${selectedService.duration}`);
         const data = await response.json();
         
         if (data.availableSlots) {
@@ -104,7 +104,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
     }
 
     fetchSlots();
-  }, [selectedDate, profile.id]);
+  }, [selectedDate, profile.id, selectedService.duration]);
 
   // Calendar Helpers
   const renderHeader = () => {

@@ -11,13 +11,15 @@ import {
   format, 
   getDay,
   parse,
-  isValid
+  isValid,
+  isSameDay
 } from 'date-fns';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const profileId = searchParams.get('profileId');
   const dateStr = searchParams.get('date');
+  const duration = parseInt(searchParams.get('duration') || '30');
 
   if (!profileId || !dateStr) {
     return NextResponse.json({ error: 'Missing profileId or date' }, { status: 400 });
@@ -28,7 +30,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 });
   }
 
-  console.log(`[API_AVAILABILITY] Fetching for profile: [${profileId}] on date: [${dateStr}]`);
+  const today = startOfDay(new Date());
+  const isToday = isSameDay(requestedDate, today);
+  const now = new Date();
+
+  console.log(`[API_AVAILABILITY] Fetching for profile: [${profileId}] on date: [${dateStr}] | Duration: ${duration}min | isToday: ${isToday}`);
 
   try {
     // 1. Fetch profile and business configuration
@@ -55,8 +61,6 @@ export async function GET(req: NextRequest) {
     const contextJson = businessConfig.context_json as any;
     const operatingHours = contextJson?.operating_hours;
 
-    console.log(`[API_AVAILABILITY] Google token found: ${!!refreshToken}`);
-
     // 2. Determine day of the week and operating hours
     const dayOfWeek = getDay(requestedDate); // 0 (Sunday) to 6 (Saturday)
     let hours = null;
@@ -75,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     const { open, close } = hours;
 
-    // 3. Generate initial slots based on operating hours
+    // 3. Generate slots based on operating hours and duration
     const slots: string[] = [];
     const [openH, openM] = open.split(':').map(Number);
     const [closeH, closeM] = close.split(':').map(Number);
@@ -87,8 +91,24 @@ export async function GET(req: NextRequest) {
     endTime.setHours(closeH, closeM, 0, 0);
 
     while (isBefore(currentSlot, endTime)) {
-      slots.push(format(currentSlot, 'HH:mm'));
-      currentSlot = addMinutes(currentSlot, 30);
+      const slotEnd = addMinutes(currentSlot, duration);
+      
+      // Slot must start and end within operating hours
+      if (isBefore(slotEnd, endTime) || format(slotEnd, 'HH:mm') === format(endTime, 'HH:mm')) {
+        
+        // If today, block past slots
+        let isPast = false;
+        if (isToday) {
+          isPast = isBefore(currentSlot, now);
+        }
+
+        if (!isPast) {
+          slots.push(format(currentSlot, 'HH:mm'));
+        }
+      }
+      
+      // Move to next slot based on duration (Gold Standard: start next slot right after previous)
+      currentSlot = addMinutes(currentSlot, duration);
     }
 
     // 4. Google API Integration (FreeBusy)
@@ -115,11 +135,8 @@ export async function GET(req: NextRequest) {
           start: b.start as string,
           end: b.end as string,
         }));
-
-        console.log(`[API_AVAILABILITY] Busy intervals found: ${busyIntervals.length}`);
       } catch (err: any) {
         console.error('[API_AVAILABILITY] Google FreeBusy query failed:', err.message);
-        // Graceful fallback to slots based only on operating hours
       }
     }
 
@@ -129,14 +146,12 @@ export async function GET(req: NextRequest) {
       const slotStart = new Date(requestedDate);
       slotStart.setHours(slotH, slotM, 0, 0);
       
-      const slotEnd = addMinutes(slotStart, 30);
+      const slotEnd = addMinutes(slotStart, duration);
 
-      // Check if slot overlaps with ANY busy interval
+      // Overlap condition: (slotStart < busyEnd) AND (slotEnd > busyStart)
       const isBusy = busyIntervals.some(interval => {
         const busyStart = new Date(interval.start);
         const busyEnd = new Date(interval.end);
-
-        // Overlap condition: (slotStart < busyEnd) AND (slotEnd > busyStart)
         return isBefore(slotStart, busyEnd) && isBefore(busyStart, slotEnd);
       });
 
