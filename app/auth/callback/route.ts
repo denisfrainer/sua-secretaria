@@ -61,7 +61,7 @@ export async function GET(request: Request) {
           .insert({
             owner_id: session.user.id,
             plan_tier: 'ELITE',
-            instance_name: `inst-${session.user.id.substring(0, 8)}`,
+            instance_name: null, // Only populated when user explicitly creates an instance
             context_json: {
               is_ai_enabled: true,
               connection_status: 'DISCONNECTED',

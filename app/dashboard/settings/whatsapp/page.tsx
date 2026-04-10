@@ -140,6 +140,7 @@ export default function WhatsAppSettingsPage() {
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
 
   const isConnected = config?.context_json?.connection_status === 'CONNECTED';
+  const hasInstance = Boolean(config?.instance_name && config.instance_name.trim().length > 0);
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -216,8 +217,9 @@ export default function WhatsAppSettingsPage() {
             key="infra"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col gap-8"
+            className="flex flex-col gap-6"
           >
+            {/* STATE 3: Connected */}
             {isConnected ? (
               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center text-center gap-6 relative overflow-hidden">
                 <div className="w-20 h-20 rounded-[2rem] bg-indigo-50 flex items-center justify-center shadow-lg shadow-indigo-500/10 mb-2">
@@ -227,47 +229,45 @@ export default function WhatsAppSettingsPage() {
                   <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Ativo</h3>
                   <p className="text-sm font-medium text-slate-400">Instância operando normalmente.</p>
                 </div>
-                <div className="w-full pt-6 flex flex-col gap-3 border-t border-slate-50">
-                   <button
-                     onClick={handleDeleteInstance}
-                     disabled={disconnecting}
-                     className="w-full h-14 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
-                   >
-                     {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={18} />}
-                     Excluir Instância
-                   </button>
-                </div>
               </div>
-            ) : !config?.instance_name ? (
+
+            /* STATE 1: No instance — show ONLY the create button */
+            ) : !hasInstance ? (
               <div className="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-10 flex flex-col items-center text-center gap-6">
                 <RefreshCw size={40} className="text-slate-200" />
                 <h3 className="text-lg font-bold text-slate-900">Infraestrutura pendente</h3>
+                <p className="text-sm text-slate-400 max-w-xs">Clique abaixo para gerar um QR Code e conectar seu WhatsApp.</p>
                 <button 
                   onClick={handleInitializeInstance}
-                  className="w-full h-14 bg-[#533CFA] text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 active:scale-95 transition-all outline-none"
+                  disabled={loading}
+                  className="w-full h-14 bg-[#533CFA] text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 active:scale-95 transition-all outline-none disabled:opacity-50"
                 >
-                  Gerar QR Code
+                  {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Gerar QR Code'}
                 </button>
               </div>
+
+            /* STATE 2: Instance exists but disconnected — show QR */
             ) : (
-              <>
-                <QRCodeDisplay 
-                  instanceName={config.instance_name} 
-                  onConnected={fetchStatus}
-                />
-                {/* 🛡️ EMERGENCY DELETE — always visible when instance exists */}
-                <button
-                  onClick={handleDeleteInstance}
-                  disabled={disconnecting}
-                  className="w-full h-12 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50 mt-4"
-                >
-                  {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-                  Excluir Instância e Recomeçar
-                </button>
-              </>
+              <QRCodeDisplay 
+                instanceName={config.instance_name} 
+                onConnected={fetchStatus}
+              />
             )}
 
-            {!isConnected && (
+            {/* 🛡️ EMERGENCY DELETE — ALWAYS visible when instance_name exists, regardless of state */}
+            {hasInstance && (
+              <button
+                onClick={handleDeleteInstance}
+                disabled={disconnecting}
+                className="w-full h-14 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={18} />}
+                Excluir Instância
+              </button>
+            )}
+
+            {/* Help text — only when disconnected */}
+            {!isConnected && hasInstance && (
               <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 flex items-start gap-4">
                 <AlertCircle className="text-slate-400 shrink-0" size={20} />
                 <div className="flex flex-col gap-1">
