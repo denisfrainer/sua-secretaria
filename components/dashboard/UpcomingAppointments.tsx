@@ -49,17 +49,20 @@ export function UpcomingAppointments({ initialAgenda = [], initialIntegrated = n
         }
 
         const data = await res.json();
-        if (data.integrated === false) {
+        const apiIsIntegrated = data.isIntegrated ?? data.integrated; // Backward compatibility fallback
+        const apiAppointments = data.appointments ?? data.agenda; // Backward compatibility fallback
+
+        if (apiIsIntegrated === false) {
           setIsIntegrated(false);
           return;
         }
 
         setIsIntegrated(true); // Explicitly set to true on successful data return
 
-        if (data.agenda) {
+        if (apiAppointments) {
           const now = new Date();
           // Filter events that start after now and sort by start time
-          const upcoming = data.agenda
+          const upcoming = apiAppointments
             .filter((app: Appointment) => isAfter(parseISO(app.start), now))
             .sort((a: Appointment, b: Appointment) => parseISO(a.start).getTime() - parseISO(b.start).getTime())
             .slice(0, 3);
