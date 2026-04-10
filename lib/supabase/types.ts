@@ -9,6 +9,7 @@ export type Database = {
           instance_name: string;
           context_json: any;
           plan_tier: PlanTier;
+          enable_smart_scarcity: boolean;
           updated_at: string;
           // Add other fields as discovered/needed
         };
@@ -17,6 +18,7 @@ export type Database = {
           instance_name: string;
           context_json: any;
           plan_tier?: PlanTier;
+          enable_smart_scarcity?: boolean;
           updated_at?: string;
         };
         Update: {
@@ -24,6 +26,7 @@ export type Database = {
           instance_name?: string;
           context_json?: any;
           plan_tier?: PlanTier;
+          enable_smart_scarcity?: boolean;
           updated_at?: string;
         };
       };

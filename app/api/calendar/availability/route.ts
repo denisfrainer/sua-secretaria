@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         .single(),
       supabaseAdmin
         .from('business_config')
-        .select('id, context_json')
+        .select('id, context_json, enable_smart_scarcity')
         .eq('owner_id', profileId)
         .single()
     ]);
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
     const businessConfig = configRes.data;
     const contextJson = businessConfig.context_json as any;
     const operatingHours = contextJson?.operating_hours;
+    const isScarcityEnabled = businessConfig.enable_smart_scarcity;
 
     // 2. Determine day of the week and operating hours
     const dayOfWeek = getDay(requestedDate); // 0 (Sunday) to 6 (Saturday)
@@ -110,13 +111,7 @@ export async function GET(req: NextRequest) {
         // If today, block past slots
         let isPast = false;
         if (isToday) {
-          // Compare only hours and minutes for strict local day matching
-          const currentHour = currentSlot.getHours();
-          const currentMin = currentSlot.getMinutes();
-          const nowHour = now.getUTCHours(); // Assuming server might be UTC but we want to compare with BR time
-          const nowMin = now.getUTCMinutes();
-
-          // Simpler: just use the isBefore with the adjusted 'now'
+          // Use the adjusted 'now' for BR time
           isPast = isBefore(currentSlot, now);
         }
 
@@ -160,7 +155,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 5. Filter slots against busy intervals
-    const availableSlots = slots.filter(slotTime => {
+    let availableSlots = slots.filter(slotTime => {
       const [slotH, slotM] = slotTime.split(':').map(Number);
       const slotStart = new Date(requestedDate);
       slotStart.setHours(slotH, slotM, 0, 0);
@@ -175,6 +170,27 @@ export async function GET(req: NextRequest) {
 
       return !isBusy;
     });
+
+    // 6. Smart Scarcity Implementation (Silicon Valley standard deterministic filter)
+    if (isScarcityEnabled) {
+      const SCARCITY_THRESHOLD = 0.35; // Hide 35% of slots
+      const initialCount = availableSlots.length;
+      
+      availableSlots = availableSlots.filter(slotTime => {
+        // Deterministic pseudo-random based on profile, date and slot
+        const seedString = `${profileId}-${dateStr}-${slotTime}`;
+        let hash = 0;
+        for (let i = 0; i < seedString.length; i++) {
+          hash = Math.imul(31, hash) + seedString.charCodeAt(i) | 0;
+        }
+        const pseudoRandom = Math.abs(hash) / 2147483647;
+        
+        // Return true (keep) if > threshold
+        return pseudoRandom > SCARCITY_THRESHOLD;
+      });
+      
+      console.log(`[ENGINE_DEBUG] Smart Scarcity applied: ${initialCount} -> ${availableSlots.length} slots (-${initialCount - availableSlots.length})`);
+    }
 
     console.log(`[ENGINE_DEBUG] Final available slots:`, availableSlots);
     return NextResponse.json({ availableSlots });

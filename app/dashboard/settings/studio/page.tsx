@@ -9,7 +9,7 @@ import {
   Building2, Clock, 
   CheckCircle2, AlertTriangle, Loader2,
   MapPin, ParkingCircle, Smile, Wallet, ShieldAlert,
-  MessageCircleQuestion, Link2
+  MessageCircleQuestion, Link2, TrendingUp
 } from 'lucide-react';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 import { OperatingHoursRow } from '@/components/dashboard/settings/OperatingHoursRow';
@@ -35,7 +35,7 @@ interface FAQItem {
 
 interface BusinessConfig {
   id: number;
-  owner_id: string;
+  enable_smart_scarcity: boolean;
   context_json: {
     business_info: {
       name: string;
@@ -188,6 +188,11 @@ export default function BusinessSettingsPage() {
     });
   };
 
+  const updateScarcity = (value: boolean) => {
+    if (!config) return;
+    setConfig({ ...config, enable_smart_scarcity: value });
+  };
+
   const generateInstanceName = (name: string) => {
     const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
@@ -235,7 +240,8 @@ export default function BusinessSettingsPage() {
           .insert({
               owner_id: user.id,
               instance_name: instanceName,
-              context_json: config.context_json
+              context_json: config.context_json,
+              enable_smart_scarcity: config.enable_smart_scarcity
           })
           .select()
           .single();
@@ -249,6 +255,7 @@ export default function BusinessSettingsPage() {
           .from('business_config')
           .update({
             context_json: config.context_json,
+            enable_smart_scarcity: config.enable_smart_scarcity,
             updated_at: new Date().toISOString()
           })
           .eq('id', config.id);
@@ -371,6 +378,40 @@ export default function BusinessSettingsPage() {
           <OperatingHoursRow label="Segunda a Sexta" data={config?.context_json?.operating_hours?.weekdays} onChange={(f, v) => updateOperatingHours('weekdays', f, v)} />
           <OperatingHoursRow label="Sábados" data={config?.context_json?.operating_hours?.saturday} onChange={(f, v) => updateOperatingHours('saturday', f, v)} />
           <OperatingHoursRow label="Domingos" data={config?.context_json?.operating_hours?.sunday} onChange={(f, v) => updateOperatingHours('sunday', f, v)} />
+        </div>
+      </motion.section>
+
+      {/* SECTION 3: CONVERSION / SCARCITY */}
+      <motion.section variants={itemVariants} className="flex flex-col gap-6">
+        <div className="flex items-center gap-3 border-b border-black/5 pb-3">
+          <TrendingUp size={20} className="text-blue-600 shrink-0" />
+          <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Alta Conversão</h2>
+        </div>
+        
+        <div 
+          onClick={() => updateScarcity(!config?.enable_smart_scarcity)}
+          className={`group flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all cursor-pointer ${
+            config?.enable_smart_scarcity 
+            ? 'bg-blue-50/50 border-blue-600/20 shadow-xl shadow-blue-500/5' 
+            : 'bg-white border-gray-100 hover:border-gray-200'
+          }`}
+        >
+          <div className="flex flex-col gap-1 max-w-[80%]">
+            <h3 className="font-black text-gray-900 flex items-center gap-2">
+              Modo Agenda Disputada
+              <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-widest font-black ${
+                config?.enable_smart_scarcity ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
+              }`}>
+                {config?.enable_smart_scarcity ? 'Ativo' : 'OFF'}
+              </span>
+            </h3>
+            <p className="text-xs text-gray-500 font-medium leading-relaxed">
+              Oculta estrategicamente alguns horários vazios para gerar prova social e acelerar a decisão do cliente.
+            </p>
+          </div>
+          <div className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${config?.enable_smart_scarcity ? 'bg-blue-600' : 'bg-gray-200'}`}>
+             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${config?.enable_smart_scarcity ? 'left-7' : 'left-1'}`} />
+          </div>
         </div>
       </motion.section>
 
