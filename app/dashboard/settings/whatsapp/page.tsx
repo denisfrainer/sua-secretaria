@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { 
-  MessageSquare, 
+  MessageSquare,
+  Trash2, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
@@ -82,26 +83,15 @@ export default function WhatsAppSettingsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ instanceName })
       });
-      if (!initRes.ok) throw new Error("Erro ao inicializar IA.");
 
-      if (config) {
-        await supabase.from('business_config').update({ instance_name: instanceName }).eq('id', config.id);
-      } else {
-        await supabase.from('business_config').insert({
-          owner_id: user.id,
-          instance_name: instanceName,
-          context_json: { 
-            connection_status: "DISCONNECTED",
-            business_info: { name: businessName, handoff_phone: "", scheduling_link: "" },
-            operating_hours: {
-              weekdays: { open: "09:00", close: "18:00", is_closed: false },
-              saturday: { open: "09:00", close: "13:00", is_closed: false },
-              sunday: { open: "00:00", close: "00:00", is_closed: true }
-            },
-            services: [], faq: []
-          }
-        });
+      if (initRes.status === 409) {
+        const data = await initRes.json();
+        alert(data.error || 'Você já possui uma instância. Exclua a atual antes de criar uma nova.');
+        await fetchStatus();
+        return;
       }
+
+      if (!initRes.ok) throw new Error("Erro ao inicializar IA.");
       await fetchStatus();
     } catch (err) { console.error(err); } 
     finally { setLoading(false); }
@@ -128,17 +118,24 @@ export default function WhatsAppSettingsPage() {
     finally { setSavingBehavior(false); }
   };
 
-  const handleDisconnect = async () => {
+  const handleDeleteInstance = async () => {
     if (!config?.instance_name) return;
+    const confirmed = window.confirm(`Tem certeza que deseja excluir a instância "${config.instance_name}"? Esta ação é irreversível.`);
+    if (!confirmed) return;
+    
     setDisconnecting(true);
     try {
-      await fetch(`/api/instance/logout?instance=${config.instance_name}`, { method: 'POST' });
-      const newContext = { ...config.context_json, connection_status: 'DISCONNECTED' };
-      await supabase.from('business_config').update({ context_json: newContext }).eq('id', config.id);
+      const res = await fetch(`/api/instance/delete?instance=${config.instance_name}`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        console.error('Delete failed:', data);
+      }
       await fetchStatus();
     } catch (err) { console.error(err); } 
     finally { setDisconnecting(false); }
   };
+
+  const handleDisconnect = handleDeleteInstance;
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
 
@@ -232,12 +229,12 @@ export default function WhatsAppSettingsPage() {
                 </div>
                 <div className="w-full pt-6 flex flex-col gap-3 border-t border-slate-50">
                    <button
-                     onClick={handleDisconnect}
+                     onClick={handleDeleteInstance}
                      disabled={disconnecting}
                      className="w-full h-14 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
                    >
-                     {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <LogOut size={18} />}
-                     Desconectar Celular
+                     {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={18} />}
+                     Excluir Instância
                    </button>
                 </div>
               </div>
@@ -253,10 +250,21 @@ export default function WhatsAppSettingsPage() {
                 </button>
               </div>
             ) : (
-              <QRCodeDisplay 
-                instanceName={config.instance_name} 
-                onConnected={fetchStatus}
-              />
+              <>
+                <QRCodeDisplay 
+                  instanceName={config.instance_name} 
+                  onConnected={fetchStatus}
+                />
+                {/* 🛡️ EMERGENCY DELETE — always visible when instance exists */}
+                <button
+                  onClick={handleDeleteInstance}
+                  disabled={disconnecting}
+                  className="w-full h-12 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50 mt-4"
+                >
+                  {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                  Excluir Instância e Recomeçar
+                </button>
+              </>
             )}
 
             {!isConnected && (
@@ -265,7 +273,7 @@ export default function WhatsAppSettingsPage() {
                 <div className="flex flex-col gap-1">
                   <h4 className="text-sm font-bold text-slate-900 tracking-tight">Problemas com o QR Code?</h4>
                   <p className="text-xs font-medium text-slate-500 leading-relaxed">
-                    Se o código demorar para carregar, aguarde alguns segundos. Você também pode clicar no botão "Reiniciar" se a conexão travar.
+                    Se o código demorar, aguarde alguns segundos. Se a conexão travar, clique em "Excluir Instância" para limpar e gerar um novo QR Code.
                   </p>
                 </div>
               </div>

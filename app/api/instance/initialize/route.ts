@@ -78,6 +78,25 @@ export async function POST(request: Request) {
 
         console.log(`✅ [EVOLUTION] business_config synced for ${tenantId} with instance ${instanceName}`);
 
+        // 🛡️ ANTI-ABUSE: Check if user already has an active instance
+        const { data: currentConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('instance_name, context_json')
+            .eq('owner_id', tenantId)
+            .maybeSingle();
+
+        const existingInstanceName = currentConfig?.instance_name;
+        const connectionStatus = (currentConfig?.context_json as any)?.connection_status;
+
+        if (existingInstanceName && existingInstanceName !== instanceName) {
+            console.warn(`🛡️ [ANTI-ABUSE] User ${tenantId} already has instance "${existingInstanceName}" (status: ${connectionStatus}). Blocking creation.`);
+            return NextResponse.json({ 
+                error: 'Você já possui uma instância. Exclua a atual antes de criar uma nova.',
+                existingInstance: existingInstanceName,
+                status: connectionStatus
+            }, { status: 409 });
+        }
+
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
         const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, ""); // Ensure no trailing slash
