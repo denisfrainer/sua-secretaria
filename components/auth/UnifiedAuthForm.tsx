@@ -101,7 +101,7 @@ export default function UnifiedAuthForm() {
                   </>
                 ) : (
                   <>
-                    Continuar com E-mail
+                    Continuar com e-mail
                     <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
                   </>
                 )}
