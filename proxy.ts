@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
      user = data.user;
   }
 
-  console.log(`📡 [MIDDLEWARE_CHECK] Path: ${pathname} | AuthToken: ${hasAuthToken} | User: ${!!user}`);
+  console.log(`📡 [PROXY_CHECK] Path: ${pathname} | AuthToken: ${hasAuthToken} | User: ${!!user}`);
 
   // 3. Authorization Logic
   
@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
   // Prevent logged users from seeing login/home
   const isLandingOrLogin = pathname === '/' || pathname.startsWith('/login')
   if (isLandingOrLogin && user) {
-    console.log(`✅ [MIDDLEWARE] Authenticated user on ${pathname}. Redirecting to /dashboard.`);
+    console.log(`✅ [PROXY] Authenticated user on ${pathname}. Redirecting to /dashboard.`);
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
