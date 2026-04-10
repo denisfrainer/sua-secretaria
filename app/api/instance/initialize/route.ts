@@ -112,7 +112,8 @@ export async function POST(request: Request) {
         console.log(`🚀 [EVOLUTION] Initiating instance: ${instanceName} | Tenant: ${tenantId}`);
         console.log(`🔗 [EVOLUTION] Target Webhook: ${webhookFullUrl}`);
 
-        // 1. Create the Instance
+        // 1. Create the Instance WITH webhook subscription bundled in
+        //    This ensures CONNECTION_UPDATE events fire from the very first second.
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
             headers: {
@@ -122,7 +123,18 @@ export async function POST(request: Request) {
             body: JSON.stringify({
                 instanceName: instanceName,
                 qrcode: true,
-                integration: "WHATSAPP-BAILEYS"
+                integration: "WHATSAPP-BAILEYS",
+                webhook: {
+                    url: webhookFullUrl,
+                    byEvents: false,
+                    base64: false,
+                    events: [
+                        "MESSAGES_UPSERT",
+                        "CONNECTION_UPDATE",
+                        "messages.upsert",
+                        "connection.update"
+                    ]
+                }
             }),
         });
 
@@ -133,33 +145,39 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to create instance', details: createData }, { status: createRes.status });
         }
 
-        console.log(`✅ [EVOLUTION] Instance ${instanceName} created successfully.`);
+        console.log(`✅ [EVOLUTION] Instance ${instanceName} created with inline webhook.`);
 
-        // 2. Set the Webhook for the Worker
-        const webhookRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': apiKey,
-            },
-            body: JSON.stringify({
-                webhook: {
-                    enabled: true,
-                    url: webhookFullUrl,
-                    webhookByEvents: false,
-                    webhookBase64: false,
-                    events: [
-                        "MESSAGES_UPSERT",
-                        "CONNECTION_UPDATE"
-                    ]
-                }
-            }),
-        });
+        // 2. Belt-and-suspenders: Also set webhook explicitly in case the create payload didn't register it
+        try {
+            const webhookRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': apiKey,
+                },
+                body: JSON.stringify({
+                    webhook: {
+                        enabled: true,
+                        url: webhookFullUrl,
+                        webhookByEvents: false,
+                        webhookBase64: false,
+                        events: [
+                            "MESSAGES_UPSERT",
+                            "CONNECTION_UPDATE",
+                            "messages.upsert",
+                            "connection.update"
+                        ]
+                    }
+                }),
+            });
 
-        if (!webhookRes.ok) {
-            console.error('⚠️ [EVOLUTION] Failed to set webhook, but instance was created.', await webhookRes.text());
-        } else {
-            console.log(`✅ [EVOLUTION] Webhook set successfully to ${webhookUrl}`);
+            if (!webhookRes.ok) {
+                console.warn('⚠️ [EVOLUTION] Fallback webhook/set returned non-200:', await webhookRes.text());
+            } else {
+                console.log(`✅ [EVOLUTION] Fallback webhook/set confirmed for ${instanceName}`);
+            }
+        } catch (webhookErr: any) {
+            console.warn(`⚠️ [EVOLUTION] Fallback webhook/set failed (non-fatal):`, webhookErr.message);
         }
 
         // Return the QR Code and the created instance data
