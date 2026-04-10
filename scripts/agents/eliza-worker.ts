@@ -712,37 +712,71 @@ http.createServer((req, res) => {
                 // --- 🔌 CONNECTION UPDATE HANDLER ---
                 if (isConnectionEvent) {
                     const state = body.data?.state || body.data?.connection;
-                    console.log(`🔌 [CONNECTION] State: ${state} for ${instanceName}`);
+                    console.log(`🔌 [CONNECTION] Raw payload:`, JSON.stringify(body.data));
+                    console.log(`🔌 [CONNECTION] Resolved state: "${state}" for instance: "${instanceName}" | tenantId: "${tenantId}"`);
 
-                    if (state === 'open' || state === 'CONNECTED') {
+                    const isOpen = state === 'open' || state === 'CONNECTED';
+                    const isClosed = state === 'close' || state === 'DISCONNECTED';
+
+                    if (isOpen || isClosed) {
+                        const newStatus = isOpen ? 'CONNECTED' : 'DISCONNECTED';
+
                         try {
-                            // Fetch current config to avoid overwriting other fields in context_json
-                            const { data: config } = await supabaseAdmin
+                            // Strategy: Try to find the config by instance_name first, fallback to tenantId
+                            let matchQuery = supabaseAdmin
                                 .from('business_config')
-                                .select('context_json')
+                                .select('id, context_json, instance_name, owner_id')
                                 .eq('instance_name', instanceName)
-                                .single();
+                                .maybeSingle();
 
-                            if (config) {
-                                const newContext = { 
-                                    ...config.context_json, 
-                                    connection_status: 'CONNECTED' 
-                                };
+                            let { data: config, error: fetchError } = await matchQuery;
 
-                                const { error } = await supabaseAdmin
+                            // Fallback: if instance_name match fails but we have a tenantId, use that
+                            if (!config && tenantId) {
+                                console.log(`🔄 [CONNECTION] No match by instance_name, trying tenantId: ${tenantId}`);
+                                const fallback = await supabaseAdmin
                                     .from('business_config')
-                                    .update({ 
-                                        context_json: newContext,
-                                        updated_at: new Date().toISOString()
-                                    })
-                                    .eq('instance_name', instanceName);
+                                    .select('id, context_json, instance_name, owner_id')
+                                    .eq('owner_id', tenantId)
+                                    .maybeSingle();
+                                config = fallback.data;
+                                fetchError = fallback.error;
+                            }
 
-                                if (error) throw error;
-                                console.log(`✅ [DB_UPDATE] Instance ${instanceName} marked as CONNECTED.`);
+                            if (fetchError) {
+                                console.error(`❌ [CONNECTION] DB fetch error:`, fetchError.message);
+                                return;
+                            }
+
+                            if (!config) {
+                                console.warn(`⚠️ [CONNECTION] No business_config found for instance "${instanceName}" or tenant "${tenantId}". Cannot update status.`);
+                                return;
+                            }
+
+                            // Merge connection_status into context_json (preserving all other data)
+                            const updatedContext = {
+                                ...(config.context_json as object),
+                                connection_status: newStatus
+                            };
+
+                            const { error: updateError } = await supabaseAdmin
+                                .from('business_config')
+                                .update({
+                                    context_json: updatedContext,
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', config.id);
+
+                            if (updateError) {
+                                console.error(`❌ [CONNECTION] DB update failed:`, updateError.message);
+                            } else {
+                                console.log(`✅ [CONNECTION] Instance "${instanceName}" (owner: ${config.owner_id}) → ${newStatus}`);
                             }
                         } catch (err: any) {
-                            console.error(`❌ [CONNECTION_DB_ERROR] Failed to update status:`, err.message);
+                            console.error(`❌ [CONNECTION_DB_ERROR] Exception:`, err.message);
                         }
+                    } else {
+                        console.log(`🔇 [CONNECTION] Unhandled state: "${state}" — ignoring.`);
                     }
                     return; // Stop processing for connection events
                 }

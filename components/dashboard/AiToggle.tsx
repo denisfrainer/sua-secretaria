@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 
 export function AiToggle() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -27,7 +28,6 @@ export function AiToggle() {
     const previousState = enabled;
     const newState = !previousState;
 
-    // Optimistic UI
     setEnabled(newState);
     setLoading(true);
 
@@ -44,34 +44,40 @@ export function AiToggle() {
       setEnabled(data.enabled);
     } catch (error) {
       console.error('[AI_TOGGLE] Toggle error:', error);
-      // Rollback on error
       setEnabled(previousState);
     } finally {
       setLoading(false);
     }
   };
 
-  if (enabled === null) return <div className="w-11 h-6 bg-slate-100 rounded-full animate-pulse" />;
+  // Skeleton while loading initial state
+  if (enabled === null) {
+    return <div className="w-[52px] h-[30px] bg-slate-100 rounded-full animate-pulse" />;
+  }
 
   return (
-    <div className="flex items-center gap-3">
-      <div 
-        onClick={toggleAi}
+    <motion.button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      initial={false}
+      animate={{ 
+        backgroundColor: enabled ? '#34C759' : '#FF3B30',
+        opacity: loading ? 0.6 : 1
+      }}
+      onClick={toggleAi}
+      className={`relative w-[52px] h-[30px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
+    >
+      <motion.span 
+        layout
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={`
-          relative w-11 h-6 rounded-full cursor-pointer transition-colors duration-200 ease-in-out
-          ${enabled ? 'bg-emerald-500' : 'bg-slate-200'}
-          ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-        `}
+          absolute top-[2px] left-[2px] w-[26px] h-[26px] rounded-full bg-white shadow-md flex items-center justify-center
+          ${enabled ? 'translate-x-[22px]' : 'translate-x-0'}
+        `} 
       >
-        <motion.div 
-          className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm"
-          animate={{ x: enabled ? 20 : 0 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        />
-      </div>
-      <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? 'text-emerald-600' : 'text-slate-400'}`}>
-        IA {enabled ? 'Ativa' : 'Pausada'}
-      </span>
-    </div>
+        {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+      </motion.span>
+    </motion.button>
   );
 }

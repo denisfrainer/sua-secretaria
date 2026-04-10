@@ -130,11 +130,7 @@ export default async function DashboardPage() {
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
       
       {/* Dynamic Welcome Header (Motion inside) */}
-      <DashboardGreeting 
-        userName={displayName} 
-        isOnline={isConnected} 
-        instanceName={businessConfig?.instance_name} 
-      />
+      <DashboardGreeting userName={displayName} />
 
       {/* Real-time Next Appointments Section (Motion inside) */}
       <UpcomingAppointments initialAgenda={initialAgenda} initialIntegrated={isIntegrated} />
