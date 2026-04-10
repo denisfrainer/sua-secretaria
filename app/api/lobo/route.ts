@@ -150,7 +150,7 @@ export async function POST(req: Request) {
             if (!lead.phone || !lead.name) continue;
 
             // Force the global instance for this specific asynchronous worker
-            const instanceName = 'agente-lobo'; 
+            const instanceName = 'agente-lobo';
 
             // --- 🛡️ TIER ACCESS CONTROL BYPASS ---
             // Skip the database lookup for the master internal bot to save latency and ignore dirty lead data
@@ -163,9 +163,9 @@ export async function POST(req: Request) {
                     .select('plan_tier')
                     .eq('instance_name', instanceName)
                     .single();
-                    
+
                 const currentTier = (config?.plan_tier as PlanTier) || 'STARTER';
-                
+
                 if (!hasAccess(currentTier, 'WOLF_AGENT_OUTBOUND')) {
                     console.warn(`[WOLF_ABORT] Access denied for ${instanceName}. Plan ${currentTier} lacks ELITE permission.`);
                     await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
@@ -199,24 +199,40 @@ export async function POST(req: Request) {
             // --- 🎯 LETHAL STRIKE: AI AGENT PITCH ---
             const variationsAI = [
                 {
-                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Floripa.`,
+                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Florianópolis.`,
                     part2: `Vocês trabalham com algum sistema de agendamento atualmente?`
                 },
                 {
-                    part1: `${saudacao} pessoal, tudo certo? Me chamo Denis, sou desenvolvedor aqui da Lagoa da Conceição.`,
-                    part2: `Vocês já utilizam algum sistema para agendar os clientes atualmente?`
+                    part1: `${saudacao} pessoal, tudo certo? Me chamo Denis, sou desenvolvedor de Florianópolis.`,
+                    part2: `Vocês utilizam algum sistema para agendar os clientes atualmente?`
                 },
                 {
-                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tudo bem? Me chamo Denis, sou desenvolvedor de software residente em Florianópolis.`,
+                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor de software.`,
+                    part2: `Como vocês fazem os agendamentos hoje? É tudo manual ou tem alguma agenda específica pra isso?`
+                },
+                {
+                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tudo bem? Me chamo Denis, sou desenvolvedor de software.`,
                     part2: `Como vocês gerenciam os agendamentos hoje? É tudo manual ou tem alguma agenda específica pra isso?`
                 },
                 {
-                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Tranquilo?`,
-                    part2: `Vocês já cogitaram ter um sistema de agendamento automático aqui pelo WhatsApp?`
+                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Me chamo Denis sou desenvolvedor de sistemas.`,
+                    part2: `Vocês já pensaram em ter uma secretária virtual fazendo agendamentos aqui pelo WhatsApp?`
                 },
                 {
-                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor aqui de Floripa.`,
-                    part2: `Como funciona o sistema de agendamento de vocês atualmente?`
+                    part1: `{Fala|Opa|Oi|Olá}, ${saudacao}! Me chamo Denis sou desenvolvedor de sistemas.`,
+                    part2: `Vocês já pensaram em ter uma secretária virtual que faz agendamentos automáticos aqui pelo WhatsApp?`
+                },
+                {
+                    part1: `${saudacao}, tudo certo? Me chamo Denis sou desenvolvedor de sistemas.`,
+                    part2: `Vocês já pensaram em ter uma assistente virtual fazendo agendamentos aqui pelo WhatsApp?`
+                },
+                {
+                    part1: `${saudacao}, tudo bem? Me chamo Denis sou desenvolvedor de sistemas.`,
+                    part2: `Vocês sabiam que já existem secretárias de inteligência artificial que fazem agendamentos pra vocês?`
+                },
+                {
+                    part1: `${saudacao}, tudo bem? Me chamo Denis, sou desenvolvedor de software.`,
+                    part2: `Vocês sabiam que já existem assistentes de inteligência artificial que atendem, fazem agendamentos e até fecham vendas pra vocês?`
                 }
             ];
 

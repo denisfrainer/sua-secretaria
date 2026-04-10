@@ -40,30 +40,48 @@ export async function GET(req: NextRequest) {
   console.log(`[API_AVAILABILITY] Fetching profile: [${profileId}] | Date: [${dateStr}] | isToday: ${isToday} | ServerTime: ${new Date().toISOString()} | BR_Time: ${now.toISOString()}`);
 
   try {
-    // 1. Fetch profile and business configuration
-    const [profileRes, configRes] = await Promise.all([
-      supabaseAdmin
-        .from('profiles')
-        .select('google_refresh_token')
-        .eq('id', profileId)
-        .single(),
-      supabaseAdmin
-        .from('business_config')
-        .select('id, context_json, enable_smart_scarcity')
-        .eq('owner_id', profileId)
-        .single()
-    ]);
+    // 1. Fetch profile
+    const { data: profileData, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('google_refresh_token')
+      .eq('id', profileId)
+      .single();
 
-    if (configRes.error || !configRes.data) {
-      console.error('[API_AVAILABILITY] Business config not found:', configRes.error);
+    if (profileError) {
+      console.warn(`[API_AVAILABILITY] Profile fetch error: ${profileError.message}`);
+    }
+
+    // 2. Fetch business configuration with defensive check for enable_smart_scarcity
+    let businessConfigRes = await supabaseAdmin
+      .from('business_config')
+      .select('id, context_json, enable_smart_scarcity')
+      .eq('owner_id', profileId)
+      .single();
+
+    // GRACEFUL DEGRADATION: If column does not exist (migration pending), fallback to restricted select
+    if (businessConfigRes.error && (businessConfigRes.error.code === '42703' || businessConfigRes.error.message.includes('column "enable_smart_scarcity" does not exist'))) {
+      console.warn(`[API_AVAILABILITY] Missing column 'enable_smart_scarcity' detected. Falling back...`);
+      businessConfigRes = await supabaseAdmin
+        .from('business_config')
+        .select('id, context_json')
+        .eq('owner_id', profileId)
+        .single();
+      
+      if (businessConfigRes.data) {
+        (businessConfigRes.data as any).enable_smart_scarcity = false; // Forced fallback
+      }
+    }
+
+    if (businessConfigRes.error || !businessConfigRes.data) {
+      console.error('[API_AVAILABILITY] Business config not found:', businessConfigRes.error);
       return NextResponse.json({ error: 'Business configuration not found' }, { status: 404 });
     }
 
-    const refreshToken = profileRes.data?.google_refresh_token;
-    const businessConfig = configRes.data;
+    const refreshToken = profileData?.google_refresh_token;
+    const businessConfig = businessConfigRes.data;
     const contextJson = businessConfig.context_json as any;
     const operatingHours = contextJson?.operating_hours;
-    const isScarcityEnabled = businessConfig.enable_smart_scarcity;
+    const isScarcityEnabled = (businessConfig as any).enable_smart_scarcity || false;
 
     // 2. Determine day of the week and operating hours
     const dayOfWeek = getDay(requestedDate); // 0 (Sunday) to 6 (Saturday)
