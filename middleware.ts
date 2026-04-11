@@ -41,7 +41,7 @@ export default async function middleware(request: NextRequest) {
   if (isDashboard && !user && !isAuthCallback) {
     // Redirect to login if accessing dashboard without session
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.searchParams.set('clear_session', 'true')
     return NextResponse.redirect(url)
   }
 

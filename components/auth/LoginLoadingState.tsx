@@ -13,6 +13,28 @@ export function LoginLoadingState() {
   const [message, setMessage] = useState('Finalizando seu acesso...');
 
   useEffect(() => {
+    // 0. ESCAPE HATCH (The Ghost Loop Fix)
+    // If the middleware kicked us back here because of a sync failure, 
+    // explicitly sign out to wipe the stale LocalStorage.
+    const runEscapeHatch = async () => {
+      const clearSession = searchParams.get('clear_session');
+      if (clearSession === 'true') {
+        console.warn('⚡ [AUTH ESCAPE HATCH] Sync failure detected. Purging local session...');
+        await supabase.auth.signOut();
+        setIsProcessing(false);
+        
+        // Remove the param from URL to keep it clean
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('clear_session');
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+      }
+    };
+    runEscapeHatch();
+  }, [searchParams, supabase]);
+
+  useEffect(() => {
     // 0. QUICK SESSION CHECK (Basic Login / No OAuth)
     // If we have a session but NO 'code' in the URL, we are already logged in 
     // and just landed on /login by mistake or stale session. Get the user out.
