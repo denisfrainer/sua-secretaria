@@ -1110,6 +1110,10 @@ http.createServer((req, res) => {
 
     res.writeHead(404);
     res.end();
-}).listen(PORT, () => console.log(`🌐 Server(Healthcheck & Webhook) running on port ${PORT} `));
-
-startPolling();
+}).listen(PORT, () => {
+    console.log(`🌐 Server(Healthcheck & Webhook) running on port ${PORT}`);
+    console.log(`🚀 [BOOT] Server started. Igniting polling engine...`);
+    startPolling().catch((err: any) => {
+        console.error(`💥 [BOOT] startPolling() crashed fatally:`, err.message, err.stack);
+    });
+});
