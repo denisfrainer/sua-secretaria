@@ -1,108 +1,147 @@
-import React from 'react';
-import { Bot, Activity, Users, Settings, Plus, QrCode } from 'lucide-react';
-import { supabaseAdmin } from '../../../lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
+import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments';
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
+import QuickActions from '@/components/dashboard/QuickActions';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { TrialStatusBox } from '@/components/dashboard/TrialStatusBox';
+import { redirect } from 'next/navigation';
+import { google } from 'googleapis';
+import { getGoogleAuthClient } from '@/lib/calendar/google';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+import { cookies } from 'next/headers';
+import { ElizaRoiCard } from '@/components/dashboard/eliza-roi-card';
 
-export default async function AgentDashboard() {
-    const { data: agents } = await supabaseAdmin
-        .from('agent_configs')
-        .select('*, organizations(name)');
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-    const agentesReais = agents || [];
-    const agentesAtivos = agentesReais.filter((a: any) => a.is_active).length;
-    // Assuming 499 per agent
-    const mrrCalculado = agentesAtivos * 499;
 
-    return (
-        <div className="min-h-screen bg-black text-white font-sans flex flex-col p-4 max-w-lg mx-auto sm:max-w-xl md:max-w-2xl border-x border-white">
-            
-            {/* 1. HEADER */}
-            <header className="flex justify-between items-center py-4 border-b border-white">
-                <div className="flex items-center gap-2">
-                    <span className="font-heading font-black text-xl tracking-tighter">LP.NEXUS</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1 text-base font-semibold tracking-widest text-[#00E676]">
-                        <span className="w-1.5 h-1.5 bg-[#00E676] inline-block" /> AGENTS: ACTIVE
-                    </span>
-                    <Settings size={18} className="text-white cursor-pointer" />
-                </div>
-            </header>
+  // Defensive data fetching with Admin fallback to Standard client
+  let businessConfig = null;
+  let profile = null;
+  let initialAgenda: any[] = [];
+  let isIntegrated = false;
 
-            {/* 2. MAIN KPI SECTION */}
-            <section className="py-12 flex flex-col items-center justify-center border-b border-white">
-                <h1 className="text-4xl font-heading font-bold tracking-tight">R$ {mrrCalculado}</h1>
-                <p className="text-base text-[#888888] mt-1 uppercase tracking-wider">vs R$ 0,00 last month</p>
-                <p className="text-base text-white mt-1">MRR TOTAL</p>
-            </section>
+  try {
+    // Try Admin first for reliability (bypasses RLS issues)
+    if (supabaseAdmin) {
+      const [configRes, profileRes] = await Promise.all([
+        supabaseAdmin.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
+        supabaseAdmin.from('profiles').select('full_name, plan_tier, trial_ends_at').eq('id', user?.id).single()
+      ]);
+      
+      businessConfig = configRes.data;
+      profile = profileRes.data;
+    } 
+    
+    console.log('[DASHBOARD_FETCH] Profile:', profile);
 
-            {/* 3. AGENT STATUS GRID (2x2) */}
-            <section className="grid grid-cols-2 border-b border-white">
-                <div className="border-r border-b border-white p-5 space-y-2 flex flex-col">
-                    <Activity size={20} className="text-white" />
-                    <div>
-                        <p className="text-base text-[#888888] uppercase font-semibold">Conversas</p>
-                        <p className="text-2xl font-bold">0</p>
-                    </div>
-                </div>
-                <div className="border-b border-white p-5 space-y-2 flex flex-col">
-                    <Bot size={20} className="text-white" />
-                    <div>
-                        <p className="text-base text-[#888888] uppercase font-semibold">Agentes Ativos</p>
-                        <p className="text-2xl font-bold">{agentesAtivos}</p>
-                    </div>
-                </div>
-                <div className="border-r p-5 space-y-2 flex flex-col border-white">
-                    <Users size={20} className="text-white" />
-                    <div>
-                        <p className="text-base text-[#888888] uppercase font-semibold">Leads</p>
-                        <p className="text-2xl font-bold">0</p>
-                    </div>
-                </div>
-                <div className="p-5 space-y-2 flex flex-col">
-                    <QrCode size={20} className="text-white" />
-                    <div>
-                        <p className="text-base text-[#888888] uppercase font-semibold">Status</p>
-                        <p className="text-base font-bold text-[#00E676]">Conectado</p>
-                    </div>
-                </div>
-            </section>
+    // 2. FETCH AGENDA SERVER-SIDE (To eliminate 401 race conditions)
+    const refreshToken = profile?.google_refresh_token || (businessConfig?.context_json as any)?.google_calendar?.refresh_token;
 
-            {/* 4. SETTINGS LAYER IF AGENTS EXIST - REMOVED */}
+    if (refreshToken && businessConfig) {
+      try {
+        const authClient = await getGoogleAuthClient(businessConfig.id, {
+          ...businessConfig.context_json,
+          google_calendar: {
+            ...(businessConfig.context_json as any).google_calendar,
+            refresh_token: refreshToken
+          }
+        });
+        const calendar = google.calendar({ version: 'v3', auth: authClient });
+        const now = new Date();
+        const timeMax = endOfDay(now).toISOString();
 
-            {/* 5. AGENT MANAGEMENT LIST */}
-            <section className="py-8 flex-1">
-                <h3 className="font-heading text-lg font-bold mb-4 uppercase tracking-wider">Fleet Management</h3>
-                <div className="border border-white divide-y divide-white rounded-none">
-                    {agentesReais.length === 0 ? (
-                        <div className="text-center py-8 text-[#888888] text-base">
-                            Nenhum agente configurado ainda.
-                        </div>
-                    ) : (
-                        agentesReais.map((agent: any) => (
-                            <div key={agent.id} className="flex justify-between items-center p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-none ${agent.is_active ? 'bg-[#00E676]' : 'bg-[#888888]'}`} />
-                                    <div>
-                                        <p className="text-base font-bold uppercase">{agent.organizations?.name || 'Cliente'}</p>
-                                        <p className="text-base text-[#888888]">{agent.whatsapp_number || 'Sem número'}</p>
-                                    </div>
-                                </div>
-                                <button className="border border-white px-3 py-1 text-base font-bold uppercase rounded-none hover:bg-white hover:text-black transition">
-                                    Edit
-                                </button>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </section>
+        const response = await calendar.events.list({
+          calendarId: 'primary',
+          timeMin: now.toISOString(), // Start from now to avoid fetching past events
+          timeMax,
+          singleEvents: true,
+          orderBy: 'startTime',
+        });
 
-            {/* 6. FLOATING ACTION BUTTON (FAB) */}
-            <button className="fixed bottom-6 right-6 bg-black border border-white p-4 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all duration-200 group z-50">
-                <Plus size={24} className="text-white group-hover:text-black transition-colors" />
-            </button>
+        const events = response.data.items || [];
+        initialAgenda = events
+          .map(event => ({
+            id: event.id,
+            title: event.summary,
+            start: event.start?.dateTime || event.start?.date,
+            end: event.end?.dateTime || event.end?.date,
+            description: event.description || '',
+          }))
+          .filter(app => {
+            const appStart = app.start ? new Date(app.start) : null;
+            return appStart && appStart > now;
+          })
+          .slice(0, 3); // Match the client-side slice of 3
+        
+        isIntegrated = true;
+        console.log(`[DASHBOARD_FETCH] Agenda fetched: ${initialAgenda.length} events`);
+      } catch (gCalError: any) {
+        console.warn('[DASHBOARD_FETCH] GCal fetch error:', gCalError.message);
+        // Fallback: If we have a token, consider it integrated but with empty initial agenda
+        // This allows the client-side component to try fetching again.
+        isIntegrated = true;
+      }
+    } else {
+        console.log('[DASHBOARD_FETCH] No refresh token found. isIntegrated = false');
+    }
+  } catch (error) {
+    console.warn('⚠️ [DASHBOARD] Fetching error, attempting fallback...', error);
+    // Final fallback attempt with standard client for both config and profile
+    const [{ data: configData }, { data: profileData }] = await Promise.all([
+      supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
+      supabase.from('profiles').select('full_name, plan_tier, trial_ends_at').eq('id', user?.id).single()
+    ]);
+    businessConfig = configData;
+    profile = profileData;
+    
+    console.log('[DASHBOARD_FETCH] Fallback Profile:', profile);
+  }
 
-        </div>
-    );
+  // Strict Gating: If user exists but essential registration data is missing, we might still show skeleton
+  // However, we at least want a name to show.
+  const hasInstance = Boolean(businessConfig?.instance_name);
+  const isConnected = hasInstance && businessConfig?.context_json?.connection_status === 'CONNECTED';
+  
+  // Safely extract email prefix
+  const userEmail = user?.email || '';
+  const emailPrefix = userEmail ? userEmail.split('@')[0] : '';
+  const formattedPrefix = emailPrefix ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) : '';
+
+  // Determine final display name
+  const displayName = profile?.full_name?.split(' ')[0] 
+    || user?.user_metadata?.full_name?.split(' ')[0]
+    || formattedPrefix 
+    || 'Visitante';
+
+  return (
+    <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
+      
+      {/* Trial Status Indicator (Railway Style) */}
+      <div className="flex justify-end w-full -mb-4">
+        <TrialStatusBox 
+          planTier={profile?.plan_tier || 'FREE'} 
+          trialEndsAt={profile?.trial_ends_at || null} 
+        />
+      </div>
+
+      {/* Dynamic Welcome Header (Motion inside) */}
+      <DashboardGreeting userName={displayName} isConnected={isConnected} />
+
+      {/* Real-time Next Appointments Section (Motion inside) */}
+      <UpcomingAppointments initialAgenda={initialAgenda} initialIntegrated={isIntegrated} />
+
+      {/* Main Action Grid (Motion inside) */}
+      <QuickActions />
+
+      {/* ROI Dashboard (Mock) */}
+      <ElizaRoiCard />
+
+    </div>
+  );
 }
