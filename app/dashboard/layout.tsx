@@ -15,25 +15,23 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) redirect('/login');
 
-  // Fetch subscription data for trial status indicator
-  const { data: config } = await supabaseAdmin
-    .from('business_config')
+  // Fetch subscription data directly from Profile (Source of Truth for UI)
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
     .select('plan_tier, trial_ends_at')
-    .eq('owner_id', user.id)
+    .eq('id', user.id)
     .maybeSingle();
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex flex-col font-source">
+    <div className="min-h-screen bg-[#fafafa] flex flex-col font-source text-gray-900">
       {/* Protected minimal header */}
       <header className="w-full h-16 flex items-center justify-between px-6 sticky top-0 z-50">
-        {/* Background layer for glassmorphism - separated to avoid opacity inheritance for children */}
+        {/* Background layer for glassmorphism */}
         <div className="absolute inset-0 bg-[#fafafa]/90 backdrop-blur-md border-b border-black/5 -z-10 pointer-events-none" />
         
+        {/* LEFT: Logo Group */}
         <Link 
           href="/" 
           className="flex items-center gap-2 text-black text-lg font-bold tracking-tight hover:opacity-80 transition-opacity"
@@ -47,11 +45,13 @@ export default async function DashboardLayout({
           />
           meatende.ai
         </Link>
-        <div className="flex items-center gap-4">
+
+        {/* RIGHT: Controls Group (Trial + Menu) */}
+        <div className="flex items-center gap-3">
           {/* Railway-style Trial Status Box */}
           <TrialStatusBox 
-            planTier={config?.plan_tier || 'FREE'} 
-            trialEndsAt={config?.trial_ends_at || null} 
+            planTier={profile?.plan_tier || 'FREE'} 
+            trialEndsAt={profile?.trial_ends_at || null} 
           />
 
           <div className="hidden md:block">

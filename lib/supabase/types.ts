@@ -40,6 +40,7 @@ export type Database = {
           slug: string | null;
           display_name: string | null;
           avatar_url: string | null;
+          trial_ends_at: string | null;
         };
       };
       // ... more tables

@@ -6,9 +6,10 @@ import { AiToggle } from './AiToggle';
 
 interface DashboardGreetingProps {
   userName: string;
+  isConnected?: boolean;
 }
 
-export function DashboardGreeting({ userName }: DashboardGreetingProps) {
+export function DashboardGreeting({ userName, isConnected = false }: DashboardGreetingProps) {
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
@@ -40,13 +41,17 @@ export function DashboardGreeting({ userName }: DashboardGreetingProps) {
         {greeting || '...'}{userName ? `,\n${userName}` : ''}
       </motion.h1>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-      >
-        <AiToggle />
-      </motion.div>
+      {isConnected && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+          className="flex flex-col items-center gap-1"
+        >
+          <AiToggle />
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">IA Ativa</span>
+        </motion.div>
+      )}
     </div>
   );
 }

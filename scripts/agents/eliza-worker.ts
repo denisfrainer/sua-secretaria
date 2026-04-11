@@ -881,6 +881,18 @@ http.createServer((req, res) => {
                             console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
                         } else {
                             console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL INITIATED)' : ''}`);
+                            
+                            // 🔄 [SYNC] Propagate trial status to user profile for Header/UI usage
+                            if (updatePayload.plan_tier === 'TRIAL') {
+                                console.log(`🔄 [SYNC] Syncing TRIAL status to profile for owner: ${config.owner_id}`);
+                                await supabaseAdmin
+                                    .from('profiles')
+                                    .update({
+                                        plan_tier: 'TRIAL',
+                                        trial_ends_at: updatePayload.trial_ends_at
+                                    })
+                                    .eq('id', config.owner_id);
+                            }
                         }
                     } catch (err: any) {
                         console.error(`💥 [CONNECTION] Unhandled exception:`, err.message, err.stack);
