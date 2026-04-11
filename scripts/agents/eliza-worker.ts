@@ -1130,12 +1130,22 @@ http.createServer((req, res) => {
                         // Dynamic Routing: Any instance that is NOT the static menu is routed to the AI Agent
                         if (instanceName !== 'demo-menu') {
                             console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
+                            console.log(`🔍 [SWITCH] Checking global AI status (key: eliza_active)...`);
                             const { data: elizaSwitch, error: switchError } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
                             
-                            if (switchError) console.error(`⚠️ [SUPABASE WARN] Failed to check eliza switch:`, switchError.message);
+                            if (switchError) {
+                                console.error(`⚠️ [SUPABASE WARN] Failed to check eliza switch:`, switchError.message);
+                            }
 
-                            if (elizaSwitch && elizaSwitch.value?.enabled === false) {
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                            const isEnabled = !elizaSwitch || elizaSwitch.value?.enabled !== false;
+                            console.log(`⚙️ [SWITCH] Global AI Status: ${isEnabled ? 'ENABLED' : 'DISABLED'}`);
+
+                            if (!isEnabled) {
+                                console.log(`🛑 [PAUSE] Global AI is DISABLED. Moving lead ${clientNumber} to needs_human.`);
+                                await supabaseAdmin.from('leads_lobo').update({ 
+                                    status: 'needs_human', 
+                                    needs_human: true 
+                                }).eq('phone', clientNumber);
                                 return;
                             }
 
