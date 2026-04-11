@@ -10,13 +10,12 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
   
-  // 1. Catch Supabase Auth Errors (e.g., Database Trigger failures)
+  // 1. Catch Supabase Auth Errors
   const error = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
+  const errorDescription = searchParams.get('error_description');
 
   if (error || errorDescription) {
     console.error('[AUTH_CALLBACK_ERROR] Supabase reported an error:', { error, errorDescription });
-    // Use /login as fallback for errors
     const loginUrl = new URL('/login', origin);
     loginUrl.searchParams.set('auth_error', error || 'signup_failed');
     if (errorDescription) loginUrl.searchParams.set('error_description', errorDescription);
@@ -35,13 +34,9 @@ export async function GET(request: Request) {
             return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch (err) {
-              // This can be ignored if the middleware is handling refresh
-            }
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
           },
         },
       }
@@ -72,7 +67,7 @@ export async function GET(request: Request) {
         console.log(`[AUTH_CALLBACK] Creating default config for ${session.user.id}`);
         await supabaseAdmin.from('business_config').insert({
           owner_id: session.user.id,
-          plan_tier: 'FREE', // Initial signup is FREE
+          plan_tier: 'FREE',
           instance_name: null,
           context_json: {
             is_ai_enabled: true,
@@ -90,6 +85,7 @@ export async function GET(request: Request) {
         });
       }
 
+      // Final redirect after session is established
       return NextResponse.redirect(new URL(next, origin));
     }
     

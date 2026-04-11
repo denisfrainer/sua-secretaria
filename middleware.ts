@@ -2,10 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export default async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
   const supabase = createServerClient(
@@ -17,37 +15,44 @@ export default async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value, options))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options)
           )
         },
       },
     }
   )
 
-  // Identity Check (Identity ONLY, no DB queries for performance)
+  // IMPORTANT: Avoid using getUser() in middleware if performance is a priority, 
+  // but as per your request and official SSR guide for session refresh, we use it here.
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
   
-  // Clean route protection (No more locale prefixes)
+  // Route Protection Logic
   const isDashboard = pathname.startsWith('/dashboard')
   const isLogin = pathname.startsWith('/login')
   const isAuthCallback = pathname.includes('/auth/callback')
 
-  // Protected Route Logic
   if (isDashboard && !user && !isAuthCallback) {
     // Redirect to login if accessing dashboard without session
-    return NextResponse.redirect(new URL('/login', request.url))
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
 
   if (isLogin && user) {
     // Redirect to dashboard if already logged in
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
   }
 
-  return response
+  return supabaseResponse
 }
 
 export const config = {
