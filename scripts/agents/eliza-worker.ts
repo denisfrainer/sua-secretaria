@@ -802,6 +802,7 @@ http.createServer((req, res) => {
                         const { error: updateError } = await supabaseAdmin
                             .from('business_config')
                             .update({
+                                status: newStatus,
                                 context_json: updatedContext,
                                 updated_at: new Date().toISOString()
                             })

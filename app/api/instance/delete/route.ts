@@ -83,6 +83,7 @@ export async function POST(request: Request) {
             .from('business_config')
             .update({
                 instance_name: null,
+                status: 'DISCONNECTED',
                 context_json: cleanedContext,
                 updated_at: new Date().toISOString()
             })
