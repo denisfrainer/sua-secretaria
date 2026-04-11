@@ -9,8 +9,8 @@ interface TrialStatusBoxProps {
 }
 
 /**
- * Premium Trial Status Indicator (Railway Style)
- * Displays the remaining days in the trial period with a compact, minimal design.
+ * Premium Trial Status Indicator (Railway Dark Mode Style)
+ * Displays the remaining days in the trial period with a compact, minimal dark design.
  */
 export function TrialStatusBox({ trialEndsAt, planTier }: TrialStatusBoxProps) {
   const daysLeft = useMemo(() => {
@@ -29,11 +29,8 @@ export function TrialStatusBox({ trialEndsAt, planTier }: TrialStatusBoxProps) {
   if (daysLeft === null) return null;
 
   return (
-    <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-[#ecfdf5] border border-[#10b981]/20 rounded-lg shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="relative">
-        <Bell size={14} className="text-[#10b981]" />
-      </div>
-      <span className="text-[11px] font-bold text-[#065f46] whitespace-nowrap tracking-tight">
+    <div className="inline-flex items-center px-3 py-1 rounded-md text-[11px] font-medium bg-[#0A1911] text-[#34D399] border border-[#133020] shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
+      <span className="whitespace-nowrap tracking-tight uppercase">
         {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} restantes
       </span>
     </div>

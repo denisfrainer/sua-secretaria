@@ -4,6 +4,7 @@ import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { TrialStatusBox } from '@/components/dashboard/TrialStatusBox';
 import { redirect } from 'next/navigation';
 import { google } from 'googleapis';
 import { getGoogleAuthClient } from '@/lib/calendar/google';
@@ -15,15 +16,6 @@ import { cookies } from 'next/headers';
 import { ElizaRoiCard } from '@/components/dashboard/eliza-roi-card';
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const hasSupabaseCookie = cookieStore.getAll().some(c => c.name.includes('supabase'));
-
-  console.log('[DASHBOARD_RENDER] Auth State Check:', {
-    hasSupabaseCookie,
-    cookieNames: cookieStore.getAll().map(c => c.name),
-    timestamp: new Date().toISOString()
-  });
-
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -39,7 +31,7 @@ export default async function DashboardPage() {
     if (supabaseAdmin) {
       const [configRes, profileRes] = await Promise.all([
         supabaseAdmin.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
-        supabaseAdmin.from('profiles').select('full_name').eq('id', user?.id).single()
+        supabaseAdmin.from('profiles').select('full_name, plan_tier, trial_ends_at').eq('id', user?.id).single()
       ]);
       
       businessConfig = configRes.data;
@@ -103,7 +95,7 @@ export default async function DashboardPage() {
     // Final fallback attempt with standard client for both config and profile
     const [{ data: configData }, { data: profileData }] = await Promise.all([
       supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
-      supabase.from('profiles').select('full_name').eq('id', user?.id).single()
+      supabase.from('profiles').select('full_name, plan_tier, trial_ends_at').eq('id', user?.id).single()
     ]);
     businessConfig = configData;
     profile = profileData;
@@ -130,6 +122,14 @@ export default async function DashboardPage() {
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
       
+      {/* Trial Status Indicator (Railway Style) */}
+      <div className="flex justify-end w-full -mb-4">
+        <TrialStatusBox 
+          planTier={profile?.plan_tier || 'FREE'} 
+          trialEndsAt={profile?.trial_ends_at || null} 
+        />
+      </div>
+
       {/* Dynamic Welcome Header (Motion inside) */}
       <DashboardGreeting userName={displayName} isConnected={isConnected} />
 

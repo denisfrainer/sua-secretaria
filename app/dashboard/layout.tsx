@@ -20,13 +20,6 @@ export default async function DashboardLayout({
 
   if (!user) redirect('/login');
 
-  // Fetch subscription data directly from Profile (Source of Truth for UI)
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('plan_tier, trial_ends_at')
-    .eq('id', user.id)
-    .maybeSingle();
-
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col font-source text-gray-900">
       {/* Protected minimal header */}
@@ -49,14 +42,8 @@ export default async function DashboardLayout({
           meatende.ai
         </Link>
 
-        {/* RIGHT: Controls Group (Trial + Menu) */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-nowrap shrink-0">
-          {/* Railway-style Trial Status Box */}
-          <TrialStatusBox 
-            planTier={profile?.plan_tier || 'FREE'} 
-            trialEndsAt={profile?.trial_ends_at || null} 
-          />
-
+        {/* RIGHT: Controls Group (Menu) */}
+        <div className="flex items-center gap-3">
           <div className="hidden md:block shrink-0">
             <DashboardHeaderMenu email={user?.email || ''} />
           </div>
