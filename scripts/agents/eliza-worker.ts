@@ -1024,19 +1024,33 @@ http.createServer((req, res) => {
                                 return;
                             }
 
-                            if (lead.is_locked === true || lead.ai_paused === true || lead.needs_human === true) {
-                                console.log(`🔒 Lead travado ou com humano.Ignorando.`);
+                            if (lead.is_locked === true) {
+                                console.log(`🔒 [GUARD] Lead is_locked=true. Ignoring message from ${clientNumber}.`);
                                 return;
+                            }
+
+                            // If lead was previously paused/handed-off, a new inbound message
+                            // means the human interaction is over — unpause and let AI resume.
+                            if (lead.ai_paused === true || lead.needs_human === true) {
+                                console.log(`🔓 [GUARD] Lead was paused (ai_paused=${lead.ai_paused}, needs_human=${lead.needs_human}). New message received — unpausing for AI.`);
+                                await supabaseAdmin.from('leads_lobo').update({
+                                    ai_paused: false,
+                                    needs_human: false
+                                }).eq('id', lead.id);
                             }
                         }
 
                         if (!lead) {
+                            console.log(`🆕 [LEAD] Creating new lead for ${clientNumber} (instance: ${instanceName})`);
                             const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
                                 phone: clientNumber, 
                                 status: 'organic_inbound', 
                                 name: 'Lead inbound', 
                                 message_buffer: '', 
                                 is_processing: false, 
+                                ai_paused: false,
+                                needs_human: false,
+                                is_locked: false,
                                 instance_name: instanceName,
                                 owner_id: tenantId
                             }).select().single();
@@ -1094,8 +1108,11 @@ http.createServer((req, res) => {
 
                             await supabaseAdmin.from('leads_lobo').update({ 
                                 status: 'eliza_processing',
-                                instance_name: instanceName // Synchronize instance name
+                                ai_paused: false,
+                                needs_human: false,
+                                instance_name: instanceName
                             }).eq('phone', clientNumber);
+                            console.log(`✅ [WEBHOOK] Lead ${clientNumber} set to eliza_processing with ai_paused=false, needs_human=false.`);
                             
                             console.log(`🎯 [WEBHOOK] Status of ${clientNumber} set to 'eliza_processing'.`);
                         }
