@@ -669,11 +669,21 @@ ${businessContext}
 // 🔄 POLLING ENGINE
 // ==============================================================
 let pollCycleCount = 0;
+let isPolling = false;
+
 async function startPolling() {
-    console.log('🔄 [WORKER] Listening for eliza_processing leads...');
-    while (true) {
+    console.log('🚀 [BOOT] Igniting Eliza Polling Engine Heartbeat...');
+    
+    setInterval(async () => {
+        if (isPolling) return; // Prevent overlapping runs
+        isPolling = true;
         pollCycleCount++;
+
         try {
+            if (pollCycleCount % 12 === 0) { // Log heartbeat every ~1 minute (12 * 5s)
+                console.log(`💓 [HEARTBEAT] Cycle #${pollCycleCount} — Scanning for eliza_processing leads...`);
+            }
+
             const { data: leads, error: pollError } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
@@ -682,27 +692,22 @@ async function startPolling() {
                 .limit(1);
 
             if (pollError) {
-                console.error(`❌ [WORKER] Poll query failed (cycle #${pollCycleCount}):`, pollError.message);
-            } else if (leads && leads.length > 0) {
+                console.error(`❌ [WORKER ERROR] Database poll failed (Cycle #${pollCycleCount}):`, pollError.message);
+                isPolling = false;
+                return;
+            }
+
+            if (leads && leads.length > 0) {
                 const lead = leads[0];
-                console.log(`🔄 [WORKER] Cycle #${pollCycleCount} — Found lead to process:`, {
-                    id: lead.id,
-                    phone: lead.phone,
-                    instance_name: lead.instance_name,
-                    owner_id: lead.owner_id,
-                    ai_paused: lead.ai_paused,
-                    needs_human: lead.needs_human,
-                });
+                console.log(`🔄 [WORKER] Cycle #${pollCycleCount} — Found lead to process: ${lead.phone}`);
                 await processLead(lead);
-            } else if (pollCycleCount % 60 === 0) {
-                // Heartbeat every ~5 minutes (60 * 5s)
-                console.log(`💓 [WORKER] Heartbeat — cycle #${pollCycleCount}, no leads in queue.`);
             }
         } catch (e: any) {
-            console.error(`❌ [WORKER] Polling exception (cycle #${pollCycleCount}):`, e.message, e.stack);
+            console.error(`❌ [CRASH PREVENTED] Unknown error in polling loop (Cycle #${pollCycleCount}):`, e.message, e.stack);
+        } finally {
+            isPolling = false;
         }
-        await new Promise(r => setTimeout(r, 5000));
-    }
+    }, 5000); // Bulletproof 5s interval
 }
 
 // ==============================================================
@@ -999,7 +1004,7 @@ http.createServer((req, res) => {
                             return;
                         }
 
-                        let { data: lead } = await supabaseAdmin
+                        let { data: lead, error: fetchError } = await supabaseAdmin
                             .from('leads_lobo')
                             .select('*')
                             .eq('phone', clientNumber)
@@ -1007,8 +1012,14 @@ http.createServer((req, res) => {
                             .eq('owner_id', tenantId)
                             .maybeSingle();
 
+                        if (fetchError) {
+                            console.error(`❌ [SUPABASE ERROR] Failed to fetch lead ${clientNumber}:`, fetchError.message);
+                            return;
+                        }
+
                         if (lead) {
-                            await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+                            const { error: updError } = await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
+                            if (updError) console.error(`⚠️ [SUPABASE WARN] Failed to update lead replied status:`, updError.message);
 
                             if (lead.updated_at) {
                                 const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
@@ -1020,7 +1031,13 @@ http.createServer((req, res) => {
 
                             if ((lead.reply_count || 0) >= 10) {
                                 console.log(`🚨[CIRCUIT BREAKER] Bot Loop.Travando ${clientNumber}.`);
-                                await supabaseAdmin.from('leads_lobo').update({ is_locked: true, status: 'needs_human', ai_paused: true, needs_human: true }).eq('phone', clientNumber);
+                                const { error: lockError } = await supabaseAdmin.from('leads_lobo').update({ 
+                                    is_locked: true, 
+                                    status: 'needs_human', 
+                                    ai_paused: true, 
+                                    needs_human: true 
+                                }).eq('phone', clientNumber);
+                                if (lockError) console.error(`❌ [SUPABASE ERROR] Failed to lock lead:`, lockError.message);
                                 return;
                             }
 
@@ -1033,16 +1050,17 @@ http.createServer((req, res) => {
                             // means the human interaction is over — unpause and let AI resume.
                             if (lead.ai_paused === true || lead.needs_human === true) {
                                 console.log(`🔓 [GUARD] Lead was paused (ai_paused=${lead.ai_paused}, needs_human=${lead.needs_human}). New message received — unpausing for AI.`);
-                                await supabaseAdmin.from('leads_lobo').update({
+                                const { error: unpauseError } = await supabaseAdmin.from('leads_lobo').update({
                                     ai_paused: false,
                                     needs_human: false
                                 }).eq('id', lead.id);
+                                if (unpauseError) console.error(`❌ [SUPABASE ERROR] Failed to unpause lead:`, unpauseError.message);
                             }
                         }
 
                         if (!lead) {
                             console.log(`🆕 [LEAD] Creating new lead for ${clientNumber} (instance: ${instanceName})`);
-                            const { data: newLead } = await supabaseAdmin.from('leads_lobo').insert({
+                            const { data: newLead, error: insertError } = await supabaseAdmin.from('leads_lobo').insert({
                                 phone: clientNumber, 
                                 status: 'organic_inbound', 
                                 name: 'Lead inbound', 
@@ -1054,13 +1072,23 @@ http.createServer((req, res) => {
                                 instance_name: instanceName,
                                 owner_id: tenantId
                             }).select().single();
+                            
+                            if (insertError) {
+                                console.error(`❌ [SUPABASE ERROR] Failed to CREATE lead:`, insertError.message, insertError.details);
+                                return; // Stop if we can't create the lead
+                            }
                             lead = newLead;
                         }
 
                         // --- SALVAMENTO E GATILHO ---
-                        await supabaseAdmin.from('messages').insert({
+                        const { error: msgInsertError } = await supabaseAdmin.from('messages').insert({
                             lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
                         });
+
+                        if (msgInsertError) {
+                            console.error(`❌ [SUPABASE ERROR] Failed to insert message:`, msgInsertError.message);
+                            // We might want to continue, but usually, if the message isn't saved, AI will lack context.
+                        }
 
                         // --- BRANCH A: STATIC MENU ---
                         if (instanceName === 'demo-menu') {
@@ -1075,11 +1103,12 @@ http.createServer((req, res) => {
                             } else if (msgClean === '2') {
                                 menuResponse = "Você escolheu a Opção 2: Falar com atendente humano. Um momento, por favor, nossa equipe já vai te atender.";
                                 newStatus = "human_handling";
-                                await supabaseAdmin.from('leads_lobo').update({
+                                const { error: menuUpdError } = await supabaseAdmin.from('leads_lobo').update({
                                     status: newStatus,
                                     needs_human: true,
                                     ai_paused: true
                                 }).eq('id', lead.id);
+                                if (menuUpdError) console.error(`❌ [SUPABASE ERROR] Failed to update lead in menu branch:`, menuUpdError.message);
                             } else if (msgClean === '3') {
                                 menuResponse = "Você escolheu a Opção 3: Horários de funcionamento.\n🕒 Funcionamos das 08:00 às 18:00 de segunda a sexta.\n\nDigite 0 para voltar ao menu principal.";
                             } else {
@@ -1090,7 +1119,8 @@ http.createServer((req, res) => {
                             await sendWhatsAppMessage(clientNumber, menuResponse, 1000);
 
                             // Apenas atualiza o status se for a ramificação do menu
-                            await supabaseAdmin.from('leads_lobo').update({ status: newStatus }).eq('id', lead.id);
+                            const { error: finalMenuUpd } = await supabaseAdmin.from('leads_lobo').update({ status: newStatus }).eq('id', lead.id);
+                            if (finalMenuUpd) console.error(`⚠️ [SUPABASE WARN] Failed to update lead status:`, finalMenuUpd.message);
 
                             console.log(`🚦 [ROUTER] Branch A finalizada.`);
                             return; // CRITICAL: Ends webhook execution here so the AI engine is never engaged
@@ -1100,21 +1130,28 @@ http.createServer((req, res) => {
                         // Dynamic Routing: Any instance that is NOT the static menu is routed to the AI Agent
                         if (instanceName !== 'demo-menu') {
                             console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
-                            const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').single();
+                            const { data: elizaSwitch, error: switchError } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
+                            
+                            if (switchError) console.error(`⚠️ [SUPABASE WARN] Failed to check eliza switch:`, switchError.message);
+
                             if (elizaSwitch && elizaSwitch.value?.enabled === false) {
                                 await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                                 return;
                             }
 
-                            await supabaseAdmin.from('leads_lobo').update({ 
+                            const { error: triggerError } = await supabaseAdmin.from('leads_lobo').update({ 
                                 status: 'eliza_processing',
                                 ai_paused: false,
                                 needs_human: false,
                                 instance_name: instanceName
                             }).eq('phone', clientNumber);
-                            console.log(`✅ [WEBHOOK] Lead ${clientNumber} set to eliza_processing with ai_paused=false, needs_human=false.`);
+
+                            if (triggerError) {
+                                console.error(`❌ [SUPABASE ERROR] Failed to trigger eliza_processing:`, triggerError.message);
+                                return;
+                            }
                             
-                            console.log(`🎯 [WEBHOOK] Status of ${clientNumber} set to 'eliza_processing'.`);
+                            console.log(`✅ [WEBHOOK] Lead ${clientNumber} set to eliza_processing with ai_paused=false, needs_human=false.`);
                         }
                     }
                 }
