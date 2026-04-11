@@ -307,9 +307,19 @@ async function processLead(lead: any) {
     
     console.log(`\n===========================================`);
     console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber} (Instance: ${instanceToUse})`);
+    console.log(`🔍 [ELIZA] Lead metadata:`, {
+        id: lead.id,
+        owner_id: lead.owner_id,
+        instance_name: lead.instance_name,
+        status: lead.status,
+        ai_paused: lead.ai_paused,
+        needs_human: lead.needs_human,
+        is_locked: lead.is_locked,
+    });
 
     try {
         // 1. Lock lead status
+        console.log(`🔒 [ELIZA] Locking lead ${lead.id} → eliza_analyzing`);
         await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
 
         // 2. Load context and history (DYNAMIC MULTI-TENANT)
@@ -327,8 +337,9 @@ async function processLead(lead: any) {
         const currentTier = configData?.plan_tier || 'ELITE'; // Temporarily default to ELITE for testing
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
+        console.log(`🛡️ [ELIZA] Tier check: plan=${currentTier}, hasAccess=${hasAccess(currentTier, 'AI_CONFIGURATION')}`);
         if (!hasAccess(currentTier, 'AI_CONFIGURATION')) {
-            console.warn(`[ELIZA_ABORT] Access denied for ${instanceToUse}. Plan ${currentTier} fails AI check.`);
+            console.warn(`[ELIZA_ABORT] ❌ Access denied for ${instanceToUse}. Plan ${currentTier} fails AI check. Reverting to waiting_reply.`);
             
             // Revert status to avoid constant polling of an unauthorized lead
             await supabaseAdmin.from('leads_lobo').update({ 
@@ -347,8 +358,9 @@ async function processLead(lead: any) {
 
             // --- 🚦 TENANT-LEVEL KILL SWITCH ---
             const isAiEnabled = fullConfig?.is_ai_enabled ?? true;
+            console.log(`🚦 [ELIZA] Kill switch check: is_ai_enabled=${isAiEnabled}`);
             if (!isAiEnabled) {
-                console.warn(`[ELIZA_PAUSED] IA desativada pelo usuário para instância: ${instanceToUse}. Abortando processamento.`);
+                console.warn(`[ELIZA_PAUSED] ❌ IA desativada pelo usuário para instância: ${instanceToUse}. Abortando.`);
                 await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
                 return;
             }
@@ -502,8 +514,11 @@ ${businessContext}
             })),
         });
 
-        console.log(`⏳ Calling Gemini API com a mensagem: "${currentMessage}"`);
+        console.log(`⏳ [LLM] Calling Gemini API with message: "${currentMessage.substring(0, 80)}..."`);
+        console.log(`⏳ [LLM] System instruction length: ${systemInstruction.length} chars`);
+        const llmStartTime = Date.now();
         let result = await chat.sendMessage({ message: currentMessage });
+        console.log(`✅ [LLM] Gemini responded in ${Date.now() - llmStartTime}ms. Has text: ${!!result.text}, Has tools: ${!!result.functionCalls}`);
 
         // 5. Tool Loop (Function Calling)
         let loopCount = 0;
@@ -639,30 +654,52 @@ ${businessContext}
         console.log(`✅[ELIZA] Success for ${clientNumber}`);
 
     } catch (error: any) {
-        console.error("❌ [ELIZA ERROR]:", error.message);
-        await supabaseAdmin.from('leads_lobo').update({ status: 'waiting_reply' }).eq('id', lead.id);
+        console.error(`❌ [ELIZA FATAL] Lead ${lead.id} (${clientNumber}) crashed:`, error.message);
+        console.error(`❌ [ELIZA FATAL] Stack trace:`, error.stack);
+        // Mark as error — NOT waiting_reply — to prevent silent infinite retry loops
+        await supabaseAdmin.from('leads_lobo').update({ 
+            status: 'eliza_error',
+            needs_human: true 
+        }).eq('id', lead.id);
+        console.error(`❌ [ELIZA FATAL] Lead ${lead.id} marked as eliza_error. Requires manual intervention.`);
     }
 }
 
 // ==============================================================
 // 🔄 POLLING ENGINE
 // ==============================================================
+let pollCycleCount = 0;
 async function startPolling() {
     console.log('🔄 [WORKER] Listening for eliza_processing leads...');
     while (true) {
+        pollCycleCount++;
         try {
-            const { data: leads } = await supabaseAdmin
+            const { data: leads, error: pollError } = await supabaseAdmin
                 .from('leads_lobo')
                 .select('*')
                 .eq('status', 'eliza_processing')
                 .eq('ai_paused', false)
                 .limit(1);
 
-            if (leads && leads.length > 0) {
-                await processLead(leads[0]);
+            if (pollError) {
+                console.error(`❌ [WORKER] Poll query failed (cycle #${pollCycleCount}):`, pollError.message);
+            } else if (leads && leads.length > 0) {
+                const lead = leads[0];
+                console.log(`🔄 [WORKER] Cycle #${pollCycleCount} — Found lead to process:`, {
+                    id: lead.id,
+                    phone: lead.phone,
+                    instance_name: lead.instance_name,
+                    owner_id: lead.owner_id,
+                    ai_paused: lead.ai_paused,
+                    needs_human: lead.needs_human,
+                });
+                await processLead(lead);
+            } else if (pollCycleCount % 60 === 0) {
+                // Heartbeat every ~5 minutes (60 * 5s)
+                console.log(`💓 [WORKER] Heartbeat — cycle #${pollCycleCount}, no leads in queue.`);
             }
-        } catch (e) {
-            console.error("Polling error:", e);
+        } catch (e: any) {
+            console.error(`❌ [WORKER] Polling exception (cycle #${pollCycleCount}):`, e.message, e.stack);
         }
         await new Promise(r => setTimeout(r, 5000));
     }
