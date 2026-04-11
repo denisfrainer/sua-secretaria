@@ -417,10 +417,12 @@ async function processLead(lead: any) {
         if (isGreetingOnly) {
             console.log(`👋 [ELIZA_FLOW] Saudação detectada. Iniciando funil de vendas.`);
             console.log(`🚫 [ELIZA_FLOW] Handoff bloqueado para mensagem inicial.`);
-            dynamicInstruction += "\n⚠️ CRITICAL OVERRIDE: O usuário apenas enviou uma saudação inicial. VOCÊ NÃO PODE ACIONAR O HANDOFF (notify_human_specialist). Responda com fluidez natural: identifique-se como Eliza, assistente virtual da [NOME DA EMPRESA], informe seu propósito (agendamentos) e conduza-o suavemente para o STEP 1.";
+            dynamicInstruction += `\n⚠️ CRITICAL OVERRIDE: O usuário apenas enviou uma saudação inicial. VOCÊ NÃO PODE ACIONAR O HANDOFF (notify_human_specialist). Responda com fluidez natural: identifique-se como Eliza, assistente virtual da ${businessName}, informe seu propósito (agendamentos) e conduza-o suavemente para o STEP 1.`;
         }
 
-        // Injeção da data atual para blindagem de calendário
+        // Dynamic Branding
+        const businessName = configData?.business_name || 'nossa clínica';
+        
         const now = new Date();
         const formattedDate = now.toLocaleDateString('pt-BR', {
             weekday: 'long',
@@ -444,7 +446,7 @@ CRITICAL INSTRUCTION: ALL YOUR RESPONSES TO THE USER MUST BE GENERATED EXCLUSIVE
 - REGRAS COMPORTAMENTAIS: ${toneRules}
 
 # 2. STRICT RULES & GUARDRAILS (RAIL MODE)
-- ENTRY POINT: Greetings ("Olá", "Bom dia") are engagement triggers. Respond cordially, introduce yourself as Eliza, the virtual assistant of [NOME DA EMPRESA], and ask how you can help, immediately guiding them to STEP 1.
+- ENTRY POINT: Greetings ("Olá", "Bom dia") are engagement triggers. Respond cordially, introduce yourself as Eliza, the virtual assistant of ${businessName}, and ask how you can help, immediately guiding them to STEP 1.
 - CONSTRAINT 1 (NO CHITCHAT): You are a receptionist, not a friend. Beyond the initial greeting, do not make open-ended conversation. Keep the flow moving to the calendar.
 - CONSTRAINT 2 (SHORT ANSWERS): Your responses must be extremely concise. Maximum of 2 text bubbles per interaction. Maximum of 20 words per bubble. Use the "||" separator to split distinct ideas.
 - CONSTRAINT 3 (NO HALLUCINATIONS): Base prices, services, and rules STRICTLY on the "BUSINESS CONTEXT". If a user asks for a service or price not listed, DO NOT invent it.
@@ -508,10 +510,18 @@ ${businessContext}
                 systemInstruction: systemInstruction,
                 tools: [{ functionDeclarations }] as any,
             },
-            history: chatHistory.map((msg: any) => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }],
-            })),
+            history: chatHistory
+                .filter((msg: any) => {
+                    // 🧽 [HISTORY CLEANSING] Filter out handoff triggers and escape phrases 
+                    // to prevent Gemini from thinking it's stuck or shouldn't respond.
+                    const isHandoff = msg.content.includes("[HANDOFF_TRIGGERED]");
+                    const isEscape = msg.content.includes("Vou pedir para a especialista");
+                    return !isHandoff && !isEscape;
+                })
+                .map((msg: any) => ({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }],
+                })),
         });
 
         console.log(`⏳ [LLM] Calling Gemini API with message: "${currentMessage.substring(0, 80)}..."`);
@@ -894,6 +904,13 @@ http.createServer((req, res) => {
                     : String(dataObj.key.remoteJid);
 
                 const clientNumber = normalizePhone(rawJid);
+                
+                // 🛡️ [THE GHOST FILTER] Ignore messages from the bot's own number
+                const BOT_NUMBER = '554898097754';
+                if (clientNumber === BOT_NUMBER) {
+                    return; // Silent return
+                }
+
                 const incomingMessageId = dataObj.key.id;
                 const messageObj = dataObj.message;
 
