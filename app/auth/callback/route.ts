@@ -1,7 +1,7 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,20 +12,24 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = await cookies();
-    
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+          getAll() {
+            return cookieStore.getAll();
           },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.delete({ name, ...options });
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // setAll can throw in certain server component contexts — safe to ignore
+              // because middleware will handle the refresh on the next request
+            }
           },
         },
       }
@@ -92,7 +96,8 @@ export async function GET(request: Request) {
         console.log(`[AUTH_CALLBACK] business_config already exists for ${session.user.id}. Skipping.`);
       }
 
-      // Return NextResponse.redirect to ensure cookies are attached to the browser response.
+      // Redirect — the cookies were already set via setAll during exchangeCodeForSession.
+      // The middleware will validate and refresh them on the /dashboard request.
       return NextResponse.redirect(new URL(next, origin));
     }
     

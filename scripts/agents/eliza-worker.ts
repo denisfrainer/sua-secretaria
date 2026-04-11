@@ -735,8 +735,10 @@ http.createServer((req, res) => {
                     console.log(`🔌 [CONNECTION] Raw data dump:`, JSON.stringify(body.data || body));
                     console.log(`🔌 [CONNECTION] Extracted state: "${rawState}" → normalized: "${normalizedState}"`);
 
-                    // STATE CLASSIFICATION
-                    const CONNECTED_STATES = ['open', 'connected', 'connecting'];
+                    // STATE CLASSIFICATION — STRICT: only 'open' = CONNECTED
+                    // 'connecting' is deliberately EXCLUDED — it fires when Evolution
+                    // is booting up to generate QR, NOT when user has actually scanned.
+                    const CONNECTED_STATES = ['open', 'connected'];
                     const DISCONNECTED_STATES = ['close', 'disconnected', 'refused', 'logout'];
 
                     const isOpen = CONNECTED_STATES.includes(normalizedState);

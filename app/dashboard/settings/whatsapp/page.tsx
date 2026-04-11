@@ -3,16 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { 
-  MessageSquare,
   Trash2, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
   RefreshCw,
-  LogOut,
-  ShieldCheck,
   Smartphone,
-  QrCode,
   List,
   ChevronRight,
   ArrowLeft,
@@ -31,16 +27,23 @@ export default function WhatsAppSettingsPage() {
   const [activeView, setActiveView] = useState<ViewState>(null);
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [savingBehavior, setSavingBehavior] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  // Track whether we just created an instance and should show QR
-  const [showQrAfterCreate, setShowQrAfterCreate] = useState(false);
   
   const [handoffNumber, setHandoffNumber] = useState('');
   const [schedulingLink, setSchedulingLink] = useState('');
   
   const supabase = createClient();
+
+  // ────────────────────────────────────────────────────────
+  // SINGLE SOURCE OF TRUTH: Derive state strictly from DB
+  // ────────────────────────────────────────────────────────
+  const instanceName: string | null = config?.instance_name?.trim() || null;
+  const connectionStatus: string = config?.context_json?.connection_status || 'DISCONNECTED';
+  const hasInstance = Boolean(instanceName);
+  const isConnected = hasInstance && connectionStatus === 'CONNECTED';
 
   const fetchStatus = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -60,32 +63,31 @@ export default function WhatsAppSettingsPage() {
     setLoading(false);
   }, [supabase]);
 
+  // Initial load — fetch DB state ONCE on mount. No auto-init.
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
 
   const handleViewChange = (view: ViewState) => {
-    console.log('[WA_NAV] User entering sub-section:', { 
-      section: view || 'selection_hub', 
-      timestamp: new Date().toISOString() 
-    });
     setActiveView(view);
   };
 
+  // ────────────────────────────────────────────────────────
+  // INITIALIZE: Strictly onClick only. Never auto-triggered.
+  // ────────────────────────────────────────────────────────
   const handleInitializeInstance = async () => {
-    setLoading(true);
-    setShowQrAfterCreate(false);
+    setInitializing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const businessName = user.user_metadata?.business_name || 'Minha Empresa';
       const slug = businessName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
-      const instanceName = `${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const name = `${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
       
       const initRes = await fetch('/api/instance/initialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instanceName })
+          body: JSON.stringify({ instanceName: name })
       });
 
       if (initRes.status === 409) {
@@ -97,11 +99,10 @@ export default function WhatsAppSettingsPage() {
 
       if (!initRes.ok) throw new Error("Erro ao inicializar IA.");
       
-      // Signal that we just created — show QR code immediately
-      setShowQrAfterCreate(true);
+      // Refresh DB state — will now have instance_name set + DISCONNECTED → shows QR
       await fetchStatus();
     } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+    finally { setInitializing(false); }
   };
 
   const handleSaveBehavior = async () => {
@@ -126,34 +127,28 @@ export default function WhatsAppSettingsPage() {
   };
 
   const handleDeleteInstance = async () => {
-    if (!config?.instance_name) return;
-    const confirmed = window.confirm(`Tem certeza que deseja excluir a instância "${config.instance_name}"? Esta ação é irreversível.`);
+    if (!instanceName) return;
+    const confirmed = window.confirm(`Tem certeza que deseja excluir a instância "${instanceName}"? Esta ação é irreversível.`);
     if (!confirmed) return;
     
     setDisconnecting(true);
     try {
-      const res = await fetch(`/api/instance/delete?instance=${config.instance_name}`, { method: 'POST' });
+      const res = await fetch(`/api/instance/delete?instance=${instanceName}`, { method: 'POST' });
       if (!res.ok) {
         const data = await res.json();
         console.error('Delete failed:', data);
       }
-      setShowQrAfterCreate(false);
       await fetchStatus();
     } catch (err) { console.error(err); } 
     finally { setDisconnecting(false); }
   };
 
-  const handleDisconnect = handleDeleteInstance;
-
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
-
-  const hasInstance = Boolean(config?.instance_name && config.instance_name.trim().length > 0);
-  const isConnected = hasInstance && config?.context_json?.connection_status === 'CONNECTED';
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
       
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           {activeView && (
@@ -174,6 +169,9 @@ export default function WhatsAppSettingsPage() {
       </div>
 
       <AnimatePresence mode="wait">
+        {/* ══════════════════════════════════════════════ */}
+        {/* HUB VIEW: Two navigation cards                */}
+        {/* ══════════════════════════════════════════════ */}
         {!activeView ? (
           <motion.div 
             key="hub"
@@ -182,7 +180,6 @@ export default function WhatsAppSettingsPage() {
             exit={{ opacity: 0, y: -10 }}
             className="flex flex-col gap-4"
           >
-            {/* CARD 1: INFRASTRUCTURE */}
             <button 
               onClick={() => handleViewChange('infra')}
               className="group flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:border-slate-200 transition-all text-left w-full"
@@ -205,7 +202,6 @@ export default function WhatsAppSettingsPage() {
               </div>
             </button>
 
-            {/* CARD 2: BEHAVIOR */}
             <button 
               onClick={() => handleViewChange('menu')}
               className="group flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:border-slate-200 transition-all text-left w-full"
@@ -220,6 +216,10 @@ export default function WhatsAppSettingsPage() {
               <ChevronRight size={20} className="text-slate-300" />
             </button>
           </motion.div>
+
+        /* ══════════════════════════════════════════════ */
+        /* INFRA VIEW: Strict 3-state machine            */
+        /* ══════════════════════════════════════════════ */
         ) : activeView === 'infra' ? (
           <motion.div 
             key="infra"
@@ -227,9 +227,7 @@ export default function WhatsAppSettingsPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col gap-6"
           >
-            {/* ============================================ */}
-            {/* STATE 1: No instance — show ONLY the create button */}
-            {/* ============================================ */}
+            {/* ─── STATE A: No instance → Create button ─── */}
             {!hasInstance ? (
               <div className="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-10 flex flex-col items-center text-center gap-6">
                 <RefreshCw size={40} className="text-slate-200" />
@@ -237,87 +235,73 @@ export default function WhatsAppSettingsPage() {
                 <p className="text-sm text-slate-400 max-w-xs">Clique abaixo para gerar um QR Code e conectar seu WhatsApp.</p>
                 <button 
                   onClick={handleInitializeInstance}
-                  disabled={loading}
+                  disabled={initializing}
                   className="w-full h-14 bg-[#533CFA] text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 active:scale-95 transition-all outline-none disabled:opacity-50"
                 >
-                  {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Gerar QR Code'}
+                  {initializing ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Gerar QR Code'}
                 </button>
               </div>
 
-            /* ============================================ */
-            /* STATE 2: Instance exists + just created — show QR code */
-            /* ============================================ */
-            ) : showQrAfterCreate && !isConnected ? (
-              <QRCodeDisplay 
-                instanceName={config.instance_name} 
-                onConnected={() => {
-                  setShowQrAfterCreate(false);
-                  fetchStatus();
-                }}
-              />
+            /* ─── STATE B: Instance exists + DISCONNECTED → QR Code ─── */
+            ) : !isConnected ? (
+              <>
+                <QRCodeDisplay 
+                  instanceName={instanceName!} 
+                  onConnected={fetchStatus}
+                />
 
-            /* ============================================ */
-            /* STATE 3: Instance exists — show status card  */
-            /* ============================================ */
-            ) : (
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center text-center gap-6 relative overflow-hidden">
-                {isConnected ? (
-                  <>
-                    <div className="w-20 h-20 rounded-[2rem] bg-green-50 flex items-center justify-center shadow-lg shadow-green-500/10 mb-2">
-                      <CheckCircle2 size={40} className="text-green-500" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Ativo</h3>
-                      <p className="text-sm font-medium text-slate-400">Instância operando normalmente.</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-4 py-1.5 rounded-full border border-green-100">
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      Online
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-20 h-20 rounded-[2rem] bg-red-50 flex items-center justify-center shadow-lg shadow-red-500/10 mb-2">
-                      <WifiOff size={40} className="text-red-400" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Offline</h3>
-                      <p className="text-sm font-medium text-slate-400">Instância desconectada.</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-4 py-1.5 rounded-full border border-red-100">
-                      <div className="w-2 h-2 rounded-full bg-red-400" />
-                      Offline
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+                <button
+                  onClick={handleDeleteInstance}
+                  disabled={disconnecting}
+                  className="w-full h-14 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={18} />}
+                  Excluir Instância
+                </button>
 
-            {/* 🛡️ EMERGENCY DELETE — ALWAYS visible when instance_name exists */}
-            {hasInstance && (
-              <button
-                onClick={handleDeleteInstance}
-                disabled={disconnecting}
-                className="w-full h-14 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={18} />}
-                Excluir Instância
-              </button>
-            )}
-
-            {/* Help text — only when disconnected and has instance */}
-            {!isConnected && hasInstance && !showQrAfterCreate && (
-              <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 flex items-start gap-4">
-                <AlertCircle className="text-slate-400 shrink-0" size={20} />
-                <div className="flex flex-col gap-1">
-                  <h4 className="text-sm font-bold text-slate-900 tracking-tight">Instância offline?</h4>
-                  <p className="text-xs font-medium text-slate-500 leading-relaxed">
-                    Sua instância está desconectada. Exclua e crie uma nova para reconectar via QR Code.
-                  </p>
+                <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 flex items-start gap-4">
+                  <AlertCircle className="text-slate-400 shrink-0" size={20} />
+                  <div className="flex flex-col gap-1">
+                    <h4 className="text-sm font-bold text-slate-900 tracking-tight">Problemas com o QR Code?</h4>
+                    <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                      Se o código demorar, aguarde alguns segundos. Se travar, clique em &quot;Excluir Instância&quot; e tente novamente.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </>
+
+            /* ─── STATE C: Instance exists + CONNECTED → Active ─── */
+            ) : (
+              <>
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center text-center gap-6 relative overflow-hidden">
+                  <div className="w-20 h-20 rounded-[2rem] bg-green-50 flex items-center justify-center shadow-lg shadow-green-500/10 mb-2">
+                    <CheckCircle2 size={40} className="text-green-500" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Ativo</h3>
+                    <p className="text-sm font-medium text-slate-400">Instância operando normalmente.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-4 py-1.5 rounded-full border border-green-100">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    Online
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleDeleteInstance}
+                  disabled={disconnecting}
+                  className="w-full h-14 rounded-2xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={18} />}
+                  Excluir Instância
+                </button>
+              </>
             )}
           </motion.div>
+
+        /* ══════════════════════════════════════════════ */
+        /* MENU VIEW: Behavior settings                  */
+        /* ══════════════════════════════════════════════ */
         ) : (
           <motion.div 
             key="menu"
