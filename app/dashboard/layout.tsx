@@ -50,14 +50,14 @@ export default async function DashboardLayout({
         </Link>
 
         {/* RIGHT: Controls Group (Trial + Menu) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-nowrap shrink-0">
           {/* Railway-style Trial Status Box */}
           <TrialStatusBox 
             planTier={profile?.plan_tier || 'FREE'} 
             trialEndsAt={profile?.trial_ends_at || null} 
           />
 
-          <div className="hidden md:block">
+          <div className="hidden md:block shrink-0">
             <DashboardHeaderMenu email={user?.email || ''} />
           </div>
           <div className="md:hidden">
