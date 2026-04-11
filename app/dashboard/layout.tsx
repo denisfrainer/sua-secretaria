@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { DashboardHeaderMenu } from '@/components/DashboardHeaderMenu';
 import { MobileDrawerMenu } from '@/components/MobileDrawerMenu';
+import { TrialStatusBox } from '@/components/dashboard/TrialStatusBox';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +17,15 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  // Fetch subscription data for trial status indicator
+  const { data: config } = await supabaseAdmin
+    .from('business_config')
+    .select('plan_tier, trial_ends_at')
+    .eq('owner_id', user.id)
+    .maybeSingle();
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col font-source">
@@ -37,6 +48,12 @@ export default async function DashboardLayout({
           meatende.ai
         </Link>
         <div className="flex items-center gap-4">
+          {/* Railway-style Trial Status Box */}
+          <TrialStatusBox 
+            planTier={config?.plan_tier || 'FREE'} 
+            trialEndsAt={config?.trial_ends_at || null} 
+          />
+
           <div className="hidden md:block">
             <DashboardHeaderMenu email={user?.email || ''} />
           </div>

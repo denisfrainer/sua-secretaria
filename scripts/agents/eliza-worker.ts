@@ -327,19 +327,19 @@ async function processLead(lead: any) {
 
         const { data: configData, error: configError } = await supabaseAdmin
             .from('business_config')
-            .select('id, context_json, plan_tier')
+            .select('id, context_json, plan_tier, trial_ends_at')
             .eq('instance_name', instanceToUse)
             .eq('owner_id', lead.owner_id)
             .single();
 
         let businessContext = "";
         let googleTokens = null;
-        const currentTier = configData?.plan_tier || 'ELITE'; // Temporarily default to ELITE for testing
+        const currentTier = (configData?.plan_tier as PlanTier) || 'FREE';
+        const trialEndsAt = configData?.trial_ends_at;
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
-        console.log(`🛡️ [ELIZA] Tier check: plan=${currentTier}, hasAccess=${hasAccess(currentTier, 'AI_CONFIGURATION')}`);
-        if (!hasAccess(currentTier, 'AI_CONFIGURATION')) {
-            console.warn(`[ELIZA_ABORT] ❌ Access denied for ${instanceToUse}. Plan ${currentTier} fails AI check. Reverting to waiting_reply.`);
+        if (!hasAccess(currentTier, 'AI_CONFIGURATION', trialEndsAt)) {
+            console.warn(`[ELIZA_ABORT] ❌ Access denied for ${instanceToUse}. Plan ${currentTier} expired or inactive.`);
 
             // Revert status to avoid constant polling of an unauthorized lead
             await supabaseAdmin.from('leads_lobo').update({
@@ -817,7 +817,7 @@ http.createServer((req, res) => {
                         // Path A: Match by instance_name
                         const { data: byInstance, error: errA } = await supabaseAdmin
                             .from('business_config')
-                            .select('id, context_json, owner_id')
+                            .select('id, context_json, owner_id, plan_tier, trial_ends_at')
                             .eq('instance_name', instanceName)
                             .maybeSingle();
 
@@ -829,7 +829,7 @@ http.createServer((req, res) => {
                             console.log(`🔄 [CONNECTION] instance_name "${instanceName}" not found. Falling back to tenantId: ${tenantId}`);
                             const { data: byTenant, error: errB } = await supabaseAdmin
                                 .from('business_config')
-                                .select('id, context_json, owner_id')
+                                .select('id, context_json, owner_id, plan_tier, trial_ends_at')
                                 .eq('owner_id', tenantId)
                                 .maybeSingle();
                             config = byTenant;
@@ -856,19 +856,31 @@ http.createServer((req, res) => {
                             connection_status: newStatus,
                         };
 
+                        // 🛠️ Hybrid Trial Ignition logic
+                        let updatePayload: any = {
+                            status: newStatus,
+                            context_json: updatedContext,
+                            updated_at: new Date().toISOString()
+                        };
+
+                        if (newStatus === 'CONNECTED' && (config.plan_tier === 'FREE' || !config.plan_tier) && !config.trial_ends_at) {
+                            console.log(`🔥 [TRIAL_IGNITION] Account ${config.owner_id} ignited for 30-day trial!`);
+                            const thirtyDaysFromNow = new Date();
+                            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+                            
+                            updatePayload.plan_tier = 'TRIAL';
+                            updatePayload.trial_ends_at = thirtyDaysFromNow.toISOString();
+                        }
+
                         const { error: updateError } = await supabaseAdmin
                             .from('business_config')
-                            .update({
-                                status: newStatus,
-                                context_json: updatedContext,
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', config.id); // PK targeting — zero cross-tenant risk
+                            .update(updatePayload)
+                            .eq('id', config.id); 
 
                         if (updateError) {
                             console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
                         } else {
-                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus}`);
+                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL INITIATED)' : ''}`);
                         }
                     } catch (err: any) {
                         console.error(`💥 [CONNECTION] Unhandled exception:`, err.message, err.stack);

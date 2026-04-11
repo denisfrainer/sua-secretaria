@@ -1,4 +1,4 @@
-export type PlanTier = 'STARTER' | 'PRO' | 'ELITE';
+export type PlanTier = 'FREE' | 'TRIAL' | 'STARTER' | 'PRO' | 'ELITE';
 
 /**
  * Granular Feature Gating Configuration
@@ -6,16 +6,16 @@ export type PlanTier = 'STARTER' | 'PRO' | 'ELITE';
  */
 export const FeatureGates = {
   // Level 1: Core Infrastructure
-  SMART_MENU_CONFIG: ['STARTER', 'PRO', 'ELITE'] as PlanTier[],
-  AUTOMATED_PAYMENTS_PIX: ['PRO', 'ELITE'] as PlanTier[],
-  GOOGLE_SHEETS_SYNC: ['PRO', 'ELITE'] as PlanTier[],
+  SMART_MENU_CONFIG: ['FREE', 'TRIAL', 'STARTER', 'PRO', 'ELITE'] as PlanTier[],
+  AUTOMATED_PAYMENTS_PIX: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
+  GOOGLE_SHEETS_SYNC: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
   
   // Level 2: Efficiency & Stability (PRO+)
-  WHATSAPP_CONNECT: ['PRO', 'ELITE'] as PlanTier[],
-  AI_CONFIGURATION: ['PRO', 'ELITE'] as PlanTier[],
+  WHATSAPP_CONNECT: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
+  AI_CONFIGURATION: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
   
   // Level 3: Growth & Expansion (ELITE only)
-  WOLF_AGENT_OUTBOUND: ['ELITE'] as PlanTier[],
+  WOLF_AGENT_OUTBOUND: ['TRIAL', 'ELITE'] as PlanTier[],
 };
 
 /**
@@ -24,9 +24,18 @@ export const FeatureGates = {
  * @param feature The feature key to check
  * @returns boolean indicating access grant
  */
-export function hasAccess(userPlan: PlanTier, feature: keyof typeof FeatureGates): boolean {
+export function hasAccess(userPlan: PlanTier, feature: keyof typeof FeatureGates, trialEndsAt?: string | null): boolean {
   const allowedTiers = FeatureGates[feature];
-  const granted = allowedTiers.includes(userPlan);
+  let granted = allowedTiers.includes(userPlan);
+
+  // 🛡️ [HYBRID TRIAL GATE] If user is TRIAL, check expiration
+  if (userPlan === 'TRIAL' && trialEndsAt) {
+    const isExpired = new Date() > new Date(trialEndsAt);
+    if (isExpired) {
+      console.warn(`[AUTH_GATE] Feature: ${feature} | Plan: TRIAL | Status: EXPIRED (${trialEndsAt})`);
+      return false;
+    }
+  }
 
   console.log(
     `[AUTH_GATE] Feature: ${feature} | Plan: ${userPlan} | Access Granted: ${granted}`

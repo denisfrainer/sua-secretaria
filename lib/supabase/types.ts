@@ -1,4 +1,4 @@
-export type PlanTier = 'STARTER' | 'PRO' | 'ELITE';
+export type PlanTier = 'FREE' | 'TRIAL' | 'STARTER' | 'PRO' | 'ELITE';
 
 export type Database = {
   public: {
@@ -10,6 +10,7 @@ export type Database = {
           context_json: any;
           plan_tier: PlanTier;
           enable_smart_scarcity: boolean;
+          trial_ends_at: string | null;
           updated_at: string;
           // Add other fields as discovered/needed
         };

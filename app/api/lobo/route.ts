@@ -5,6 +5,9 @@ import { supabaseAdmin } from '../../../lib/supabase/admin';
 import { normalizePhone } from '../../../lib/utils/phone';
 import { hasAccess } from '../../../lib/auth/access-control';
 import { PlanTier } from '../../../lib/supabase/types';
+import { createClient } from '../../../lib/supabase/server';
+
+const ALLOWED_EMAILS = ['lucassteiger@gmail.com', 'contato@wolfagency.com.br'];
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -42,8 +45,14 @@ export async function POST(req: Request) {
         const validToken = process.env.ADMIN_SECRET_PASSWORD;
 
         if (!isCron && token !== validToken) {
-            console.error(`❌ [${cronId}] Unauthorized access attempt.`);
-            return new NextResponse('Unauthorized', { status: 401 });
+            // If not a system request, check for session whitelist
+            const supabase = await createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user || !ALLOWED_EMAILS.includes(user.email || '')) {
+                console.error(`❌ [${cronId}] Unauthorized access attempt by ${user?.email || 'unauthenticated user'}.`);
+                return NextResponse.json({ error: 'Unauthorized to access Outreach' }, { status: 403 });
+            }
         }
 
         // 🐺 FEATURE FLAG: LOBO KILL SWITCH
