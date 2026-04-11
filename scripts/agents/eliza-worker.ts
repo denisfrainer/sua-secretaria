@@ -5,6 +5,7 @@ import { normalizePhone } from '../../lib/utils/phone';
 import { google } from 'googleapis';
 import http from 'http';
 import { hasAccess } from '../../lib/auth/access-control';
+import { PlanTier } from '../../lib/supabase/types';
 
 /**
  * ELIZA WORKER - FINAL PRODUCTION VERSION (SDK @google/genai)
@@ -411,6 +412,9 @@ async function processLead(lead: any) {
             dynamicInstruction = "STATE: [NEW INBOUND]\nDIRETRIZ: Este é um contato novo (inbound). Inicie estritamente pelo passo de reconhecimento.\n";
         }
 
+        // Dynamic Branding
+        const businessName = configData?.business_name || 'nossa clínica';
+
         const greetingRegex = /^(oi|oii|olá|ola|ei|bom dia|boa tarde|boa noite|tudo bem|opa|hello)[\s\W]*$/i;
         const isGreetingOnly = chatHistory.length === 0 && greetingRegex.test(currentMessage.trim());
 
@@ -419,9 +423,6 @@ async function processLead(lead: any) {
             console.log(`🚫 [ELIZA_FLOW] Handoff bloqueado para mensagem inicial.`);
             dynamicInstruction += `\n⚠️ CRITICAL OVERRIDE: O usuário apenas enviou uma saudação inicial. VOCÊ NÃO PODE ACIONAR O HANDOFF (notify_human_specialist). Responda com fluidez natural: identifique-se como Eliza, assistente virtual da ${businessName}, informe seu propósito (agendamentos) e conduza-o suavemente para o STEP 1.`;
         }
-
-        // Dynamic Branding
-        const businessName = configData?.business_name || 'nossa clínica';
         
         const now = new Date();
         const formattedDate = now.toLocaleDateString('pt-BR', {
