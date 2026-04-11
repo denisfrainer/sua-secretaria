@@ -30,7 +30,7 @@ export function TrialStatusBox({ trialEndsAt, planTier }: TrialStatusBoxProps) {
   return (
     <div className="inline-flex items-center px-4 py-1.5 rounded-md text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-500 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
       <span className="whitespace-nowrap tracking-tight">
-        {daysLeft} {daysLeft === 1 ? 'Dia Restante' : 'Dias Restantes'}
+        {daysLeft} {daysLeft === 1 ? 'dia restante' : 'dias restantes'}
       </span>
     </div>
   );
