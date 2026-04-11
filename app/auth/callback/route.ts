@@ -85,8 +85,9 @@ export async function GET(request: Request) {
         });
       }
 
-      // Final redirect after session is established
-      return NextResponse.redirect(new URL(next, origin));
+      // Final redirect after session is established (STRICTLY CLEAN)
+      const finalRedirect = new URL(next, origin);
+      return NextResponse.redirect(finalRedirect.origin + finalRedirect.pathname);
     }
     
     console.error('[AUTH_CALLBACK_ERROR] Exchange failed:', exchangeError?.message);

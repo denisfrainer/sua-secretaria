@@ -47,9 +47,7 @@ export function LoginLoadingState() {
         setMessage('Finalizando seu acesso...');
       }
 
-      // 1. URL CLEANUP (Stop the Double Exchange)
-      // Immediately strip the 'code' and 'next' from the URL to prevent the 
-      // client-side Supabase SDK from trying to re-exchange an already used code.
+      // 1. URL CLEANUP (Stop any other component from seeing the code)
       if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
         const url = new URL(window.location.href);
         url.searchParams.delete('code');
@@ -57,39 +55,38 @@ export function LoginLoadingState() {
         window.history.replaceState({}, document.title, url.pathname + url.search);
       }
 
-      // CLIENT-SIDE SAFETY NET:
-      // 1. Check for immediate session (cookie already present)
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          console.log('⚡ [AUTH SAFETY NET] Session found, syncing cookies before redirect...');
-          setTimeout(() => {
-            console.log('🚀 [AUTH SAFETY NET] Sync complete. Redirecting...');
+      // 2. IMMEDIATE SESSION CHECK
+      // If the server-side callback already finished, we should already have a session.
+      const checkAndRedirect = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('⚡ [AUTH READY] Session found. Redirecting...');
             const target = (next && next !== '/') ? next : '/dashboard';
-        window.location.href = target;
-          }, 500);
+            window.location.href = target;
+          }
+        } catch (err) {
+          console.error('[AUTH CHECK] Error during immediate check:', err);
         }
-      });
+      };
+      
+      checkAndRedirect();
 
-      // 2. Listen for session event (standard flow)
+      // 3. LISTEN FOR STATE CHANGES
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          console.log('⚡ [AUTH SAFETY NET] SIGNED_IN event. Syncing cookies...');
-          setTimeout(() => {
-            console.log('🚀 [AUTH SAFETY NET] Sync complete. Breaking potential loop...');
-            const target = (next && next !== '/') ? next : '/dashboard';
-        window.location.href = target;
-          }, 500);
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+          console.log(`⚡ [AUTH EVENT] ${event}. Redirecting...`);
+          const target = (next && next !== '/') ? next : '/dashboard';
+          window.location.href = target;
         }
       });
 
-      // 3. FALLBACK TIMEOUT (Force Redirect after 5s)
-      // If none of the above trigger (e.g. slow network or listener fail), 
-      // just push the user to the destination anyway after 5 seconds.
+      // 4. FALLBACK TIMEOUT (Force Redirect after 3s)
       const timeout = setTimeout(() => {
-        console.warn('🕒 [AUTH SAFETY NET] Timeout reached. Forcing navigation...');
+        console.warn('🕒 [AUTH TIMEOUT] Forcing navigation...');
         const target = (next && next !== '/') ? next : '/dashboard';
         window.location.href = target;
-      }, 5000);
+      }, 3000);
 
       return () => {
         subscription.unsubscribe();
