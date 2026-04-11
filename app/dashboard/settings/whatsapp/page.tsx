@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   Link2,
   PhoneForwarded,
-  Save
+  Save,
+  WifiOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
@@ -33,6 +34,8 @@ export default function WhatsAppSettingsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [savingBehavior, setSavingBehavior] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  // Track whether we just created an instance and should show QR
+  const [showQrAfterCreate, setShowQrAfterCreate] = useState(false);
   
   const [handoffNumber, setHandoffNumber] = useState('');
   const [schedulingLink, setSchedulingLink] = useState('');
@@ -71,6 +74,7 @@ export default function WhatsAppSettingsPage() {
 
   const handleInitializeInstance = async () => {
     setLoading(true);
+    setShowQrAfterCreate(false);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -92,6 +96,9 @@ export default function WhatsAppSettingsPage() {
       }
 
       if (!initRes.ok) throw new Error("Erro ao inicializar IA.");
+      
+      // Signal that we just created — show QR code immediately
+      setShowQrAfterCreate(true);
       await fetchStatus();
     } catch (err) { console.error(err); } 
     finally { setLoading(false); }
@@ -130,6 +137,7 @@ export default function WhatsAppSettingsPage() {
         const data = await res.json();
         console.error('Delete failed:', data);
       }
+      setShowQrAfterCreate(false);
       await fetchStatus();
     } catch (err) { console.error(err); } 
     finally { setDisconnecting(false); }
@@ -140,7 +148,6 @@ export default function WhatsAppSettingsPage() {
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
 
   const hasInstance = Boolean(config?.instance_name && config.instance_name.trim().length > 0);
-  // STRICT: Can't be "connected" without an actual instance — prevents ghost state
   const isConnected = hasInstance && config?.context_json?.connection_status === 'CONNECTED';
 
   return (
@@ -220,20 +227,10 @@ export default function WhatsAppSettingsPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col gap-6"
           >
-            {/* STATE 3: Connected */}
-            {isConnected ? (
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center text-center gap-6 relative overflow-hidden">
-                <div className="w-20 h-20 rounded-[2rem] bg-indigo-50 flex items-center justify-center shadow-lg shadow-indigo-500/10 mb-2">
-                  <CheckCircle2 size={40} className="text-[#533CFA]" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Ativo</h3>
-                  <p className="text-sm font-medium text-slate-400">Instância operando normalmente.</p>
-                </div>
-              </div>
-
-            /* STATE 1: No instance — show ONLY the create button */
-            ) : !hasInstance ? (
+            {/* ============================================ */}
+            {/* STATE 1: No instance — show ONLY the create button */}
+            {/* ============================================ */}
+            {!hasInstance ? (
               <div className="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-10 flex flex-col items-center text-center gap-6">
                 <RefreshCw size={40} className="text-slate-200" />
                 <h3 className="text-lg font-bold text-slate-900">Infraestrutura pendente</h3>
@@ -247,15 +244,56 @@ export default function WhatsAppSettingsPage() {
                 </button>
               </div>
 
-            /* STATE 2: Instance exists but disconnected — show QR */
-            ) : (
+            /* ============================================ */
+            /* STATE 2: Instance exists + just created — show QR code */
+            /* ============================================ */
+            ) : showQrAfterCreate && !isConnected ? (
               <QRCodeDisplay 
                 instanceName={config.instance_name} 
-                onConnected={fetchStatus}
+                onConnected={() => {
+                  setShowQrAfterCreate(false);
+                  fetchStatus();
+                }}
               />
+
+            /* ============================================ */
+            /* STATE 3: Instance exists — show status card  */
+            /* ============================================ */
+            ) : (
+              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center text-center gap-6 relative overflow-hidden">
+                {isConnected ? (
+                  <>
+                    <div className="w-20 h-20 rounded-[2rem] bg-green-50 flex items-center justify-center shadow-lg shadow-green-500/10 mb-2">
+                      <CheckCircle2 size={40} className="text-green-500" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Ativo</h3>
+                      <p className="text-sm font-medium text-slate-400">Instância operando normalmente.</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-4 py-1.5 rounded-full border border-green-100">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      Online
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-20 h-20 rounded-[2rem] bg-red-50 flex items-center justify-center shadow-lg shadow-red-500/10 mb-2">
+                      <WifiOff size={40} className="text-red-400" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">WhatsApp Offline</h3>
+                      <p className="text-sm font-medium text-slate-400">Instância desconectada.</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-4 py-1.5 rounded-full border border-red-100">
+                      <div className="w-2 h-2 rounded-full bg-red-400" />
+                      Offline
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
-            {/* 🛡️ EMERGENCY DELETE — ALWAYS visible when instance_name exists, regardless of state */}
+            {/* 🛡️ EMERGENCY DELETE — ALWAYS visible when instance_name exists */}
             {hasInstance && (
               <button
                 onClick={handleDeleteInstance}
@@ -267,14 +305,14 @@ export default function WhatsAppSettingsPage() {
               </button>
             )}
 
-            {/* Help text — only when disconnected */}
-            {!isConnected && hasInstance && (
+            {/* Help text — only when disconnected and has instance */}
+            {!isConnected && hasInstance && !showQrAfterCreate && (
               <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 flex items-start gap-4">
                 <AlertCircle className="text-slate-400 shrink-0" size={20} />
                 <div className="flex flex-col gap-1">
-                  <h4 className="text-sm font-bold text-slate-900 tracking-tight">Problemas com o QR Code?</h4>
+                  <h4 className="text-sm font-bold text-slate-900 tracking-tight">Instância offline?</h4>
                   <p className="text-xs font-medium text-slate-500 leading-relaxed">
-                    Se o código demorar, aguarde alguns segundos. Se a conexão travar, clique em "Excluir Instância" para limpar e gerar um novo QR Code.
+                    Sua instância está desconectada. Exclua e crie uma nova para reconectar via QR Code.
                   </p>
                 </div>
               </div>
@@ -325,4 +363,3 @@ export default function WhatsAppSettingsPage() {
     </div>
   );
 }
-

@@ -20,14 +20,105 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'instanceName is required' }, { status: 400 });
         }
 
-        // 1.5 AUTO-PROVISIONING & SYNC: Ensure business_config exists and is synced with the instance_name
-        console.log(`📡 [EVOLUTION] Ensuring business_config for ${tenantId}...`);
-        
+        // 🛡️ ANTI-ABUSE: Check FIRST if user already has an active instance (BEFORE any DB writes)
         const { data: existingConfig } = await supabaseAdmin
             .from('business_config')
-            .select('id, context_json')
+            .select('id, instance_name, context_json')
             .eq('owner_id', tenantId)
             .maybeSingle();
+
+        const existingInstanceName = existingConfig?.instance_name;
+
+        if (existingInstanceName && existingInstanceName.trim().length > 0) {
+            const connectionStatus = (existingConfig?.context_json as any)?.connection_status;
+            console.warn(`🛡️ [ANTI-ABUSE] User ${tenantId} already has instance "${existingInstanceName}" (status: ${connectionStatus}). Blocking creation.`);
+            return NextResponse.json({ 
+                error: 'Você já possui uma instância. Exclua a atual antes de criar uma nova.',
+                existingInstance: existingInstanceName,
+                status: connectionStatus
+            }, { status: 409 });
+        }
+
+        const baseUrl = process.env.EVOLUTION_API_URL;
+        const apiKey = process.env.EVOLUTION_API_KEY;
+        const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, ""); // Ensure no trailing slash
+
+        if (!baseUrl || !apiKey || !webhookUrl) {
+           console.error('🚨 [EVOLUTION] Missing env credentials (EVOLUTION_API_URL, EVOLUTION_API_KEY or WEBHOOK_URL).');
+           return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
+        }
+
+        // 2. Build the exact webhook path required for the Eliza architecture
+        const webhookFullUrl = `${webhookUrl}/api/webhook/evolution?tenantId=${tenantId}`;
+
+        console.log(`🚀 [EVOLUTION] Initiating instance: ${instanceName} | Tenant: ${tenantId}`);
+        console.log(`🔗 [EVOLUTION] Target Webhook: ${webhookFullUrl}`);
+
+        // 3. Create the Instance on Evolution API WITH webhook subscription bundled in
+        const createRes = await fetch(`${baseUrl}/instance/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': apiKey,
+            },
+            body: JSON.stringify({
+                instanceName: instanceName,
+                qrcode: true,
+                integration: "WHATSAPP-BAILEYS",
+                webhook: {
+                    url: webhookFullUrl,
+                    byEvents: false,
+                    base64: false,
+                    events: [
+                        "MESSAGES_UPSERT",
+                        "CONNECTION_UPDATE"
+                    ]
+                }
+            }),
+        });
+
+        const createData = await createRes.json();
+        
+        if (!createRes.ok) {
+            console.error('❌ [EVOLUTION] Failed to create instance:', createData);
+            return NextResponse.json({ error: 'Failed to create instance', details: createData }, { status: createRes.status });
+        }
+
+        console.log(`✅ [EVOLUTION] Instance ${instanceName} created with inline webhook.`);
+
+        // 4. Belt-and-suspenders: Also set webhook explicitly in case the create payload didn't register it
+        try {
+            const webhookRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': apiKey,
+                },
+                body: JSON.stringify({
+                    webhook: {
+                        enabled: true,
+                        url: webhookFullUrl,
+                        webhookByEvents: false,
+                        webhookBase64: false,
+                        events: [
+                            "MESSAGES_UPSERT",
+                            "CONNECTION_UPDATE"
+                        ]
+                    }
+                }),
+            });
+
+            if (!webhookRes.ok) {
+                console.warn('⚠️ [EVOLUTION] Fallback webhook/set returned non-200:', await webhookRes.text());
+            } else {
+                console.log(`✅ [EVOLUTION] Fallback webhook/set confirmed for ${instanceName}`);
+            }
+        } catch (webhookErr: any) {
+            console.warn(`⚠️ [EVOLUTION] Fallback webhook/set failed (non-fatal):`, webhookErr.message);
+        }
+
+        // 5. NOW save to DB — only after Evolution API successfully created the instance
+        console.log(`📡 [EVOLUTION] Saving instance to business_config for ${tenantId}...`);
 
         const defaultContext = {
             is_ai_enabled: true,
@@ -49,7 +140,7 @@ export async function POST(request: Request) {
             // CRITICAL: Force connection_status to DISCONNECTED to prevent ghost state
             const mergedContext = {
                 ...defaultContext,
-                ...existingConfig.context_json,
+                ...(existingConfig.context_json || {}),
                 is_ai_enabled: (existingConfig.context_json as any)?.is_ai_enabled ?? true,
                 connection_status: 'DISCONNECTED' // Hard reset — new instance starts fresh
             };
@@ -83,104 +174,6 @@ export async function POST(request: Request) {
         }
 
         console.log(`✅ [EVOLUTION] business_config synced for ${tenantId} with instance ${instanceName}`);
-
-        // 🛡️ ANTI-ABUSE: Check if user already has an active instance
-        const { data: currentConfig } = await supabaseAdmin
-            .from('business_config')
-            .select('instance_name, context_json')
-            .eq('owner_id', tenantId)
-            .maybeSingle();
-
-        const existingInstanceName = currentConfig?.instance_name;
-        const connectionStatus = (currentConfig?.context_json as any)?.connection_status;
-
-        if (existingInstanceName && existingInstanceName !== instanceName) {
-            console.warn(`🛡️ [ANTI-ABUSE] User ${tenantId} already has instance "${existingInstanceName}" (status: ${connectionStatus}). Blocking creation.`);
-            return NextResponse.json({ 
-                error: 'Você já possui uma instância. Exclua a atual antes de criar uma nova.',
-                existingInstance: existingInstanceName,
-                status: connectionStatus
-            }, { status: 409 });
-        }
-
-        const baseUrl = process.env.EVOLUTION_API_URL;
-        const apiKey = process.env.EVOLUTION_API_KEY;
-        const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, ""); // Ensure no trailing slash
-
-        if (!baseUrl || !apiKey || !webhookUrl) {
-           console.error('🚨 [EVOLUTION] Missing env credentials (EVOLUTION_API_URL, EVOLUTION_API_KEY or WEBHOOK_URL).');
-           return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
-        }
-
-        // 2. Build the exact webhook path required for the Eliza architecture
-        const webhookFullUrl = `${webhookUrl}/api/webhook/evolution?tenantId=${tenantId}`;
-
-        console.log(`🚀 [EVOLUTION] Initiating instance: ${instanceName} | Tenant: ${tenantId}`);
-        console.log(`🔗 [EVOLUTION] Target Webhook: ${webhookFullUrl}`);
-
-        // 1. Create the Instance WITH webhook subscription bundled in
-        //    This ensures CONNECTION_UPDATE events fire from the very first second.
-        const createRes = await fetch(`${baseUrl}/instance/create`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': apiKey,
-            },
-            body: JSON.stringify({
-                instanceName: instanceName,
-                qrcode: true,
-                integration: "WHATSAPP-BAILEYS",
-                webhook: {
-                    url: webhookFullUrl,
-                    byEvents: false,
-                    base64: false,
-                    events: [
-                        "MESSAGES_UPSERT",
-                        "CONNECTION_UPDATE"
-                    ]
-                }
-            }),
-        });
-
-        const createData = await createRes.json();
-        
-        if (!createRes.ok) {
-            console.error('❌ [EVOLUTION] Failed to create instance:', createData);
-            return NextResponse.json({ error: 'Failed to create instance', details: createData }, { status: createRes.status });
-        }
-
-        console.log(`✅ [EVOLUTION] Instance ${instanceName} created with inline webhook.`);
-
-        // 2. Belt-and-suspenders: Also set webhook explicitly in case the create payload didn't register it
-        try {
-            const webhookRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': apiKey,
-                },
-                body: JSON.stringify({
-                    webhook: {
-                        enabled: true,
-                        url: webhookFullUrl,
-                        webhookByEvents: false,
-                        webhookBase64: false,
-                        events: [
-                            "MESSAGES_UPSERT",
-                            "CONNECTION_UPDATE"
-                        ]
-                    }
-                }),
-            });
-
-            if (!webhookRes.ok) {
-                console.warn('⚠️ [EVOLUTION] Fallback webhook/set returned non-200:', await webhookRes.text());
-            } else {
-                console.log(`✅ [EVOLUTION] Fallback webhook/set confirmed for ${instanceName}`);
-            }
-        } catch (webhookErr: any) {
-            console.warn(`⚠️ [EVOLUTION] Fallback webhook/set failed (non-fatal):`, webhookErr.message);
-        }
 
         // Return the QR Code and the created instance data
         return NextResponse.json({

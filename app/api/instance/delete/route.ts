@@ -78,10 +78,12 @@ export async function POST(request: Request) {
             connection_status: 'DISCONNECTED',
         };
 
+        // Clear instance_name AND force connection_status to DISCONNECTED
         const { error: updateError } = await supabaseAdmin
             .from('business_config')
             .update({
                 instance_name: null,
+                connected: false,
                 context_json: cleanedContext,
                 updated_at: new Date().toISOString()
             })
@@ -89,7 +91,20 @@ export async function POST(request: Request) {
 
         if (updateError) {
             console.error(`${tag} DB update failed:`, updateError);
-            return NextResponse.json({ error: 'Failed to clear database record' }, { status: 500 });
+            // Retry without the 'connected' column in case it doesn't exist
+            const { error: retryError } = await supabaseAdmin
+                .from('business_config')
+                .update({
+                    instance_name: null,
+                    context_json: cleanedContext,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('owner_id', user.id);
+
+            if (retryError) {
+                console.error(`${tag} DB retry also failed:`, retryError);
+                return NextResponse.json({ error: 'Failed to clear database record' }, { status: 500 });
+            }
         }
 
         console.log(`${tag} ✅ Instance ${instanceName} fully deleted for user ${user.id}`);
