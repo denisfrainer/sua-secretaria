@@ -12,11 +12,12 @@ export async function GET(request: Request) {
   
   // 1. Catch Supabase Auth Errors (e.g., Database Trigger failures)
   const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
+    const errorDescription = searchParams.get('error_description');
 
   if (error || errorDescription) {
     console.error('[AUTH_CALLBACK_ERROR] Supabase reported an error:', { error, errorDescription });
-    const loginUrl = new URL('/login', origin);
+    // Use /pt/ as default for errors to ensure it lands on a valid locale route
+    const loginUrl = new URL('/pt/login', origin);
     loginUrl.searchParams.set('auth_error', error || 'signup_failed');
     if (errorDescription) loginUrl.searchParams.set('error_description', errorDescription);
     return NextResponse.redirect(loginUrl);
@@ -89,13 +90,17 @@ export async function GET(request: Request) {
         });
       }
 
-      // Final redirect to next (preserving full origin to avoid relative path issues)
-      return NextResponse.redirect(new URL(next, origin));
+      // Ensure the redirect is localized
+      const localeAwareNext = next.startsWith('/') && !next.match(/^\/([a-z]{2})(\/|$)/) 
+        ? `/pt${next}` 
+        : next;
+
+      return NextResponse.redirect(new URL(localeAwareNext, origin));
     }
     
     console.error('[AUTH_CALLBACK_ERROR] Exchange failed:', exchangeError?.message);
   }
 
-  // Fallback to error page
-  return NextResponse.redirect(new URL('/login?error=auth_failed', origin));
+  // Fallback to localized login error page
+  return NextResponse.redirect(new URL('/pt/login?error=auth_failed', origin));
 }

@@ -50,33 +50,26 @@ export default async function middleware(request: NextRequest) {
   // 5. Protected Route Logic
   if (isDashboard && !user && !isAuthCallback) {
     // Redirect to login if accessing dashboard without session
-    // We preserve the locale if present, otherwise default to /login
     const localeMatch = pathname.match(/^\/([a-z]{2})\//)
-    const localePrefix = localeMatch ? `/${localeMatch[1]}` : ''
-    return NextResponse.redirect(new URL(`${localePrefix}/login`, request.url))
+    const localePrefix = localeMatch ? `/${localeMatch[1]}` : 'pt'
+    return NextResponse.redirect(new URL(`/${localePrefix}/login`, request.url))
   }
 
   if (isLogin && user) {
     // Redirect to dashboard if already logged in
     const localeMatch = pathname.match(/^\/([a-z]{2})\//)
-    const localePrefix = localeMatch ? `/${localeMatch[1]}` : ''
-    return NextResponse.redirect(new URL(`${localePrefix}/dashboard`, request.url))
+    const localePrefix = localeMatch ? `/${localeMatch[1]}` : 'pt'
+    return NextResponse.redirect(new URL(`/${localePrefix}/dashboard`, request.url))
   }
-
-  /**
-   * NOTE ON PERFORMANCE:
-   * Do NOT add database queries (e.g., supabase.from('profiles').select()) here.
-   * Middleware runs on the Edge; database latency will slow down every single page load.
-   * Tier-based protection (PRO/ELITE) should be handled inside Server Components 
-   * (e.g., app/dashboard/settings/whatsapp/page.tsx) or Layouts.
-   */
 
   return response
 }
 
 export const config = {
   matcher: [
-    // Skip all internal paths (_next), static files, and the auth callback API
-    '/((?!api|_next/static|_next/image|auth/callback|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // 1. Skip all internal paths (_next, _vercel)
+    // 2. Skip all files with extensions (static assets, PWA manifest, sw.js)
+    // 3. Skip auth callback API
+    '/((?!api|_next|_vercel|auth/callback|.*\\..*).*)'
   ],
 }
