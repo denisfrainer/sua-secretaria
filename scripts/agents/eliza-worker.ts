@@ -1141,30 +1141,38 @@ http.createServer((req, res) => {
                         if (instanceName !== 'demo-menu') {
                             console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
 
-                            // 1. GLOBAL EMERGENCY SHUTOFF (system_settings) — Defaults to ENABLED
-                            console.log(`🔍 [SWITCH] Checking global AI status (key: eliza_active)...`);
-                            const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
-                            const isGlobalEnabled = !elizaSwitch || elizaSwitch.value?.enabled !== false;
-                            
-                            if (!isGlobalEnabled) {
-                                console.log(`🛑 [PAUSE] GLOBAL Emergency Shutoff is ACTIVE. Moving lead ${clientNumber} to needs_human.`);
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
-                                return;
-                            }
-
-                            // 2. INSTANCE-LEVEL SWITCH (business_config) — The Primary Truth
-                            // Special Case: 'agente-lobo' bypasses tenantId check if tenantId is null
+                            // 1. FETCH INSTANCE CONFIG (Primary Truth)
                             let configQuery = supabaseAdmin.from('business_config').select('context_json').eq('instance_name', instanceName);
                             if (tenantId) configQuery = configQuery.eq('owner_id', tenantId);
                             
                             const { data: bConfig } = await configQuery.maybeSingle();
-                            const isInstanceEnabled = bConfig?.context_json?.is_ai_enabled !== false;
+                            const instanceEnabled = bConfig?.context_json?.is_ai_enabled; // true, false, or undefined
 
-                            console.log(`⚙️ [SWITCH] Instance: ${instanceName} | AI: ${isInstanceEnabled ? 'ENABLED' : 'DISABLED'}`);
+                            // 2. FETCH GLOBAL SWITCH (Maintenance Mode)
+                            const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
+                            const globalEnabled = !elizaSwitch || elizaSwitch.value?.enabled !== false;
 
-                            if (!isInstanceEnabled) {
-                                console.log(`⏸️ [PAUSE] AI is disabled at the INSTANCE level (${instanceName}).`);
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
+                            // 3. APPLY HIERARCHY: Instance Overrides Global
+                            let shouldProceed = false;
+
+                            if (instanceEnabled === true) {
+                                console.log(`✅ [SWITCH] Instance ${instanceName} explicitly ENABLED. Bypassing global status.`);
+                                shouldProceed = true;
+                            } else if (instanceEnabled === false) {
+                                console.log(`⏸️ [SWITCH] Instance ${instanceName} explicitly DISABLED.`);
+                                shouldProceed = false;
+                            } else {
+                                // Instance config missing or flag unset -> Follow Global Switch
+                                console.log(`🔍 [SWITCH] No instance-level preference. Following Global Switch: ${globalEnabled ? 'ENABLED' : 'DISABLED'}`);
+                                shouldProceed = globalEnabled;
+                            }
+
+                            if (!shouldProceed) {
+                                console.log(`🛑 [PAUSE] Lead ${clientNumber} ignored (Instance: ${instanceEnabled}, Global: ${globalEnabled}).`);
+                                await supabaseAdmin.from('leads_lobo').update({ 
+                                    status: 'needs_human', 
+                                    needs_human: true 
+                                }).eq('phone', clientNumber);
                                 return;
                             }
 
