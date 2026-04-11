@@ -15,6 +15,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   if (!user) redirect('/login');
 
   // Fetch subscription data directly from Profile (Source of Truth for UI)
