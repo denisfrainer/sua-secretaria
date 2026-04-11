@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Loader2, ArrowLeft } from 'lucide-react';
-import { ServiceCard } from '../../../components/services/ServiceCard';
-import { ServiceDrawer } from '../../../components/services/ServiceDrawer';
+import { ServiceCard } from '@/components/services/ServiceCard';
+import { ServiceDrawer } from '@/components/services/ServiceDrawer';
 import Link from 'next/link';
 
 import { createClient } from '@/lib/supabase/client';

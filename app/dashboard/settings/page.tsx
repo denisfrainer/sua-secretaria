@@ -15,9 +15,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { createClient } from '../../../lib/supabase/client';
-import { hasAccess } from '../../../lib/auth/access-control';
-import { PlanTier } from '../../../lib/supabase/types';
+import { createClient } from '@/lib/supabase/client';
+import { hasAccess } from '@/lib/auth/access-control';
+import { PlanTier } from '@/lib/supabase/types';
 
 export default function SettingsHubPage() {
   const [tier, setTier] = useState<PlanTier>('STARTER');

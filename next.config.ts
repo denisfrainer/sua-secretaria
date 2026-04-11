@@ -1,14 +1,10 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from 'next-intl/plugin';
-
-const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 const nextConfig: NextConfig = {
-
-  // Recomendado para melhor compatibilidade com rotas estáticas e next-intl
+  // Configuração padrão sem next-intl
   trailingSlash: false,
 
-  // Opcional: Configuração de imagens para Static Export
+  // Configuração de imagens
   images: {
     unoptimized: true,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -22,4 +18,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default nextConfig;

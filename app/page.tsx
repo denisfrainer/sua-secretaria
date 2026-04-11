@@ -1,11 +1,22 @@
-/*
-  app/page.tsx
-  Rota raiz — redireciona para o locale padrão /pt
-*/
+import { Header } from '@/components/Header';
+import { HeroSection } from '@/components/HeroSection';
+import { PhoneMockup } from '@/components/PhoneMockup';
+import { LandingSections } from '@/components/LandingSections';
 
-import { redirect } from "next/navigation";
-import { defaultLocale } from "@/i18n";
+export default function Home() {
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen bg-white overflow-hidden text-black font-sans">
+        {/* 1. Hero Section (First Fold + Logos) */}
+        <HeroSection />
 
-export default function RootPage() {
-    redirect(`/${defaultLocale}`);
+        {/* 2. Chat WOW Factor (Second Fold) */}
+        <PhoneMockup />
+
+        {/* 3-8. Features, Setup, Comparison, Pricing, FAQ, Footer */}
+        <LandingSections />
+      </main>
+    </>
+  );
 }

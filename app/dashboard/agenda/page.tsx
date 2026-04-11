@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Settings, ChevronLeft, ChevronRight, Calendar, Loader2, ArrowLeft } from 'lucide-react';
-import { DateStrip } from '../../../components/agenda/DateStrip';
-import { TimeSlotList } from '../../../components/agenda/TimeSlotList';
-import { AgendaDrawer } from '../../../components/agenda/AgendaDrawer';
-import { AgendaSettingsModal } from '../../../components/agenda/AgendaSettingsModal';
-import { NewAppointmentDrawer } from '../../../components/agenda/NewAppointmentDrawer';
-import { AgendaEmptyState } from '../../../components/agenda/AgendaEmptyState';
+import { DateStrip } from '@/components/agenda/DateStrip';
+import { TimeSlotList } from '@/components/agenda/TimeSlotList';
+import { AgendaDrawer } from '@/components/agenda/AgendaDrawer';
+import { AgendaSettingsModal } from '@/components/agenda/AgendaSettingsModal';
+import { NewAppointmentDrawer } from '@/components/agenda/NewAppointmentDrawer';
+import { AgendaEmptyState } from '@/components/agenda/AgendaEmptyState';
 import Link from 'next/link';
 import { format, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
