@@ -1062,7 +1062,7 @@ http.createServer((req, res) => {
                             console.log(`🆕 [LEAD] Creating new lead for ${clientNumber} (instance: ${instanceName})`);
                             const { data: newLead, error: insertError } = await supabaseAdmin.from('leads_lobo').insert({
                                 phone: clientNumber, 
-                                status: 'organic_inbound', 
+                                status: 'eliza_processing', 
                                 name: 'Lead inbound', 
                                 message_buffer: '', 
                                 is_processing: false, 
@@ -1143,15 +1143,16 @@ http.createServer((req, res) => {
                                 status: 'eliza_processing',
                                 ai_paused: false,
                                 needs_human: false,
-                                instance_name: instanceName
+                                instance_name: instanceName,
+                                updated_at: new Date().toISOString()
                             }).eq('phone', clientNumber);
 
                             if (triggerError) {
-                                console.error(`❌ [SUPABASE ERROR] Failed to trigger eliza_processing:`, triggerError.message);
+                                console.error(`❌ [SUPABASE ERROR] Failed to trigger eliza_processing for ${clientNumber}:`, triggerError.message);
                                 return;
                             }
                             
-                            console.log(`✅ [WEBHOOK] Lead ${clientNumber} set to eliza_processing with ai_paused=false, needs_human=false.`);
+                            console.log(`🚀 [WEBHOOK SUCCESS] Lead ${clientNumber} ready for Worker: status=eliza_processing, ai_paused=false, needs_human=false.`);
                         }
                     }
                 }
