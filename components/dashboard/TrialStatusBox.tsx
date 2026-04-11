@@ -1,6 +1,5 @@
 'use client';
 
-import { Bell } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface TrialStatusBoxProps {
@@ -9,8 +8,8 @@ interface TrialStatusBoxProps {
 }
 
 /**
- * Premium Trial Status Indicator (Railway Dark Mode Style)
- * Displays the remaining days in the trial period with a compact, minimal dark design.
+ * Minimalist Trial Status Indicator
+ * Refactored for a lighter, text-focused design.
  */
 export function TrialStatusBox({ trialEndsAt, planTier }: TrialStatusBoxProps) {
   const daysLeft = useMemo(() => {
@@ -29,9 +28,9 @@ export function TrialStatusBox({ trialEndsAt, planTier }: TrialStatusBoxProps) {
   if (daysLeft === null) return null;
 
   return (
-    <div className="inline-flex items-center px-3 py-1 rounded-md text-[11px] font-medium bg-[#0A1911] text-[#34D399] border border-[#133020] shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
-      <span className="whitespace-nowrap tracking-tight uppercase">
-        {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} restantes
+    <div className="inline-flex items-center px-4 py-1.5 rounded-md text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-500 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
+      <span className="whitespace-nowrap tracking-tight">
+        {daysLeft} {daysLeft === 1 ? 'Dia Restante' : 'Dias Restantes'}
       </span>
     </div>
   );
