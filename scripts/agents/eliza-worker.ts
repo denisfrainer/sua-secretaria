@@ -538,6 +538,7 @@ ${businessContext}
             loopCount++;
             const functionResponseParts: any[] = [];
 
+            for (const call of result.functionCalls) {
                 if (call.name === 'notify_human_specialist') wasHandoffToolCalled = true;
 
                 const output = await executeToolCall(call.name || '', call.args, clientNumber, googleTokens);
