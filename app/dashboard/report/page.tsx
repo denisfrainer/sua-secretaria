@@ -55,30 +55,30 @@ const transactions = [
 
 export default function ReportPage() {
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
+    <div className="w-full min-h-screen bg-slate-50 pb-20 font-sans">
       {/* Header */}
       <header className="bg-white border-b border-slate-100 px-6 py-6 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link href="/dashboard" className="p-2 shrink-0 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
               <ArrowLeft size={20} />
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Performance da IA</h1>
-              <p className="text-sm text-slate-500 font-medium">Relatório de conversão e receita</p>
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight truncate">Performance da IA</h1>
+              <p className="text-xs md:text-sm text-slate-500 font-medium truncate">Relatório de conversão e receita</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <div className="flex shrink-0 items-center gap-2 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600">
               <Calendar size={16} />
               Últimos 30 Dias
               <ChevronRight size={14} className="rotate-90 text-slate-400" />
             </div>
-            <button className="p-2.5 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all">
+            <button className="p-2.5 shrink-0 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all">
               <Filter size={20} />
             </button>
-            <button className="p-2.5 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-md shadow-slate-200">
+            <button className="p-2.5 shrink-0 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-md shadow-slate-200">
               <Download size={20} />
             </button>
           </div>

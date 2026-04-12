@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Sparkles, 
   Smile, 
@@ -10,13 +10,15 @@ import {
   Save, 
   Loader2, 
   CheckCircle2, 
-  Zap 
+  Zap,
+  Target
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 import { AutoResizeTextarea } from '@/components/dashboard/settings/AutoResizeTextarea';
+import { OutreachManager } from '@/components/dashboard/OutreachManager';
 
-export default function AgentsSettingsPage() {
+function AgentsSettingsContent() {
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,6 +27,8 @@ export default function AgentsSettingsPage() {
   
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'personality';
 
   useEffect(() => {
     async function fetchData() {
@@ -93,82 +97,112 @@ export default function AgentsSettingsPage() {
   return (
     <div className="flex flex-col gap-10 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 border border-purple-500/10">
-            <Sparkles size={20} />
-          </div>
-          <h2 className="text-xl font-black text-gray-900 tracking-tight">Personalidade da Eliza</h2>
-        </div>
-        <p className="text-sm font-medium text-gray-400 max-w-lg">
-          Personalize a forma como a Eliza conversa com seus clientes. Defina o tom de voz, gírias preferidas e as regras de agendamento que ela deve seguir.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-10">
-        {/* TONE OF VOICE */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-            <Smile size={18} className="text-purple-600" />
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Identidade Visual & Tom</h3>
-          </div>
-          
-          <div className="space-y-6">
-            <StudioInput 
-              label="Estilo Base de Atendimento" 
-              value={config?.context_json?.tone_of_voice?.base_style || ''} 
-              onChange={(val) => updateToneOfVoice('base_style', val)}
-              placeholder="Ex: Profissional e amigável, Luxo e formal, etc."
-            />
-
-            <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
-              <AutoResizeTextarea 
-                label="Instruções Dinâmicas"
-                value={config?.context_json?.tone_of_voice?.custom_instructions || ''} 
-                onChange={(val) => updateToneOfVoice('custom_instructions', val)}
-                placeholder="Ex: Use emojis de brilho ✨. Chame de 'flor'. Evite usar gírias muito pesadas."
-                className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* SCHEDULING RULES */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-black/5 pb-3">
-            <ListChecks size={18} className="text-purple-600" />
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Regras de Negócio</h3>
-          </div>
-          
-          <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
-            <AutoResizeTextarea 
-              label="Regras de Agendamento"
-              value={config?.context_json?.scheduling_rules?.join('\n') || ''} 
-              onChange={updateRules}
-              placeholder="Ex: Cancelamento com 1h de antecedência. Não aceitamos menores sem autorização."
-              className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
-              rows={4}
-            />
-          </div>
-          <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest flex items-center gap-1.5 ml-2">
-            <Zap size={12} />
-            Eliza utiliza estas regras para filtrar datas disponíveis.
-          </p>
-        </div>
-      </div>
-
-      {/* FLOAT SAVE BUTTON */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-lg px-6 z-50">
-        <button
-          onClick={() => handleSubmit()}
-          disabled={saving}
-          className={`w-full h-16 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl transition-all ${success ? 'bg-green-500' : 'bg-purple-600 shadow-purple-500/20'} text-white active:scale-95 disabled:opacity-50`}
+      {/* Tab Switcher */}
+      <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
+        <button 
+          onClick={() => router.push('/dashboard/settings/agents?tab=personality')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'personality' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          {saving ? <Loader2 className="animate-spin" size={20} /> : success ? <CheckCircle2 size={20} /> : <Save size={20} />}
-          {saving ? 'Guardando...' : success ? 'Personalidade Salva!' : 'Salvar Alterações'}
+          Personalidade
+        </button>
+        <button 
+          onClick={() => router.push('/dashboard/settings/agents?tab=outbound')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'outbound' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          Wolf Agent
         </button>
       </div>
+
+      {activeTab === 'outbound' ? (
+        <OutreachManager />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 border border-purple-500/10">
+                <Sparkles size={20} />
+              </div>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight">Personalidade da Eliza</h2>
+            </div>
+            <p className="text-sm font-medium text-gray-400 max-w-lg">
+              Personalize a forma como a Eliza conversa com seus clientes. Defina o tom de voz, gírias preferidas e as regras de agendamento que ela deve seguir.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-10">
+            {/* TONE OF VOICE */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-black/5 pb-3">
+                <Smile size={18} className="text-purple-600" />
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Identidade Visual & Tom</h3>
+              </div>
+              
+              <div className="space-y-6">
+                <StudioInput 
+                  label="Estilo Base de Atendimento" 
+                  value={config?.context_json?.tone_of_voice?.base_style || ''} 
+                  onChange={(val) => updateToneOfVoice('base_style', val)}
+                  placeholder="Ex: Profissional e amigável, Luxo e formal, etc."
+                />
+
+                <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
+                  <AutoResizeTextarea 
+                    label="Instruções Dinâmicas"
+                    value={config?.context_json?.tone_of_voice?.custom_instructions || ''} 
+                    onChange={(val) => updateToneOfVoice('custom_instructions', val)}
+                    placeholder="Ex: Use emojis de brilho ✨. Chame de 'flor'. Evite usar gírias muito pesadas."
+                    className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* SCHEDULING RULES */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-black/5 pb-3">
+                <ListChecks size={18} className="text-purple-600" />
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Regras de Negócio</h3>
+              </div>
+              
+              <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
+                <AutoResizeTextarea 
+                  label="Regras de Agendamento"
+                  value={config?.context_json?.scheduling_rules?.join('\n') || ''} 
+                  onChange={updateRules}
+                  placeholder="Ex: Cancelamento com 1h de antecedência. Não aceitamos menores sem autorização."
+                  className="w-full bg-transparent border-none p-0 text-base font-bold text-gray-700 focus:ring-0 placeholder:text-gray-300 leading-relaxed"
+                  rows={4}
+                />
+              </div>
+              <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest flex items-center gap-1.5 ml-2">
+                <Zap size={12} />
+                Eliza utiliza estas regras para filtrar das disponíveis.
+              </p>
+            </div>
+          </div>
+
+          {/* FLOAT SAVE BUTTON */}
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-lg px-6 z-50">
+            <button
+              onClick={() => handleSubmit()}
+              disabled={saving}
+              className={`w-full h-16 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl transition-all ${success ? 'bg-green-500' : 'bg-purple-600 shadow-purple-500/20'} text-white active:scale-95 disabled:opacity-50`}
+            >
+              {saving ? <Loader2 className="animate-spin" size={20} /> : success ? <CheckCircle2 size={20} /> : <Save size={20} />}
+              {saving ? 'Guardando...' : success ? 'Personalidade Salva!' : 'Salvar Alterações'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+export default function AgentsSettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>}>
+      <AgentsSettingsContent />
+    </Suspense>
   );
 }

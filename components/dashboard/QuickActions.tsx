@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Link as LinkIcon, Settings, Link2, Check } from 'lucide-react';
+import { Calendar, Link as LinkIcon, Settings, Link2, Check, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,6 +69,15 @@ export default function QuickActions() {
       icon: <Link2 className="w-5 h-5" />,
       colorClass: 'text-rose-600 bg-rose-50 ring-rose-100',
       action: copyToClipboard,
+    },
+    {
+      title: 'Recuperação (Wolf)',
+      icon: <Target className="w-5 h-5" />,
+      colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
+      action: () => {
+        console.log('[NAV] Going to Wolf Agent');
+        router.push('/dashboard/settings/agents?tab=outbound');
+      },
     },
     {
       title: 'Serviços',
