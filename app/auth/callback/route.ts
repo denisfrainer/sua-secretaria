@@ -1,42 +1,55 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') ?? '/dashboard';
   
   // 1. Catch Supabase Auth Errors
-  const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
+  const error = requestUrl.searchParams.get('error');
+  const errorDescription = requestUrl.searchParams.get('error_description');
 
   if (error || errorDescription) {
     console.error('[AUTH_CALLBACK_ERROR] Supabase reported an error:', { error, errorDescription });
-    const loginUrl = new URL('/login', origin);
+    const loginUrl = new URL('/login', request.nextUrl.origin);
     loginUrl.searchParams.set('auth_error', error || 'signup_failed');
     if (errorDescription) loginUrl.searchParams.set('error_description', errorDescription);
     return NextResponse.redirect(loginUrl);
   }
 
+  // Define the base redirect target using the EXACT request origin
+  const finalRedirect = new URL(next, request.nextUrl.origin);
+  
+  // Construct the response EARLY so we can attach cookies directly to it
+  const response = NextResponse.redirect(finalRedirect);
+
   // 2. Process OAuth Code Exchange
   if (code) {
-    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll();
+            return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // WARNING: We strip out the `domain` option unconditionally.
+              // This allows Netlify dynamically generated subdomains (deploy previews) to accept the cookie.
+              // If you force a domain like '.meatendeai.com', previews at 'xxx--meatendeai.netlify.app' will drop it!
+              const { domain: _domain, ...safeOptions } = options;
+              
+              response.cookies.set({
+                name,
+                value,
+                ...safeOptions,
+              });
+            });
           },
         },
       }
@@ -85,14 +98,13 @@ export async function GET(request: Request) {
         });
       }
 
-      // Final redirect after session is established (STRICTLY CLEAN)
-      const finalRedirect = new URL(next, origin);
-      return NextResponse.redirect(finalRedirect.origin + finalRedirect.pathname);
+      // Return the response object WHICH NOW HAS THE COOKIES ATTACHED
+      return response;
     }
     
     console.error('[AUTH_CALLBACK_ERROR] Exchange failed:', exchangeError?.message);
   }
 
-  // Fallback to login error page
-  return NextResponse.redirect(new URL('/login?error=auth_failed', origin));
+  // Fallback to login error page if something fails
+  return NextResponse.redirect(new URL('/login?error=auth_failed', request.nextUrl.origin));
 }
