@@ -533,11 +533,13 @@ ${businessContext}
 
         // 5. Tool Loop (Function Calling)
         let loopCount = 0;
+        let wasHandoffToolCalled = false;
         while (result.functionCalls && result.functionCalls.length > 0 && loopCount < 3) {
             loopCount++;
             const functionResponseParts: any[] = [];
 
-            for (const call of result.functionCalls) {
+                if (call.name === 'notify_human_specialist') wasHandoffToolCalled = true;
+
                 const output = await executeToolCall(call.name || '', call.args, clientNumber, googleTokens);
 
                 functionResponseParts.push({
@@ -561,7 +563,13 @@ ${businessContext}
             });
         }
 
-        const responseText = result.text || '';
+        let responseText = result.text || '';
+
+        // 🛡️ [EMPTY STRING SHIELD] Fallback proativa para Tool Calls sem texto
+        if (wasHandoffToolCalled && responseText.trim() === '') {
+            console.log(`[EMPTY_SHIELD] Handoff tool called but Gemini returned empty text. Injecting fallback.`);
+            responseText = "Com certeza. Vou pedir para a especialista responsável te ajudar com isso agora mesmo, só um momento. [HANDOFF_TRIGGERED]";
+        }
 
         console.log(`🔍 [CIRCUIT BREAKER] Analisando similaridade de repetição para ${clientNumber}...`);
 
@@ -633,6 +641,12 @@ ${businessContext}
         let accumulatedDelayMs = 0;
 
         for (const chunk of chunks) {
+            // 🛡️ [EMPTY STRING SHIELD] Nunca permita envio de strings vazias para o WhatsApp
+            if (!chunk || chunk.trim() === '') {
+                console.log(`⚠️ [EMPTY_SHIELD] Dropping empty chunk to prevent WhatsApp API 400 crash.`);
+                continue;
+            }
+
             // Calcula o tempo de "digitação" baseado no tamanho da bolha (mínimo 2s, máximo 12s)
             const bubbleTypingTimeMs = Math.max(2000, Math.min((chunk.length / CHARS_PER_SECOND) * 1000, 12000));
             accumulatedDelayMs += bubbleTypingTimeMs;
