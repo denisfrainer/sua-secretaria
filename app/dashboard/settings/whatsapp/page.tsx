@@ -229,61 +229,64 @@ export default function WhatsAppSettingsPage() {
       <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-slate-200 overflow-hidden transition-all duration-300">
         
         {/* Card Header */}
-        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="flex gap-5">
+        <div className="flex flex-col gap-4 p-6 border-b border-slate-100">
+          
+          {/* Row 1: Icon & Status */}
+          <div className="flex justify-between items-start w-full">
             <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100/50">
               <Bot size={28} className="text-[#533CFA]" />
             </div>
-            <div className="flex flex-col">
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                <Image src="/assets/whatsapp.svg" alt="WhatsApp" width={24} height={24} />
-                Conexão da IA Atendente
-                
-                {/* Dynamic Status Indicator */}
-                {!hasInstance ? (
-                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest leading-none">
-                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                     Inativo
-                   </span>
-                ) : !isConnected ? (
-                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest leading-none">
-                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                     Aguardando Leitura
-                   </span>
-                ) : (
-                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest leading-none">
-                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                     Conectado
-                   </span>
-                )}
-              </h2>
-              <p className="text-sm font-medium text-slate-500 mt-1 max-w-md leading-relaxed">
-                Automatize o atendimento. Conecte o número de WhatsApp do seu negócio para que a IA agende clientes e tire dúvidas 24/7.
-              </p>
-            </div>
+            
+            {/* Dynamic Status Indicator */}
+            {!hasInstance ? (
+               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
+                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                 Inativo
+               </span>
+            ) : !isConnected ? (
+               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
+                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                 Aguardando Leitura
+               </span>
+            ) : (
+               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
+                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                 Conectado
+               </span>
+            )}
           </div>
-          
-          {/* Action Area for Top Header (Only if completely inactive) */}
+
+          {/* Row 2: Title */}
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 w-full text-left flex items-center gap-2">
+            <Image src="/assets/whatsapp.svg" alt="WhatsApp" width={24} height={24} className="shrink-0" />
+            Conexão da IA Atendente
+          </h2>
+
+          {/* Row 3: Description */}
+          <p className="text-sm text-slate-500 leading-relaxed text-left w-full">
+            Automatize o atendimento. Conecte o número de WhatsApp do seu negócio para que a IA agende clientes e tire dúvidas 24/7.
+          </p>
+
+          {/* Row 4: Actions */}
           {!hasInstance && (
             <button
               onClick={handleInitializeInstance}
               disabled={initializing}
-              className="h-12 px-6 bg-[#533CFA] hover:bg-[#432EEA] text-white font-bold rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition-all outline-none disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              className="w-full md:w-fit h-12 px-6 bg-[#533CFA] hover:bg-[#432EEA] text-white font-bold rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition-all outline-none disabled:opacity-50 flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
             >
               {initializing ? <Loader2 className="animate-spin" size={18} /> : <QrCode size={18} />}
               {initializing ? 'Iniciando...' : 'Gerar QR Code'}
             </button>
           )}
           
-          {/* Action Area for Active (Disconnect) */}
           {isConnected && (
             <button
               onClick={handleDeleteInstance}
               disabled={disconnecting}
-              className="h-10 px-4 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 font-bold text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              className="w-full md:w-fit h-12 md:h-10 px-6 md:px-4 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 font-bold text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
             >
               {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-              Desconectar
+              Desconectar Instância
             </button>
           )}
         </div>
@@ -382,27 +385,30 @@ export default function WhatsAppSettingsPage() {
         
         {/* Toggle Header Area */}
         <div 
-          className="flex flex-col md:flex-row justify-between cursor-pointer w-full transition-opacity hover:opacity-80 gap-4"
+          className="flex flex-col gap-4 cursor-pointer w-full transition-opacity hover:opacity-80"
           onClick={() => setIsMenuExpanded(!isMenuExpanded)}
         >
-           <div className="flex gap-4">
+           {/* Row 1: Icon & Action */}
+           <div className="flex justify-between items-start w-full">
             <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
               <Settings2 size={22} className="text-slate-600" />
             </div>
-            <div className="flex flex-col pt-1">
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">Menu de Transbordo</h2>
-              <p className="text-sm font-medium text-slate-500 mt-0.5">
-                Configure números de escape e redirecionamentos manuais.
-              </p>
-            </div>
+            <button className="h-10 px-5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm whitespace-nowrap mt-1">
+              {isMenuExpanded ? (
+                <>Esconder <ChevronUp size={16} /></>
+              ) : (
+                <>Configurar <ChevronDown size={16} /></>
+              )}
+            </button>
           </div>
-          <button className="h-10 px-5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm whitespace-nowrap self-start md:self-center">
-            {isMenuExpanded ? (
-              <>Esconder <ChevronUp size={16} /></>
-            ) : (
-              <>Configurar <ChevronDown size={16} /></>
-            )}
-          </button>
+          
+          {/* Row 2: Title & Desc */}
+          <div className="flex flex-col w-full">
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight text-left">Menu de Transbordo</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1 text-left leading-relaxed">
+              Configure números de escape e redirecionamentos manuais.
+            </p>
+          </div>
         </div>
 
         {/* Collapsible Form */}
