@@ -32,7 +32,7 @@ export function DashboardGreeting({ userName, isConnected = false }: DashboardGr
 
   return (
     <div className="flex items-center justify-between">
-      <motion.h1 
+      <motion.h1
         initial={{ opacity: 0, x: -12 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
@@ -49,7 +49,6 @@ export function DashboardGreeting({ userName, isConnected = false }: DashboardGr
           className="flex flex-col items-center gap-1"
         >
           <AiToggle />
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">IA Ativa</span>
         </motion.div>
       )}
     </div>
