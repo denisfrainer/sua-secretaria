@@ -18,14 +18,14 @@ export default function QuickActions() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserId(session.user.id);
-        
+
         // Fetch slug from profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('slug')
           .eq('id', session.user.id)
           .single();
-        
+
         if (profile?.slug) {
           setSlug(profile.slug);
         }
@@ -36,13 +36,13 @@ export default function QuickActions() {
 
   const copyToClipboard = async () => {
     if (!userId) return;
-    
+
     const baseUrl = window.location.origin;
     // Prefer SLUG link, fallback to legacy UUID/s/ link
-    const bookingUrl = slug 
-      ? `${baseUrl}/s/${slug}` 
+    const bookingUrl = slug
+      ? `${baseUrl}/s/${slug}`
       : `${baseUrl}/s/${userId}`;
-    
+
     try {
       await navigator.clipboard.writeText(bookingUrl);
       setShowToast(true);
@@ -71,7 +71,7 @@ export default function QuickActions() {
       action: copyToClipboard,
     },
     {
-      title: 'Recuperação (Wolf)',
+      title: 'Prospecção',
       icon: <Target className="w-5 h-5" />,
       colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
       action: () => {
@@ -107,15 +107,15 @@ export default function QuickActions() {
             key={index}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.3, 
+            transition={{
+              duration: 0.3,
               ease: [0.25, 0.1, 0.25, 1],
               delay: 0.05 * index
             }}
             onClick={item.action}
             className="flex flex-col items-start p-4 w-full bg-white border border-gray-100 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-sm hover:border-gray-200 active:scale-[0.98] transition-all duration-200 group text-left"
           >
-            <div 
+            <div
               className={`p-2.5 rounded-xl mb-3 ring-1 ring-inset transition-colors duration-200 ${item.colorClass}`}
             >
               {item.icon}

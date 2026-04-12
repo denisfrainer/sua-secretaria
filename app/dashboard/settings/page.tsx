@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { 
-  User, 
-  Calendar, 
-  MessageSquare, 
-  Sparkles, 
+import {
+  User,
+  Calendar,
+  MessageSquare,
+  Sparkles,
   ChevronRight,
   Lock,
   Bot,
@@ -34,7 +34,7 @@ export default function SettingsHubPage() {
           .select('plan_tier')
           .eq('id', user.id)
           .single();
-        
+
         if (profile?.plan_tier) {
           setTier(profile.plan_tier as PlanTier);
         }
@@ -91,8 +91,8 @@ export default function SettingsHubPage() {
     },
     {
       id: 'elite-outbound',
-      title: 'Recuperação de Vendas',
-      description: 'Reative clientes inativos (Wolf Agent).',
+      title: 'Ferramenta de Prospecção',
+      description: 'Prospecte a sua base de clientes com mensagens personalizadas.',
       icon: TrendingUp,
       iconColor: 'text-rose-600',
       href: '/dashboard/settings/agents?tab=outbound',
@@ -102,7 +102,7 @@ export default function SettingsHubPage() {
   ];
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -128,8 +128,8 @@ export default function SettingsHubPage() {
         const CardContent = (
           <div className={`
             group relative flex items-center gap-4 p-5 rounded-3xl border transition-all w-full
-            ${option.locked 
-              ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-pointer' 
+            ${option.locked
+              ? 'bg-gray-50/50 border-gray-200 opacity-60 cursor-pointer'
               : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 cursor-pointer shadow-sm'}
           `}>
             {/* Icon Wrapper */}
