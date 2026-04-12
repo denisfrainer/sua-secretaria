@@ -226,156 +226,159 @@ export default function WhatsAppSettingsPage() {
       {/* ──────────────────────────────────────────────────────── */}
       {/* SECTION 1: THE HERO (AI BOT CONNECTION)                  */}
       {/* ──────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-slate-200 overflow-hidden transition-all duration-300">
-        
-        {/* Card Header */}
-        <div className="flex flex-col gap-4 p-6 border-b border-slate-100">
+      <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-slate-200 overflow-hidden transition-all duration-300 relative">
+        <AnimatePresence mode="wait">
           
-          {/* Row 1: Icon & Status */}
-          <div className="flex justify-between items-start w-full">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100/50">
-              <Bot size={28} className="text-[#533CFA]" />
-            </div>
-            
-            {/* Dynamic Status Indicator */}
-            {!hasInstance ? (
-               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
-                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                 Inativo
-               </span>
-            ) : !isConnected ? (
-               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
-                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                 Aguardando Leitura
-               </span>
-            ) : (
-               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
-                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                 Conectado
-               </span>
-            )}
-          </div>
-
-          {/* Row 2: Title */}
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 w-full text-left flex items-center gap-2">
-            <Image src="/assets/whatsapp.svg" alt="WhatsApp" width={24} height={24} className="shrink-0" />
-            Conexão da IA Atendente
-          </h2>
-
-          {/* Row 3: Description */}
-          <p className="text-sm text-slate-500 leading-relaxed text-left w-full">
-            Automatize o atendimento. Conecte o número de WhatsApp do seu negócio para que a IA agende clientes e tire dúvidas 24/7.
-          </p>
-
-          {/* Row 4: Actions */}
-          {!hasInstance && (
-            <button
-              onClick={handleInitializeInstance}
-              disabled={initializing}
-              className="w-full md:w-fit h-12 px-6 bg-[#533CFA] hover:bg-[#432EEA] text-white font-bold rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition-all outline-none disabled:opacity-50 flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
+          {/* STATE 1: IDLE */}
+          {!hasInstance && !initializing && (
+            <motion.div 
+              key="idle"
+              initial={{ opacity: 0, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, filter: 'blur(4px)' }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-4 p-6 md:p-8"
             >
-              {initializing ? <Loader2 className="animate-spin" size={18} /> : <QrCode size={18} />}
-              {initializing ? 'Iniciando...' : 'Gerar QR Code'}
-            </button>
+              {/* Row 1: Icon & Status */}
+              <div className="flex justify-between items-start w-full">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100/50">
+                  <Bot size={28} className="text-[#533CFA]" />
+                </div>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                  Inativo
+                </span>
+              </div>
+
+              {/* Row 2: Title */}
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 w-full text-left flex items-center gap-2">
+                <Image src="/assets/whatsapp.svg" alt="WhatsApp" width={24} height={24} className="shrink-0" />
+                Conexão da IA Atendente
+              </h2>
+
+              {/* Row 3: Description */}
+              <p className="text-sm text-slate-500 leading-relaxed text-left w-full">
+                Automatize o atendimento. Conecte o número de WhatsApp do seu negócio para que a IA agende clientes e tire dúvidas 24/7.
+              </p>
+
+              {/* Row 4: Action */}
+              <button
+                onClick={handleInitializeInstance}
+                className="w-full md:w-fit h-12 px-6 bg-[#533CFA] hover:bg-[#432EEA] text-white font-bold rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition-all outline-none flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
+              >
+                <QrCode size={18} />
+                Gerar QR Code
+              </button>
+            </motion.div>
           )}
-          
+
+          {/* STATE 2: LOADING */}
+          {initializing && (
+            <motion.div 
+              key="loading"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center justify-center text-center gap-4 p-8 md:p-12 min-h-[300px]"
+            >
+              <div className="w-16 h-16 bg-slate-50 border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center mb-2">
+                <Loader2 className="animate-spin text-[#533CFA]" size={28} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Gerando conexão segura...</h3>
+                <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                  Sua infraestrutura de atendimento dedicada está sendo ativada.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STATE 3: QR READY */}
+          {hasInstance && !isConnected && !initializing && (
+            <motion.div
+              key="qr_ready"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-8 p-6 md:p-8"
+            >
+              <div className="bg-white p-3 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 shrink-0">
+                <QRCodeDisplay
+                  instanceName={dbState!.instance_name!}
+                  onConnected={() => fetchFromDb(false)}
+                />
+              </div>
+              
+              <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest leading-none mb-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  Aguardando Leitura
+                </span>
+                
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Escaneie para Conectar</h3>
+                <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
+                  Abra o WhatsApp no seu celular, vá em <strong className="text-slate-700">Aparelhos conectados</strong> e aponte a câmera para o código ao lado.
+                </p>
+
+                <button
+                  onClick={handleDeleteInstance}
+                  disabled={disconnecting}
+                  className="w-full md:w-fit h-10 px-5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm shrink-0 whitespace-nowrap disabled:opacity-50"
+                >
+                  {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                  Reiniciar Conexão
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STATE 4: CONNECTED */}
           {isConnected && (
-            <button
-              onClick={handleDeleteInstance}
-              disabled={disconnecting}
-              className="w-full md:w-fit h-12 md:h-10 px-6 md:px-4 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 font-bold text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
+            <motion.div
+              key="active"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-4 p-6 md:p-8"
             >
-              {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-              Desconectar Instância
-            </button>
+              {/* Row 1: Header */}
+              <div className="flex justify-between items-start w-full">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0 border border-emerald-100 relative">
+                  <Bot size={28} className="text-emerald-500 relative z-10" />
+                  <div className="absolute inset-0 rounded-2xl bg-emerald-400 animate-ping opacity-20" />
+                </div>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                  Online
+                </span>
+              </div>
+
+              {/* Row 2: Title */}
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 w-full text-left flex items-center gap-2">
+                <Image src="/assets/whatsapp.svg" alt="WhatsApp" width={24} height={24} className="shrink-0" />
+                Inteligência Ativa
+              </h2>
+
+              {/* Row 3: Description */}
+              <p className="text-sm text-slate-500 leading-relaxed text-left w-full">
+                O assistente está rodando perfeitamente. Mensagens enviadas para o seu número serão respondidas automaticamente seguindo suas diretrizes.
+              </p>
+
+              {/* Row 4: Action */}
+              <button
+                onClick={handleDeleteInstance}
+                disabled={disconnecting}
+                className="w-full md:w-fit h-12 md:h-10 px-6 md:px-4 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 font-bold text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
+              >
+                {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                Desconectar Número
+              </button>
+            </motion.div>
           )}
-        </div>
-
-        {/* Inline Body (State Driven) */}
-        <div className="bg-slate-50/50">
-          <AnimatePresence mode="wait">
-            {/* STATE: Initialize loading (UX feedback right after click) */}
-            {initializing && !hasInstance && (
-              <motion.div 
-                key="init_loading"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="p-8 flex flex-col items-center justify-center text-center gap-4"
-              >
-                <div className="w-16 h-16 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center mb-2">
-                  <Loader2 className="animate-spin text-[#533CFA]" size={28} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Preparando servidor dedicado...</h3>
-                  <p className="text-xs text-slate-500 mt-1">Sua instância está sendo criada de forma segura.</p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* STATE: QR Code Ready for Scanning */}
-            {hasInstance && !isConnected && !initializing && (
-              <motion.div
-                key="qr_code"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="p-8 flex flex-col items-center border-t border-slate-100"
-              >
-                <div className="bg-white p-3 rounded-3xl shadow-sm border border-slate-200 mb-6">
-                  <QRCodeDisplay
-                    instanceName={dbState!.instance_name!}
-                    onConnected={() => fetchFromDb(false)}
-                  />
-                </div>
-                
-                <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-2xl gap-4 bg-blue-50 border border-blue-100 p-5 rounded-2xl">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="text-blue-500 shrink-0 mt-0.5" size={20} />
-                    <div className="flex flex-col text-left">
-                      <h4 className="text-sm font-bold text-blue-900 tracking-tight">Problemas para ler o código?</h4>
-                      <p className="text-xs font-medium text-blue-700/80 leading-relaxed max-w-sm mt-0.5">
-                        Aguarde o carregamento do código se a tela estiver cinza. Caso demore muito tempo, recrie a instância.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleDeleteInstance}
-                    disabled={disconnecting}
-                    className="h-10 px-5 bg-white border border-rose-200 text-rose-500 font-bold text-xs rounded-xl flex items-center gap-2 hover:bg-rose-50 transition-all shadow-sm shrink-0 whitespace-nowrap disabled:opacity-50"
-                  >
-                    {disconnecting ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
-                    Reiniciar
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* STATE: Active / Working */}
-            {isConnected && (
-              <motion.div
-                key="active"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="p-8 flex flex-col sm:flex-row items-center gap-6"
-              >
-                {/* Visual Data / Pulse Graphic */}
-                <div className="relative flex shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center z-10 border-4 border-white shadow-sm">
-                    <CheckCircle2 size={28} className="text-emerald-500" />
-                  </div>
-                  <div className="absolute inset-0 w-16 h-16 rounded-full bg-emerald-400 animate-ping opacity-20" />
-                </div>
-                
-                <div className="flex flex-col text-left">
-                  <h3 className="text-base font-bold text-slate-900">Operação Automática</h3>
-                  <p className="text-sm text-slate-500 mt-1 max-w-md">
-                    Seu assistente de inteligência artificial já está recebendo e analisando mensagens no WhatsApp.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        </AnimatePresence>
       </div>
 
       {/* ──────────────────────────────────────────────────────── */}
