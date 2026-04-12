@@ -13,6 +13,7 @@ import {
   Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const kpis = [
   {
@@ -59,9 +60,9 @@ export default function ReportPage() {
       <header className="bg-white border-b border-slate-100 px-6 py-6 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <a href="/dashboard" className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
+            <Link href="/dashboard" className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
               <ArrowLeft size={20} />
-            </a>
+            </Link>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Performance da IA</h1>
               <p className="text-sm text-slate-500 font-medium">Relatório de conversão e receita</p>
@@ -188,7 +189,7 @@ export default function ReportPage() {
 
             <div className="mt-10 p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <p className="text-xs text-slate-500 italic leading-relaxed text-center">
-                "Mechas" continua sendo o seu serviço de maior ticket médio.
+                &quot;Mechas&quot; continua sendo o seu serviço de maior ticket médio.
               </p>
             </div>
           </motion.div>

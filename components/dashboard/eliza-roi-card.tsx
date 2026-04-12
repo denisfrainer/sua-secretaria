@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { TrendingUp, ArrowUpRight, ShoppingCart, CreditCard, RefreshCcw } from 'lucide-react';
+import Link from 'next/link';
 
 const mockData = {
   totalRevenue: 4250.00,
@@ -78,13 +79,13 @@ export const ElizaRoiCard = () => {
       </div>
 
       {/* Footer / Action */}
-      <a 
+      <Link 
         href="/dashboard/report"
         className="w-full py-4 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 border border-slate-100 group"
       >
         Ver Relatório Detalhado
         <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-      </a>
+      </Link>
     </div>
   );
 };

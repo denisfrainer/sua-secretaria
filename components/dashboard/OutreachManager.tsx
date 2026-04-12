@@ -3,16 +3,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Play, 
-  Square, 
   Settings2, 
   MessageSquarePlus, 
   Clock, 
-  CalendarDays, 
-  AlertCircle,
   Plus,
   Trash2,
-  ChevronRight,
   Info
 } from 'lucide-react';
 

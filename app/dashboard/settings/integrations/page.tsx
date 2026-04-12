@@ -5,20 +5,17 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import {
   Share2,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Calendar,
   LogOut,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { hasAccess, PlanTier } from '@/lib/auth/access-control';
 
 export default function IntegrationsSettingsPage() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<{ google_refresh_token?: string | null; plan_tier?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRevoking, setIsRevoking] = useState(false);
   const supabase = createClient();
@@ -97,7 +94,7 @@ export default function IntegrationsSettingsPage() {
       y: 0,
       transition: { 
         duration: 0.5, 
-        ease: [0.25, 0.1, 0.25, 1.0] 
+        ease: [0.25, 0.1, 0.25, 1.0] as const
       }
     }
   };
