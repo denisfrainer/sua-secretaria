@@ -14,9 +14,11 @@ import {
   QrCode,
   Settings2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 
@@ -234,6 +236,7 @@ export default function WhatsAppSettingsPage() {
             </div>
             <div className="flex flex-col">
               <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                <Image src="/assets/whatsapp.svg" alt="WhatsApp" width={24} height={24} />
                 Conexão da IA Atendente
                 
                 {/* Dynamic Status Indicator */}
