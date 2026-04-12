@@ -67,17 +67,51 @@ export default function IntegrationsSettingsPage() {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
+  if (loading) return (
+    <div className="flex flex-col gap-10 opacity-20">
+      <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse" />
+      <div className="h-64 w-full bg-gray-100 rounded-[2.5rem] animate-pulse" />
+      <div className="h-64 w-full bg-gray-100 rounded-[2.5rem] animate-pulse" />
+    </div>
+  );
 
   const isGoogleConnected = !!profile?.google_refresh_token;
   const tier = (profile?.plan_tier as PlanTier) || 'STARTER';
   const hasSheetsAccess = hasAccess(tier, 'GOOGLE_SHEETS_SYNC');
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 24 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.5, 
+        ease: [0.25, 0.1, 0.25, 1.0] 
+      }
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-10 pb-32"
+    >
 
       {/* Header */}
-      <div className="flex flex-col gap-2">
+      <motion.div variants={itemVariants} className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm">
             <Share2 size={20} />
@@ -87,18 +121,24 @@ export default function IntegrationsSettingsPage() {
         <p className="text-base font-medium text-gray-500 max-w-lg">
           Conecte ferramentas externas para expandir o poder da sua IA. Eliza pode ler e escrever na sua agenda em tempo real.
         </p>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 gap-6">
         {/* GOOGLE CALENDAR CARD */}
-        <div className="bg-white rounded-[2.5rem] border border-black/5 shadow-sm p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden group hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+        <motion.div 
+          variants={itemVariants}
+          className="bg-white rounded-[2.5rem] border border-black/5 shadow-sm p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden group hover:shadow-xl hover:shadow-blue-500/5 transition-all"
+        >
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 z-10 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="w-32 h-32 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                <img
+                <Image
                   src="/assets/google-calendar-logo.svg"
                   alt="Google Calendar"
-                  className="w-32 h-32 object-contain"
+                  width={128}
+                  height={128}
+                  className="object-contain"
+                  priority
                 />
               </div>
               <div className="flex flex-col">
@@ -160,22 +200,27 @@ export default function IntegrationsSettingsPage() {
 
           {/* Decor */}
           <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl -z-10 group-hover:bg-blue-500/10 transition-colors duration-700" />
-        </div>
+        </motion.div>
 
         {/* GOOGLE SHEETS CARD */}
-        <div className={`
-          rounded-[2.5rem] border p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden transition-all
-          ${hasSheetsAccess 
-            ? 'bg-white border-black/5 shadow-sm group hover:shadow-xl hover:shadow-purple-500/5' 
-            : 'bg-gray-50/50 border-gray-200 opacity-70 grayscale'}
-        `}>
+        <motion.div 
+          variants={itemVariants} 
+          className={`
+            rounded-[2.5rem] border p-8 md:p-10 flex flex-col gap-8 relative overflow-hidden transition-all
+            ${hasSheetsAccess 
+              ? 'bg-white border-black/5 shadow-sm group hover:shadow-xl hover:shadow-purple-500/5' 
+              : 'bg-gray-50/50 border-gray-200 opacity-70 grayscale'}
+          `}
+        >
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 z-10 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="w-32 h-32 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
-                <img
+                <Image
                   src="/assets/google-sheets-logo.svg"
                   alt="Google Sheets"
-                  className="w-32 h-32 object-contain"
+                  width={128}
+                  height={128}
+                  className="object-contain"
                 />
               </div>
               <div className="flex flex-col">
@@ -228,8 +273,8 @@ export default function IntegrationsSettingsPage() {
 
           {/* Decor */}
           <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl -z-10 group-hover:bg-purple-500/10 transition-colors duration-700" />
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

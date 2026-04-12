@@ -11,11 +11,11 @@ export const FeatureGates = {
   GOOGLE_SHEETS_SYNC: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
   
   // Level 2: Efficiency & Stability (PRO+)
-  WHATSAPP_CONNECT: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
+  WHATSAPP_CONNECT: ['FREE', 'TRIAL', 'STARTER', 'PRO', 'ELITE'] as PlanTier[],
   AI_CONFIGURATION: ['TRIAL', 'PRO', 'ELITE'] as PlanTier[],
   
   // Level 3: Growth & Expansion (ELITE only)
-  WOLF_AGENT_OUTBOUND: ['TRIAL', 'ELITE'] as PlanTier[],
+  WOLF_AGENT_OUTBOUND: ['ELITE'] as PlanTier[],
 };
 
 /**

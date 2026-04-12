@@ -4,19 +4,19 @@ import React, { useEffect } from 'react';
 import { TrendingUp, ArrowUpRight, ShoppingCart, CreditCard, RefreshCcw } from 'lucide-react';
 
 const mockData = {
-  totalRevenue: 894.00,
+  totalRevenue: 4250.00,
   currency: "R$",
   period: "Últimos 30 dias",
   recentRecoveries: [
-    { id: 1, type: "Boleto Recuperado", product: "Mentoria Starter", amount: 297.00, time: "Há 2 horas", icon: RefreshCcw },
-    { id: 2, type: "Venda Direta (PIX)", product: "E-book Setup", amount: 97.00, time: "Ontem", icon: CreditCard },
-    { id: 3, type: "Abandono de Carrinho", product: "Curso Completo", amount: 500.00, time: "Há 3 dias", icon: ShoppingCart }
+    { id: 1, type: "Confirmado", product: "Corte & Escova", amount: 120.00, time: "Há 2 horas", icon: RefreshCcw },
+    { id: 2, type: "Sinal pago (PIX)", product: "Alongamento em Gel", amount: 150.00, time: "Ontem", icon: CreditCard },
+    { id: 3, type: "Agendado", product: "Limpeza de Pele Profunda", amount: 180.00, time: "Há 3 dias", icon: ShoppingCart }
   ]
 };
 
 export const ElizaRoiCard = () => {
   useEffect(() => {
-    console.log('[MOCK_RENDER] Displaying Eliza ROI Card with mock data for UI validation.');
+    console.log('[MOCK_RENDER] Displaying Eliza ROI Card with beauty industry mock data.');
   }, []);
 
   return (
@@ -24,8 +24,8 @@ export const ElizaRoiCard = () => {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-gray-900 font-bold text-lg leading-tight">Lucro Gerado pela IA</h3>
-          <p className="text-gray-500 text-sm mt-0.5">Atribuição direta via conversas no WhatsApp</p>
+          <h3 className="text-gray-900 font-bold text-lg leading-tight">Agendamentos via IA</h3>
+          <p className="text-gray-500 text-sm mt-0.5">Atribuição direta de marcações no WhatsApp</p>
         </div>
         <div className="bg-emerald-50 p-2 rounded-xl">
           <TrendingUp size={20} className="text-emerald-600" />
@@ -51,7 +51,7 @@ export const ElizaRoiCard = () => {
       {/* List Analysis */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Recuperações Recentes</span>
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Atividade Recente</span>
           <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-md uppercase">Proof of work</span>
         </div>
         
@@ -78,9 +78,13 @@ export const ElizaRoiCard = () => {
       </div>
 
       {/* Footer / Action */}
-      <button className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+      <a 
+        href="/dashboard/report"
+        className="w-full py-4 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 border border-slate-100 group"
+      >
         Ver Relatório Detalhado
-      </button>
+        <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+      </a>
     </div>
   );
 };

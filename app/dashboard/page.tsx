@@ -123,7 +123,7 @@ export default async function DashboardPage() {
     <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
       
       {/* Trial Status Indicator (Railway Style) */}
-      <div className="flex justify-end w-full -mt-3 -mb-6">
+      <div className="flex justify-end w-full -mt-3 -mb-3">
         <TrialStatusBox 
           planTier={profile?.plan_tier || 'FREE'} 
           trialEndsAt={profile?.trial_ends_at || null} 
