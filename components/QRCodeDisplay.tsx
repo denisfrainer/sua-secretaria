@@ -138,17 +138,6 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                 </motion.div>
 
                 <div className="flex flex-col items-center gap-5 w-full pt-2">
-                    <button
-                        onClick={() => {
-                            setQrBase64(null);
-                            window.location.reload(); // Hard reset
-                        }}
-                        className="text-[10px] font-black text-red-500 hover:text-red-700 transition-all uppercase tracking-widest flex items-center gap-2 py-2 px-6 bg-red-50 rounded-full border border-red-100/50"
-                    >
-                        <RefreshCw size={12} />
-                        Reiniciar Instância
-                    </button>
-
                     <div className="flex items-center gap-2 text-[13px] text-blue-600 font-bold px-5 py-2 bg-blue-50 rounded-full border border-blue-100 animate-pulse">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                         Status: Aguardando Escaneamento

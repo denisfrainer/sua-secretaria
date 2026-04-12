@@ -11,7 +11,7 @@ export function AiToggle() {
   const [loading, setLoading] = useState(false);
   const [hasServices, setHasServices] = useState<boolean | null>(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
-  
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -79,7 +79,7 @@ export function AiToggle() {
       });
 
       if (!res.ok) throw new Error('Failed to update');
-      
+
       const data = await res.json();
       setEnabled(data.enabled);
     } catch (error) {
@@ -101,28 +101,25 @@ export function AiToggle() {
             role="switch"
             aria-checked={enabled}
             initial={false}
-            animate={{ 
+            animate={{
               backgroundColor: enabled ? '#34C759' : '#FF3B30',
               opacity: loading ? 0.6 : 1
             }}
             onClick={toggleAi}
             className={`relative w-[52px] h-[30px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
           >
-            <motion.span 
+            <motion.span
               layout
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
               className={`
                 absolute top-[2px] left-[2px] w-[26px] h-[26px] rounded-full bg-white shadow-md flex items-center justify-center
                 ${enabled ? 'translate-x-[22px]' : 'translate-x-0'}
-              `} 
+              `}
             >
               {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
             </motion.span>
           </motion.button>
         )}
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-          IA Ativa
-        </span>
       </div>
 
       {/* GUARDRAIL MODAL */}
@@ -137,7 +134,7 @@ export function AiToggle() {
               onClick={() => setShowServiceModal(false)}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
-            
+
             {/* Modal Content */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -148,15 +145,15 @@ export function AiToggle() {
               <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mb-4 border border-amber-100">
                 <AlertTriangle className="text-amber-500" size={28} />
               </div>
-              
+
               <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-2">
                 Atenção
               </h3>
-              
+
               <p className="text-sm font-medium text-slate-500 mb-6 leading-relaxed">
                 Usuário, você precisa cadastrar algum serviço antes de ligar a inteligência artificial.
               </p>
-              
+
               <div className="flex w-full gap-3">
                 <button
                   onClick={() => setShowServiceModal(false)}

@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         const webhookFullUrl = `${webhookUrl}/api/webhook/evolution?tenantId=${tenantId}`;
         console.log(`🚀 [EVOLUTION] Creating instance: ${instanceName} | Tenant: ${tenantId}`);
 
-        // 4. Call Evolution API to create the instance
+        // 4. Ensure instance exists on Evolution
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
@@ -67,11 +67,37 @@ export async function POST(request: Request) {
             }),
         });
 
-        const createData = await createRes.json();
-
+        // (We ignore creation errors since it might just mean it already exists on Evolution)
         if (!createRes.ok) {
-            console.error('❌ [EVOLUTION] Failed to create instance:', createData);
-            return NextResponse.json({ error: 'Failed to create instance', details: createData }, { status: createRes.status });
+           console.warn(`⚠️ [EVOLUTION] Instance creation warned (might exist):`, await createRes.text());
+        }
+
+        // 5. PURGE: Force logout to clear any stuck 440 conflict sessions
+        console.log(`🧹 [EVOLUTION] Purging potentially stuck connection for ${instanceName}...`);
+        try {
+             await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
+                 method: 'DELETE',
+                 headers: { 'apikey': apiKey }
+             });
+        } catch (e: any) {
+             console.log(`⚠️ [EVOLUTION] Logout returned exception (safe to ignore):`, e.message);
+        }
+
+        // Wait 1 second as strictly requested
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 6. GENERATE: Fetch fresh QR code via connect endpoint
+        console.log(`🔗 [EVOLUTION] Generating fresh QR code for ${instanceName}...`);
+        const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'apikey': apiKey }
+        });
+
+        const connectData = await connectRes.json();
+
+        if (!connectRes.ok) {
+            console.error('❌ [EVOLUTION] Failed to connect instance:', connectData);
+            return NextResponse.json({ error: 'Failed to fetch fresh QR code', details: connectData }, { status: connectRes.status });
         }
 
         console.log(`✅ [EVOLUTION] Instance ${instanceName} created.`);
@@ -147,8 +173,8 @@ export async function POST(request: Request) {
         // 7. Return to client — done
         return NextResponse.json({
             success: true,
-            instance: createData.instance || createData,
-            qrcode: createData.qrcode || createData.base64
+            instance: connectData.instance || connectData,
+            qrcode: connectData.qrcode || connectData.base64
         });
 
     } catch (error: any) {

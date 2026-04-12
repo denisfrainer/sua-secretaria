@@ -1112,7 +1112,7 @@ http.createServer((req, res) => {
 
                         if (!lead) {
                             console.log(`🆕 [LEAD] Creating new lead for ${clientNumber} (instance: ${instanceName})`);
-                            const { data: newLead, error: insertError } = await supabaseAdmin.from('leads_lobo').insert({
+                            const payload = {
                                 phone: clientNumber,
                                 status: 'eliza_processing',
                                 name: 'Lead inbound',
@@ -1123,11 +1123,34 @@ http.createServer((req, res) => {
                                 is_locked: false,
                                 instance_name: instanceName,
                                 owner_id: tenantId
-                            }).select().single();
+                            };
+                            
+                            let { data: newLead, error: insertError } = await supabaseAdmin
+                                .from('leads_lobo')
+                                .upsert(payload, { onConflict: 'phone' })
+                                .select()
+                                .single();
 
+                            // Graceful Error Handling for extreme race conditions (duplicate key despite upsert)
                             if (insertError) {
-                                console.error(`❌ [SUPABASE ERROR] Failed to CREATE lead:`, insertError.message, insertError.details);
-                                return; // Stop if we can't create the lead
+                                if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
+                                    console.warn(`⚠️ [WEBHOOK RACE] Duplicate key violation caught for ${clientNumber}. Attempting fallback fetch.`);
+                                    const { data: fallbackLead, error: fallbackError } = await supabaseAdmin
+                                        .from('leads_lobo')
+                                        .select('*')
+                                        .eq('phone', clientNumber)
+                                        .single();
+                                        
+                                    if (fallbackError || !fallbackLead) {
+                                        console.error(`❌ [SUPABASE ERROR] Fallback fetch failed for:`, clientNumber);
+                                        return;
+                                    }
+                                    newLead = fallbackLead;
+                                    insertError = null;
+                                } else {
+                                    console.error(`❌ [SUPABASE ERROR] Failed to CREATE lead:`, insertError.message, insertError.details);
+                                    return; // Stop if we can't create the lead
+                                }
                             }
                             lead = newLead;
                         }

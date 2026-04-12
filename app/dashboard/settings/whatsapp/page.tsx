@@ -328,7 +328,7 @@ export default function WhatsAppSettingsPage() {
                   className="w-full md:w-fit h-10 px-5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm shrink-0 whitespace-nowrap disabled:opacity-50"
                 >
                   {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
-                  Reiniciar Conexão
+                  Forçar Desconexão
                 </button>
               </div>
             </motion.div>
