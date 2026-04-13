@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 interface GoogleLoginButtonProps {
   text?: string;
@@ -10,7 +9,6 @@ interface GoogleLoginButtonProps {
 
 export default function GoogleLoginButton({ text, variant = 'default' }: GoogleLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
 
   const handleGoogleLogin = async () => {
     if (isLoading) return; // Strict Client-Side Lock
@@ -24,20 +22,9 @@ export default function GoogleLoginButton({ text, variant = 'default' }: GoogleL
         });
       }
 
-      console.log(`🔑 [AUTH] Initiating Google OAuth. Redirect target: ${window.location.origin}/auth/callback`);
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          scopes: 'openid email profile',
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
+      console.log(`🔑 [AUTH] Initiating Custom Google PKCE OAuth Flow.`);
+      window.location.href = '/api/auth/google';
 
-      if (error) {
-        console.error('Error logging in with Google:', error.message);
-        setIsLoading(false);
-      }
     } catch (error) {
       console.error('Unexpected error:', error);
       setIsLoading(false);
