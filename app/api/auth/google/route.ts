@@ -33,8 +33,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login?error=server_configuration', requestUrl.origin));
   }
 
-  // Construct the redirect URI based on the current origin
-  const redirectUri = `${requestUrl.origin}/api/auth/google/callback`;
+  // Construct the redirect URI using a strict base URL to avoid Netlify deploy preview mismatches
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://meatendeai.netlify.app';
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
   // Build the authorization URL
   const params = new URLSearchParams({
