@@ -187,7 +187,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
                 if (nativeError) {
                     console.error("❌ [DB ERROR]: Falha ao buscar agendamentos nativos.", nativeError);
                 } else if (nativeAppointments) {
-                    nativeAppointments.forEach(app => {
+                    nativeAppointments.forEach((app: any) => {
                         const startTime = new Date(app.start_time).toLocaleTimeString('pt-BR', {
                             hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
                         });
@@ -808,7 +808,7 @@ async function startPolling() {
 // ==============================================================
 const PORT = process.env.PORT || 8080;
 
-http.createServer((req, res) => {
+http.createServer((req: any, res: any) => {
     if (req.method === 'GET' && req.url === '/') {
         res.writeHead(200);
         res.end('Eliza Worker Online');
@@ -822,7 +822,7 @@ http.createServer((req, res) => {
 
     if (isPost && isWebhookPath) {
         let bodyStr = '';
-        req.on('data', chunk => { bodyStr += chunk.toString(); });
+        req.on('data', (chunk: any) => { bodyStr += chunk.toString(); });
 
         req.on('end', async () => {
             try {
@@ -869,7 +869,7 @@ http.createServer((req, res) => {
                         body.data?.instance?.state,   // nested instance object
                     ];
 
-                    const rawState = candidates.find(c => typeof c === 'string' && c.length > 0) || 'unknown';
+                    const rawState = candidates.find((c: any) => typeof c === 'string' && c.length > 0) || 'unknown';
                     const normalizedState = rawState.toLowerCase().trim();
 
                     console.log(`🔌 [CONNECTION] Raw data dump:`, JSON.stringify(body.data || body));
@@ -1129,7 +1129,7 @@ http.createServer((req, res) => {
                         // --- BLINDAGENS DE SEGURANÇA ---
                         const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
                         const msgLower = clientMessage.toLowerCase();
-                        if (autoReplyKeywords.some(kw => msgLower.includes(kw))) {
+                        if (autoReplyKeywords.some((kw: string) => msgLower.includes(kw))) {
                             console.log(`🛡️[SHIELD] Auto - reply(Keywords).Ignorando.`);
                             return;
                         }
