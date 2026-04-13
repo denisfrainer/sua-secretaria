@@ -150,7 +150,22 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
+    const html = `
+      <html>
+        <head>
+          <meta http-equiv="refresh" content="0;url=/dashboard" />
+        </head>
+        <body>
+          <script>window.location.href="/dashboard";</script>
+        </body>
+      </html>
+    `;
+    return new NextResponse(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    });
 
   } catch (err) {
     console.error('[AUTH_CALLBACK] Unexpected server error:', err);
