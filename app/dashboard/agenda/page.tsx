@@ -1,196 +1,115 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { Settings, ChevronLeft, ChevronRight, Calendar, Loader2, ArrowLeft } from 'lucide-react';
-import { DateStrip } from '@/components/agenda/DateStrip';
-import { TimeSlotList } from '@/components/agenda/TimeSlotList';
-import { AgendaDrawer } from '@/components/agenda/AgendaDrawer';
-import { AgendaSettingsModal } from '@/components/agenda/AgendaSettingsModal';
-import { NewAppointmentDrawer } from '@/components/agenda/NewAppointmentDrawer';
-import { AgendaEmptyState } from '@/components/agenda/AgendaEmptyState';
-import Link from 'next/link';
-import { format, addDays, isSameDay } from 'date-fns';
+import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { Calendar, Clock, User, Phone } from 'lucide-react';
+import { format, parseISO, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { createClient } from '@/lib/supabase/client';
 
-export default function AgendaPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [services, setServices] = useState<any[]>([]);
-  const [isIntegrated, setIsIntegrated] = useState(true);
+export const dynamic = 'force-dynamic';
 
-  const [agenda, setAgenda] = useState<any[]>([]);
+export default async function AgendaPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    async function fetchAgenda() {
-      // Only fetch from API if today is selected
-      const today = new Date();
-      if (!isSameDay(selectedDate, today)) {
-        setLoading(false);
-        setAgenda([]);
-        return;
-      }
+  if (!user) {
+    return (
+        <div className="flex justify-center p-12">
+            <p className="text-gray-500">Acesso negado. Por favor, faça login.</p>
+        </div>
+    );
+  }
 
-      console.log('📡 [AGENDA] Fetching real-time Google Calendar agenda...');
-      setLoading(true);
-      try {
-        const res = await fetch('/api/agenda/today');
-        
-        if (res.status === 404 || res.status === 401) {
-          setIsIntegrated(false);
-          setLoading(false);
-          return;
-        }
+  // Fetch native appointments natively mapped to the user
+  const { data: appointments, error } = await supabaseAdmin
+    .from('appointments')
+    .select('*')
+    .eq('owner_id', user.id)
+    .gte('appointment_date', new Date().toISOString().split('T')[0])
+    .order('appointment_date', { ascending: true })
+    .order('start_time', { ascending: true });
 
-        const data = await res.json();
-        const apiIsIntegrated = data.isIntegrated ?? data.integrated; // Backward compatibility fallback
-        const apiAppointments = data.appointments ?? data.agenda; // Backward compatibility fallback
+  if (error) {
+    console.error('Error fetching appointments:', error);
+  }
 
-        console.log('📡 [AGENDA] API Response:', { isIntegrated: apiIsIntegrated, appointmentsCount: apiAppointments?.length });
-
-        if (apiIsIntegrated === false) {
-          console.warn('⚠️ [AGENDA] Calendar not integrated according to API');
-          setIsIntegrated(false);
-          setAgenda([]);
-        } else {
-          setAgenda(apiAppointments || []);
-          setIsIntegrated(true);
-        }
-      } catch (error) {
-        console.error('[AGENDA] Failed to fetch agenda:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchAgenda();
-  }, [selectedDate]);
-
-  useEffect(() => {
-    async function fetchServices() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: configData } = await supabase
-        .from('business_config')
-        .select('context_json')
-        .eq('owner_id', user.id)
-        .maybeSingle();
-
-      if (configData?.context_json) {
-        setServices((configData.context_json as any).services || []);
-      }
-    }
-
-    fetchServices();
-  }, []);
-
-  const handleSlotClick = (slot: any) => {
-    console.log('🖱️ [AGENDA] Slot clicked:', slot.time);
-    setSelectedSlot(slot);
-    setIsDrawerOpen(true);
+  // Define types matches Supabase
+  type Appointment = {
+    id: string;
+    client_name: string;
+    lead_phone: string;
+    service_type: string;
+    start_time: string;
+    end_time: string;
+    appointment_date: string;
+    status: string;
   };
 
-  const handleDateChange = (date: Date) => {
-    setSelectedDate(date);
-  };
+  // Group by date
+  const grouped: Record<string, Appointment[]> = {};
+  appointments?.forEach((app: Appointment) => {
+    if (!grouped[app.appointment_date]) grouped[app.appointment_date] = [];
+    grouped[app.appointment_date].push(app);
+  });
 
   return (
-    <div className="w-full max-w-4xl px-4 py-8 flex flex-col gap-6 mx-auto animate-in fade-in duration-500 overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col gap-4">
-        <Link 
-          href="/dashboard" 
-          className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-black transition-colors w-fit"
-        >
-          <ArrowLeft size={16} />
-          Voltar ao Dashboard
-        </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-black tracking-tight text-gray-900">Agenda</h1>
-            <p className="text-gray-500 font-medium capitalize">
-              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-            </p>
-          </div>
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-3 bg-white border border-black/5 rounded-2xl shadow-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-95"
-          >
-            <Settings size={20} />
-          </button>
-        </div>
-      </div>
+      <div className="w-full max-w-2xl px-6 py-8 mx-auto flex flex-col gap-8 animate-in fade-in duration-700 pb-24">
+         {/* Header */}
+         <div className="flex flex-col gap-1 mb-2">
+            <h1 className="text-3xl font-black tracking-tight text-gray-900">Sua Agenda</h1>
+            <p className="text-sm text-gray-500 font-medium">Controle seus atendimentos agendados pela Eliza.</p>
+         </div>
 
-      {/* Date Navigation Strip */}
-      {isIntegrated && (
-        <DateStrip 
-          selectedDate={selectedDate} 
-          onDateChange={handleDateChange} 
-        />
-      )}
-
-      {/* Main Schedule Area / Empty State */}
-      <div className="flex-1 bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-        {!isIntegrated ? (
-          <AgendaEmptyState />
-        ) : (
-          <>
-            <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-blue-600" />
-                <span className="text-xs font-black uppercase tracking-widest text-gray-400">Horários do Dia</span>
-              </div>
-              {loading && <Loader2 className="animate-spin text-blue-600" size={16} />}
+         {/* Feed */}
+         {Object.keys(grouped).length === 0 ? (
+            <div className="w-full p-10 border-2 border-dashed border-gray-200 rounded-[2rem] flex flex-col items-center justify-center gap-3 text-center bg-gray-50/50">
+               <div className="h-16 w-16 bg-blue-50 text-blue-600 flex items-center justify-center rounded-full mb-2 shadow-sm">
+                   <Calendar strokeWidth={2.5} size={28} />
+               </div>
+               <p className="text-gray-900 font-black text-lg tracking-tight">Sua agenda está livre</p>
+               <p className="text-sm text-gray-500 max-w-[250px]">Nenhum agendamento foi encontrado para os próximos dias.</p>
             </div>
-            
-            <div className="flex-1 overflow-y-auto max-h-[calc(100vh-400px)] scrollbar-hide">
-              <TimeSlotList 
-                date={selectedDate} 
-                loading={loading}
-                agenda={agenda}
-                onSlotClick={handleSlotClick} 
-              />
-            </div>
-          </>
-        )}
+         ) : (
+            Object.keys(grouped).map(dateStr => {
+               const dateObj = parseISO(dateStr);
+               let dateLabel = format(dateObj, "EEEE, d 'de' MMMM", { locale: ptBR });
+               if (isToday(dateObj)) dateLabel = 'Hoje, ' + format(dateObj, "d 'de' MMMM", { locale: ptBR });
+               else if (isTomorrow(dateObj)) dateLabel = 'Amanhã, ' + format(dateObj, "d 'de' MMMM", { locale: ptBR });
+
+               return (
+                  <div key={dateStr} className="flex flex-col gap-5">
+                     <h2 className="text-xs font-black text-blue-600 uppercase tracking-widest pl-2">
+                        {dateLabel}
+                     </h2>
+                     <div className="flex flex-col gap-4">
+                        {grouped[dateStr].map(app => (
+                           <div key={app.id} className="bg-white border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all duration-300 shadow-sm rounded-[1.5rem] p-6 flex flex-col gap-4">
+                              <div className="flex justify-between items-start">
+                                 <div className="flex flex-col gap-1">
+                                    <h3 className="font-bold text-gray-900 text-xl tracking-tight leading-none">{app.client_name}</h3>
+                                    <span className="text-sm text-gray-500 font-medium">{app.service_type || 'Serviço Padrão'}</span>
+                                 </div>
+                                 <div className="bg-blue-50 text-blue-700 font-black px-4 py-2 rounded-full text-sm flex items-center gap-2">
+                                    <Clock strokeWidth={2.5} size={15} className="opacity-70" />
+                                    {format(new Date(app.start_time), 'HH:mm')}
+                                 </div>
+                              </div>
+                              <div className="h-px w-full bg-gray-50/80 my-1" />
+                              <div className="flex items-center justify-between text-xs font-semibold text-gray-400">
+                                 <div className="flex items-center gap-1.5 hover:text-gray-600 transition-colors">
+                                    <Phone size={14} strokeWidth={2.5} />
+                                    {app.lead_phone}
+                                 </div>
+                                 <div className="flex items-center gap-1.5">
+                                    <User size={14} strokeWidth={2.5} />
+                                    Status: <span className="text-emerald-700 uppercase tracking-widest text-[10px] font-black bg-emerald-50 px-2 py-0.5 rounded-full ml-1">{app.status}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               );
+            })
+         )}
       </div>
-
-      {/* Drawers & Modals */}
-      {isIntegrated && (
-        <>
-          <AgendaDrawer 
-            isOpen={isDrawerOpen} 
-            onClose={() => setIsDrawerOpen(false)} 
-            slot={selectedSlot} 
-            onNewBooking={() => {
-              setIsDrawerOpen(false);
-              setIsBookingOpen(true);
-            }}
-          />
-
-          <NewAppointmentDrawer
-            isOpen={isBookingOpen}
-            onClose={() => setIsBookingOpen(false)}
-            selectedTime={selectedSlot?.time || ''}
-            services={services}
-            onSuccess={() => {
-              // Trigger refresh
-              setSelectedDate(new Date(selectedDate));
-            }}
-          />
-
-          <AgendaSettingsModal 
-            isOpen={isSettingsOpen} 
-            onClose={() => setIsSettingsOpen(false)} 
-          />
-        </>
-      )}
-    </div>
   );
 }

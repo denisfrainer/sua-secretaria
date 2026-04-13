@@ -99,7 +99,7 @@ const functionDeclarations: any[] = [
     }
 ];
 
-async function executeToolCall(name: string, args: any, clientPhone: string, googleTokens?: any): Promise<any> {
+async function executeToolCall(name: string, args: any, clientPhone: string, googleTokens?: any, ownerId?: string, businessConfig?: any): Promise<any> {
     console.log(`🔧 [TOOL EXECUTION]: ${name} ${googleTokens ? '(Dynamic Auth)' : '(No Auth)'}`);
     console.log(`➡️  [TOOL ARGS]:`, JSON.stringify(args));
 
@@ -152,39 +152,82 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
 
     if (name === 'check_calendar_availability') {
         console.log(`\n================= 👁️ CONSOLE.GOD (CALENDAR CHECK) 👁️ =================`);
-        console.log(`📅 Leitura de agenda acionada para a data: ${args.date}`);
-
-        if (!googleTokens || !googleTokens.refresh_token) {
-            console.error("❌ [CALENDAR ERROR]: Google Calendar not integrated for this tenant.");
-            return { status: 'error', message: 'Este negócio ainda não conectou a agenda do Google.' };
-        }
+        console.log(`📅 Leitura de agenda acionada para a data: ${args.date} | Owner: ${ownerId}`);
 
         try {
-            oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
-            const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+            const requestedDate = new Date(`${args.date}T00:00:00-03:00`);
+            const dayOfWeek = requestedDate.getDay(); // 0 = Sunday, 1 = Monday... 6 = Saturday
+            
+            // 1. Check Operating Hours rules first
+            let dayConfig = businessConfig?.operating_hours?.weekdays;
+            if (dayOfWeek === 0) dayConfig = businessConfig?.operating_hours?.sunday;
+            if (dayOfWeek === 6) dayConfig = businessConfig?.operating_hours?.saturday;
 
-            const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
-            const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
+            if (dayConfig && dayConfig.is_closed) {
+                console.log(`❌ [CALENDAR] Dia fechado no operating_hours.`);
+                return { 
+                    status: 'success', 
+                    date: args.date, 
+                    busy_slots: 'O dia todo',
+                    message: `O estabelecimento está fechado neste dia de acordo com as regras de funcionamento.` 
+                };
+            }
 
-            const requestParams = {
-                calendarId: 'primary',
-                timeMin: startOfDay.toISOString(),
-                timeMax: endOfDay.toISOString(),
-                singleEvents: true,
-                orderBy: 'startTime'
-            };
+            let busySlots: string[] = [];
 
-            const response = await calendar.events.list(requestParams);
-            const events = response.data.items || [];
+            // 2. Fetch Native Supabase Appointments
+            if (ownerId) {
+                const { data: nativeAppointments, error: nativeError } = await supabaseAdmin
+                    .from('appointments')
+                    .select('start_time, end_time')
+                    .eq('owner_id', ownerId)
+                    .eq('appointment_date', args.date)
+                    .neq('status', 'cancelled');
+                
+                if (nativeError) {
+                    console.error("❌ [DB ERROR]: Falha ao buscar agendamentos nativos.", nativeError);
+                } else if (nativeAppointments) {
+                    nativeAppointments.forEach(app => {
+                        const startTime = new Date(app.start_time).toLocaleTimeString('pt-BR', {
+                            hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+                        });
+                        busySlots.push(`[Nativo] ${startTime}`);
+                    });
+                }
+            }
 
-            console.log(`⬅️ Payload recebido do Google (Total itens encontrados: ${events.length})`);
+            // 3. Fetch Google Calendar (Secondary/Optional Sync)
+            if (googleTokens && googleTokens.refresh_token) {
+                try {
+                    oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
+                    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+                    
+                    const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
+                    const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
 
-            const busySlots = events.map((ev: any) => {
-                const start = ev.start?.dateTime || ev.start?.date;
-                return start ? new Date(start).toLocaleTimeString('pt-BR', {
-                    hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
-                }) : 'Hora indefinida';
-            });
+                    const response = await calendar.events.list({
+                        calendarId: 'primary',
+                        timeMin: startOfDay.toISOString(),
+                        timeMax: endOfDay.toISOString(),
+                        singleEvents: true,
+                        orderBy: 'startTime'
+                    });
+                    
+                    const events = response.data.items || [];
+                    events.forEach((ev: any) => {
+                        const start = ev.start?.dateTime || ev.start?.date;
+                        if (start) {
+                            const timeStr = new Date(start).toLocaleTimeString('pt-BR', {
+                                hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+                            });
+                            busySlots.push(`[Google] ${timeStr}`);
+                        }
+                    });
+                    console.log(`⬅️ Payload Google Calendar encontrado: ${events.length} eventos.`);
+                } catch (gErr: any) {
+                    console.error("⚠️ [GOOGLE CALENDAR ERROR]:", gErr.message);
+                }
+            }
 
             return {
                 status: 'success',
@@ -192,44 +235,68 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
                 busy_slots: busySlots.length > 0 ? busySlots : 'Nenhum horário ocupado.',
                 message: busySlots.length > 0
                     ? `Estes horários já estão OCUPADOS: ${busySlots.join(', ')}. Não agende neles.`
-                    : `Agenda 100% livre. Ofereça o horário solicitado.`
+                    : `Agenda livre para os horários de operação normal.`
             };
 
         } catch (err: any) {
             console.error("❌ [CALENDAR ERROR]:", err.message);
-            return { status: 'error', message: 'Falha ao consultar a API do Google Calendar.' };
+            return { status: 'error', message: 'Falha ao consultar a disponibilidade de agenda.' };
         }
     }
 
     if (name === 'schedule_appointment') {
         console.log(`📅 [CALENDAR] Iniciando agendamento para ${args.client_name}`);
 
-        if (!googleTokens || !googleTokens.refresh_token) {
-            console.error("❌ [CALENDAR ERROR]: Google Calendar not integrated.");
-            return { status: 'error', message: 'Integração com Google Calendar pendente para este negócio.' };
-        }
-
         try {
-            oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
-            const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
             const startTime = new Date(`${args.date}T${args.time}:00-03:00`);
             const durationInMinutes = args.duration_minutes ? Number(args.duration_minutes) : 60;
             const endTime = new Date(startTime.getTime() + (durationInMinutes * 60 * 1000));
 
-            console.log(`➡️ [API REQUEST] Event: ${startTime.toISOString()} to ${endTime.toISOString()} (Duration: ${durationInMinutes}m)`);
+            // 1. Insert into Native Supabase Calendar
+            if (ownerId) {
+                const { error: dbError } = await supabaseAdmin.from('appointments').insert({
+                    owner_id: ownerId,
+                    lead_phone: clientPhone,
+                    client_name: args.client_name,
+                    service_type: args.service_type,
+                    appointment_date: args.date,
+                    start_time: startTime.toISOString(),
+                    end_time: endTime.toISOString(),
+                    duration_minutes: durationInMinutes,
+                    status: 'confirmed'
+                });
 
-            await calendar.events.insert({
-                calendarId: 'primary',
-                requestBody: {
-                    summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
-                    description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}\nDuração: ${durationInMinutes}m\n(Agendado via Eliza)`,
-                    start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
-                    end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
+                if (dbError) {
+                    console.error("❌ [DB INSERT ERROR]: Falha ao salvar agendamento nativo.", dbError);
+                    throw new Error("Erro ao salvar no banco de dados.");
                 }
-            });
+                console.log(`✅ [NATIVE CALENDAR] Agendamento salvo no Supabase!`);
+            } else {
+                console.error("⚠️ [NATIVE CALENDAR ERROR]: ownerId ausente, falha ao gravar agendamento.");
+                throw new Error("Erro interno: owner id não encontrado.");
+            }
 
-            console.log(`✅ [CALENDAR] Sucesso! Evento criado.`);
+            // 2. Sync to Google Calendar (Optional)
+            if (googleTokens && googleTokens.refresh_token) {
+                try {
+                    oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
+                    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+                    await calendar.events.insert({
+                        calendarId: 'primary',
+                        requestBody: {
+                            summary: `[AGENDADO] ${args.client_name} - ${args.service_type}`,
+                            description: `Serviço: ${args.service_type}\nTelefone: ${clientPhone}\nDuração: ${durationInMinutes}m\n(Agendado via Eliza)`,
+                            start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
+                            end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
+                        }
+                    });
+                    console.log(`✅ [GOOGLE CALENDAR] Sucesso! Evento sincronizado.`);
+                } catch (syncErr: any) {
+                    console.error("⚠️ [GOOGLE SYNC ERROR] Falha ao sincronizar agenda:", syncErr.message);
+                }
+            }
+
             return {
                 status: 'success',
                 message: 'Horário reservado com sucesso no calendário.',
@@ -541,7 +608,7 @@ ${businessContext}
             for (const call of result.functionCalls) {
                 if (call.name === 'notify_human_specialist') wasHandoffToolCalled = true;
 
-                const output = await executeToolCall(call.name || '', call.args, clientNumber, googleTokens);
+                const output = await executeToolCall(call.name || '', call.args, clientNumber, googleTokens, lead.owner_id, JSON.parse(businessContext));
 
                 functionResponseParts.push({
                     functionResponse: {
