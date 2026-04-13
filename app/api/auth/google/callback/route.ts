@@ -28,7 +28,10 @@ export async function GET(request: NextRequest) {
   // Validate state to prevent CSRF attacks
   if (!storedState || state !== storedState) {
     console.error('[GOOGLE_OAUTH_ERROR] State mismatch');
-    return NextResponse.redirect(new URL('/login?error=invalid_state', requestUrl.origin));
+    const response = NextResponse.redirect(new URL('/login?error=invalid_state', requestUrl.origin));
+    response.cookies.delete('oauth_state');
+    response.cookies.delete('oauth_nonce');
+    return response;
   }
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
