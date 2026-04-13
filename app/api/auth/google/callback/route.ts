@@ -73,23 +73,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_id_token', requestUrl.origin));
     }
 
-    // Prepare response early to set cookies
-    const response = NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
-
-    // 2. Initialize Supabase SSR Client
+    // 2. Initialize Supabase SSR Client natively to prevent Netlify cookie dropping
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            return request.cookies.getAll();
+            return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              const { domain: _domain, ...safeOptions } = options;
-              response.cookies.set({ name, value, ...safeOptions });
-            });
+            try {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                const { domain: _domain, ...safeOptions } = options;
+                console.log(`[AUTH_CALLBACK] Setting Supabase cookie: ${name}`);
+                cookieStore.set({ name, value, ...safeOptions });
+              });
+            } catch (error) {
+              console.warn('[AUTH_CALLBACK] Warning: Unable to run setAll inside this context.', error);
+            }
           },
         },
       }
@@ -110,9 +112,14 @@ export async function GET(request: NextRequest) {
 
     console.log('[AUTH_CALLBACK] Login successful with Google ID Token.');
 
-    // 4. Clean up the security cookies
-    response.cookies.delete('oauth_state');
-    response.cookies.delete('oauth_nonce');
+    // 4. Clean up the security cookies securely via cookieStore
+    try {
+      console.log('[AUTH_CALLBACK] Cleaning up security cookies.');
+      cookieStore.delete('oauth_state');
+      cookieStore.delete('oauth_nonce');
+    } catch (e) {
+      console.warn('[AUTH_CALLBACK] Could not delete security cookies:', e);
+    }
 
     // 5. 🛡️ GUARANTEE BUSINESS CONFIG EXISTS (Ported from old callback)
     const { data: existingConfig } = await supabaseAdmin
@@ -143,7 +150,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return response;
+    return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
 
   } catch (err) {
     console.error('[AUTH_CALLBACK] Unexpected server error:', err);
