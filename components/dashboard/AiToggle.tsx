@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -102,8 +102,7 @@ export function AiToggle() {
             aria-checked={enabled}
             initial={false}
             animate={{
-              backgroundColor: enabled ? '#34C759' : '#FF3B30',
-              opacity: loading ? 0.6 : 1
+              backgroundColor: enabled ? '#34C759' : '#FF3B30'
             }}
             onClick={toggleAi}
             className={`relative w-[52px] h-[30px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
@@ -116,7 +115,6 @@ export function AiToggle() {
                 ${enabled ? 'translate-x-[22px]' : 'translate-x-0'}
               `}
             >
-              {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
             </motion.span>
           </motion.button>
         )}

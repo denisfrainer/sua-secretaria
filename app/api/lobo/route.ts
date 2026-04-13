@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         let currentStats = statsData;
 
         if (!currentStats) {
-            const randomDailyLimit = Math.floor(Math.random() * (90 - 60 + 1)) + 60;
+            const randomDailyLimit = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
             const { data: newStats, error: insertError } = await supabaseAdmin
                 .from('lobo_daily_stats')
                 .insert([{ date_id: todayStr, sent_count: 0, daily_limit: randomDailyLimit }])
@@ -285,8 +285,8 @@ export async function POST(req: Request) {
 
                 await supabaseAdmin.rpc('increment_lobo_sent_count', { today_date: getBrazilDateString(), increment_by: 1 });
 
-                // Novo Jitter: Pausa entre 8 e 15 minutos
-                const nextHuntMinutes = Math.floor(Math.random() * (15 - 8 + 1)) + 8;
+                //Jitter: Pausa entre 6 e 12 minutos
+                const nextHuntMinutes = Math.floor(Math.random() * (12 - 6 + 1)) + 6;
                 const futureDate = new Date(Date.now() + nextHuntMinutes * 60 * 1000).toISOString();
 
                 console.log(`⏱️ [PACING METRICS] Janela de 10h. Novo cooldown sorteado: ${nextHuntMinutes} min. Capacidade teórica máxima hoje: ${Math.floor(600 / nextHuntMinutes)} leads.`);
