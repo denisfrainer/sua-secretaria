@@ -8,11 +8,15 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   const requestUrl = new URL(request.url);
   
-  // Generate a random state and nonce to prevent CSRF and replay attacks
+  // Generate a random state and raw nonce to prevent CSRF and replay attacks
   const state = crypto.randomBytes(32).toString('hex');
-  const nonce = crypto.randomBytes(32).toString('base64url'); // Using base64url is recommended for nonces
+  const rawNonce = crypto.randomBytes(32).toString('base64url'); // Using base64url is recommended for nonces
   
-  // Store state and nonce in HTTP-only cookies
+  // Supabase's signInWithIdToken hashes the incoming nonce.
+  // We must pass the hashed nonce to Google so the ID token's claim matches the hash.
+  const hashedNonce = crypto.createHash('sha256').update(rawNonce).digest('hex');
+  
+  // Store state and RAW nonce in HTTP-only cookies
   cookieStore.set('oauth_state', state, { 
     httpOnly: true, 
     secure: process.env.NODE_ENV === 'production', 
@@ -20,7 +24,7 @@ export async function GET(request: Request) {
     maxAge: 60 * 10 // 10 minutes
   });
   
-  cookieStore.set('oauth_nonce', nonce, { 
+  cookieStore.set('oauth_nonce', rawNonce, { 
     httpOnly: true, 
     secure: process.env.NODE_ENV === 'production', 
     path: '/', 
@@ -44,7 +48,7 @@ export async function GET(request: Request) {
     response_type: 'code',
     scope: 'openid email profile',
     state: state,
-    nonce: nonce,
+    nonce: hashedNonce,
     prompt: 'select_account',
   });
 
