@@ -51,7 +51,7 @@ export function HeroSection() {
             {isLoggedIn ? (
               <a
                 href="/dashboard"
-                className="flex items-center justify-center w-full px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-md shadow-md text-[16px] font-bold transition-all duration-200 ease-in-out hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+                className="flex items-center justify-center w-full px-8 h-14 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-md shadow-md text-[16px] font-bold transition-all duration-200 ease-in-out hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
               >
                 Ir para o Dashboard
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,7 +62,7 @@ export function HeroSection() {
               <>
                 <a
                   href="#precos"
-                  className="flex items-center justify-center w-full sm:w-1/2 px-4 h-12 bg-[#533AFD] text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#533AFD]"
+                  className="flex items-center justify-center w-full sm:w-1/2 px-4 h-14 bg-[#533AFD] text-white rounded-md shadow-sm text-[16px] font-medium transition-all duration-200 ease-in-out hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#533AFD]"
                 >
                   Contratar Agora
                 </a>
