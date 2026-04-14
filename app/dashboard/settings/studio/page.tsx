@@ -350,7 +350,7 @@ export default function BusinessSettingsPage() {
             />
             <div className="px-1 flex items-center justify-between">
               <p className="text-[11px] font-bold text-gray-400">
-                Seu link público: <span className="text-blue-600">meatende.ai/s/{slug || 'seu-nome'}</span>
+                Seu link público: <span className="text-blue-600">suasecretaria.com/s/{slug || 'seu-nome'}</span>
               </p>
               {slug && slug === originalSlug ? (
                 <a 

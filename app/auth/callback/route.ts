@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
             cookiesToSet.forEach(({ name, value, options }) => {
               // WARNING: We strip out the `domain` option unconditionally.
               // This allows Netlify dynamically generated subdomains (deploy previews) to accept the cookie.
-              // If you force a domain like '.meatendeai.com', previews at 'xxx--meatendeai.netlify.app' will drop it!
+              // If you force a domain like '.suasecretaria.com', previews at 'xxx--suasecretaria.netlify.app' will drop it!
               const { domain: _domain, ...safeOptions } = options;
               
               response.cookies.set({

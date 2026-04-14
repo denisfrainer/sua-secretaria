@@ -121,10 +121,10 @@ export default async function PublicBookingPage({
 
       {/* Branded Footer */}
       <footer className="mt-8 text-center">
-        <a href="https://meatende.ai" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest">
+        <a href="https://suasecretaria.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest">
           Powered by 
-          <Image src="/assets/robot.png" alt="meatende.ai" width={16} height={16} className="opacity-70 group-hover:opacity-100" />
-          meatende.ai
+          <Image src="/assets/robot.png" alt="Sua SecretarIA" width={16} height={16} className="opacity-70 group-hover:opacity-100" />
+          Sua SecretarIA
         </a>
       </footer>
     </div>

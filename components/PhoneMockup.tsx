@@ -65,7 +65,7 @@ export function PhoneMockup() {
               IA
             </div>
             <div className="translate-y-[4px]">
-              <p className="text-white text-base font-bold leading-tight tracking-wide">meatende.ai</p>
+              <p className="text-white text-base font-bold leading-tight tracking-wide">Sua SecretarIA</p>
               <p className="text-[#a2e8d4] text-xs mt-0.5">online</p>
             </div>
           </div>

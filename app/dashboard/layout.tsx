@@ -39,7 +39,7 @@ export default async function DashboardLayout({
             alt="Robot Logo" 
             className="object-contain"
           />
-          meatende.ai
+          Sua SecretarIA
         </Link>
 
         {/* RIGHT: Controls Group (Menu) */}

@@ -426,7 +426,7 @@ export default function WhatsAppSettingsPage() {
               <div className="pt-8 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                 <StudioInput
                   label="Link da Agenda Online"
-                  placeholder="ex: meatende.ai/estudio"
+                  placeholder="ex: suasecretaria.com/estudio"
                   icon={<Link2 size={18} />}
                   value={schedulingLink}
                   onChange={setSchedulingLink}

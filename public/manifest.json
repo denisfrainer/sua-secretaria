@@ -1,6 +1,6 @@
 {
-  "name": "meatende.ai",
-  "short_name": "meatende.ai",
+  "name": "Sua SecretarIA",
+  "short_name": "Sua SecretarIA",
   "description": "Painel de Controle da Inteligência Artificial",
   "start_url": "/dashboard",
   "display": "standalone",

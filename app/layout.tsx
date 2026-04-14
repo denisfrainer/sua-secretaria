@@ -24,20 +24,20 @@ const jakarta = Plus_Jakarta_Sans({
 
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://meatendeai.netlify.app'),
-    title: "meatende.ai",
+    metadataBase: new URL('https://suasecretaria.netlify.app'),
+    title: "Sua SecretarIA",
     description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
     openGraph: {
-        title: "meatende.ai - Seu funcionário de IA",
+        title: "Sua SecretarIA - Seu funcionário de IA",
         description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
         locale: 'pt_BR',
         type: 'website',
         images: [
             {
-                url: 'https://meatendeai.netlify.app/og-image.jpg',
+                url: 'https://suasecretaria.netlify.app/og-image.jpg',
                 width: 1200,
                 height: 630,
-                alt: 'meatende.ai',
+                alt: 'Sua SecretarIA',
             },
         ],
     },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'meatende.ai',
+        title: 'Sua SecretarIA',
     },
 };
 

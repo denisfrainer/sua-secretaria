@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
-import GoogleLoginButton from '@/components/GoogleLoginButton';
 import { createClient } from '@/lib/supabase/server';
 import { LoginLoadingState } from '@/components/auth/LoginLoadingState';
 import Link from 'next/link';
@@ -32,17 +31,17 @@ export default async function LoginPage() {
                                 src="/assets/robot.png"
                                 width={40}
                                 height={40}
-                                alt="meatende.ai"
+                                alt="Sua SecretarIA"
                                 className="object-contain"
                             />
                         </div>
                     </Link>
                     <div className="flex flex-col gap-2">
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                            Acesse sua conta
+                            Acesse o sistema
                         </h1>
                         <p className="text-base font-medium text-slate-500">
-                            Faça login com o Google ou cadastre-se
+                            Crie sua conta ou entre com seu WhatsApp
                         </p>
                     </div>
                 </div>
@@ -54,7 +53,7 @@ export default async function LoginPage() {
 
                 <div className="flex flex-col items-center gap-2 text-center opacity-40 mt-4">
                     <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                        meatende.ai &copy; {new Date().getFullYear()}
+                        Sua SecretarIA &copy; {new Date().getFullYear()}
                     </p>
                 </div>
             </div>

@@ -122,10 +122,10 @@ export default function PaymentsPricingPage() {
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">URL de Webhook Ativa</label>
               <div className="flex gap-2">
                 <div className="flex-1 h-12 bg-slate-50 rounded-xl border border-slate-100 flex items-center px-4 text-xs font-mono text-slate-500 truncate">
-                  https://meatende.ai/api/webhooks/pix
+                  https://suasecretaria.com/api/webhooks/pix
                 </div>
                 <button 
-                  onClick={() => navigator.clipboard.writeText('https://meatende.ai/api/webhooks/pix')}
+                  onClick={() => navigator.clipboard.writeText('https://suasecretaria.com/api/webhooks/pix')}
                   className="h-12 w-12 rounded-xl bg-slate-900 text-white flex items-center justify-center hover:bg-black transition-all active:scale-95 shadow-sm"
                 >
                   <Copy size={18} />

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=server_configuration', requestUrl.origin));
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://meatendeai.netlify.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://suasecretaria.netlify.app';
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
   try {

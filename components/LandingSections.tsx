@@ -21,24 +21,24 @@ export function LandingSections() {
 
   const faqData = [
     {
-      question: "O que é a meatende.ai?",
-      answer: "A meatende.ai é uma secretária virtual com inteligência artificial para WhatsApp. Ela atende seus clientes 24 horas por dia, tira dúvidas sobre seus procedimentos e agenda horários automaticamente. Diferente de robôs de opções (digite 1 ou 2), ela conversa de forma natural como uma pessoa real."
+      question: "O que é a Sua SecretarIA?",
+      answer: "A Sua SecretarIA é uma secretária virtual com inteligência artificial para WhatsApp. Ela atende seus clientes 24 horas por dia, tira dúvidas sobre seus procedimentos e agenda horários automaticamente. Diferente de robôs de opções (digite 1 ou 2), ela conversa de forma natural como uma pessoa real."
     },
     {
-      question: "Para quem a meatende.ai é indicada?",
+      question: "Para quem a Sua SecretarIA é indicada?",
       answer: "É ideal para quem trabalha com as mãos e não pode parar para responder o celular. Os principais segmentos incluem: barbearias, salões de beleza, clínicas de estética, estúdios de tatuagem, manicures e qualquer profissional que precise focar no serviço enquanto a agenda enche sozinha."
     },
     {
-      question: "Como a meatende.ai sabe o que responder?",
+      question: "Como a Sua SecretarIA sabe o que responder?",
       answer: "É simples: você cadastra os seus serviços, durações, preços e horários de funcionamento no nosso painel. A partir daí, a inteligência artificial entende o seu estilo e conversa com seus clientes passando exatamente as informações do seu negócio, sem você precisar programar regras difíceis."
     },
     {
-      question: "A meatende.ai funciona com o meu número de WhatsApp?",
+      question: "A Sua SecretarIA funciona com o meu número de WhatsApp?",
       answer: "Sim. Funciona diretamente no seu número de trabalho existente. Você não precisa trocar de número nem comprar um celular novo. A conexão é rápida, segura e feita apenas lendo um QR Code."
     },
     {
-      question: "A meatende.ai parece um robô chato?",
-      answer: "Não. A meatende.ai entende mensagens curtas, gírias e o contexto da conversa. Ela atende de forma tão fluida e educada que muitos clientes nem percebem que estão falando com uma inteligência artificial na hora de marcar o horário."
+      question: "A Sua SecretarIA parece um robô chato?",
+      answer: "Não. A Sua SecretarIA entende mensagens curtas, gírias e o contexto da conversa. Ela atende de forma tão fluida e educada que muitos clientes nem percebem que estão falando com uma inteligência artificial na hora de marcar o horário."
     },
     {
       question: "Meu número corre risco de ser banido?",
@@ -62,25 +62,25 @@ export function LandingSections() {
     {
       feature: "Experiência do Cliente",
       competitor: "Chato, obriga o cliente a \"digitar 1 ou 2\"",
-      meatende: "Conversa natural e fluida, como se fosse você",
+      suasecretaria: "Conversa natural e fluida, como se fosse você",
       icon: MessageSquare
     },
     {
       feature: "Configuração",
       competitor: "Exige montar caminhos e regras complexas",
-      meatende: "É só cadastrar os serviços e ela aprende sozinha",
+      suasecretaria: "É só cadastrar os serviços e ela aprende sozinha",
       icon: Brain
     },
     {
       feature: "Filtro de Curiosos",
       competitor: "Só repassa a pessoa para você ter que atender",
-      meatende: "Tira as dúvidas de preço e foca em fechar o horário",
+      suasecretaria: "Tira as dúvidas de preço e foca em fechar o horário",
       icon: Filter
     },
     {
       feature: "Começar a usar",
       competitor: "Dias perdidos tentando configurar o sistema",
-      meatende: "Escaneou o QR Code, ela já começa a agendar",
+      suasecretaria: "Escaneou o QR Code, ela já começa a agendar",
       icon: Zap
     }
   ];
@@ -95,7 +95,7 @@ export function LandingSections() {
               A diferença entre um robô chato e a sua secretária ideal
             </h2>
             <p className="mt-6 text-xl text-gray-500 leading-relaxed font-medium">
-              A meatende.ai não manda opções prontas. Ela entende o cliente, tira as dúvidas e marca o horário.
+              A Sua SecretarIA não manda opções prontas. Ela entende o cliente, tira as dúvidas e marca o horário.
             </p>
           </div>
 
@@ -168,7 +168,7 @@ export function LandingSections() {
       <MotionSection id="comparativo" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white w-full max-w-full overflow-hidden">
         <div className="max-w-4xl mx-auto w-full">
           <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16 break-words whitespace-normal">
-            Por que a meatende.ai é diferente
+            Por que a Sua SecretarIA é diferente
           </h2>
 
           <div className="w-full flex flex-col gap-8 md:gap-4">
@@ -176,7 +176,7 @@ export function LandingSections() {
             <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-4 border-b border-gray-200">
               <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Diferença</div>
               <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Robôs Comuns</div>
-              <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">meatende.ai</div>
+              <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">Sua SecretarIA</div>
             </div>
 
             {/* Feature Comparison Items */}
@@ -197,10 +197,10 @@ export function LandingSections() {
                   <p className="break-words whitespace-normal font-medium">{item.competitor}</p>
                 </div>
 
-                {/* meatende.ai Block - Mobile Stack, Desktop Third Column */}
+                {/* Sua SecretarIA Block - Mobile Stack, Desktop Third Column */}
                 <div className="p-5 md:p-6 font-bold text-blue-700 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl min-w-0">
-                  <span className="block text-[10px] uppercase font-extrabold text-blue-600 mb-2 md:hidden tracking-wider">meatende.ai</span>
-                  <p className="break-words whitespace-normal">{item.meatende}</p>
+                  <span className="block text-[10px] uppercase font-extrabold text-blue-600 mb-2 md:hidden tracking-wider">Sua SecretarIA</span>
+                  <p className="break-words whitespace-normal">{item.suasecretaria}</p>
                 </div>
               </div>
             ))}
@@ -371,7 +371,7 @@ export function LandingSections() {
       <footer className="py-16 bg-black text-white text-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-6">
           <p className="font-medium text-gray-400 tracking-wide text-sm">
-            <span className="text-white font-bold">meatende.ai</span> — Inteligência Artificial aplicada ao mundo dos negócios.<br className="hidden sm:block" />
+            <span className="text-white font-bold">Sua SecretarIA</span> — Inteligência Artificial aplicada ao mundo dos negócios.<br className="hidden sm:block" />
           </p>
           <p className="text-xs text-gray-600 font-bold uppercase tracking-widest mt-4">
             Todos os direitos reservados © {currentYear}

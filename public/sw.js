@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meatende-admin-pwa-v1';
+const CACHE_NAME = 'suasecretaria-admin-pwa-v1';
 
 self.addEventListener('install', (event) => {
   console.log('✅ [PWA] Service Worker Instalado.');

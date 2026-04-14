@@ -55,7 +55,7 @@ function CheckoutContent() {
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-3">
             <Image src="/assets/robot.png" width={32} height={32} alt="Logo" />
-            <span className="text-xl font-black tracking-tight">meatende.ai</span>
+            <span className="text-xl font-black tracking-tight">Sua SecretarIA</span>
           </div>
 
           <div className="flex flex-col gap-2">

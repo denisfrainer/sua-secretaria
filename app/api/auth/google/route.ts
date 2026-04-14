@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   }
 
   // Construct the redirect URI using a strict base URL to avoid Netlify deploy preview mismatches
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://meatendeai.netlify.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://suasecretaria.netlify.app';
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
   // Build the authorization URL

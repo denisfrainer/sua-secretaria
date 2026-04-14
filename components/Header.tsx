@@ -44,7 +44,7 @@ export function Header() {
                 height={32}
                 className="w-8 h-auto"
               />
-              <span className="font-bold text-lg text-slate-900">meatende.ai</span>
+              <span className="font-bold text-lg text-slate-900">Sua SecretarIA</span>
             </a>
 
             {/* Desktop Nav */}

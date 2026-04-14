@@ -20,6 +20,7 @@
     "ai": "^6.0.116",
     "axios": "^1.14.0",
     "clsx": "^2.1.1",
+    "critters": "^0.0.23",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "googleapis": "^171.4.0",

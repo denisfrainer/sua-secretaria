@@ -39,7 +39,7 @@ export function HeroSection() {
             Sua secretária que atende o WhatsApp com linguagem natural e faz agendamentos automáticos 24/7.
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
-            Feito para quem trabalha com as mãos e não pode parar para responder o celular. A <strong className="font-semibold text-black">meatende.ai</strong> conversa com seus clientes como uma pessoa real, tira dúvidas e lota sua agenda no automático.
+            Feito para quem trabalha com as mãos e não pode parar para responder o celular. A <strong className="font-semibold text-black">Sua SecretarIA</strong> conversa com seus clientes como uma pessoa real, tira dúvidas e lota sua agenda no automático.
           </p>
 
           <motion.div
