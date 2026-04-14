@@ -7,6 +7,10 @@ export type Database = {
         Row: {
           id: number;
           instance_name: string;
+          business_name: string | null;
+          niche: string | null;
+          system_prompt: string | null;
+          owner_id: string;
           context_json: any;
           plan_tier: PlanTier;
           enable_smart_scarcity: boolean;
@@ -16,8 +20,12 @@ export type Database = {
         };
         Insert: {
           id?: number;
-          instance_name: string;
-          context_json: any;
+          instance_name?: string;
+          business_name?: string | null;
+          niche?: string | null;
+          system_prompt?: string | null;
+          owner_id: string;
+          context_json?: any;
           plan_tier?: PlanTier;
           enable_smart_scarcity?: boolean;
           updated_at?: string;
@@ -25,6 +33,10 @@ export type Database = {
         Update: {
           id?: number;
           instance_name?: string;
+          business_name?: string | null;
+          niche?: string | null;
+          system_prompt?: string | null;
+          owner_id?: string;
           context_json?: any;
           plan_tier?: PlanTier;
           enable_smart_scarcity?: boolean;

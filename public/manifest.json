@@ -8,13 +8,13 @@
   "theme_color": "#2563EB",
   "icons": [
     {
-      "src": "/robot.png",
+      "src": "/eliza.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/robot.png",
+      "src": "/eliza.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

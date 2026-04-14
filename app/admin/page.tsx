@@ -209,7 +209,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 flex items-center justify-center transition-transform hover:scale-110 active:rotate-3">
-                            <Image src="/assets/robot.png" width={32} height={32} alt="Wizard" className="w-8 h-8 object-contain" />
+                            <Image src="/assets/eliza.png" width={32} height={32} alt="Sua SecretarIA" className="w-8 h-8 object-contain" />
                         </div>
                         <h1 className="text-[24px] font-bold text-slate-900 font-outfit tracking-tight">Hello, wizard</h1>
                     </div>

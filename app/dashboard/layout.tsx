@@ -19,6 +19,27 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect('/login');
+  
+  const userId = user.id;
+  console.log('[ROUTING_GUARD] Checking business_config for:', userId);
+
+  // Check if business_config exists for this user
+  const { data: businessConfig, error } = await supabase
+    .from('business_config')
+    .select('id')
+    .eq('owner_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[ROUTING_GUARD] Error fetching business_config:', error);
+  }
+
+  if (!businessConfig) {
+    console.log('[ROUTING_GUARD] No business_config found. Redirecting to /onboarding.');
+    redirect('/onboarding');
+  } else {
+    console.log('[ROUTING_GUARD] business_config found. Granting access to dashboard.');
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col font-source text-gray-900">
@@ -33,10 +54,10 @@ export default async function DashboardLayout({
           className="flex items-center gap-2 text-black text-lg font-bold tracking-tight hover:opacity-80 transition-opacity"
         >
           <Image 
-            src="/assets/robot.png" 
+            src="/assets/eliza.png" 
             width={24} 
             height={24} 
-            alt="Robot Logo" 
+            alt="Sua SecretarIA" 
             className="object-contain"
           />
           Sua SecretarIA

@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  Trash2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2, 
+import {
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
   Bot,
   Link2,
   PhoneForwarded,
@@ -51,7 +51,7 @@ export default function WhatsAppSettingsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [savingBehavior, setSavingBehavior] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
   // UI States
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
 
@@ -138,7 +138,7 @@ export default function WhatsAppSettingsPage() {
       const businessName = user.user_metadata?.business_name || 'Minha Empresa';
       const slug = businessName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
       const name = `${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
-      
+
       const initRes = await fetch('/api/instance/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +158,7 @@ export default function WhatsAppSettingsPage() {
       console.error('[WA_INIT] Error:', err);
     } finally {
       // Intentionally kept slightly active to allow QR polling to kick in
-      setTimeout(() => setInitializing(false), 2000); 
+      setTimeout(() => setInitializing(false), 2000);
     }
   };
 
@@ -166,7 +166,7 @@ export default function WhatsAppSettingsPage() {
     if (!dbState?.instance_name) return;
     const confirmed = window.confirm(`Tem certeza que deseja desconectar o WhatsApp da IA? A automação será interrompida.`);
     if (!confirmed) return;
-    
+
     setDisconnecting(true);
     try {
       const res = await fetch(`/api/instance/delete?instance=${dbState.instance_name}`, { method: 'POST' });
@@ -222,16 +222,16 @@ export default function WhatsAppSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32 font-sans bg-slate-50 min-h-screen -mx-6 px-6 -mt-8 pt-8">
-      
+
       {/* ──────────────────────────────────────────────────────── */}
       {/* SECTION 1: THE HERO (AI BOT CONNECTION)                  */}
       {/* ──────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-slate-200 overflow-hidden transition-all duration-300 relative">
         <AnimatePresence mode="wait">
-          
+
           {/* STATE 1: IDLE */}
           {!hasInstance && !initializing && (
-            <motion.div 
+            <motion.div
               key="idle"
               initial={{ opacity: 0, filter: 'blur(4px)' }}
               animate={{ opacity: 1, filter: 'blur(0px)' }}
@@ -261,20 +261,20 @@ export default function WhatsAppSettingsPage() {
                 Automatize o atendimento. Conecte o número de WhatsApp do seu negócio para que a IA agende clientes e tire dúvidas 24/7.
               </p>
 
-              {/* Row 4: Action */}
+              {/* BLOQUEIO DE TESTE: Comentando o botão original
               <button
                 onClick={handleInitializeInstance}
                 className="w-full md:w-fit h-12 px-6 bg-[#533CFA] hover:bg-[#432EEA] text-white font-bold rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition-all outline-none flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
               >
                 <QrCode size={18} />
                 Gerar QR Code
-              </button>
+              </button>*/}
             </motion.div>
           )}
 
           {/* STATE 2: LOADING */}
           {initializing && (
-            <motion.div 
+            <motion.div
               key="loading"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -310,13 +310,13 @@ export default function WhatsAppSettingsPage() {
                   onConnected={() => fetchFromDb(false)}
                 />
               </div>
-              
+
               <div className="flex flex-col items-center md:items-start text-center md:text-left">
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest leading-none mb-4">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                   Aguardando Leitura
                 </span>
-                
+
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Escaneie para Conectar</h3>
                 <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
                   Abra o WhatsApp no seu celular, vá em <strong className="text-slate-700">Aparelhos conectados</strong> e aponte a câmera para o código ao lado.
@@ -385,14 +385,14 @@ export default function WhatsAppSettingsPage() {
       {/* SECTION 2: THE SECONDARY CARD (MENU & HANDOFF)           */}
       {/* ──────────────────────────────────────────────────────── */}
       <div className="bg-transparent border border-slate-200 rounded-[2rem] p-6 lg:p-8 flex flex-col relative overflow-hidden group hover:border-slate-300 transition-colors">
-        
+
         {/* Toggle Header Area */}
-        <div 
+        <div
           className="flex flex-col gap-4 cursor-pointer w-full transition-opacity hover:opacity-80"
           onClick={() => setIsMenuExpanded(!isMenuExpanded)}
         >
-           {/* Row 1: Icon & Action */}
-           <div className="flex justify-between items-start w-full">
+          {/* Row 1: Icon & Action */}
+          <div className="flex justify-between items-start w-full">
             <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
               <Settings2 size={22} className="text-slate-600" />
             </div>
@@ -404,7 +404,7 @@ export default function WhatsAppSettingsPage() {
               )}
             </button>
           </div>
-          
+
           {/* Row 2: Title & Desc */}
           <div className="flex flex-col w-full">
             <h2 className="text-lg font-bold text-slate-900 tracking-tight text-left">Menu de Transbordo</h2>
@@ -417,7 +417,7 @@ export default function WhatsAppSettingsPage() {
         {/* Collapsible Form */}
         <AnimatePresence>
           {isMenuExpanded && (
-            <motion.div 
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}

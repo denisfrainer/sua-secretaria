@@ -123,7 +123,7 @@ export default async function PublicBookingPage({
       <footer className="mt-8 text-center">
         <a href="https://suasecretaria.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest">
           Powered by 
-          <Image src="/assets/robot.png" alt="Sua SecretarIA" width={16} height={16} className="opacity-70 group-hover:opacity-100" />
+          <Image src="/assets/eliza.png" alt="Sua SecretarIA" width={16} height={16} className="opacity-70 group-hover:opacity-100" />
           Sua SecretarIA
         </a>
       </footer>

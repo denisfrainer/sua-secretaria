@@ -28,7 +28,7 @@ export default async function LoginPage() {
                     <Link href="/">
                         <div className="w-16 h-16 rounded-3xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer">
                             <Image
-                                src="/assets/robot.png"
+                                src="/assets/eliza.png"
                                 width={40}
                                 height={40}
                                 alt="Sua SecretarIA"
