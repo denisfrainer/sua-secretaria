@@ -8,8 +8,8 @@ export type Database = {
           id: number;
           instance_name: string;
           business_name: string | null;
-          niche: string | null;
-          system_prompt: string | null;
+          business_niche: string | null;
+          custom_rules: string | null;
           owner_id: string;
           context_json: any;
           plan_tier: PlanTier;
@@ -22,8 +22,8 @@ export type Database = {
           id?: number;
           instance_name?: string;
           business_name?: string | null;
-          niche?: string | null;
-          system_prompt?: string | null;
+          business_niche?: string | null;
+          custom_rules?: string | null;
           owner_id: string;
           context_json?: any;
           plan_tier?: PlanTier;
@@ -34,8 +34,8 @@ export type Database = {
           id?: number;
           instance_name?: string;
           business_name?: string | null;
-          niche?: string | null;
-          system_prompt?: string | null;
+          business_niche?: string | null;
+          custom_rules?: string | null;
           owner_id?: string;
           context_json?: any;
           plan_tier?: PlanTier;

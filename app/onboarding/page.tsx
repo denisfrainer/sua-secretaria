@@ -34,8 +34,8 @@ export default async function OnboardingPage() {
         const payload = {
             owner_id: userId,
             business_name: businessName,
-            niche: niche,
-            system_prompt: systemPrompt,
+            business_niche: niche,
+            custom_rules: systemPrompt,
             context_json: {
                 welcome_message: `Olá! Bem-vindo(a) à ${businessName}. Como posso ajudar você hoje?`,
                 niche: niche
@@ -43,14 +43,14 @@ export default async function OnboardingPage() {
             updated_at: new Date().toISOString()
         };
 
-        console.log('[ONBOARDING_SUBMIT] Payload sent to DB:', payload);
+        console.log('[ONBOARDING_DB_CALL] Attempting to insert sanitized payload:', payload);
 
         const { error } = await supabaseAdmin
             .from('business_config')
             .upsert(payload, { onConflict: 'owner_id' });
 
         if (error) {
-            console.error('[ONBOARDING_ERROR] Supabase insertion failed:', error);
+            console.error('[ONBOARDING_DB_ERROR] Supabase rejection details:', error);
             throw new Error(`Failed to save business config: ${error.message}`);
         }
 
