@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { LogoCloud } from '@/components/LogoCloud';
 import { motion } from 'framer-motion';
 import { Inter } from 'next/font/google';
-import GoogleLoginButton from '@/components/GoogleLoginButton';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -66,9 +66,12 @@ export function HeroSection() {
                 >
                   Contratar Agora
                 </a>
-                <div className="w-full sm:w-1/2">
-                  <GoogleLoginButton text="Começar grátis com Google" variant="default" />
-                </div>
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center w-full sm:w-1/2 px-4 h-14 bg-white border border-gray-200 rounded-md shadow-sm text-[16px] font-bold text-slate-900 transition-all duration-200 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-100 peer-hover:border-gray-300 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md"
+                >
+                  teste grátis
+                </Link>
               </>
             )}
           </motion.div>
