@@ -12,7 +12,6 @@ export default function Home() {
         <Hero />
 
         {/* Existing Content */}
-        <PhoneMockup />
         <LandingSections />
       </main>
     </>

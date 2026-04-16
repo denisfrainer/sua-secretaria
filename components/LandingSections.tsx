@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Brain, Filter, Shield, CheckCircle, QrCode, Mic, Bot, ChevronDown, MessageSquare, Zap } from 'lucide-react';
+import { Brain, Filter, Shield, QrCode, Mic, Bot, ChevronDown, MessageSquare, Zap } from 'lucide-react';
 
 const MotionSection = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => (
   <motion.section
@@ -50,38 +50,11 @@ export function LandingSections() {
     },
     {
       question: "Vou perder meu histórico se usar o meu número atual?",
-      answer: "Não. Você continua com o seu WhatsApp normal no seu celular, com todas as suas conversas antigas intactas. A secretária virtual apenas roda junto com você, assumindo as novas conversas para você não deixar ninguém esperando."
+      answer: "Não. Você continua com o seu WhatsApp normal no seu celular, with all your old conversations intact. A secretária virtual apenas roda junto com você, assumindo as novas conversas para você não deixar ninguém esperando."
     },
     {
       question: "Posso assumir a conversa no celular se eu quiser?",
       answer: "Sim! A qualquer momento você pode pegar o seu aparelho e responder o cliente normalmente. Quando você, como dono(a), envia uma mensagem, a IA pausa automaticamente e deixa você continuar o atendimento daquele cliente."
-    }
-  ];
-
-  const comparisonData = [
-    {
-      feature: "Experiência do Cliente",
-      competitor: "Chato, obriga o cliente a \"digitar 1 ou 2\"",
-      suasecretaria: "Conversa natural e fluida, como se fosse você",
-      icon: MessageSquare
-    },
-    {
-      feature: "Configuração",
-      competitor: "Exige montar caminhos e regras complexas",
-      suasecretaria: "É só cadastrar os serviços e ela aprende sozinha",
-      icon: Brain
-    },
-    {
-      feature: "Filtro de Curiosos",
-      competitor: "Só repassa a pessoa para você ter que atender",
-      suasecretaria: "Tira as dúvidas de preço e foca em fechar o horário",
-      icon: Filter
-    },
-    {
-      feature: "Começar a usar",
-      competitor: "Dias perdidos tentando configurar o sistema",
-      suasecretaria: "Escaneou o QR Code, ela já começa a agendar",
-      icon: Zap
     }
   ];
 
@@ -124,7 +97,7 @@ export function LandingSections() {
               <div className="mb-6">
                 <Shield className="w-10 h-10 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">WhatsApp Seguro</h3>
+              <h3 className="text-2xl font-bold text-black mb-4 tracking-tight">WhatsApp Safe</h3>
               <p className="text-gray-500 leading-relaxed font-medium">
                 Esqueça gambiarras ou medo de ter o WhatsApp banido. Utilizamos a conexão Oficial da Meta. Seu número de trabalho fica 100% seguro, funcionando sem quedas ou bloqueios.
               </p>
@@ -159,185 +132,6 @@ export function LandingSections() {
               <div className="w-[72px] h-[72px] rounded-[1.25rem] bg-blue-600 text-white flex items-center justify-center mb-6 shadow-lg shadow-blue-600/30 z-10"><Bot className="w-[32px] h-[32px] stroke-2" /></div>
               <h3 className="text-xl font-bold text-black mb-3">Deixe sua funcionária trabalhar</h3>
               <p className="text-gray-500 font-medium">A IA assume o primeiro contato instantaneamente, sem deixar nenhum lead esfriar no funil.</p>
-            </div>
-          </div>
-        </div>
-      </MotionSection>
-
-      {/* 5. Comparison Table (Fully Responsive Stacked Cards & Desktop Grid) */}
-      <MotionSection id="comparativo" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white w-full max-w-full overflow-hidden">
-        <div className="max-w-4xl mx-auto w-full">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight text-center mb-16 break-words whitespace-normal">
-            Por que a Sua SecretarIA é diferente
-          </h2>
-
-          <div className="w-full flex flex-col gap-8 md:gap-4">
-            {/* Header row for Desktop only */}
-            <div className="hidden md:grid grid-cols-3 gap-4 px-6 pb-4 border-b border-gray-200">
-              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Diferença</div>
-              <div className="font-bold text-gray-400 uppercase text-xs tracking-wider">Robôs Comuns</div>
-              <div className="font-extrabold text-blue-600 uppercase text-xs tracking-wider">Sua SecretarIA</div>
-            </div>
-
-            {/* Feature Comparison Items */}
-            {comparisonData.map((item, idx) => (
-              <div
-                key={idx}
-                className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-white border border-gray-200 rounded-2xl md:rounded-none md:border-none overflow-hidden shadow-sm md:shadow-none transition-all duration-300 hover:shadow-md md:hover:shadow-none"
-              >
-                {/* Feature Header - Mobile Header, Desktop First Column */}
-                <div className="bg-gray-100 md:bg-transparent p-5 md:p-6 font-bold text-black flex items-center gap-3 border-b md:border-none border-gray-200 min-w-0">
-                  <item.icon className="w-5 h-5 text-blue-600 shrink-0" />
-                  <span className="break-words whitespace-normal leading-tight">{item.feature}</span>
-                </div>
-
-                {/* Competitor Block - Mobile Stack, Desktop Second Column */}
-                <div className="p-5 md:p-6 text-gray-500 border-b md:border-b-0 md:border-l border-gray-100 md:bg-white md:border md:rounded-xl min-w-0">
-                  <span className="block text-[10px] uppercase font-bold text-gray-400 mb-2 md:hidden tracking-wider">Robôs Comuns</span>
-                  <p className="break-words whitespace-normal font-medium">{item.competitor}</p>
-                </div>
-
-                {/* Sua SecretarIA Block - Mobile Stack, Desktop Third Column */}
-                <div className="p-5 md:p-6 font-bold text-blue-700 bg-blue-50/50 md:bg-blue-50/30 md:border md:border-blue-100/50 md:rounded-xl min-w-0">
-                  <span className="block text-[10px] uppercase font-extrabold text-blue-600 mb-2 md:hidden tracking-wider">Sua SecretarIA</span>
-                  <p className="break-words whitespace-normal">{item.suasecretaria}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </MotionSection>
-
-      {/* 6. Pricing */}
-      <MotionSection id="precos" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gray-50 border-y border-gray-200">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight">
-              Escolha seu nível de atendimento
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            {/* Tier 1: Chatbot Tradicional */}
-            <div className="bg-white p-8 md:p-10 border border-gray-200 shadow-sm rounded-3xl text-left flex flex-col">
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Bot Tradicional</p>
-              <div className="flex items-baseline justify-start gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-black tracking-tight">R$ 39</span>
-                <span className="text-xl text-gray-400 font-bold">/mês</span>
-              </div>
-              <p className="text-gray-500 font-medium mb-8 leading-relaxed">
-                Chatbot e automação simples, com fluxos baseados em menus tradicionais (digite 1, digite 2).
-              </p>
-
-              <ul className="text-left space-y-4 mb-10 font-medium flex-1">
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-500">Múltipla escolha (menus)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-500">Respostas estáticas</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-500">Necessário criar próprias regras</span>
-                </li>
-              </ul>
-
-              <a
-                href="https://wa.me/5548992123255?text=Olá, quero assinar o Plano Básico"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block border-2 border-gray-200 text-gray-600 font-bold text-lg py-4 rounded-xl hover:bg-gray-50 transition-colors w-full text-center mt-auto"
-              >
-                Assinar Plano Básico
-              </a>
-            </div>
-
-            {/* Tier 2: IA Padrão */}
-            <div className="bg-white p-8 md:p-10 border border-gray-200 shadow-sm rounded-3xl text-left flex flex-col relative">
-              <p className="text-sm font-bold text-gray-600 uppercase tracking-widest mb-3">Funcionária de IA</p>
-              <div className="flex items-baseline justify-start gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-black tracking-tight">R$ 99</span>
-                <span className="text-xl text-gray-400 font-bold">/mês</span>
-              </div>
-              <p className="text-gray-600 font-medium mb-8 leading-relaxed">
-                Inteligência autônoma que responde no escuro, defende o Lead e agenda automaticamente.
-              </p>
-
-              <ul className="text-left space-y-4 mb-10 font-medium flex-1">
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">Até 3.000 conversas por mês</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">Integração com Agenda oficial do Google</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">Treinamento de IA (Tom de voz e contexto)</span>
-                </li>
-              </ul>
-
-              <a
-                href="https://wa.me/5548992123255?text=Olá, quero assinar o Plano Pro"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-gray-900 text-white font-bold text-lg py-4 rounded-xl shadow-md hover:bg-black transition-colors w-full text-center mt-auto"
-              >
-                Assinar Pro
-              </a>
-            </div>
-
-            {/* Tier 3: Empresarial - Highlighted */}
-            <div className="bg-white p-8 md:p-10 border-2 border-blue-600 shadow-xl rounded-3xl text-left flex flex-col relative transform lg:-translate-y-4">
-              <div className="absolute top-0 right-8 transform -translate-y-1/2">
-                <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest py-1.5 px-3 rounded-full shadow-md">
-                  Mais Popular
-                </span>
-              </div>
-              <p className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-3">Empresarial</p>
-              <div className="flex items-baseline justify-start gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-black tracking-tight border-b-2 border-blue-600 pb-1">R$ 199</span>
-                <span className="text-xl text-gray-400 font-bold">/mês</span>
-              </div>
-              <p className="text-gray-600 font-medium mb-8 leading-relaxed">
-                Escala máxima para operações ativas. Intervenção híbrida, base de dados e suporte total.
-              </p>
-
-              <ul className="text-left space-y-4 mb-10 font-medium flex-1">
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Até 9.000 conversas por mês</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Alterações de contexto ilimitadas</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Suporte Técnico Prioritário 24/7</span>
-                </li>
-                {/* Code-specific features */}
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Intervenção silenciosa do Vendedor</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-900">Dashboard próprio com as métricas do seu negócio</span>
-                </li>
-              </ul>
-
-              <a
-                href="https://wa.me/5548992123255?text=Olá, quero assinar o Plano Elite"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-colors w-full text-center mt-auto"
-              >
-                Assinar Elite
-              </a>
             </div>
           </div>
         </div>

@@ -16,7 +16,6 @@ export function Hero() {
     { name: 'Google Agenda', src: '/assets/agenda-logo.svg' },
     { name: 'Pix', src: '/assets/pix-logo.png' },
     { name: 'Pagar.me', src: '/assets/pagarme-logo.png' },
-    { name: 'RD Station', src: '/assets/rd-station-logo.svg' },
     { name: 'Meta', src: '/assets/meta-logo.svg' },
     { name: 'Google Sheets', src: '/assets/sheets-logo.svg' },
   ];
@@ -42,7 +41,7 @@ export function Hero() {
                     key={i}
                     src={logo.src}
                     alt={logo.name}
-                    className="h-5 md:h-6 w-auto object-contain flex-shrink-0"
+                    className="h-6 md:h-8 w-auto object-contain flex-shrink-0"
                   />
                 ))}
               </div>
@@ -68,13 +67,13 @@ export function Hero() {
           {/* Right Column: Image */}
           <div className="relative order-first md:order-last">
             <div className="absolute -inset-4 bg-purple-100 rounded-3xl blur-3xl opacity-40 -z-10 animate-pulse"></div>
-            <div className="relative bg-white p-2 rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden transform hover:rotate-1 transition-transform duration-500">
+            <div className="relative overflow-hidden shadow-2xl transform hover:rotate-1 transition-transform duration-500 rounded-xl">
               <Image
                 src="/assets/hero-beauty.png"
                 alt="Profissional de beleza utilizando smartphone"
                 width={600}
                 height={600}
-                className="rounded-[2rem] object-cover w-full aspect-[4/5] md:aspect-square"
+                className="object-cover w-full aspect-[4/5] md:aspect-square"
                 priority
               />
             </div>
