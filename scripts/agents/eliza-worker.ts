@@ -941,12 +941,14 @@ http.createServer((req: any, res: any) => {
 
                         let updatePayload: any = {
                             status: newStatus,
-                            context_json: updatedContext,
                             updated_at: new Date().toISOString()
                         };
 
-                        // 🎯 FORCED TRIAL ACTIVATION (30 Days)
+                        // 🎯 ATOMIC SYNC: If connecting, capture the ACTUAL instanceName from the webhook
+                        // This fixes the divergence between generated names and actual Evolution names.
                         if (newStatus === 'CONNECTED') {
+                            updatePayload.instance_name = instanceName;
+                            
                             const thirtyDaysFromNow = new Date();
                             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
                             const newTrialDate = thirtyDaysFromNow.toISOString();
@@ -954,8 +956,15 @@ http.createServer((req: any, res: any) => {
                             updatePayload.plan_tier = 'TRIAL';
                             updatePayload.trial_ends_at = newTrialDate;
                             
-                            console.log(`🔥 [TRIAL_ACTIVATION] Instance connected. Account ${config.owner_id} forced to TRIAL, trial_ends_at updated to: ${newTrialDate}`);
+                            console.log(`🔥 [CONNECTION] Instance "${instanceName}" connected. Capture confirmed. Account ${config.owner_id} forced to 30-day TRIAL.`);
                         }
+
+                        // Merge connection_status into context_json for legacy compatibility
+                        const updatedContext = {
+                            ...(config.context_json || {}),
+                            connection_status: newStatus,
+                        };
+                        updatePayload.context_json = updatedContext;
 
                         const { error: updateError } = await supabaseAdmin
                             .from('business_config')
@@ -965,11 +974,10 @@ http.createServer((req: any, res: any) => {
                         if (updateError) {
                             console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
                         } else {
-                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL FORCED)' : ''}`);
+                            console.log(`✅ [CONNECTION] ${instanceName} Sync Success → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL ACTIVE)' : ''}`);
                             
-                            // 🔄 [SYNC] Propagate trial status to user profile for Header/UI usage
+                            // 🔄 [SYNC] Propagate trial status to user profile
                             if (updatePayload.plan_tier === 'TRIAL') {
-                                console.log(`🔄 [SYNC] Syncing FORCED TRIAL status to profile for owner: ${config.owner_id}`);
                                 await supabaseAdmin
                                     .from('profiles')
                                     .update({
@@ -977,6 +985,7 @@ http.createServer((req: any, res: any) => {
                                         trial_ends_at: updatePayload.trial_ends_at
                                     })
                                     .eq('id', config.owner_id);
+                                console.log(`🔄 [SYNC] Profile tier updated for ${config.owner_id}`);
                             }
                         }
                     } catch (err: any) {

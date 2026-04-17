@@ -40,6 +40,16 @@ export async function GET(request: Request) {
         cache: 'no-store'
     });
     
+    // 🛡️ Resilience: If instance not found, return 200 (DISCONNECTED) instead of crashing
+    if (stateRes.status === 404) {
+      console.log(`📡 [API STATUS] Instance "${instanceName}" not found on Evolution API.`);
+      return NextResponse.json({ 
+        instance: instanceName,
+        state: 'DISCONNECTED', 
+        status: 'NOT_FOUND' 
+      }, { status: 200 });
+    }
+
     let currentState = 'DISCONNECTED';
     if (stateRes.ok) {
         try {
@@ -48,9 +58,8 @@ export async function GET(request: Request) {
             console.log(`📡 [API STATUS] State for ${instanceName}: ${currentState}`);
         } catch (e) {
             console.error(`❌ [API STATUS] Error parsing state JSON for ${instanceName}:`, e);
+            // Non-JSON response (e.g. proxy error) defaults to DISCONNECTED
         }
-    } else if (stateRes.status === 404) {
-        currentState = 'DISCONNECTED';
     } else {
         const errorText = await stateRes.text();
         console.warn(`⚠️ [API STATUS] State fetch failed (${stateRes.status}):`, errorText);
@@ -79,7 +88,8 @@ export async function GET(request: Request) {
             console.error(`❌ [API STATUS] Error parsing connect JSON for ${instanceName}:`, e);
         }
       } else {
-        const errorData = await connectRes.text();
+        // Safe readout - don't catch text errors as they aren't fatal to the route
+        const errorData = await connectRes.text().catch(() => "Unknown error");
         console.warn(`⚠️ [API STATUS] Evolution connect failed (${connectRes.status}):`, errorData);
       }
     }
@@ -93,6 +103,13 @@ export async function GET(request: Request) {
 
   } catch (error: any) {
     console.error("❌ [STATUS API ERROR]:", error.message);
-    return NextResponse.json({ state: 'ERROR', message: error.message }, { status: 500 });
+    
+    // 🛡️ Resilience Revert: Return 200 even on catch to prevent frontend 500-loop crashes
+    // Only return 500 if it's a critical logic failure before API calls (handled above)
+    return NextResponse.json({ 
+      state: 'ERROR', 
+      message: error.message,
+      instance: instanceName
+    }, { status: 200 });
   }
 }
