@@ -929,16 +929,6 @@ http.createServer((req: any, res: any) => {
                             return;
                         }
 
-                        // 🛠️ ATOMIC UPDATE — merge connection_status into context_json
-                        const currentContext = (config.context_json && typeof config.context_json === 'object')
-                            ? config.context_json
-                            : {};
-
-                        const updatedContext = {
-                            ...currentContext,
-                            connection_status: newStatus,
-                        };
-
                         let updatePayload: any = {
                             status: newStatus,
                             updated_at: new Date().toISOString()
@@ -960,11 +950,10 @@ http.createServer((req: any, res: any) => {
                         }
 
                         // Merge connection_status into context_json for legacy compatibility
-                        const updatedContext = {
+                        updatePayload.context_json = {
                             ...(config.context_json || {}),
                             connection_status: newStatus,
                         };
-                        updatePayload.context_json = updatedContext;
 
                         const { error: updateError } = await supabaseAdmin
                             .from('business_config')
