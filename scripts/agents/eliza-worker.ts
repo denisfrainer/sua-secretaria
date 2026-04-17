@@ -157,7 +157,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
         try {
             const requestedDate = new Date(`${args.date}T00:00:00-03:00`);
             const dayOfWeek = requestedDate.getDay(); // 0 = Sunday, 1 = Monday... 6 = Saturday
-            
+
             // 1. Check Operating Hours rules first
             let dayConfig = businessConfig?.operating_hours?.weekdays;
             if (dayOfWeek === 0) dayConfig = businessConfig?.operating_hours?.sunday;
@@ -165,11 +165,11 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
 
             if (dayConfig && dayConfig.is_closed) {
                 console.log(`❌ [CALENDAR] Dia fechado no operating_hours.`);
-                return { 
-                    status: 'success', 
-                    date: args.date, 
+                return {
+                    status: 'success',
+                    date: args.date,
                     busy_slots: 'O dia todo',
-                    message: `O estabelecimento está fechado neste dia de acordo com as regras de funcionamento.` 
+                    message: `O estabelecimento está fechado neste dia de acordo com as regras de funcionamento.`
                 };
             }
 
@@ -183,7 +183,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
                     .eq('owner_id', ownerId)
                     .eq('appointment_date', args.date)
                     .neq('status', 'cancelled');
-                
+
                 if (nativeError) {
                     console.error("❌ [DB ERROR]: Falha ao buscar agendamentos nativos.", nativeError);
                 } else if (nativeAppointments) {
@@ -201,7 +201,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
                 try {
                     oauth2Client.setCredentials({ refresh_token: googleTokens.refresh_token });
                     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-                    
+
                     const startOfDay = new Date(`${args.date}T00:00:00-03:00`);
                     const endOfDay = new Date(`${args.date}T23:59:59-03:00`);
 
@@ -212,7 +212,7 @@ async function executeToolCall(name: string, args: any, clientPhone: string, goo
                         singleEvents: true,
                         orderBy: 'startTime'
                     });
-                    
+
                     const events = response.data.items || [];
                     events.forEach((ev: any) => {
                         const start = ev.start?.dateTime || ev.start?.date;
@@ -490,7 +490,7 @@ async function processLead(lead: any) {
             console.log(`🚫 [ELIZA_FLOW] Handoff bloqueado para mensagem inicial.`);
             dynamicInstruction += `\n⚠️ CRITICAL OVERRIDE: O usuário apenas enviou uma saudação inicial. VOCÊ NÃO PODE ACIONAR O HANDOFF (notify_human_specialist). Responda com fluidez natural: identifique-se como Eliza, assistente virtual da ${businessName}, informe seu propósito (agendamentos) e conduza-o suavemente para o STEP 1.`;
         }
-        
+
         const now = new Date();
         const formattedDate = now.toLocaleDateString('pt-BR', {
             weekday: 'long',
@@ -847,7 +847,7 @@ http.createServer((req: any, res: any) => {
                 }
 
                 const instanceName = body.instance || body.instanceName || body.data?.instance || 'unknown';
-                
+
                 // 🛠️ UUID Sanitization: Handle string "null" or missing tenantId to prevent Supabase crashes
                 let tenantId = parsedUrl.searchParams.get('tenantId');
                 if (!tenantId || tenantId === 'null' || tenantId === 'undefined') {
@@ -904,7 +904,7 @@ http.createServer((req: any, res: any) => {
                                 .select('id, context_json, owner_id, plan_tier, trial_ends_at')
                                 .eq('owner_id', tenantId)
                                 .maybeSingle();
-                            
+
                             config = byTenant;
                             dbError = errTenant;
                         }
@@ -917,7 +917,7 @@ http.createServer((req: any, res: any) => {
                                 .select('id, context_json, owner_id, plan_tier, trial_ends_at')
                                 .eq('instance_name', instanceName)
                                 .maybeSingle();
-                            
+
                             config = byInstance;
                             dbError = dbError || errInstance;
                         }
@@ -941,14 +941,14 @@ http.createServer((req: any, res: any) => {
                         // This fixes the divergence between generated names and actual Evolution names.
                         if (newStatus === 'CONNECTED') {
                             updatePayload.instance_name = instanceName;
-                            
+
                             const thirtyDaysFromNow = new Date();
                             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
                             const newTrialDate = thirtyDaysFromNow.toISOString();
 
                             updatePayload.plan_tier = 'TRIAL';
                             updatePayload.trial_ends_at = newTrialDate;
-                            
+
                             console.log(`🔥 [CONNECTION] Instance "${instanceName}" connected. Capture confirmed. Account ${config.owner_id} forced to 30-day TRIAL.`);
                         }
 
@@ -961,13 +961,13 @@ http.createServer((req: any, res: any) => {
                         const { error: updateError } = await supabaseAdmin
                             .from('business_config')
                             .update(updatePayload)
-                            .eq('id', config.id); 
+                            .eq('id', config.id);
 
                         if (updateError) {
                             console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
                         } else {
                             console.log(`✅ [CONNECTION] ${instanceName} Sync Success → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL ACTIVE)' : ''}`);
-                            
+
                             // 🔄 [SYNC] Propagate trial status to user profile
                             if (updatePayload.plan_tier === 'TRIAL') {
                                 await supabaseAdmin
@@ -1014,12 +1014,6 @@ http.createServer((req: any, res: any) => {
                     : String(dataObj.key.remoteJid);
 
                 const clientNumber = normalizePhone(rawJid);
-                
-                // 🛡️ [THE GHOST FILTER] Ignore messages from the bot's own number
-                const BOT_NUMBER = '554898097754';
-                if (clientNumber === BOT_NUMBER) {
-                    return; // Silent return
-                }
 
                 const incomingMessageId = dataObj.key.id;
                 const messageObj = dataObj.message;
@@ -1209,7 +1203,7 @@ http.createServer((req: any, res: any) => {
                                 instance_name: instanceName,
                                 owner_id: tenantId
                             };
-                            
+
                             let { data: newLead, error: insertError } = await supabaseAdmin
                                 .from('leads_lobo')
                                 .upsert(payload, { onConflict: 'phone' })
@@ -1225,7 +1219,7 @@ http.createServer((req: any, res: any) => {
                                         .select('*')
                                         .eq('phone', clientNumber)
                                         .single();
-                                        
+
                                     if (fallbackError || !fallbackLead) {
                                         console.error(`❌ [SUPABASE ERROR] Fallback fetch failed for:`, clientNumber);
                                         return;
@@ -1294,7 +1288,7 @@ http.createServer((req: any, res: any) => {
                             // 1. FETCH INSTANCE CONFIG (Primary Truth)
                             let configQuery = supabaseAdmin.from('business_config').select('context_json').eq('instance_name', instanceName);
                             if (tenantId) configQuery = configQuery.eq('owner_id', tenantId);
-                            
+
                             const { data: bConfig } = await configQuery.maybeSingle();
                             const instanceEnabled = bConfig?.context_json?.is_ai_enabled; // true, false, or undefined
 
@@ -1319,9 +1313,9 @@ http.createServer((req: any, res: any) => {
 
                             if (!shouldProceed) {
                                 console.log(`🛑 [PAUSE] Lead ${clientNumber} ignored (Instance: ${instanceEnabled}, Global: ${globalEnabled}).`);
-                                await supabaseAdmin.from('leads_lobo').update({ 
-                                    status: 'needs_human', 
-                                    needs_human: true 
+                                await supabaseAdmin.from('leads_lobo').update({
+                                    status: 'needs_human',
+                                    needs_human: true
                                 }).eq('phone', clientNumber);
                                 return;
                             }
