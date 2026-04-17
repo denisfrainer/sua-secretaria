@@ -40,12 +40,21 @@ export async function GET(request: Request) {
         cache: 'no-store'
     });
     
-    if (stateRes.status === 404) {
-      return NextResponse.json({ state: 'DISCONNECTED', status: 'not_found' });
+    let currentState = 'DISCONNECTED';
+    if (stateRes.ok) {
+        try {
+            const stateData = await stateRes.json();
+            currentState = stateData?.instance?.state || 'DISCONNECTED';
+            console.log(`📡 [API STATUS] State for ${instanceName}: ${currentState}`);
+        } catch (e) {
+            console.error(`❌ [API STATUS] Error parsing state JSON for ${instanceName}:`, e);
+        }
+    } else if (stateRes.status === 404) {
+        currentState = 'DISCONNECTED';
+    } else {
+        const errorText = await stateRes.text();
+        console.warn(`⚠️ [API STATUS] State fetch failed (${stateRes.status}):`, errorText);
     }
-    
-    const stateData = await stateRes.json();
-    const currentState = stateData?.instance?.state || 'DISCONNECTED';
 
     let qrCodeBase64 = null;
 
@@ -63,11 +72,15 @@ export async function GET(request: Request) {
       });
       
       if (connectRes.ok) {
-        const connectData = await connectRes.json();
-        qrCodeBase64 = connectData?.base64 || null; 
+        try {
+            const connectData = await connectRes.json();
+            qrCodeBase64 = connectData?.base64 || null; 
+        } catch (e) {
+            console.error(`❌ [API STATUS] Error parsing connect JSON for ${instanceName}:`, e);
+        }
       } else {
         const errorData = await connectRes.text();
-        console.warn(`⚠️ [API STATUS] Evolution connect failed:`, errorData);
+        console.warn(`⚠️ [API STATUS] Evolution connect failed (${connectRes.status}):`, errorData);
       }
     }
 

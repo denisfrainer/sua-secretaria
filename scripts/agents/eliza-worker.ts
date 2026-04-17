@@ -929,7 +929,7 @@ http.createServer((req: any, res: any) => {
                             return;
                         }
 
-                        // ATOMIC UPDATE — merge connection_status into context_json
+                        // 🛠️ ATOMIC UPDATE — merge connection_status into context_json
                         const currentContext = (config.context_json && typeof config.context_json === 'object')
                             ? config.context_json
                             : {};
@@ -939,20 +939,22 @@ http.createServer((req: any, res: any) => {
                             connection_status: newStatus,
                         };
 
-                        // 🛠️ Hybrid Trial Ignition logic
                         let updatePayload: any = {
                             status: newStatus,
                             context_json: updatedContext,
                             updated_at: new Date().toISOString()
                         };
 
-                        if (newStatus === 'CONNECTED' && (config.plan_tier === 'FREE' || !config.plan_tier) && !config.trial_ends_at) {
-                            console.log(`🔥 [TRIAL_IGNITION] Account ${config.owner_id} ignited for 30-day trial!`);
+                        // 🎯 FORCED TRIAL ACTIVATION (30 Days)
+                        if (newStatus === 'CONNECTED') {
                             const thirtyDaysFromNow = new Date();
                             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-                            
+                            const newTrialDate = thirtyDaysFromNow.toISOString();
+
                             updatePayload.plan_tier = 'TRIAL';
-                            updatePayload.trial_ends_at = thirtyDaysFromNow.toISOString();
+                            updatePayload.trial_ends_at = newTrialDate;
+                            
+                            console.log(`🔥 [TRIAL_ACTIVATION] Instance connected. Account ${config.owner_id} forced to TRIAL, trial_ends_at updated to: ${newTrialDate}`);
                         }
 
                         const { error: updateError } = await supabaseAdmin
@@ -963,11 +965,11 @@ http.createServer((req: any, res: any) => {
                         if (updateError) {
                             console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
                         } else {
-                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL INITIATED)' : ''}`);
+                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL FORCED)' : ''}`);
                             
                             // 🔄 [SYNC] Propagate trial status to user profile for Header/UI usage
                             if (updatePayload.plan_tier === 'TRIAL') {
-                                console.log(`🔄 [SYNC] Syncing TRIAL status to profile for owner: ${config.owner_id}`);
+                                console.log(`🔄 [SYNC] Syncing FORCED TRIAL status to profile for owner: ${config.owner_id}`);
                                 await supabaseAdmin
                                     .from('profiles')
                                     .update({

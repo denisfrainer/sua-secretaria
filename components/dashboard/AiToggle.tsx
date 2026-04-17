@@ -18,7 +18,7 @@ export function AiToggle() {
   useEffect(() => {
     async function fetchInitialStatus() {
       try {
-        const res = await fetch('/api/dashboard/system-toggle');
+        const res = await fetch('/api/dashboard/ai-toggle');
         const data = await res.json();
         setEnabled(data.enabled ?? true);
       } catch (error) {
@@ -72,7 +72,7 @@ export function AiToggle() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/dashboard/system-toggle', {
+      const res = await fetch('/api/dashboard/ai-toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: newState }),

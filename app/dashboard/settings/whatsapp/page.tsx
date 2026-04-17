@@ -39,7 +39,7 @@ function extractDbState(row: any): DbState | null {
   return {
     id: row.id,
     instance_name: row.instance_name?.trim() || null,
-    connection_status: row.context_json?.connection_status || 'DISCONNECTED',
+    connection_status: row.status || row.context_json?.connection_status || 'DISCONNECTED',
     context_json: row.context_json || {},
   };
 }
@@ -352,7 +352,7 @@ export default function WhatsAppSettingsPage() {
                 </div>
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest leading-none shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                  Online
+                  Instância conectada
                 </span>
               </div>
 
@@ -374,7 +374,7 @@ export default function WhatsAppSettingsPage() {
                 className="w-full md:w-fit h-12 md:h-10 px-6 md:px-4 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 font-bold text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
               >
                 {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-                Desconectar Número
+                Desativar número
               </button>
             </motion.div>
           )}
