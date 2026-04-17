@@ -893,30 +893,33 @@ http.createServer((req: any, res: any) => {
                     console.log(`🔌 [CONNECTION] Resolved: "${rawState}" → ${newStatus}`);
 
                     try {
-                        // DUAL-PATH DB LOOKUP: instance_name first, tenantId fallback
+                        // 🧬 LOGIC RE-ALIGNMENT: Prioritize tenantId (owner_id) from URL for stable lookups
                         let config: any = null;
                         let dbError: any = null;
 
-                        // Path A: Match by instance_name
-                        const { data: byInstance, error: errA } = await supabaseAdmin
-                            .from('business_config')
-                            .select('id, context_json, owner_id, plan_tier, trial_ends_at')
-                            .eq('instance_name', instanceName)
-                            .maybeSingle();
-
-                        config = byInstance;
-                        dbError = errA;
-
-                        // Path B: Fallback to tenantId if Path A missed
-                        if (!config && tenantId) {
-                            console.log(`🔄 [CONNECTION] instance_name "${instanceName}" not found. Falling back to tenantId: ${tenantId}`);
-                            const { data: byTenant, error: errB } = await supabaseAdmin
+                        if (tenantId) {
+                            console.log(`🔍 [CONNECTION] Identifying via tenantId: ${tenantId}`);
+                            const { data: byTenant, error: errTenant } = await supabaseAdmin
                                 .from('business_config')
                                 .select('id, context_json, owner_id, plan_tier, trial_ends_at')
                                 .eq('owner_id', tenantId)
                                 .maybeSingle();
+                            
                             config = byTenant;
-                            dbError = errB;
+                            dbError = errTenant;
+                        }
+
+                        // FALLBACK: Match by instance_name only if tenantId lookup failed or was missing
+                        if (!config) {
+                            console.log(`🔄 [CONNECTION] tenantId lookup missed. Trying instance_name: ${instanceName}`);
+                            const { data: byInstance, error: errInstance } = await supabaseAdmin
+                                .from('business_config')
+                                .select('id, context_json, owner_id, plan_tier, trial_ends_at')
+                                .eq('instance_name', instanceName)
+                                .maybeSingle();
+                            
+                            config = byInstance;
+                            dbError = dbError || errInstance;
                         }
 
                         if (dbError) {

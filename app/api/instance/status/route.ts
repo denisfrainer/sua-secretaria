@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,28 @@ export async function GET(request: Request) {
 
     if (!instanceName) {
       return NextResponse.json({ error: 'Missing instance name' }, { status: 400 });
+    }
+
+    // 🛡️ [ALIGNMENT] Check if instanceName matches DB for this user
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+        const { data: config } = await supabaseAdmin
+            .from('business_config')
+            .select('instance_name')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+
+        if (config?.instance_name !== instanceName) {
+            console.warn(`🛡️ [API STATUS] Mismatch: Request="${instanceName}" | DB="${config?.instance_name}"`);
+            return NextResponse.json({ 
+                instance: instanceName,
+                state: 'DISCONNECTED', 
+                status: 'MISMATCH',
+                qr: null 
+            }, { status: 200 });
+        }
     }
 
     const evoUrl = process.env.EVOLUTION_URL || process.env.NEXT_PUBLIC_EVOLUTION_URL;
