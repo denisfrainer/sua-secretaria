@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { revalidatePath } from 'next/cache';
 
 export default async function OnboardingPage() {
     const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function OnboardingPage() {
 
     async function handleOnboarding(formData: FormData) {
         'use server';
-        
+
         const userId = user?.id; // user is available from the closure
         if (!userId) throw new Error('User not authenticated');
 
@@ -55,6 +56,7 @@ export default async function OnboardingPage() {
         }
 
         console.log('[ONBOARDING_SUCCESS] Business config saved successfully for user:', userId);
+        revalidatePath('/', 'layout');
         redirect('/dashboard');
     }
 
@@ -111,7 +113,7 @@ export default async function OnboardingPage() {
                                     <option value="Eyebrows">Sobrancelhas & Cílios</option>
                                 </select>
                                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                                 </div>
                             </div>
                         </div>
