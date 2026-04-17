@@ -14,6 +14,7 @@ import {
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 import { OperatingHoursRow } from '@/components/dashboard/settings/OperatingHoursRow';
 import { AutoResizeTextarea } from '@/components/dashboard/settings/AutoResizeTextarea';
+import { MockLogoUpload } from '@/components/dashboard/settings/MockLogoUpload';
 
 // ==============================================================
 // TYPES
@@ -316,12 +317,19 @@ export default function BusinessSettingsPage() {
       animate="visible"
       className="flex flex-col gap-12 pb-32"
     >
-      {/* SECTION 1: STUDIO INFO */}
+          {/* SECTION 1: STUDIO INFO */}
       <motion.section variants={itemVariants} className="flex flex-col gap-6">
         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
           <Building2 size={20} className="text-blue-600 shrink-0" />
           <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Informações Básicas</h2>
         </div>
+
+        {/* LOGO UPLOAD (MOCKED) */}
+        <MockLogoUpload 
+          currentUrl={(config?.context_json as any)?.business_info?.logo_url}
+          onUploadComplete={(base64) => updateBusinessInfo('logo_url', base64)}
+        />
+
         <div className="grid grid-cols-1 gap-5">
           <StudioInput 
             label="Nome do Estabelecimento" 

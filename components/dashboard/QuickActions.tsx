@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Link as LinkIcon, Settings, Link2, Check, Target } from 'lucide-react';
+import { Calendar, Link as LinkIcon, Settings, Link2, Check, Target, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -68,15 +68,19 @@ export default function QuickActions() {
       title: 'Link de agendamento',
       icon: <Link2 className="w-5 h-5" />,
       colorClass: 'text-rose-600 bg-rose-50 ring-rose-100',
-      action: copyToClipboard,
-    },
-    {
-      title: 'Prospecção',
-      icon: <Target className="w-5 h-5" />,
-      colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
       action: () => {
-        console.log('[NAV] Going to Wolf Agent');
-        router.push('/dashboard/settings/agents?tab=outbound');
+        console.log('[NAVIGATION] Navigating to /dashboard/settings/booking-link');
+        router.push('/dashboard/settings/booking-link');
+      },
+    },
+
+    {
+      title: 'WhatsApp',
+      icon: <MessageSquare className="w-5 h-5" />,
+      colorClass: 'text-indigo-600 bg-indigo-50 ring-indigo-100',
+      action: () => {
+        console.log('[NAV] Going to WhatsApp settings');
+        router.push('/dashboard/settings/whatsapp');
       },
     },
     {

@@ -13,7 +13,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import { cookies } from 'next/headers';
-import { ElizaRoiCard } from '@/components/dashboard/eliza-roi-card';
+
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -139,8 +139,7 @@ export default async function DashboardPage() {
       {/* Main Action Grid (Motion inside) */}
       <QuickActions />
 
-      {/* ROI Dashboard (Mock) */}
-      <ElizaRoiCard />
+
 
     </div>
   );

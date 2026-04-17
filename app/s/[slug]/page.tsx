@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
-import SchedulingInterface from '@/components/scheduling/SchedulingInterface';
+import PublicBookingUI from '@/components/scheduling/PublicBookingUI';
 
 /**
  * UNIVERSAL SCHEDULING ROUTE
@@ -55,9 +55,7 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
 
   console.log(`[SLUG_RESOLVER] Resolved profile for: ${decodedSlug} -> ${profile.display_name || profile.full_name}`);
 
-  return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col items-center justify-center p-4 md:p-8">
-      <SchedulingInterface profile={profile} businessConfig={businessConfig} />
-    </div>
+      return (
+    <PublicBookingUI profile={profile} businessConfig={businessConfig} />
   );
 }

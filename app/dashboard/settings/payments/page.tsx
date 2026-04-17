@@ -104,41 +104,7 @@ export default function PaymentsPricingPage() {
   return (
     <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32">
       
-      {/* 1. SEÇÃO DE CONFIGURAÇÃO PIX (PRO/ELITE ONLY) */}
-      {canUsePix && (
-        <section className="flex flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3 text-slate-900">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                <Wallet size={20} />
-              </div>
-              <h2 className="text-xl font-bold tracking-tight">Configuração de Faturamento</h2>
-            </div>
-            <p className="text-sm font-medium text-slate-500">Gerencie seus recebimentos automáticos via PIX.</p>
-          </div>
 
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col gap-6">
-            <div className="flex flex-col gap-4">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">URL de Webhook Ativa</label>
-              <div className="flex gap-2">
-                <div className="flex-1 h-12 bg-slate-50 rounded-xl border border-slate-100 flex items-center px-4 text-xs font-mono text-slate-500 truncate">
-                  https://suasecretaria.com/api/webhooks/pix
-                </div>
-                <button 
-                  onClick={() => navigator.clipboard.writeText('https://suasecretaria.com/api/webhooks/pix')}
-                  className="h-12 w-12 rounded-xl bg-slate-900 text-white flex items-center justify-center hover:bg-black transition-all active:scale-95 shadow-sm"
-                >
-                  <Copy size={18} />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 w-fit px-4 py-2 rounded-full border border-emerald-100">
-               <ShieldCheck size={14} />
-               Sincronização com Mercado Pago Ativa
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* 2. SEÇÃO DE PLANOS (GRID) */}
       <section className="flex flex-col gap-8 mt-2">
@@ -212,39 +178,26 @@ export default function PaymentsPricingPage() {
                     ))}
                   </ul>
                 </div>
+
+                {/* Subscibe Button (New) */}
+                <div className="mt-8">
+                  <button
+                    className={`
+                      w-full h-12 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]
+                      ${isSelected 
+                        ? 'bg-[#533CFA] text-white shadow-lg shadow-indigo-500/20 px-6' 
+                        : 'bg-slate-50 text-slate-400 hover:bg-slate-100 px-6'}
+                    `}
+                  >
+                    Assinar por R$ {plano.price.split(',')[0]}
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
               </motion.div>
             );
           })}
         </div>
 
-        {/* 3. FINAL CTA */}
-        <div className="mt-6">
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 flex flex-col lg:flex-row items-center justify-between gap-8 shadow-sm">
-             <div className="flex flex-col gap-2 text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start gap-2">
-                   <h4 className="text-lg font-bold text-slate-900">Assinar Plano {currentPlanData?.name}</h4>
-                   <span className="text-sm font-bold text-[#533CFA]">R$ {currentPlanData?.price}/mês</span>
-                </div>
-                <p className="text-sm font-medium text-slate-500 max-w-sm">
-                  Desbloqueie agora todo o potencial do seu negócio com a inteligência artificial da Eliza.
-                </p>
-             </div>
-
-             <div className="flex flex-col gap-3 w-full lg:w-auto min-w-[240px]">
-                <Link 
-                  href={`/checkout?plan=${selectedPlan}`}
-                  className="h-16 w-full rounded-2xl bg-[#533CFA] text-white font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-[0.98] transition-all"
-                >
-                  Confirmar Assinatura
-                  <ArrowRight size={20} />
-                </Link>
-                <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                  <div className="flex items-center gap-1.5"><ShieldCheck size={14} /> Checkout Seguro</div>
-                  <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Cancelamento Grátis</div>
-                </div>
-             </div>
-          </div>
-        </div>
       </section>
 
     </div>

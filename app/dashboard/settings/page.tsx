@@ -46,7 +46,7 @@ export default function SettingsHubPage() {
   const SETTINGS_OPTIONS = [
     {
       id: 'studio',
-      title: 'Configurações do Estúdio',
+      title: 'Configurações do Negócio',
       description: 'Catálogo de serviços, horários e regras da IA.',
       icon: Building2,
       iconColor: 'text-blue-600',
@@ -63,21 +63,12 @@ export default function SettingsHubPage() {
     },
     {
       id: 'pagamentos',
-      title: 'Pagamentos',
-      description: 'Configure PIX Automático e faturamento.',
+      title: 'Planos',
+      description: 'veja nossos planos de assinatura',
       icon: CreditCard,
       iconColor: 'text-emerald-600',
       href: '/dashboard/settings/payments',
       locked: false,
-    },
-    {
-      id: 'whatsapp',
-      title: 'Conexão WhatsApp',
-      description: 'Vincule seu número para o agente.',
-      image: '/assets/whatsapp.svg',
-      href: '/dashboard/settings/whatsapp',
-      locked: !hasAccess(tier, 'WHATSAPP_CONNECT'),
-      requiredTier: 'PRO',
     },
     {
       id: 'ai',
@@ -89,16 +80,7 @@ export default function SettingsHubPage() {
       locked: !hasAccess(tier, 'AI_CONFIGURATION'),
       requiredTier: 'PRO',
     },
-    {
-      id: 'elite-outbound',
-      title: 'Ferramenta de Prospecção',
-      description: 'Prospecte a sua base de clientes com mensagens personalizadas.',
-      icon: TrendingUp,
-      iconColor: 'text-rose-600',
-      href: '/dashboard/settings/agents?tab=outbound',
-      locked: !hasAccess(tier, 'WOLF_AGENT_OUTBOUND'),
-      requiredTier: 'ELITE',
-    }
+
   ];
 
   return (
