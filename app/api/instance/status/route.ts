@@ -28,14 +28,23 @@ export async function GET(request: Request) {
     });
 
     if (stateRes.status === 404) {
-      return NextResponse.json({ state: 'DISCONNECTED', status: 'NOT_FOUND' }, { status: 200 });
+      console.warn(`📡 [API STATUS] Instance "${instanceName}" not found (404).`);
+      return NextResponse.json({ 
+        state: 'NOT_FOUND', 
+        status: 'NOT_FOUND',
+        qr: null 
+      }, { status: 200 });
     }
 
     const stateData = await stateRes.json().catch(() => ({}));
     const currentState = stateData?.instance?.state || 'DISCONNECTED';
 
-    if (currentState === 'open') {
-      return NextResponse.json({ state: 'open', instance: instanceName }, { status: 200 });
+    if (currentState === 'open' || currentState === 'connected') {
+      return NextResponse.json({ 
+        state: 'open', 
+        instance: instanceName,
+        qr: null
+      }, { status: 200 });
     }
 
     // Se não estiver aberto, tenta pegar o QR Code
@@ -45,11 +54,17 @@ export async function GET(request: Request) {
     });
 
     const connectData = await connectRes.json().catch(() => ({}));
+    const rawQR = connectData?.base64 || connectData?.qrcode || null;
+
+    // 🛡️ [PREFIX GUARD] Ensure base64 prefix is present
+    const finalQR = (rawQR && typeof rawQR === 'string' && !rawQR.startsWith('data:')) 
+        ? `data:image/png;base64,${rawQR}` 
+        : rawQR;
 
     return NextResponse.json({
       instance: instanceName,
       state: currentState,
-      qr: connectData?.base64 || null
+      qr: finalQR
     }, { status: 200 });
 
   } catch (error: any) {

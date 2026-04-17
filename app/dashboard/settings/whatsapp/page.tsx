@@ -304,12 +304,11 @@ export default function WhatsAppSettingsPage() {
               transition={{ duration: 0.4 }}
               className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-8 p-6 md:p-8"
             >
-              <div className="bg-white p-3 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 shrink-0">
-                <QRCodeDisplay
-                  instanceName={dbState!.instance_name!}
-                  onConnected={() => fetchFromDb(false)}
-                />
-              </div>
+              <QRCodeDisplay
+                instanceName={dbState!.instance_name!}
+                onConnected={() => fetchFromDb(false)}
+                onReProvision={handleInitializeInstance}
+              />
 
               <div className="flex flex-col items-center md:items-start text-center md:text-left">
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest leading-none mb-4">
