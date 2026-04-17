@@ -371,7 +371,7 @@ async function transcribeAudioWithGemini(base64Audio: string, mimeType: string):
 // ==============================================================
 async function processLead(lead: any) {
     const clientNumber = lead.phone;
-    const instanceToUse = lead.instance_name || process.env.EVOLUTION_INSTANCE_NAME || 'agente-lobo';
+    const instanceToUse = lead.instance_name || process.env.EVOLUTION_INSTANCE_NAME || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
 
     console.log(`\n===========================================`);
     console.log(`🧠 [ELIZA] Processing Lead: ${clientNumber} (Instance: ${instanceToUse})`);
@@ -818,7 +818,7 @@ http.createServer((req: any, res: any) => {
     // 🌐 WEBHOOK ROUTER (Evolution API v1/v2 & Z-API)
     const isPost = req.method === 'POST';
     const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
-    const isWebhookPath = parsedUrl.pathname === '/webhook' || parsedUrl.pathname === '/api/webhook/evolution';
+    const isWebhookPath = parsedUrl.pathname === '/webhook' || parsedUrl.pathname === '/api/webhook' || parsedUrl.pathname === '/api/webhook/evolution';
 
     if (isPost && isWebhookPath) {
         let bodyStr = '';

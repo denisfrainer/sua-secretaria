@@ -159,11 +159,11 @@ export async function POST(req: Request) {
             if (!lead.phone || !lead.name) continue;
 
             // Force the global instance for this specific asynchronous worker
-            const instanceName = 'agente-lobo';
+            const instanceName = (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
 
             // --- 🛡️ TIER ACCESS CONTROL BYPASS ---
             // Skip the database lookup for the master internal bot to save latency and ignore dirty lead data
-            const isGlobalAgent = instanceName === 'agente-lobo';
+            const isGlobalAgent = instanceName === (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
 
             if (!isGlobalAgent) {
                 // Keep this only if you plan to allow SaaS clients to have their own Wolf Agents later

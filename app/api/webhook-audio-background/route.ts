@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ status: 'ignored', reason: 'ai_paused_or_needs_human' }, { status: 200 });
         }
 
-        const instanceName = lead?.instance_name || body.instance || 'agente-lobo';
+        const instanceName = lead?.instance_name || body.instance || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
         const { data: config } = await supabaseAdmin

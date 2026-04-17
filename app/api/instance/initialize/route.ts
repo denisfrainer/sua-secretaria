@@ -41,21 +41,29 @@ export async function POST(request: Request) {
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
         const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, "");
+        const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria';
 
         if (!baseUrl || !apiKey || !webhookUrl) {
             console.error('🚨 [EVOLUTION] Missing env credentials.');
             return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
         }
 
-        const webhookFullUrl = `${webhookUrl}/api/webhook/evolution?tenantId=${tenantId}`;
-        console.log(`🚀 [EVOLUTION] Creating instance: ${instanceName} | Tenant: ${tenantId}`);
+        // Force naming convention: secretaria-uuid or provided name with prefix
+        const finalInstanceName = instanceName.startsWith(prefix) 
+            ? instanceName 
+            : `${prefix}-${instanceName}`;
+
+        const webhookFullUrl = `${webhookUrl}/api/webhook?tenantId=${tenantId}`;
+        
+        console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Prefix: ${prefix} | Tenant: ${tenantId}`);
+        console.log(`🔗 [EVOLUTION_API] Webhook target: ${webhookFullUrl}`);
 
         // 4. Ensure instance exists on Evolution
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
             body: JSON.stringify({
-                instanceName,
+                instanceName: finalInstanceName,
                 qrcode: true,
                 integration: "WHATSAPP-BAILEYS",
                 webhook: {
@@ -73,9 +81,9 @@ export async function POST(request: Request) {
         }
 
         // 5. PURGE: Force logout to clear any stuck 440 conflict sessions
-        console.log(`🧹 [EVOLUTION] Purging potentially stuck connection for ${instanceName}...`);
+        console.log(`🧹 [EVOLUTION] Purging potentially stuck connection for ${finalInstanceName}...`);
         try {
-             await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
+             await fetch(`${baseUrl}/instance/logout/${finalInstanceName}`, {
                  method: 'DELETE',
                  headers: { 'apikey': apiKey }
              });
@@ -87,8 +95,8 @@ export async function POST(request: Request) {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // 6. GENERATE: Fetch fresh QR code via connect endpoint
-        console.log(`🔗 [EVOLUTION] Generating fresh QR code for ${instanceName}...`);
-        const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
+        console.log(`🔗 [EVOLUTION] Generating fresh QR code for ${finalInstanceName}...`);
+        const connectRes = await fetch(`${baseUrl}/instance/connect/${finalInstanceName}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey }
         });
@@ -100,11 +108,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to fetch fresh QR code', details: connectData }, { status: connectRes.status });
         }
 
-        console.log(`✅ [EVOLUTION] Instance ${instanceName} created.`);
+        console.log(`✅ [EVOLUTION] Instance ${finalInstanceName} created.`);
 
         // 5. Belt-and-suspenders: explicit webhook/set (non-fatal)
         try {
-            const wRes = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
+            const wRes = await fetch(`${baseUrl}/webhook/set/${finalInstanceName}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
                 body: JSON.stringify({
@@ -131,7 +139,7 @@ export async function POST(request: Request) {
             const { error } = await supabaseAdmin
                 .from('business_config')
                 .update({
-                    instance_name: instanceName,
+                    instance_name: finalInstanceName,
                     updated_at: new Date().toISOString()
                 })
                 .eq('owner_id', tenantId);
@@ -146,7 +154,7 @@ export async function POST(request: Request) {
                 .from('business_config')
                 .insert({
                     owner_id: tenantId,
-                    instance_name: instanceName,
+                    instance_name: finalInstanceName,
                     plan_tier: 'ELITE',
                     context_json: {
                         is_ai_enabled: true,

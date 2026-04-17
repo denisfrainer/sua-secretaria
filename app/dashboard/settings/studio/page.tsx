@@ -195,8 +195,9 @@ export default function BusinessSettingsPage() {
 
   const generateInstanceName = (name: string) => {
     const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+    const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria';
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
-    return `${slug || 'studio'}-${randomSuffix}`;
+    return `${prefix}-${slug || 'studio'}-${randomSuffix}`;
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {

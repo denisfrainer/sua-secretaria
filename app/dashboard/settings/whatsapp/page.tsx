@@ -137,7 +137,8 @@ export default function WhatsAppSettingsPage() {
 
       const businessName = user.user_metadata?.business_name || 'Minha Empresa';
       const slug = businessName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
-      const name = `${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria';
+      const name = `${prefix}-${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const initRes = await fetch('/api/instance/initialize', {
         method: 'POST',
@@ -261,14 +262,13 @@ export default function WhatsAppSettingsPage() {
                 Automatize o atendimento. Conecte o número de WhatsApp do seu negócio para que a IA agende clientes e tire dúvidas 24/7.
               </p>
 
-              {/* BLOQUEIO DE TESTE: Comentando o botão original
               <button
                 onClick={handleInitializeInstance}
                 className="w-full md:w-fit h-12 px-6 bg-[#533CFA] hover:bg-[#432EEA] text-white font-bold rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition-all outline-none flex items-center justify-center gap-2 mt-2 whitespace-nowrap"
               >
                 <QrCode size={18} />
                 Gerar QR Code
-              </button>*/}
+              </button>
             </motion.div>
           )}
 
