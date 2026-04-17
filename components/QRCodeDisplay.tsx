@@ -65,6 +65,7 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                 }
 
                 if (data.qr) {
+                    console.log(`[QR_RENDER] Base64 length: ${data.qr.length}`);
                     setQrBase64(data.qr);
                 }
             } catch (err) {
@@ -117,28 +118,29 @@ export default function QRCodeDisplay({ instanceName, onConnected }: { instanceN
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="w-64 h-64 bg-zinc-50 rounded-3xl border border-black/5 flex items-center justify-center overflow-hidden relative shadow-sm transition-all hover:shadow-md"
+                    className="flex items-center justify-center p-4 bg-white rounded-[32px] shadow-sm w-full max-w-[300px] aspect-square mx-auto border border-black/5 relative overflow-hidden transition-all hover:shadow-md"
                 >
                     {qrBase64 ? (
-                        <Image 
-                            src={qrBase64.includes('base64,') ? qrBase64 : `data:image/png;base64,${qrBase64}`}
-                            alt="QR Code do WhatsApp" 
-                            fill
-                            className="object-cover p-4"
-                        />
+                        <div className="relative w-full h-full">
+                            <img 
+                                src={qrBase64.startsWith('data:') ? qrBase64 : `data:image/png;base64,${qrBase64}`}
+                                alt="WhatsApp QR Code"
+                                className="w-full h-full object-contain"
+                            />
+                        </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <div className="relative">
                                 <div className="absolute inset-0 bg-blue-600/20 rounded-full animate-ping" />
                                 <Loader2 size={32} className="animate-spin text-blue-600 relative" />
                             </div>
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Gerando QR</span>
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] ml-1 font-source">Gerando QR</span>
                         </div>
                     )}
                 </motion.div>
 
                 <div className="flex flex-col items-center gap-5 w-full pt-2">
-                    <div className="flex items-center gap-2 text-[13px] text-blue-600 font-bold px-5 py-2 bg-blue-50 rounded-full border border-blue-100 animate-pulse">
+                    <div className="flex items-center gap-2 text-[13px] text-blue-600 font-bold px-5 py-2 bg-blue-50 rounded-full border border-blue-100 animate-pulse font-source">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                         Status: Aguardando Escaneamento
                     </div>
