@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { normalizePhone } from '@/lib/utils/phone';
 
 export default function UnifiedAuthForm() {
-  const [mode, setMode] = useState<'login' | 'signup'>('signup');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [formData, setFormData] = useState({
     fullName: '',
     whatsapp: '',
@@ -105,166 +105,184 @@ export default function UnifiedAuthForm() {
 
   if (isSuccess) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center text-center py-4 gap-4"
-      >
-        <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center shadow-inner">
-          <CheckCircle2 size={32} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <h3 className="text-xl font-bold text-slate-900 tracking-tight">Conta criada!</h3>
-          <p className="text-sm font-medium text-slate-500 leading-relaxed">
-            Sua conta foi criada com sucesso. <br />
-            Você já pode acessar o sistema.
-          </p>
-        </div>
-        <button
-          onClick={() => window.location.href = '/dashboard'}
-          style={{ backgroundColor: '#533AFD' }}
-          className="w-full h-[64px] text-white rounded-md font-bold text-base flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+      <div className="bg-white rounded-[32px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 w-full">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center text-center py-4 gap-4"
         >
-          Ir para o Dashboard
-          <ArrowRight size={18} />
-        </button>
-      </motion.div>
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center shadow-inner">
+            <CheckCircle2 size={32} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight">Conta criada!</h3>
+            <p className="text-sm font-medium text-slate-500 leading-relaxed">
+              Sua conta foi criada com sucesso. <br />
+              Você já pode acessar o sistema.
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="w-full h-16 bg-[#533AFD] text-white rounded-2xl font-bold text-base flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-indigo-100"
+          >
+            Ir para o Dashboard
+            <ArrowRight size={18} />
+          </button>
+        </motion.div>
+      </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={mode}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-3"
-          >
-            {mode === 'signup' && (
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <User size={18} />
+    <div className="w-full flex flex-col gap-10">
+      {/* BRAND HEADER - Dynamic based on Mode */}
+      <div className="flex flex-col items-center text-center gap-6">
+        <button onClick={() => window.location.href = '/'} className="w-20 h-20 rounded-full bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer text-5xl">
+            👩🏼‍💼
+        </button>
+        <div className="flex flex-col gap-2">
+            <h1 className="text-[32px] font-extrabold tracking-tight text-slate-900">
+                {mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
+            </h1>
+            <p className="text-[17px] font-medium text-slate-500">
+                Comece agora e use grátis por 30 dias.
+            </p>
+        </div>
+      </div>
+
+      {/* FORM CARD */}
+      <div className="bg-white rounded-[32px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-4"
+            >
+              {mode === 'signup' && (
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#533AFD] transition-colors">
+                    <User size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    name="fullName"
+                    required
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    placeholder="Seu nome completo"
+                    className="w-full pl-14 pr-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[#533AFD]/30 transition-all"
+                  />
                 </div>
-                <input
-                  type="text"
-                  name="fullName"
-                  required
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  placeholder="Seu nome completo"
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-                />
-              </div>
-            )}
+              )}
 
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                <Smartphone size={18} />
-              </div>
-              <input
-                type="tel"
-                name="whatsapp"
-                required
-                value={formData.whatsapp}
-                onChange={handleInputChange}
-                placeholder="WhatsApp (ex: 11999999999)"
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-              />
-            </div>
-
-            {mode === 'signup' && (
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <Smartphone size={18} />
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#533AFD] transition-colors">
+                  <Smartphone size={20} />
                 </div>
                 <input
                   type="tel"
-                  name="confirmWhatsapp"
+                  name="whatsapp"
                   required
-                  value={formData.confirmWhatsapp}
+                  value={formData.whatsapp}
                   onChange={handleInputChange}
-                  placeholder="Confirmar WhatsApp"
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                  placeholder="WhatsApp (ex: 11999999)"
+                  className="w-full pl-14 pr-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[#533AFD]/30 transition-all"
                 />
               </div>
-            )}
 
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                <Lock size={18} />
-              </div>
-              <input
-                type="password"
-                name="password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="Sua senha"
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-              />
-            </div>
+              {mode === 'signup' && (
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#533AFD] transition-colors">
+                    <Smartphone size={20} />
+                  </div>
+                  <input
+                    type="tel"
+                    name="confirmWhatsapp"
+                    required
+                    value={formData.confirmWhatsapp}
+                    onChange={handleInputChange}
+                    placeholder="Confirmar WhatsApp"
+                    className="w-full pl-14 pr-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[#533AFD]/30 transition-all"
+                  />
+                </div>
+              )}
 
-            {mode === 'signup' && (
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <Lock size={18} />
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#533AFD] transition-colors">
+                  <Lock size={20} />
                 </div>
                 <input
                   type="password"
-                  name="confirmPassword"
+                  name="password"
                   required
-                  value={formData.confirmPassword}
+                  value={formData.password}
                   onChange={handleInputChange}
-                  placeholder="Confirmar senha"
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                  placeholder="Sua senha"
+                  className="w-full pl-14 pr-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[#533AFD]/30 transition-all"
                 />
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
 
-        {error && (
-          <p className="text-xs font-semibold text-rose-500 px-1">
-            {error}
-          </p>
-        )}
+              {mode === 'signup' && (
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#533AFD] transition-colors">
+                    <Lock size={20} />
+                  </div>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="Confirmar senha"
+                    className="w-full pl-14 pr-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[#533AFD]/30 transition-all"
+                  />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{ backgroundColor: '#533AFD' }}
-          className="w-full h-[64px] text-white rounded-md font-bold text-base flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed group mt-2"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="animate-spin" size={20} />
-              <span>Processando...</span>
-            </>
-          ) : (
-            <>
-              {mode === 'signup' ? 'Criar minha conta' : 'Entrar no sistema'}
-              {mode === 'signup' ? <UserPlus size={18} /> : <LogIn size={18} />}
-            </>
+          {error && (
+            <p className="text-[13px] font-bold text-rose-500 px-1">
+              {error}
+            </p>
           )}
-        </button>
 
-        <div className="flex flex-col items-center gap-2 mt-2">
           <button
-            type="button"
-            onClick={() => {
-              setMode(mode === 'signup' ? 'login' : 'signup');
-              setError(null);
-            }}
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-16 bg-[#533AFD] text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed group mt-2 shadow-xl shadow-indigo-100"
           >
-            {mode === 'signup' ? 'Já tenho uma conta' : 'Ainda não tenho conta'}
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={24} />
+                <span>Processando...</span>
+              </>
+            ) : (
+              <>
+                {mode === 'signup' ? 'Criar minha conta' : 'Entrar no sistema'}
+                <ArrowRight size={20} className="ml-1" />
+              </>
+            )}
           </button>
-        </div>
-      </form>
+
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'signup' ? 'login' : 'signup');
+                setError(null);
+              }}
+              className="text-[15px] font-bold text-[#533AFD] hover:text-indigo-800 transition-colors"
+            >
+              {mode === 'signup' ? 'Já tenho uma conta' : 'Ainda não tenho conta'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
