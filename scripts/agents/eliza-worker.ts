@@ -1359,13 +1359,14 @@ http.createServer((req: any, res: any) => {
                             console.log(`🚀 [WEBHOOK SUCCESS] Lead ${clientNumber} ready for Worker: status=eliza_processing, ai_paused=false, needs_human=false.`);
                         }
                     }
-                } catch (extractionError: any) {
-                    console.error('❌ [WEBHOOK_EXTRACTION_ERROR]:', extractionError.message);
-                    console.error('📦 [FAULTY_PAYLOAD]:', JSON.stringify(body, null, 2));
                 }
-            } catch (error) {
-                console.error('❌ [WEBHOOK CRASH]:', error);
+            } catch (extractionError: any) {
+                console.error('❌ [WEBHOOK_EXTRACTION_ERROR]:', extractionError.message);
+                console.error('📦 [FAULTY_PAYLOAD]:', JSON.stringify(body, null, 2));
             }
+        } catch (error) {
+            console.error('❌ [WEBHOOK CRASH]:', error);
+        }
         });
         return;
     }
