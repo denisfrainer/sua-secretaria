@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Link as LinkIcon, Settings, Link2, Check, Target, MessageSquare } from 'lucide-react';
+import { Calendar, Link as LinkIcon, Settings, Link2, Check, MessageSquare, Bot } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +19,6 @@ export default function QuickActions() {
       if (session?.user) {
         setUserId(session.user.id);
 
-        // Fetch slug from profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('slug')
@@ -38,7 +37,6 @@ export default function QuickActions() {
     if (!userId) return;
 
     const baseUrl = window.location.origin;
-    // Prefer SLUG link, fallback to legacy UUID/s/ link
     const bookingUrl = slug
       ? `${baseUrl}/s/${slug}`
       : `${baseUrl}/s/${userId}`;
@@ -47,7 +45,6 @@ export default function QuickActions() {
       await navigator.clipboard.writeText(bookingUrl);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
-      console.log('[UI_ACTION] Scheduling link successfully copied to clipboard');
       console.log('[CLIPBOARD] Link copied:', bookingUrl);
     } catch (err) {
       console.error('[CLIPBOARD] Failed to copy:', err);
@@ -59,53 +56,44 @@ export default function QuickActions() {
       title: 'Agenda',
       icon: <Calendar className="w-5 h-5" />,
       colorClass: 'text-blue-600 bg-blue-50 ring-blue-100',
-      action: () => {
-        console.log('[NAVIGATION] Navigating to /dashboard/agenda');
-        router.push('/dashboard/agenda');
-      },
+      action: () => router.push('/dashboard/agenda'),
     },
     {
       title: 'Link de agendamento',
       icon: <Link2 className="w-5 h-5" />,
       colorClass: 'text-rose-600 bg-rose-50 ring-rose-100',
-      action: () => {
-        console.log('[NAVIGATION] Navigating to /dashboard/settings/booking-link');
-        router.push('/dashboard/settings/booking-link');
-      },
+      action: () => router.push('/dashboard/settings/booking-link'),
     },
-
     {
-      title: 'WhatsApp',
+      title: 'Agente',
       icon: <MessageSquare className="w-5 h-5" />,
       colorClass: 'text-indigo-600 bg-indigo-50 ring-indigo-100',
-      action: () => {
-        console.log('[NAV] Going to WhatsApp settings');
-        router.push('/dashboard/settings/whatsapp');
-      },
+      action: () => router.push('/dashboard/settings/whatsapp'),
+    },
+    {
+      title: 'Robô de menu',
+      icon: <Bot className="w-5 h-5" />,
+      colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
+      action: () => router.push('/dashboard/settings/whatsapp'),
     },
     {
       title: 'Serviços',
       icon: <LinkIcon className="w-5 h-5" />,
       colorClass: 'text-orange-600 bg-orange-50 ring-orange-100',
-      action: () => {
-        console.log('[NAV] Going to catalog');
-        router.push('/dashboard/settings/catalog');
-      },
+      action: () => router.push('/dashboard/settings/catalog'),
     },
     {
       title: 'Configurações',
       icon: <Settings className="w-5 h-5" />,
       colorClass: 'text-emerald-600 bg-emerald-50 ring-emerald-100',
-      action: () => {
-        console.log('[NAV] Going to settings hub');
-        router.push('/dashboard/settings');
-      },
+      action: () => router.push('/dashboard/settings'),
     },
+
   ];
 
   return (
     <div className="relative">
-      <div className="grid grid-cols-2 gap-3 mt-6">
+      <div className="grid grid-cols-2 gap-3">
         {actions.map((item, index) => (
           <motion.button
             key={index}
@@ -124,7 +112,8 @@ export default function QuickActions() {
             >
               {item.icon}
             </div>
-            <span className="font-semibold text-gray-950 text-base tracking-tight">
+
+            <span className="font-bold text-gray-950 text-base tracking-tight">
               {item.title}
             </span>
           </motion.button>

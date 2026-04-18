@@ -3,22 +3,19 @@ import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointment
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
-import { TrialStatusBox } from '@/components/dashboard/TrialStatusBox';
+import { StatusHeader } from '@/components/dashboard/StatusHeader';
+import { BrainSelector } from '@/components/dashboard/BrainSelector';
 import { redirect } from 'next/navigation';
 import { google } from 'googleapis';
 import { getGoogleAuthClient } from '@/lib/calendar/google';
-import { startOfDay, endOfDay } from 'date-fns';
+import { endOfDay } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-import { cookies } from 'next/headers';
-
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
 
   // Defensive data fetching with Admin fallback to Standard client
   let businessConfig = null;
@@ -58,7 +55,7 @@ export default async function DashboardPage() {
 
         const response = await calendar.events.list({
           calendarId: 'primary',
-          timeMin: now.toISOString(), // Start from now to avoid fetching past events
+          timeMin: now.toISOString(),
           timeMax,
           singleEvents: true,
           orderBy: 'startTime',
@@ -77,14 +74,12 @@ export default async function DashboardPage() {
             const appStart = app.start ? new Date(app.start) : null;
             return appStart && appStart > now;
           })
-          .slice(0, 3); // Match the client-side slice of 3
+          .slice(0, 3);
         
         isIntegrated = true;
         console.log(`[DASHBOARD_FETCH] Agenda fetched: ${initialAgenda.length} events`);
       } catch (gCalError: any) {
         console.warn('[DASHBOARD_FETCH] GCal fetch error:', gCalError.message);
-        // Fallback: If we have a token, consider it integrated but with empty initial agenda
-        // This allows the client-side component to try fetching again.
         isIntegrated = true;
       }
     } else {
@@ -92,7 +87,6 @@ export default async function DashboardPage() {
     }
   } catch (error) {
     console.warn('⚠️ [DASHBOARD] Fetching error, attempting fallback...', error);
-    // Final fallback attempt with standard client for both config and profile
     const [{ data: configData }, { data: profileData }] = await Promise.all([
       supabase.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
       supabase.from('profiles').select('full_name, plan_tier, trial_ends_at').eq('id', user?.id).single()
@@ -103,8 +97,6 @@ export default async function DashboardPage() {
     console.log('[DASHBOARD_FETCH] Fallback Profile:', profile);
   }
 
-  // Strict Gating: If user exists but essential registration data is missing, we might still show skeleton
-  // However, we at least want a name to show.
   const hasInstance = Boolean(businessConfig?.instance_name);
   const isConnected = hasInstance && businessConfig?.context_json?.connection_status === 'CONNECTED';
   
@@ -120,26 +112,22 @@ export default async function DashboardPage() {
     || 'Visitante';
 
   return (
-    <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8 mx-auto animate-in fade-in duration-700">
+    <div className="w-full max-w-md px-6 py-8 flex flex-col gap-6 mx-auto animate-in fade-in duration-700">
       
-      {/* Trial Status Indicator (Railway Style) */}
-      <div className="flex justify-end w-full -mt-3 -mb-3">
-        <TrialStatusBox 
-          planTier={profile?.plan_tier || 'FREE'} 
-          trialEndsAt={profile?.trial_ends_at || null} 
-        />
-      </div>
+      {/* 1. Greeting */}
+      <DashboardGreeting userName={displayName} />
 
-      {/* Dynamic Welcome Header (Motion inside) */}
-      <DashboardGreeting userName={displayName} isConnected={isConnected} />
+      {/* 2. Status Header — The "Life" Indicator */}
+      <StatusHeader />
 
-      {/* Real-time Next Appointments Section (Motion inside) */}
+      {/* 3. Brain Selector — AI vs Menu (only when connected) */}
+      {isConnected && <BrainSelector />}
+
+      {/* 4. Upcoming Appointments */}
       <UpcomingAppointments initialAgenda={initialAgenda} initialIntegrated={isIntegrated} />
 
-      {/* Main Action Grid (Motion inside) */}
+      {/* 5. Quick Actions Grid (2x2) */}
       <QuickActions />
-
-
 
     </div>
   );

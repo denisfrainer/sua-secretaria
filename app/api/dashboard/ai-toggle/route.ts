@@ -11,7 +11,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { enabled } = await request.json();
+    const body = await request.json();
+    const { enabled, service_mode } = body;
 
     if (typeof enabled !== 'boolean') {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
@@ -29,11 +30,16 @@ export async function POST(request: Request) {
     }
 
     // 2. Update context_json
-    const updatedContext = {
+    const updatedContext: Record<string, any> = {
       ...(config.context_json as object),
       is_ai_enabled: enabled,
       updated_at: new Date().toISOString()
     };
+
+    // 3. Persist service_mode if provided ('ai' or 'menu')
+    if (service_mode && (service_mode === 'ai' || service_mode === 'menu')) {
+      updatedContext.service_mode = service_mode;
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from('business_config')
@@ -45,8 +51,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to update configuration' }, { status: 500 });
     }
 
-    console.log(`✅ [AI_TOGGLE] User ${user.id} toggled AI to ${enabled ? 'ON' : 'OFF'}`);
-    return NextResponse.json({ success: true, enabled });
+    console.log(`✅ [AI_TOGGLE] User ${user.id} toggled AI to ${enabled ? 'ON' : 'OFF'}${service_mode ? ` | mode: ${service_mode}` : ''}`);
+    return NextResponse.json({ success: true, enabled, service_mode: updatedContext.service_mode });
+
 
   } catch (error: any) {
     console.error('💥 [AI_TOGGLE] Exception:', error);

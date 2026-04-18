@@ -1253,8 +1253,19 @@ http.createServer((req: any, res: any) => {
                                 // We might want to continue, but usually, if the message isn't saved, AI will lack context.
                             }
 
+                            // --- ROUTING: Determine service_mode from business_config ---
+                            // Priority: context_json.service_mode > legacy instanceName check
+                            let configQuery = supabaseAdmin.from('business_config').select('context_json').eq('instance_name', instanceName);
+                            if (tenantId) configQuery = configQuery.eq('owner_id', tenantId);
+
+                            const { data: bConfig } = await configQuery.maybeSingle();
+                            const serviceMode = bConfig?.context_json?.service_mode || (instanceName === 'demo-menu' ? 'menu' : 'ai');
+
+                            console.log(`🧠 [ROUTER] service_mode resolved: "${serviceMode}" for instance: ${instanceName}`);
+
                             // --- BRANCH A: STATIC MENU ---
-                            if (instanceName === 'demo-menu') {
+                            if (serviceMode === 'menu') {
+
                                 console.log(`🚦 [ROUTER] Branch A: Static Menu acionado para ${clientNumber}`);
                                 const msgClean = clientMessage.trim().toLowerCase();
 
@@ -1290,16 +1301,13 @@ http.createServer((req: any, res: any) => {
                             }
 
                             // --- BRANCH B: AI AGENT ---
-                            // Dynamic Routing: Any instance that is NOT the static menu is routed to the AI Agent
-                            if (instanceName !== 'demo-menu') {
+                            // Dynamic Routing: service_mode is 'ai' (or default)
+                            if (serviceMode === 'ai') {
                                 console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
 
-                                // 1. FETCH INSTANCE CONFIG (Primary Truth)
-                                let configQuery = supabaseAdmin.from('business_config').select('context_json').eq('instance_name', instanceName);
-                                if (tenantId) configQuery = configQuery.eq('owner_id', tenantId);
-
-                                const { data: bConfig } = await configQuery.maybeSingle();
+                                // bConfig already fetched above; extract AI enabled flag
                                 const instanceEnabled = bConfig?.context_json?.is_ai_enabled; // true, false, or undefined
+
 
                                 // 2. FETCH GLOBAL SWITCH (Maintenance Mode)
                                 const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
