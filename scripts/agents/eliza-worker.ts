@@ -1108,36 +1108,38 @@ http.createServer((req: any, res: any) => {
                     // ==============================================================
                     // 🛡️ A TRAVA GOD TIER (SILENT HANDOFF & FOGO AMIGO)
                     // ==============================================================
-                    if (isFromMe || isOwner) {
+                    // 1. Admin Commands (Owner Only)
+                    if (isOwner) {
+                        const cmd = clientMessage.trim();
+                        if (cmd === '/pausar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
+                            console.log(`⏸️ [COMANDO] IA pausada manualmente pelo dono para ${clientNumber}.`);
+                            return;
+                        } else if (cmd === '/retomar') {
+                            await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false, status: 'organic_inbound' }).eq('phone', clientNumber);
+                            console.log(`▶️ [COMANDO] IA retomada manualmente pelo dono para ${clientNumber}.`);
+                            return;
+                        }
+                        // If not a command, allow it to pass through so Admin Mode in processLead can handle it.
+                    }
+
+                    // 2. Silent Handoff (Device Intervention)
+                    if (isFromMe) {
                         // Verifica se a mensagem foi enviada pelo próprio sistema (Eliza) via API
                         const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
 
                         if (isAPI) {
-                            // É a Eliza respondendo. Ignoramos para não criar loop.
-                            return;
+                            return; // É a Eliza respondendo. Ignoramos para não criar loop.
                         } else {
-                            // É VOCÊ (Denis/Humano) digitando diretamente no WhatsApp ou pelo OWNER_PHONE.
-                            const cmd = clientMessage.trim();
-
-                            if (cmd === '/pausar') {
-                                await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                                console.log(`⏸️[COMANDO] IA pausada manualmente para ${clientNumber}.`);
-                                return;
-                            } else if (cmd === '/retomar') {
-                                await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false, status: 'organic_inbound' }).eq('phone', clientNumber);
-                                console.log(`▶️[COMANDO] IA retomada manualmente para ${clientNumber}.`);
-                                return;
-                            }
-
-                            // SILENT HANDOFF: Se você digitou qualquer outra coisa, trava a IA para este lead permanentemente.
-                            console.log(`🛡️[FOGO AMIGO] Denis assumiu o controle via ${isOwner ? 'OWNER_PHONE' : 'DIRECT'}. Travando a IA para o lead ${clientNumber}.`);
+                            // Intervenção humana direta no aparelho
+                            console.log(`🛡️ [FOGO AMIGO] Intervenção humana no aparelho detectada. Travando a IA para o lead ${clientNumber}.`);
                             await supabaseAdmin.from('leads_lobo').update({
                                 needs_human: true,
                                 ai_paused: true,
                                 status: 'human_handling'
                             }).eq('phone', clientNumber);
 
-                            return; // Mata a execução do webhook aqui. A IA não vai nem ler o resto.
+                            return; // Mata a execução do webhook aqui.
                         }
                     }
 
