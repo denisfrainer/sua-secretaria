@@ -832,6 +832,10 @@ http.createServer((req: any, res: any) => {
 
                 const body = JSON.parse(bodyStr);
 
+                // 🎯 [WEBHOOK_RAW_ENTRY] TOP-LEVEL LOGGING
+                console.log(`\n📥 [WEBHOOK_RAW_ENTRY] Path: ${parsedUrl.pathname} | Search: ${parsedUrl.search}`);
+                console.log(`📦 [WEBHOOK_PAYLOAD]`, JSON.stringify(body, null, 2));
+
                 // 2. BULLETPROOF EVENT NORMALIZATION
                 //    Evolution v1: "MESSAGES_UPSERT", "CONNECTION_UPDATE"
                 //    Evolution v2: "messages.upsert", "connection.update"
@@ -988,19 +992,37 @@ http.createServer((req: any, res: any) => {
                 }
 
                 // --- 💬 MESSAGE PROCESSING ---
+                let dataObj: any = null;
 
-                let dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
-                if (!dataObj) return;
+                try {
+                    // 2.1 BULLETPROOF PAYLOAD EXTRACTION
+                    // Evolution v1: body.data is usually the message object
+                    // Evolution v2: body.data.messages is an array [0]
+                    if (Array.isArray(body.data)) {
+                        dataObj = body.data[0];
+                    } else if (body.data?.messages && Array.isArray(body.data.messages)) {
+                        dataObj = body.data.messages[0];
+                    } else {
+                        dataObj = body.data;
+                    }
 
-                const remoteJid = dataObj.key?.remoteJid || '';
-                if (remoteJid.endsWith('@g.us')) {
-                    console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
-                    return;
-                }
+                    if (!dataObj) {
+                        console.log(`⚠️ [ROUTER] Payload extraction failed: No data object found.`);
+                        return;
+                    }
 
-                if (!dataObj.key) return;
+                    if (!dataObj.key) {
+                        console.log(`⚠️ [ROUTER] Payload extraction failed: dataObj has no 'key' (Is this a status/presence only event?). Structure:`, JSON.stringify(dataObj).substring(0, 200));
+                        return;
+                    }
 
-                const isFromMe = dataObj.key.fromMe === true;
+                    const remoteJid = dataObj.key?.remoteJid || '';
+                    if (remoteJid.endsWith('@g.us')) {
+                        console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
+                        return;
+                    }
+
+                    const isFromMe = dataObj.key.fromMe === true;
 
                 // 🛡️ [TRAVA DE FOGO AMIGO] Optimized Self-Messaging Detection
                 // Drops any message originated from the bot itself (both from key.fromMe and API patterns)
@@ -1337,6 +1359,9 @@ http.createServer((req: any, res: any) => {
                             console.log(`🚀 [WEBHOOK SUCCESS] Lead ${clientNumber} ready for Worker: status=eliza_processing, ai_paused=false, needs_human=false.`);
                         }
                     }
+                } catch (extractionError: any) {
+                    console.error('❌ [WEBHOOK_EXTRACTION_ERROR]:', extractionError.message);
+                    console.error('📦 [FAULTY_PAYLOAD]:', JSON.stringify(body, null, 2));
                 }
             } catch (error) {
                 console.error('❌ [WEBHOOK CRASH]:', error);
