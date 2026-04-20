@@ -37,7 +37,9 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "scratch",
+    "scripts"
   ],
   "ts-node": {
     "esm": true,

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './lib/supabase/admin';
+import { supabaseAdmin } from '../lib/supabase/admin';
 
 async function checkProfiles() {
   const { data, error } = await supabaseAdmin
