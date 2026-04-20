@@ -41,7 +41,7 @@ export default function IntegrationsSettingsPage() {
 
   const handleGoogleAuth = () => {
     const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard/settings/integrations`;
-    window.location.href = `/api/auth/google?redirectTo=${encodeURIComponent(redirectTo)}`;
+    window.location.href = '/api/auth/google';
   };
 
   const handleRevokeGoogle = async () => {

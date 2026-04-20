@@ -257,7 +257,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
       return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
     };
 
-    const details = encodeURIComponent(`Agendamento realizado via Sua SecretarIA\nCliente: ${formData.name}\nWhatsApp: ${formData.phone}`);
+    const details = encodeURIComponent(`Agendamento realizado via Meatende.ai\nCliente: ${formData.name}\nWhatsApp: ${formData.phone}`);
     const summary = encodeURIComponent(`Agendamento: ${businessName}`);
     
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${summary}&dates=${formatDate(start)}/${formatDate(end)}&details=${details}`;
@@ -287,6 +287,9 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
                 <h1 className="text-xl font-bold text-gray-900 leading-tight">
                   {businessName}
                 </h1>
+                {profile.phone && (
+                  <p className="text-sm text-gray-500 mt-1 font-medium">{profile.phone}</p>
+                )}
               </div>
             </div>
 
@@ -580,7 +583,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
 
       <div className="text-center mt-12 text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center gap-3">
         <div className="w-8 h-px bg-gray-200" />
-        Desenvolvido por Sua SecretarIA
+        Desenvolvido por Meatende.ai
         <div className="w-8 h-px bg-gray-200" />
       </div>
 

@@ -1,28 +1,14 @@
-import { supabaseAdmin } from '@/lib/supabase/admin';
-import { notFound } from 'next/navigation';
-import SchedulingInterface from '@/components/scheduling/SchedulingInterface';
+import { redirect } from 'next/navigation';
 
 export default async function PublicSchedulePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const profileId = resolvedParams?.id;
 
   if (!profileId || profileId === 'undefined') {
-    notFound();
+    return null;
   }
   
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('*')
-    .eq('id', profileId)
-    .single();
-
-  if (!profile) {
-    notFound();
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col items-center justify-center p-4 md:p-8">
-      <SchedulingInterface profile={profile} />
-    </div>
-  );
+  // Permanent redirect to the new primary booking journey
+  redirect(`/booking/${profileId}`);
 }
+

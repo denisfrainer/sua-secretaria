@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
   // Standardizing 'now' to match the user's Brazil context even if server is UTC.
   const now = new Date(new Date().getTime() - (3 * 60 * 60 * 1000)); 
 
+  console.log('[BOOKING_FLOW] API hit. Fetching availability for profile:', profileId);
   console.log(`[API_AVAILABILITY] Fetching profile: [${profileId}] | Date: [${dateStr}] | isToday: ${isToday} | ServerTime: ${new Date().toISOString()} | BR_Time: ${now.toISOString()}`);
 
   try {
@@ -162,6 +163,8 @@ export async function GET(req: NextRequest) {
           },
         });
 
+        console.log('[BOOKING_FLOW] Google FreeBusy response status:', freeBusyRes.status);
+
         const busy = freeBusyRes.data.calendars?.primary?.busy || [];
         busyIntervals = busy.map((b: any) => ({
           start: b.start as string,
@@ -218,6 +221,7 @@ export async function GET(req: NextRequest) {
       console.log(`[ENGINE_DEBUG] Smart Scarcity Guardrail: ${initialCount} -> ${availableSlots.length} slots kept.`);
     }
 
+    console.log('[BOOKING_FLOW] Slots remaining after Smart Scarcity:', availableSlots.length);
     console.log(`[ENGINE_DEBUG] Final available slots:`, availableSlots);
     return NextResponse.json({ availableSlots });
 

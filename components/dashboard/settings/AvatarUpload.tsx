@@ -2,7 +2,6 @@
 
 import React, { useState, useRef } from 'react';
 import { Camera, Loader2, User } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 interface AvatarUploadProps {
   userId: string;
@@ -14,7 +13,6 @@ export function AvatarUpload({ userId, currentUrl, onUploadComplete }: AvatarUpl
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const supabase = createClient();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -26,42 +24,29 @@ export function AvatarUpload({ userId, currentUrl, onUploadComplete }: AvatarUpl
     setUploading(true);
 
     try {
-      console.log('[STORAGE_UPLOAD_START] Attempting to upload avatar for user:', userId);
+      console.log('[STORAGE_UPLOAD_START] Attempting to upload avatar via API route for user:', userId);
+      const startTime = Date.now();
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const formData = new FormData();
+      formData.append('file', file);
 
-      // 1. Upload to Supabase Storage
-      const { error: uploadError, data } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { 
-          upsert: true,
-          contentType: file.type 
-        });
+      const response = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        body: formData,
+      });
 
-      if (uploadError) {
-        console.error('[STORAGE_UPLOAD_ERROR] Supabase returned an error:', {
-          message: uploadError.message,
-          name: uploadError.name,
-          details: uploadError
-        });
-        throw uploadError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload photo');
       }
 
-      console.log('[STORAGE_UPLOAD_SUCCESS] File uploaded successfully:', data?.path);
+      const { publicUrl } = await response.json();
+      console.log(`[STORAGE_UPLOAD_SUCCESS] Uploaded via API route in ${Date.now() - startTime}ms. URL: ${publicUrl}`);
 
-      // 2. Get Public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      console.log('[STORAGE_UPLOAD_URL_GENERATED] Public URL:', publicUrl);
-      
       onUploadComplete(publicUrl);
     } catch (err: any) {
       console.error('[PROFILE_AVATAR_EXCEPTION] Execution halted during upload:', err);
-      alert('Erro ao fazer upload da imagem. Verifique as permissões do bucket "avatars".');
+      alert('Erro ao fazer upload da imagem. Tente novamente mais tarde.');
     } finally {
       setUploading(false);
     }
@@ -73,7 +58,7 @@ export function AvatarUpload({ userId, currentUrl, onUploadComplete }: AvatarUpl
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div 
+      <div
         onClick={triggerFileInput}
         className="group relative w-32 h-32 rounded-[2.5rem] bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer overflow-hidden hover:border-blue-400 hover:bg-blue-50/30 transition-all shadow-inner"
       >
@@ -93,15 +78,15 @@ export function AvatarUpload({ userId, currentUrl, onUploadComplete }: AvatarUpl
           )}
         </div>
       </div>
-      
-      <input 
-        type="file" 
+
+      <input
+        type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         accept="image/*"
         className="hidden"
       />
-      
+
       <div className="flex flex-col items-center gap-1">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Foto de Perfil</p>
         <p className="text-[9px] font-medium text-slate-400">JPG, PNG ou WebP</p>

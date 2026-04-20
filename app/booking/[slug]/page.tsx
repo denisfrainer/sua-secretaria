@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
-import PublicBookingUI from '@/components/scheduling/PublicBookingUI';
+import SchedulingInterface from '@/components/scheduling/SchedulingInterface';
 
 /**
  * UNIVERSAL SCHEDULING ROUTE
@@ -46,6 +46,25 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
     profile = profileById;
   }
 
+  // 3. FALLBACK: Check if it's a phone number (New Schema)
+  if (!profile) {
+    const potentialPhone = decodedSlug.replace(/\D/g, '');
+    if (potentialPhone.length >= 10) {
+      console.log(`[SLUG_RESOLVER] Falling back to Phone lookup for: ${potentialPhone}`);
+      const { data: profileByPhone } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('phone', potentialPhone)
+        .maybeSingle();
+        
+      profile = profileByPhone;
+    }
+  }
+
+  if (!profile) {
+    notFound();
+  }
+
   // 3. Fetch Business Config
   const { data: businessConfig } = await supabaseAdmin
     .from('business_config')
@@ -55,7 +74,9 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
 
   console.log(`[SLUG_RESOLVER] Resolved profile for: ${decodedSlug} -> ${profile.display_name || profile.full_name}`);
 
-      return (
-    <PublicBookingUI profile={profile} businessConfig={businessConfig} />
+  return (
+    <div className="min-h-screen bg-gray-50/50 flex flex-col items-center justify-center p-4 md:p-8">
+      <SchedulingInterface profile={profile} businessConfig={businessConfig} />
+    </div>
   );
 }

@@ -21,12 +21,14 @@ export default function QuickActions() {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('slug')
+          .select('slug, phone')
           .eq('id', session.user.id)
           .single();
 
         if (profile?.slug) {
           setSlug(profile.slug);
+        } else if (profile?.phone) {
+          setSlug(profile.phone);
         }
       }
     };
@@ -38,8 +40,8 @@ export default function QuickActions() {
 
     const baseUrl = window.location.origin;
     const bookingUrl = slug
-      ? `${baseUrl}/s/${slug}`
-      : `${baseUrl}/s/${userId}`;
+      ? `${baseUrl}/booking/${slug}`
+      : `${baseUrl}/booking/${userId}`;
 
     try {
       await navigator.clipboard.writeText(bookingUrl);
@@ -56,7 +58,7 @@ export default function QuickActions() {
       title: 'Agenda',
       icon: <Calendar className="w-5 h-5" />,
       colorClass: 'text-blue-600 bg-blue-50 ring-blue-100',
-      action: () => router.push('/dashboard/agenda'),
+      action: () => router.push('/dashboard'),
     },
     {
       title: 'Link de agendamento',
@@ -68,13 +70,13 @@ export default function QuickActions() {
       title: 'Agente',
       icon: <MessageSquare className="w-5 h-5" />,
       colorClass: 'text-indigo-600 bg-indigo-50 ring-indigo-100',
-      action: () => router.push('/dashboard/settings/whatsapp'),
+      action: () => router.push('/dashboard'),
     },
     {
       title: 'Robô de menu',
       icon: <Bot className="w-5 h-5" />,
       colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
-      action: () => router.push('/dashboard/settings/whatsapp'),
+      action: () => router.push('/dashboard'),
     },
     {
       title: 'Serviços',

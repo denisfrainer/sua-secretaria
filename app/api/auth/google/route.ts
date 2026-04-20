@@ -1,22 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const requestUrl = new URL(request.url);
+  const origin = request.nextUrl.origin;
   
-  // Generate a random state and raw nonce to prevent CSRF and replay attacks
+  // 1. Security tokens for both Auth (Login) and Integration flows
   const state = crypto.randomBytes(32).toString('hex');
-  const rawNonce = crypto.randomBytes(32).toString('base64url'); // Using base64url is recommended for nonces
+  const rawNonce = crypto.randomBytes(32).toString('base64url');
   
   // Supabase's signInWithIdToken hashes the incoming nonce.
   // We must pass the hashed nonce to Google so the ID token's claim matches the hash.
   const hashedNonce = crypto.createHash('sha256').update(rawNonce).digest('hex');
   
-  // Store state and RAW nonce in HTTP-only cookies
+  // Store security identifiers in HTTP-only cookies
   cookieStore.set('oauth_state', state, { 
     httpOnly: true, 
     secure: process.env.NODE_ENV === 'production', 
@@ -33,28 +34,31 @@ export async function GET(request: Request) {
     maxAge: 60 * 10 
   });
 
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    console.error('[GOOGLE_AUTH] Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID');
-    return NextResponse.redirect(new URL('/login?error=server_configuration', requestUrl.origin));
-  }
+  // 2. Initialize Native Google OAuth2 Client
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    `${origin}/api/auth/google/callback`
+  );
 
-  // Construct the redirect URI using a strict base URL to avoid Netlify deploy preview mismatches
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://suasecretaria.netlify.app';
-  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  // 3. Request broad scopes to support both Login and Calendar Integration
+  const scopes = [
+    'openid',
+    'email',
+    'profile',
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/calendar.freebusy'
+  ];
 
-  // Build the authorization URL
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    scope: 'openid email profile',
+  // 4. Generate URL with explicit offline access and consent
+  const authorizationUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline', // Mandatory for refresh_token
+    prompt: 'consent',     // Forces refresh_token delivery
+    scope: scopes,
     state: state,
     nonce: hashedNonce,
-    prompt: 'select_account',
   });
 
-  const authorizationUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-
+  console.log('🚀 [CUSTOM_OAUTH] Initiating native flow from origin:', origin);
   return NextResponse.redirect(authorizationUrl);
 }

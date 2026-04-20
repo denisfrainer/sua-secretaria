@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     if (supabaseAdmin) {
       const [configRes, profileRes] = await Promise.all([
         supabaseAdmin.from('business_config').select('*').eq('owner_id', user?.id).maybeSingle(),
-        supabaseAdmin.from('profiles').select('full_name, plan_tier, trial_ends_at').eq('id', user?.id).single()
+        supabaseAdmin.from('profiles').select('full_name, plan_tier, trial_ends_at, google_refresh_token').eq('id', user?.id).single()
       ]);
       
       businessConfig = configRes.data;

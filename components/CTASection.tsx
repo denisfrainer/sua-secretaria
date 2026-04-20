@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export function CTASection() {
   const t = useTranslations('CTASection');
@@ -17,12 +18,12 @@ export function CTASection() {
         <p className="text-lg sm:text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
           {t('description')}
         </p>
-        <a
-          href="#"
+        <Link
+          href="/login"
           className="flex w-full items-center justify-center text-center border border-[#00FF41] rounded-2xl bg-transparent font-mono text-[#00FF41] tracking-widest font-bold text-xl px-12 py-6 [text-shadow:0_0_8px_rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] hover:bg-[#00FF41]/10 hover:shadow-[0_0_20px_rgba(0,255,65,0.6)] hover:[text-shadow:0_0_12px_rgba(0,255,65,1)] transition-all duration-300 ease-out"
         >
           {t('button')}
-        </a>
+        </Link>
       </div>
     </section>
   );
