@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { MinimalistHeader } from '@/components/dashboard/MinimalistHeader';
 
 export default function BookingLinkPage() {
   const [slug, setSlug] = useState('');
@@ -102,17 +103,11 @@ export default function BookingLinkPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto flex flex-col gap-10 pb-24 px-4">
-
-      {/* STRIPE HEADER */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">
-          Link de Agendamento
-        </h1>
-        <p className="text-lg font-medium text-gray-500 leading-relaxed">
-          O endereço principal para suas clientes agendarem horários com você.
-        </p>
-      </div>
+    <div className="max-w-xl mx-auto flex flex-col gap-2 pb-24 px-4 overflow-x-hidden">
+      <MinimalistHeader title="Link de Agendamento" />
+      <p className="text-lg font-medium text-gray-500 leading-relaxed mb-8">
+        O endereço principal para suas clientes agendarem horários com você.
+      </p>
 
       {/* MAIN CARD: STRIPE STYLE */}
       <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-8 flex flex-col gap-8 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)]">

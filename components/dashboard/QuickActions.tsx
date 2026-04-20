@@ -39,9 +39,10 @@ export default function QuickActions() {
     if (!userId) return;
 
     const baseUrl = window.location.origin;
+    // Updated to ROOT level slug
     const bookingUrl = slug
-      ? `${baseUrl}/booking/${slug}`
-      : `${baseUrl}/booking/${userId}`;
+      ? `${baseUrl}/${slug}`
+      : `${baseUrl}/${userId}`;
 
     try {
       await navigator.clipboard.writeText(bookingUrl);
@@ -67,22 +68,22 @@ export default function QuickActions() {
       action: () => router.push('/dashboard/settings/booking-link'),
     },
     {
-      title: 'Agente',
+      title: 'Studio',
       icon: <MessageSquare className="w-5 h-5" />,
       colorClass: 'text-indigo-600 bg-indigo-50 ring-indigo-100',
-      action: () => router.push('/dashboard/settings'),
+      action: () => router.push('/dashboard/settings/studio'),
     },
     {
-      title: 'Robô de menu',
+      title: 'WhatsApp',
       icon: <Bot className="w-5 h-5" />,
       colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
-      action: () => router.push('/dashboard/settings'),
+      action: () => router.push('/dashboard/settings/whatsapp'),
     },
     {
-      title: 'Serviços',
+      title: 'Integrações',
       icon: <LinkIcon className="w-5 h-5" />,
       colorClass: 'text-orange-600 bg-orange-50 ring-orange-100',
-      action: () => router.push('/dashboard/settings/catalog'),
+      action: () => router.push('/dashboard/settings/integrations'),
     },
     {
       title: 'Configurações',
@@ -90,7 +91,6 @@ export default function QuickActions() {
       colorClass: 'text-emerald-600 bg-emerald-50 ring-emerald-100',
       action: () => router.push('/dashboard/settings'),
     },
-
   ];
 
   return (

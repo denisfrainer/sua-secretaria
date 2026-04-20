@@ -24,10 +24,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/dashboard?error=missing_client_id', requestUrl.origin));
   }
 
-  // 2. Dynamic Redirect URI (Kill Hardcoded Legacy Domains)
-  const baseUrl = process.env.NODE_ENV === 'development' 
-    ? requestUrl.origin 
-    : (process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin);
+  // STRICT URL RESOLUTION: Prevents Netlify Deploy Previews from hijacking the redirect URI
+  const baseUrl = process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : (process.env.NEXT_PUBLIC_SITE_URL || 'https://sua-secretaria.netlify.app');
 
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
   

@@ -44,6 +44,8 @@ function extractDbState(row: any): DbState | null {
   };
 }
 
+import { MinimalistHeader } from '@/components/dashboard/MinimalistHeader';
+
 export default function WhatsAppSettingsPage() {
   const [dbState, setDbState] = useState<DbState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,7 +157,8 @@ export default function WhatsAppSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32 font-sans bg-slate-50 min-h-screen -mx-6 px-6 -mt-8 pt-8">
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32 font-sans bg-slate-50 min-h-screen -mx-6 px-6 -mt-8 pt-8 overflow-x-hidden">
+      <MinimalistHeader title="WhatsApp & Agente" />
 
       {/* SECTION 1: THE SHARED CONNECTION CARD */}
       <WhatsAppConnectionCard />

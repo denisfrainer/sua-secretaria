@@ -1,24 +1,41 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// ⚡ RESERVED PATHS: Middleware will SKIP all authentication logic for routes NOT in this list.
+// Expanded to include common static files that might fall through to dynamic routes.
+const RESERVED_PATHS = [
+  '/dashboard', 
+  '/api', 
+  '/login', 
+  '/admin', 
+  '/auth', 
+  '/_next', 
+  '/assets',
+  '/favicon.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/manifest.json'
+];
+
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // 1. NEGATIVE MATCHER: Fast-track public routes
+  // If the path is NOT reserved AND is not the root landing page, skip middleware entirely.
+  const isReserved = RESERVED_PATHS.some(path => pathname.startsWith(path));
   
-  // 1. FAST PATH: Early return for public assets and public booking routes
-  // This bypasses ALL database/auth overhead for critical paths
-  if (
-    pathname.startsWith('/booking/') || 
-    pathname.startsWith('/api/') ||
-    pathname.includes('.') ||
-    pathname === '/'
-  ) {
-    return NextResponse.next()
+  if (!isReserved && pathname !== '/') {
+    // console.log(`[PERF] Middleware skipped for public route: ${pathname}`);
+    const response = NextResponse.next();
+    response.headers.set('x-middleware-skipped', 'true');
+    return response;
   }
 
   let supabaseResponse = NextResponse.next({
     request,
   })
 
+  // 2. AUTHENTICATION (Only runs for reserved paths / dashboard)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,7 +57,7 @@ export default async function middleware(request: NextRequest) {
     }
   )
 
-  // 2. LAZY AUTH: Only invoke getUser() for protected routes
+  // Lazy Auth Recovery
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
   const isLogin = pathname === '/login'
@@ -68,12 +85,8 @@ export default async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - auth/callback (auth api)
+     * Match all request paths except for static files with extensions.
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth/callback).*)',
+    '/((?!.*\\..*|auth/callback).*)',
   ],
 }

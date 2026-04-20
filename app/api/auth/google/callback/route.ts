@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   
-  const baseUrl = process.env.NODE_ENV === 'development' 
-    ? requestUrl.origin 
-    : (process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin);
+  // STRICT URL RESOLUTION: Prevents Netlify Deploy Previews from hijacking the redirect URI
+  const baseUrl = process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : (process.env.NEXT_PUBLIC_SITE_URL || 'https://sua-secretaria.netlify.app');
     
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
 

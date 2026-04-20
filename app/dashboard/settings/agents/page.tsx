@@ -14,6 +14,7 @@ import {
   Target
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { MinimalistHeader } from '@/components/dashboard/MinimalistHeader';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 import { AutoResizeTextarea } from '@/components/dashboard/settings/AutoResizeTextarea';
 import { OutreachManager } from '@/components/dashboard/OutreachManager';
@@ -117,8 +118,10 @@ function AgentsSettingsContent() {
         <OutreachManager />
       ) : (
         <>
-          {/* Header */}
-          <div className="flex flex-col gap-2">
+          <MinimalistHeader title="Personalidade da Eliza" />
+          
+          {/* Header Description */}
+          <div className="flex flex-col gap-2 -mt-6 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 border border-purple-500/10">
                 <Sparkles size={20} />

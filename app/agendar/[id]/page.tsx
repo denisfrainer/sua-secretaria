@@ -8,7 +8,7 @@ export default async function PublicSchedulePage({ params }: { params: Promise<{
     return null;
   }
   
-  // Permanent redirect to the new primary booking journey
-  redirect(`/booking/${profileId}`);
+  // Permanent redirect to the new primary booking journey at root level
+  redirect(`/${profileId}`);
 }
 

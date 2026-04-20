@@ -31,14 +31,22 @@ export default function SettingsLayout({
   const isCatalog = pathname.includes('/catalog');
   const isSettingsRoot = pathname === '/dashboard/settings';
   
-  // If we are in a sub-setting (e.g. /business), the back button goes to the Hub.
-  // If we are at the Hub, it goes back to the Dashboard.
-  const backLink = isSettingsRoot ? '/dashboard' : '/dashboard/settings';
+  // High-focus pages that implement their own MinimalistHeader
+  const isFocusPage = [
+    '/dashboard/settings/booking-link',
+    '/dashboard/settings/studio',
+    '/dashboard/settings/whatsapp',
+    '/dashboard/settings/catalog',
+    '/dashboard/settings/agents'
+  ].some(route => pathname.startsWith(route));
+  
+  // Back button always goes to the Dashboard as requested
+  const backLink = '/dashboard';
 
   return (
     <div className="w-full min-h-screen bg-[#fafafa] flex flex-col font-source antialiased">
       {/* Settings Header - Simplified silicon valley style */}
-      {!isCatalog && (
+      {!isCatalog && !isFocusPage && (
         <header className="h-20 w-full sticky top-0 bg-[#fafafa]/80 backdrop-blur-md z-40 border-b border-black/5">
           <div className="w-full max-w-3xl h-full px-6 mx-auto flex items-center gap-4">
             <Link 

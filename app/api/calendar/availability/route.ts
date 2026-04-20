@@ -108,7 +108,8 @@ export async function GET(req: NextRequest) {
     }
 
     const { open, close } = hours;
-    console.log(`[ENGINE_DEBUG] Working hours: ${open} to ${close}`);
+    const lunchInterval = operatingHours?.lunch_interval;
+    console.log(`[ENGINE_DEBUG] Working hours: ${open} to ${close} | Lunch: ${lunchInterval?.enabled ? `${lunchInterval.open}-${lunchInterval.close}` : 'Disabled'}`);
 
     // 3. Generate slots based on operating hours and duration
     const slots: string[] = [];
@@ -121,12 +122,32 @@ export async function GET(req: NextRequest) {
     const endTime = new Date(requestedDate);
     endTime.setHours(closeH, closeM, 0, 0);
 
+    // Lunch Interval Parsing
+    let lunchStart: Date | null = null;
+    let lunchEnd: Date | null = null;
+    if (lunchInterval?.enabled && lunchInterval.open && lunchInterval.close) {
+      const [lsh, lsm] = lunchInterval.open.split(':').map(Number);
+      const [leh, lem] = lunchInterval.close.split(':').map(Number);
+      lunchStart = new Date(requestedDate);
+      lunchStart.setHours(lsh, lsm, 0, 0);
+      lunchEnd = new Date(requestedDate);
+      lunchEnd.setHours(leh, lem, 0, 0);
+    }
+
     while (isBefore(currentSlot, endTime)) {
       const slotEnd = addMinutes(currentSlot, duration);
       
       // Slot must start and end within operating hours
       if (isBefore(slotEnd, endTime) || format(slotEnd, 'HH:mm') === format(endTime, 'HH:mm')) {
         
+        // --- Lunch Interval Check ---
+        let isInLunch = false;
+        if (lunchStart && lunchEnd) {
+          // A slot is "in lunch" if it overlaps with the lunch interval
+          // (SlotStart < LunchEnd) AND (LunchStart < SlotEnd)
+          isInLunch = isBefore(currentSlot, lunchEnd) && isBefore(lunchStart, slotEnd);
+        }
+
         // If today, block past slots
         let isPast = false;
         if (isToday) {
@@ -134,7 +155,7 @@ export async function GET(req: NextRequest) {
           isPast = isBefore(currentSlot, now);
         }
 
-        if (!isPast) {
+        if (!isPast && !isInLunch) {
           slots.push(format(currentSlot, 'HH:mm'));
         }
       }

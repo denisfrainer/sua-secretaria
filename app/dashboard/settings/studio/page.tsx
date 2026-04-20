@@ -48,6 +48,7 @@ interface BusinessConfig {
       weekdays: { open: string; close: string; is_closed: boolean };
       saturday: { open: string; close: string; is_closed: boolean };
       sunday: { open: string; close: string; is_closed: boolean };
+      lunch_interval: { open: string; close: string; enabled: boolean };
       observations: string;
     };
     services: Service[];
@@ -83,6 +84,8 @@ const itemVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
+
+import { MinimalistHeader } from '@/components/dashboard/MinimalistHeader';
 
 export default function BusinessSettingsPage() {
   const supabase = createClient();
@@ -123,6 +126,7 @@ export default function BusinessSettingsPage() {
               weekdays: { open: "09:00", close: "18:00", is_closed: false },
               saturday: { open: "09:00", close: "13:00", is_closed: false },
               sunday: { open: "00:00", close: "00:00", is_closed: true },
+              lunch_interval: { open: "12:00", close: "13:00", enabled: false },
               observations: ""
             },
             services: [],
@@ -174,6 +178,20 @@ export default function BusinessSettingsPage() {
         operating_hours: {
           ...(config.context_json?.operating_hours || {}),
           [day]: { ...(config.context_json?.operating_hours?.[day] || {}), [field]: value }
+        }
+      }
+    });
+  };
+
+  const updateLunchInterval = (field: 'open' | 'close' | 'enabled', value: any) => {
+    if (!config) return;
+    setConfig({
+      ...config,
+      context_json: {
+        ...config.context_json,
+        operating_hours: {
+          ...(config.context_json?.operating_hours || {}),
+          lunch_interval: { ...(config.context_json?.operating_hours?.lunch_interval || { open: '12:00', close: '13:00', enabled: false }), [field]: value }
         }
       }
     });
@@ -315,8 +333,10 @@ export default function BusinessSettingsPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col gap-12 pb-32"
+      className="flex flex-col gap-2 pb-32 overflow-x-hidden"
     >
+      <MinimalistHeader title="Studio & Perfil" />
+      <div className="h-4" /> {/* Spacer */}
           {/* SECTION 1: STUDIO INFO */}
       <motion.section variants={itemVariants} className="flex flex-col gap-6">
         <div className="flex items-center gap-3 border-b border-black/5 pb-3">
@@ -390,6 +410,67 @@ export default function BusinessSettingsPage() {
           <OperatingHoursRow label="Segunda a Sexta" data={config?.context_json?.operating_hours?.weekdays} onChange={(f, v) => updateOperatingHours('weekdays', f, v)} />
           <OperatingHoursRow label="Sábados" data={config?.context_json?.operating_hours?.saturday} onChange={(f, v) => updateOperatingHours('saturday', f, v)} />
           <OperatingHoursRow label="Domingos" data={config?.context_json?.operating_hours?.sunday} onChange={(f, v) => updateOperatingHours('sunday', f, v)} />
+          
+          {/* LUNCH INTERVAL CARD */}
+          <div className={`bg-white rounded-3xl p-6 shadow-sm border-2 transition-all ${config?.context_json?.operating_hours?.lunch_interval?.enabled ? 'border-blue-600/20 bg-blue-50/5' : 'border-black/5'} flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full mt-4`}>
+            <div className="flex flex-col gap-1">
+              <span className="text-base font-bold text-gray-900">Intervalo de Almoço</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                {config?.context_json?.operating_hours?.lunch_interval?.enabled 
+                  ? `${config?.context_json?.operating_hours?.lunch_interval?.open} — ${config?.context_json?.operating_hours?.lunch_interval?.close}` 
+                  : 'Desativado'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
+              <div className="flex items-center gap-3 sm:pr-6 sm:border-r border-black/5">
+                <span className="text-xs font-black text-gray-300 uppercase tracking-widest">Ativar</span>
+                <button
+                  type="button"
+                  onClick={() => updateLunchInterval('enabled', !config?.context_json?.operating_hours?.lunch_interval?.enabled)}
+                  className={`
+                    relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none
+                    ${config?.context_json?.operating_hours?.lunch_interval?.enabled ? 'bg-blue-600' : 'bg-gray-200'}
+                  `}
+                >
+                  <div
+                    className={`
+                      absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200
+                      ${config?.context_json?.operating_hours?.lunch_interval?.enabled ? 'translate-x-5' : 'translate-x-0'}
+                    `}
+                  />
+                </button>
+              </div>
+
+              <div className={`flex items-center gap-1.5 transition-opacity duration-200 ${!config?.context_json?.operating_hours?.lunch_interval?.enabled ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+                <select
+                  value={config?.context_json?.operating_hours?.lunch_interval?.open || '12:00'}
+                  onChange={(e) => updateLunchInterval('open', e.target.value)}
+                  className="bg-gray-50 border border-black/5 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 outline-none cursor-pointer focus:border-blue-600/20"
+                >
+                  {Array.from({ length: 48 }, (_, i) => {
+                    const hours = Math.floor(i / 2);
+                    const minutes = i % 2 === 0 ? '00' : '30';
+                    const time = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                    return <option key={time} value={time}>{time}</option>;
+                  })}
+                </select>
+                <span className="text-gray-300 font-bold text-xs">até</span>
+                <select
+                  value={config?.context_json?.operating_hours?.lunch_interval?.close || '13:00'}
+                  onChange={(e) => updateLunchInterval('close', e.target.value)}
+                  className="bg-gray-50 border border-black/5 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 outline-none cursor-pointer focus:border-blue-600/20"
+                >
+                  {Array.from({ length: 48 }, (_, i) => {
+                    const hours = Math.floor(i / 2);
+                    const minutes = i % 2 === 0 ? '00' : '30';
+                    const time = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                    return <option key={time} value={time}>{time}</option>;
+                  })}
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.section>
 

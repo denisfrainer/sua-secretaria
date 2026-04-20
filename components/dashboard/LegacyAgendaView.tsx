@@ -27,6 +27,8 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { MinimalistHeader } from './MinimalistHeader';
+
 interface Appointment {
   id: string;
   client_name: string;
@@ -89,29 +91,12 @@ export function LegacyAgendaView({ initialAppointments }: LegacyAgendaViewProps)
       
       {/* 1. HEADER SECTION */}
       <div className="w-full max-w-lg mx-auto px-6 pt-6">
-        {/* Standard Back Button */}
-        <Link 
-          href="/dashboard"
-          className="w-10 h-10 rounded-xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-colors mb-6"
-        >
-          <ArrowLeft size={18} className="text-gray-900" />
-        </Link>
+        <MinimalistHeader title="Agenda" />
 
-        {/* Title & Date */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex flex-col">
-            <h1 className="text-4xl font-black text-[#1a2b4b] tracking-tight">Agenda</h1>
-            <p className="text-lg font-bold text-[#7c8db5] mt-1">
-              {formatDateLabel(selectedDate)}
-            </p>
-          </div>
-          <Link 
-            href="/dashboard/settings"
-            className="w-12 h-12 rounded-2xl bg-white shadow-md border border-black/5 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <Settings size={22} />
-          </Link>
-        </div>
+        {/* Date Label */}
+        <p className="text-lg font-bold text-[#7c8db5] mb-8">
+          {formatDateLabel(selectedDate)}
+        </p>
 
         {/* HOJE / AMANHÃ Toggles */}
         <div className="flex gap-4 mb-10">

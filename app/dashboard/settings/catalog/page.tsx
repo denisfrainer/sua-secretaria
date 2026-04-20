@@ -51,6 +51,8 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
+import { MinimalistHeader } from '@/components/dashboard/MinimalistHeader';
+
 export default function CatalogPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -199,7 +201,7 @@ export default function CatalogPage() {
           <Scissors size={32} className="text-gray-300" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight">Cofiguração Necessária</h2>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight">Configuração Necessária</h2>
           <p className="text-sm font-medium text-gray-500 max-w-xs mx-auto">
             Defina o nome da sua empresa nas configurações básicas antes de gerenciar seus serviços.
           </p>
@@ -219,18 +221,13 @@ export default function CatalogPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col gap-8 pb-32"
+      className="flex flex-col gap-2 pb-32 overflow-x-hidden"
     >
+      <MinimalistHeader title="Catálogo de Serviços" />
+      
       {/* Header Section */}
-      <header className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="w-10 h-10 rounded-xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft size={18} className="text-gray-900" />
-          </button>
-          
+      <header className="flex flex-col gap-6 mt-4">
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-2 px-4 py-2 bg-white shadow-sm border border-black/5 rounded-2xl">
             <LayoutGrid size={14} className="text-blue-600" />
             <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
@@ -240,7 +237,6 @@ export default function CatalogPage() {
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-gray-950 tracking-tight">Catálogo de Serviços</h1>
           <p className="text-base font-medium text-gray-500">Gerencie os procedimentos e valores do seu negócio.</p>
         </div>
 
