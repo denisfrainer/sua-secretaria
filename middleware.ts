@@ -2,6 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  
+  // 1. FAST PATH: Early return for public assets and public booking routes
+  // This bypasses ALL database/auth overhead for critical paths
+  if (
+    pathname.startsWith('/booking/') || 
+    pathname.startsWith('/api/') ||
+    pathname.includes('.') ||
+    pathname === '/'
+  ) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -27,29 +40,26 @@ export default async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid using getUser() in middleware if performance is a priority, 
-  // but as per your request and official SSR guide for session refresh, we use it here.
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
-  
-  // Route Protection Logic
+  // 2. LAZY AUTH: Only invoke getUser() for protected routes
   const isDashboard = pathname.startsWith('/dashboard')
-  const isLogin = pathname.startsWith('/login')
-  const isAuthCallback = pathname.includes('/auth/callback')
+  const isAdmin = pathname.startsWith('/admin')
+  const isLogin = pathname === '/login'
 
-  if (isDashboard && !user && !isAuthCallback) {
-    // Redirect to login if accessing dashboard without session
-    const url = request.nextUrl.clone()
-    url.searchParams.set('clear_session', 'true')
-    return NextResponse.redirect(url)
-  }
+  if (isDashboard || isAdmin || isLogin) {
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (isLogin && user) {
-    // Redirect to dashboard if already logged in
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    if ((isDashboard || isAdmin) && !user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('clear_session', 'true')
+      return NextResponse.redirect(url)
+    }
+
+    if (isLogin && user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
@@ -57,9 +67,13 @@ export default async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 1. Skip all internal paths (_next, _vercel)
-    // 2. Skip all files with extensions (static assets, PWA manifest, sw.js)
-    // 3. Skip auth callback API
-    '/((?!api|_next|_vercel|auth/callback|.*\\..*).*)'
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - auth/callback (auth api)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback).*)',
   ],
 }

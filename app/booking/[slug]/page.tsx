@@ -22,17 +22,20 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
     return <div className="p-8 text-center text-red-500 font-bold">Erro: Conexão com o banco de dados falhou. Verifique as chaves administrativas.</div>;
   }
 
+  console.time(`[SSR_RESOLVER] ${decodedSlug} total`);
+  console.time(`[SSR_RESOLVER] ${decodedSlug} profile`);
   let { data: profile, error: slugError } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('slug', decodedSlug)
     .maybeSingle();
+  console.timeEnd(`[SSR_RESOLVER] ${decodedSlug} profile`);
 
   if (slugError) {
     console.error('[SLUG_RESOLVER] DB Error (Slug):', slugError.message);
   }
 
-  // 2. FALLBACK: Check if slug is a valid UUID (Legacy ID support)
+  // 2. FALLBACKS (UUID, Phone)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   
   if (!profile && uuidRegex.test(decodedSlug)) {
@@ -46,7 +49,6 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
     profile = profileById;
   }
 
-  // 3. FALLBACK: Check if it's a phone number (New Schema)
   if (!profile) {
     const potentialPhone = decodedSlug.replace(/\D/g, '');
     if (potentialPhone.length >= 10) {
@@ -62,15 +64,19 @@ export default async function SlugSchedulePage({ params }: { params: Promise<{ s
   }
 
   if (!profile) {
+    console.timeEnd(`[SSR_RESOLVER] ${decodedSlug} total`);
     notFound();
   }
 
   // 3. Fetch Business Config
+  console.time(`[SSR_RESOLVER] ${decodedSlug} config`);
   const { data: businessConfig } = await supabaseAdmin
     .from('business_config')
     .select('*')
     .eq('owner_id', profile.id)
     .maybeSingle();
+  console.timeEnd(`[SSR_RESOLVER] ${decodedSlug} config`);
+  console.timeEnd(`[SSR_RESOLVER] ${decodedSlug} total`);
 
   console.log(`[SLUG_RESOLVER] Resolved profile for: ${decodedSlug} -> ${profile.display_name || profile.full_name}`);
 

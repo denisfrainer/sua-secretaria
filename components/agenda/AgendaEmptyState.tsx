@@ -9,22 +9,8 @@ export function AgendaEmptyState() {
   const supabase = createClient();
 
   const handleConnectCalendar = async () => {
-    console.log('🔄 [OAUTH] Triggering Google Calendar OAuth flow...');
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        scopes: 'openid email profile https://www.googleapis.com/auth/calendar',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/agenda` 
-      }
-    });
-
-    if (error) {
-      console.error('❌ [OAUTH] Error during sign-in:', error.message);
-    }
+    console.log('🔄 [OAUTH] Redirecting to native Google OAuth flow...');
+    window.location.href = '/api/auth/google/login';
   };
 
   return (

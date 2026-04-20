@@ -1,605 +1,364 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  CreditCard, 
-  ChevronLeft, 
-  ChevronRight,
-  User,
-  MessageCircle,
-  CheckCircle2,
-  ArrowRight,
-  Loader2,
-  ChevronDown,
-  Check
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   format, 
-  addMonths, 
-  subMonths, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  isSameMonth, 
-  isSameDay, 
   addDays, 
-  isBefore, 
-  startOfDay 
+  startOfDay, 
+  isSameDay,
+  isAfter,
+  parseISO
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { 
+  Check, 
+  Loader2, 
+  Calendar as CalendarIcon, 
+  Clock, 
+  User, 
+  MessageSquare,
+  ArrowRight
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
 
 interface SchedulingInterfaceProps {
   profile: any;
   businessConfig?: any;
 }
 
-type BookingStep = 'calendar' | 'time' | 'form' | 'success';
+type Step = 'select' | 'form' | 'success';
 
 export default function SchedulingInterface({ profile, businessConfig }: SchedulingInterfaceProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [step, setStep] = useState<BookingStep>('calendar');
+  // --- State ---
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [step, setStep] = useState<Step>('select');
   const [isBooking, setIsBooking] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
-    phone: ''
+    phone: '',
   });
-  
-  const services = businessConfig?.context_json?.services || [];
-  const activeServices = services.filter((s: any) => s.status === 'active');
-  
-  const [selectedService, setSelectedService] = useState<any>(activeServices[0] || { 
-    name: 'Consultoria Especializada', 
-    price: 150, 
-    duration: 45 
-  });
-  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
-  const handleServiceChange = (service: any) => {
-    setSelectedService(service);
-    setIsSelectorOpen(false);
-    console.log('[SCHEDULING_UI] Service changed by user:', { 
-      id: service.id, 
-      name: service.name, 
-      price: service.price 
-    });
-  };
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const businessName = profile.display_name || profile.full_name || 'Nossa Empresa';
+  // --- Date Generation ---
+  const dates = Array.from({ length: 30 }).map((_, i) => addDays(startOfDay(new Date()), i));
 
-  // Fetch Available Slots
+  // --- Logic: Fetch Availability ---
   useEffect(() => {
-    async function fetchSlots() {
-      if (!selectedDate) return;
-
+    async function fetchAvailability() {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      console.log('[SCHEDULING_UI] Fetching slots for date:', formattedDate);
+      console.log(`[UI_SCHEDULING] Fetching slots for date: ${formattedDate}`);
       
-      setIsLoadingSlots(true);
+      setLoadingSlots(true);
+      setSelectedSlot(null); // Reset slot when date changes
+      
       try {
-        const response = await fetch(`/api/calendar/availability?profileId=${profile.id}&date=${formattedDate}&duration=${selectedService.duration}`);
+        const response = await fetch(`/api/calendar/availability?profileId=${profile.id}&date=${formattedDate}`);
         const data = await response.json();
         
-        if (data.availableSlots) {
-          console.log('[SCHEDULING_UI] Received slots:', data.availableSlots);
-          setAvailableSlots(data.availableSlots);
-        } else {
-          setAvailableSlots([]);
-        }
+        const slots = data.availableSlots || [];
+        console.log(`[UI_SCHEDULING] API returned ${slots.length} slots.`);
+        setAvailableSlots(slots);
       } catch (error) {
-        console.error('[SCHEDULING_UI] Error fetching slots:', error);
+        console.error('[UI_SCHEDULING] Fetch error:', error);
         setAvailableSlots([]);
       } finally {
-        setIsLoadingSlots(false);
+        setLoadingSlots(false);
       }
     }
 
-    fetchSlots();
-  }, [selectedDate, profile.id, selectedService.duration]);
+    fetchAvailability();
+  }, [selectedDate, profile.id]);
 
-  // Calendar Helpers
-  const renderHeader = () => {
-    return (
-      <div className="flex items-center justify-between px-2 mb-6">
-        <h2 className="text-lg font-bold text-gray-900 capitalize">
-          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-        </h2>
-        <div className="flex gap-1">
-          <button 
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <ChevronLeft size={20} className="text-gray-600" />
-          </button>
-          <button 
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <ChevronRight size={20} className="text-gray-600" />
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderDays = () => {
-    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    return (
-      <div className="grid grid-cols-7 mb-2">
-        {days.map((day, i) => (
-          <div key={i} className="text-center text-[10px] font-black uppercase tracking-widest text-gray-400">
-            {day}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderCells = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-    const calendarRows = [];
-    let days = [];
-    let day = startDate;
-    let formattedDate = "";
-
-    const today = startOfDay(new Date());
-
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        formattedDate = format(day, "d");
-        const cloneDay = day;
-        const isDisabled = !isSameMonth(day, monthStart) || isBefore(day, today);
-        const isSelected = selectedDate && isSameDay(day, selectedDate);
-
-        days.push(
-          <button
-            key={day.toString()}
-            disabled={isDisabled}
-            onClick={() => {
-              setSelectedDate(cloneDay);
-              setStep('calendar'); // Just ensure we are on calendar step to show times
-            }}
-            className={`
-              relative w-10 h-10 mx-auto flex items-center justify-center text-sm font-semibold transition-all rounded-full aspect-square
-              ${isDisabled ? 'text-gray-200 cursor-default' : 'hover:bg-blue-50 hover:text-blue-600 cursor-pointer'}
-              ${isSelected ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white shadow-xl shadow-blue-500/20 scale-110' : 'text-gray-700'}
-            `}
-          >
-            {formattedDate}
-            {isSelected && (
-              <motion.div 
-                layoutId="activeDay"
-                className="absolute inset-0 border-2 border-blue-600 rounded-full"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-          </button>
-        );
-        day = addDays(day, 1);
-      }
-      calendarRows.push(
-        <div className="grid grid-cols-7 gap-1" key={day.toString()}>
-          {days}
-        </div>
-      );
-      days = [];
-    }
-    return <div className="flex flex-col gap-1">{calendarRows}</div>;
-  };
-
+  // --- Logic: Submit Booking ---
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedTime) return;
+    if (!selectedDate || !selectedSlot) return;
 
+    const payload = {
+      profileId: profile.id,
+      date: format(selectedDate, 'yyyy-MM-dd'),
+      time: selectedSlot,
+      clientName: formData.name,
+      clientPhone: formData.phone,
+    };
+
+    console.log('[UI_SCHEDULING] Executing booking payload:', payload);
     setIsBooking(true);
+
     try {
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      
       const response = await fetch('/api/calendar/book', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          profileId: profile.id,
-          date: formattedDate,
-          time: selectedTime,
-          clientName: formData.name,
-          clientPhone: formData.phone,
-          serviceName: selectedService.name
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao agendar horário.');
-      }
-
+      if (!response.ok) throw new Error('Falha no agendamento');
+      
       setStep('success');
-    } catch (error: any) {
-      console.error('[SCHEDULING_UI] Booking error:', error);
-      alert(error.message || 'Ocorreu um erro ao realizar o agendamento. Tente novamente.');
+    } catch (error) {
+      console.error('[UI_SCHEDULING] Booking error:', error);
+      alert('Erro ao realizar agendamento. Tente novamente.');
     } finally {
       setIsBooking(false);
     }
   };
 
-  const resetBooking = () => {
-    setSelectedDate(null);
-    setSelectedTime(null);
-    setStep('calendar');
-    setFormData({ name: '', phone: '' });
-  };
+  // --- UI Components ---
+  
+  const renderDateSelector = () => (
+    <div className="w-full mb-10">
+      <div className="flex items-center justify-between mb-4 px-2">
+        <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">
+          {format(selectedDate, 'MMMM yyyy', { locale: ptBR })}
+        </h2>
+      </div>
+      
+      <div 
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {dates.map((date) => {
+          const isSelected = isSameDay(date, selectedDate);
+          return (
+            <button
+              key={date.toISOString()}
+              onClick={() => setSelectedDate(date)}
+              className={`
+                flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center rounded-2xl border-2 transition-all snap-center
+                ${isSelected 
+                  ? 'bg-black border-black text-white shadow-lg' 
+                  : 'bg-white border-gray-100 text-gray-500 hover:border-gray-300'
+                }
+              `}
+            >
+              <span className="text-[10px] font-black uppercase tracking-tighter mb-1 opacity-70">
+                {format(date, 'eee', { locale: ptBR })}
+              </span>
+              <span className="text-xl font-black">
+                {format(date, 'd')}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
-  const getGoogleCalendarUrl = () => {
-    if (!selectedDate || !selectedTime) return '';
-    
-    const [hours, minutes] = selectedTime.split(':').map(Number);
-    const start = new Date(selectedDate);
-    start.setHours(hours, minutes, 0);
-    
-    const end = new Date(start);
-    end.setMinutes(end.getMinutes() + (selectedService.duration || 45));
-    
-    const formatDate = (date: Date) => {
-      return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
-    };
+  const renderSlotList = () => (
+    <div className="w-full flex-1 flex flex-col gap-3">
+      <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-2 px-2">
+        Horários Disponíveis
+      </h3>
+      
+      {loadingSlots ? (
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-14 w-full bg-gray-50 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      ) : availableSlots.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {availableSlots.map((slot) => {
+            const isSelected = selectedSlot === slot;
+            return (
+              <button
+                key={slot}
+                onClick={() => setSelectedSlot(slot)}
+                className={`
+                  w-full h-14 px-6 flex items-center justify-between rounded-xl border-2 transition-all
+                  ${isSelected 
+                    ? 'bg-gray-100 border-black text-black' 
+                    : 'bg-white border-gray-100 text-gray-700 hover:border-gray-200'
+                  }
+                `}
+              >
+                <span className="text-base font-black">{slot}</span>
+                {isSelected && <Check size={20} className="text-black" />}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="w-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-3xl">
+          <Clock size={24} className="text-gray-300 mb-2" />
+          <p className="text-sm font-bold text-gray-300 uppercase tracking-widest">Sem horários para hoje</p>
+        </div>
+      )}
+    </div>
+  );
 
-    const details = encodeURIComponent(`Agendamento realizado via Meatende.ai\nCliente: ${formData.name}\nWhatsApp: ${formData.phone}`);
-    const summary = encodeURIComponent(`Agendamento: ${businessName}`);
-    
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${summary}&dates=${formatDate(start)}/${formatDate(end)}&details=${details}`;
-  };
+  const renderForm = () => (
+    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mb-8">
+        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Finalizar Agendamento</h2>
+        <p className="text-sm font-medium text-gray-500 mt-1">
+          {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedSlot}
+        </p>
+      </div>
 
-  console.log('[SCHEDULING_UI] Rendering Profile Header:', { name: businessName, hasAvatar: !!profile.avatar_url });
-
-  return (
-    <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-gray-100 overflow-hidden flex flex-col md:flex-row">
-        
-        {/* Left Column: Business Info */}
-        <div className="w-full md:w-[320px] p-8 md:p-10 bg-gray-50/50 border-r border-gray-100">
-          <div className="flex flex-col items-start text-left w-full">
-            {/* Standard Profile Header */}
-            <div className="flex flex-row items-center gap-4 mb-8 w-full">
-              <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xl md:text-2xl font-black">
-                    {businessName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                  {businessName}
-                </h1>
-                {profile.phone && (
-                  <p className="text-sm text-gray-500 mt-1 font-medium">{profile.phone}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Service & Details Block */}
-            <div className="flex flex-col gap-6 w-full">
-               {activeServices.length > 1 ? (
-                 <div className="relative w-full">
-                   <button 
-                     type="button"
-                     onClick={() => setIsSelectorOpen(!isSelectorOpen)}
-                     className="w-full text-left group p-4 rounded-xl bg-white md:bg-transparent md:p-3 md:-ml-3 md:rounded-2xl hover:bg-white hover:shadow-sm transition-all flex items-center justify-between border border-gray-100 md:border-transparent hover:border-gray-100"
-                   >
-                     <div className="flex flex-col gap-0.5">
-                       <h2 className="text-base md:text-lg font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
-                         {selectedService.name}
-                       </h2>
-                     </div>
-                     <ChevronDown className={`text-gray-300 transition-transform duration-300 ${isSelectorOpen ? 'rotate-180' : ''}`} size={18} />
-                   </button>
-
-                   <AnimatePresence>
-                     {isSelectorOpen && (
-                       <motion.div 
-                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                         className="absolute top-full left-[-12px] w-[calc(100%+24px)] mt-2 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[60] py-2"
-                       >
-                         {activeServices.map((srv: any) => (
-                           <button
-                             key={srv.id}
-                             type="button"
-                             onClick={() => handleServiceChange(srv)}
-                             className={`w-full p-4 text-left flex items-center justify-between hover:bg-blue-50/50 transition-colors group ${selectedService.id === srv.id ? 'bg-blue-50/30' : ''}`}
-                           >
-                             <div className="flex flex-col">
-                               <span className={`font-bold text-sm ${selectedService.id === srv.id ? 'text-blue-600' : 'text-gray-700'}`}>
-                                 {srv.name}
-                               </span>
-                               <span className="text-xs text-gray-400 font-medium">
-                                 {srv.duration} min • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(srv.price)}
-                               </span>
-                             </div>
-                             {selectedService.id === srv.id && (
-                               <Check size={16} className="text-blue-600" />
-                             )}
-                           </button>
-                         ))}
-                       </motion.div>
-                     )}
-                   </AnimatePresence>
-                 </div>
-               ) : (
-                 <div className="flex flex-col gap-2 w-full">
-                   <h2 className="text-lg font-bold text-gray-600">
-                     {selectedService.name}
-                   </h2>
-                 </div>
-               )}
-            </div>
- 
-             {/* Details Tags */}
-              <div className="flex flex-col gap-3 w-full">
-                <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                    <Clock size={16} />
-                  </div>
-                  <span>{selectedService.duration} min</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-500 font-medium text-base">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                    <CreditCard size={16} />
-                  </div>
-                  <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedService.price)}</span>
-                </div>
-              </div>
-
-            {/* Step Indicator (Desktop) */}
-            <div className="hidden md:flex flex-col gap-4 mt-8 w-full border-t border-gray-100 pt-8">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Progresso</p>
-              <div className="flex flex-col gap-3">
-                <div className={`flex items-center gap-3 text-sm font-bold transition-colors ${step === 'calendar' ? 'text-blue-600' : 'text-gray-400'}`}>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${step === 'calendar' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>1</div>
-                  Data e hora
-                </div>
-                <div className={`flex items-center gap-3 text-sm font-bold transition-colors ${step === 'form' ? 'text-blue-600' : 'text-gray-400'}`}>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${step === 'form' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>2</div>
-                  Seus dados
-                </div>
-              </div>
-            </div>
-          </div>
+      <form onSubmit={handleBooking} className="flex flex-col gap-6">
+        <div className="space-y-2">
+          <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 px-1">Seu Nome</label>
+          <input 
+            required
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            className="w-full h-14 px-5 bg-white border-2 border-gray-100 rounded-xl focus:border-black transition-all outline-none text-base font-bold shadow-sm"
+            placeholder="Ex: João Silva"
+          />
         </div>
 
-        {/* Right Column: Interaction Flow */}
-        <div className="flex-1 p-8 md:p-10 min-h-[500px] flex flex-col">
-          <AnimatePresence mode="wait">
-            {step === 'calendar' && (
-              <motion.div 
-                key="calendar-step"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="flex flex-col h-full"
-              >
-                <hr className="md:hidden border-gray-100 my-8 w-full" />
+        <div className="space-y-2">
+          <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 px-1">Seu WhatsApp</label>
+          <input 
+            required
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            className="w-full h-14 px-5 bg-white border-2 border-gray-100 rounded-xl focus:border-black transition-all outline-none text-base font-bold shadow-sm"
+            placeholder="(00) 00000-0000"
+          />
+        </div>
 
-                <h3 className="text-2xl font-black text-gray-950 tracking-tight mb-8">
-                  Selecione o melhor horário
-                </h3>
+        <div className="pt-4 flex flex-col gap-3">
+          <button
+            type="submit"
+            disabled={isBooking}
+            className="w-full h-16 bg-black text-white rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            {isBooking ? <Loader2 className="animate-spin" /> : 'Confirmar Agendamento'}
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setStep('select')}
+            className="w-full h-12 text-gray-400 font-bold text-sm uppercase tracking-widest hover:text-black transition-colors"
+          >
+            Voltar
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 
-                <div className="flex flex-col lg:flex-row gap-10">
-                  {/* Calendar View */}
-                  <div className="flex-1 max-w-sm">
-                    {renderHeader()}
-                    {renderDays()}
-                    {renderCells()}
-                  </div>
-
-                  {/* Time Slots */}
-                  <div className="w-full lg:w-48 flex flex-col animate-in fade-in slide-in-from-right-4 duration-500">
-                    {selectedDate ? (
-                      <>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">
-                          {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                        </p>
-                        
-                        <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                          {isLoadingSlots ? (
-                            // Pulsing Skeleton Loader
-                            Array.from({ length: 6 }).map((_, i) => (
-                              <div 
-                                key={`skeleton-${i}`}
-                                className="h-[46px] w-full bg-gray-100 rounded-xl animate-pulse"
-                              />
-                            ))
-                          ) : availableSlots.length > 0 ? (
-                            availableSlots.map((time) => (
-                              <button
-                                key={time}
-                                onClick={() => {
-                                  setSelectedTime(time);
-                                  setStep('form');
-                                }}
-                                className="py-3 px-4 rounded-xl border border-gray-100 font-bold text-gray-700 hover:border-blue-600 hover:bg-blue-50/50 hover:text-blue-600 transition-all text-center"
-                              >
-                                {time}
-                              </button>
-                            ))
-                          ) : (
-                            <div className="py-8 px-4 text-center">
-                              <p className="text-sm font-bold text-gray-400">
-                                Nenhum horário disponível nesta data.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
-                        <CalendarIcon size={24} className="text-gray-300 mb-3" />
-                        <p className="text-sm font-bold text-gray-400">
-                          Selecione uma data para ver horários
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 'form' && (
-              <motion.div 
-                key="form-step"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="flex flex-col h-full max-w-md mx-auto w-full pt-4"
-              >
-                <button 
-                  onClick={() => setStep('calendar')}
-                  className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors mb-8 group"
-                >
-                  <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                  Voltar para horários
-                </button>
-
-                <h3 className="text-2xl font-black text-gray-950 tracking-tight mb-2">
-                  Quase lá!
-                </h3>
-                <p className="text-base text-gray-500 mb-8 font-medium">
-                  Confirme seus dados para finalizar o agendamento para <strong>{selectedTime}</strong> no dia <strong>{selectedDate && format(selectedDate, "d 'de' MMMM", { locale: ptBR })}</strong>.
-                </p>
-
-                <form onSubmit={handleBooking} className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-bold text-gray-900 px-1">Nome completo</label>
-                    <input 
-                      required
-                      type="text"
-                      placeholder="Como podemos te chamar?"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="h-14 px-5 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all outline-none text-base font-medium placeholder:text-gray-400 shadow-inner"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-bold text-gray-900 px-1">WhatsApp</label>
-                    <div className="relative">
-                      <input 
-                        required
-                        type="tel"
-                        placeholder="(00) 00000-0000"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        className="h-14 w-full px-5 pl-12 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all outline-none text-base font-medium placeholder:text-gray-400 shadow-inner"
-                      />
-                      <MessageCircle size={20} className="absolute left-4 top-4 text-gray-300" />
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={isBooking}
-                    className={`mt-4 h-14 w-full bg-blue-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group ${isBooking ? 'opacity-70 cursor-not-allowed' : ''}`}
-                  >
-                    {isBooking ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} />
-                        Agendando...
-                      </>
-                    ) : (
-                      <>
-                        Confirmar agendamento
-                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              </motion.div>
-            )}
-
-            {step === 'success' && (
-              <motion.div 
-                key="success-step"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center justify-center h-full text-center py-12"
-              >
-                <div className="w-24 h-24 rounded-[2.5rem] bg-green-50 text-green-500 flex items-center justify-center mb-8 shadow-inner border border-green-100 animate-bounce">
-                  <CheckCircle2 size={48} />
-                </div>
-                <h3 className="text-3xl font-black text-gray-950 tracking-tight mb-4">
-                  Agendamento confirmado!
-                </h3>
-                <p className="text-lg text-gray-500 font-medium max-w-sm mb-10 leading-relaxed">
-                  Tudo certo, <strong>{formData.name}</strong>! Enviamos uma confirmação para seu WhatsApp.
-                </p>
-                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 w-full max-w-sm mb-8">
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-black uppercase tracking-widest text-gray-400">Resumo</p>
-                    <p className="text-base font-bold text-gray-700">
-                      {selectedDate && format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedTime}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 w-full max-w-sm">
-                  <a 
-                    href={getGoogleCalendarUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 w-full h-14 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-500/10 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                  >
-                    <CalendarIcon size={20} />
-                    Adicionar ao calendário
-                  </a>
-                  <button 
-                    onClick={resetBooking}
-                    className="flex items-center justify-center gap-3 w-full h-14 bg-white text-gray-600 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
-                  >
-                    Fazer novo agendamento
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+  const renderSuccess = () => (
+    <div className="w-full py-12 flex flex-col items-center text-center animate-in zoom-in duration-500">
+      <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-6 shadow-xl leading-none">
+        <Check size={40} strokeWidth={3} />
+      </div>
+      <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Agendamento Realizado!</h2>
+      <p className="text-gray-500 font-medium mb-10">Tudo pronto. Enviamos os detalhes para o seu WhatsApp.</p>
+      
+      <div className="w-full p-6 border-2 border-gray-100 rounded-3xl mb-8">
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Data e Hora</span>
+          <span className="text-base font-black text-gray-900">
+            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedSlot}
+          </span>
         </div>
       </div>
 
-      <div className="text-center mt-12 text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center gap-3">
-        <div className="w-8 h-px bg-gray-200" />
-        Desenvolvido por Meatende.ai
-        <div className="w-8 h-px bg-gray-200" />
+      <button
+        onClick={() => {
+          setStep('select');
+          setSelectedSlot(null);
+        }}
+        className="px-8 py-4 border-2 border-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all"
+      >
+        Novo Agendamento
+      </button>
+    </div>
+  );
+
+  // --- Main Layout ---
+  return (
+    <div className="w-full max-w-xl mx-auto py-8">
+      {/* Wireframe Container */}
+      <div className="bg-white border-2 border-black rounded-[2.5rem] p-8 md:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,0.03)]">
+        
+        {/* Header: Professional Info */}
+        {step !== 'success' && (
+          <div className="flex flex-col items-start mb-12">
+            <h1 className="text-3xl font-black tracking-tight text-gray-900 leading-none mb-2">
+              {profile.display_name || profile.full_name}
+            </h1>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em]">Agende seu Atendimento</p>
+          </div>
+        )}
+
+        <AnimatePresence mode="wait">
+          {step === 'select' && (
+            <motion.div 
+              key="select"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="flex flex-col h-full"
+            >
+              {renderDateSelector()}
+              {renderSlotList()}
+              
+              {selectedSlot && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-10"
+                >
+                  <button
+                    onClick={() => setStep('form')}
+                    className="w-full h-16 bg-black text-white rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all"
+                  >
+                    Continuar
+                    <ArrowRight size={20} />
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {step === 'form' && (
+            <motion.div 
+              key="form"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+            >
+              {renderForm()}
+            </motion.div>
+          )}
+
+          {step === 'success' && (
+            <motion.div 
+              key="success"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              {renderSuccess()}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Footer Branding (Subtle Wireframe) */}
+      <div className="mt-10 flex flex-col items-center gap-2 opacity-20">
+         <div className="w-12 h-px bg-black" />
+         <span className="text-[10px] font-black uppercase tracking-widest text-black">Sua SecretarIA</span>
       </div>
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e5e7eb;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #d1d5db;
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </div>

@@ -115,7 +115,7 @@ export function UpcomingAppointments({ initialAgenda = [], initialIntegrated = n
           <p className="text-base font-medium text-gray-600">Conecte o Google Calendar nas configurações</p>
         </div>
         <Link
-          href="/api/auth/google"
+          href="/api/auth/google/login"
           className="text-base font-bold text-blue-600 hover:underline"
         >
           Configurar agora

@@ -37,6 +37,7 @@ export function MobileDrawerMenu({ email }: { email: string }) {
 
   const navLinks = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Agenda', href: '/dashboard/agenda', icon: History },
     { label: 'Perfil', href: '/dashboard/settings/profile', icon: User },
     { label: 'Configurações', href: '/dashboard/settings', icon: Settings },
   ];

@@ -815,7 +815,7 @@ http.createServer((req: any, res: any) => {
         return;
     }
 
-    // 🌐 WEBHOOK ROUTER SIMPLIFICADO (Estilo Meatende.ai)
+    // 🌐 WEBHOOK ROUTER SIMPLIFICADO
     const isPost = req.method === 'POST';
     const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
 
@@ -993,7 +993,7 @@ http.createServer((req: any, res: any) => {
                 }
 
                 // --- 💬 MESSAGE PROCESSING ---
-                // Extração IDÊNTICA ao Meatende.ai (Testado e Aprovado)
+                // Extração padronizada de metadados do WhatsApp
                 const dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
 
                 if (!dataObj || !dataObj.key) {

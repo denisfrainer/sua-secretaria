@@ -58,7 +58,7 @@ export default function QuickActions() {
       title: 'Agenda',
       icon: <Calendar className="w-5 h-5" />,
       colorClass: 'text-blue-600 bg-blue-50 ring-blue-100',
-      action: () => router.push('/dashboard'),
+      action: () => router.push('/dashboard/agenda'),
     },
     {
       title: 'Link de agendamento',
@@ -70,13 +70,13 @@ export default function QuickActions() {
       title: 'Agente',
       icon: <MessageSquare className="w-5 h-5" />,
       colorClass: 'text-indigo-600 bg-indigo-50 ring-indigo-100',
-      action: () => router.push('/dashboard'),
+      action: () => router.push('/dashboard/settings'),
     },
     {
       title: 'Robô de menu',
       icon: <Bot className="w-5 h-5" />,
       colorClass: 'text-purple-600 bg-purple-50 ring-purple-100',
-      action: () => router.push('/dashboard'),
+      action: () => router.push('/dashboard/settings'),
     },
     {
       title: 'Serviços',
