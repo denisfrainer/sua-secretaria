@@ -191,8 +191,8 @@ async function processProfile(profile: any) {
 
         // Handle Audio Multimodal
         if (lastMessage.content === "[AUDIO]") {
-            const instanceName = profile.instance_name || process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria';
-            const base64 = await getAudioBase64(lastMessage.message_id, instanceName);
+            const instanceName = profile.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+            const base64 = await getAudioBase64(lastMessage.message_id, instanceName!);
             if (base64) {
                 messageData.audioBase64 = base64;
             } else {

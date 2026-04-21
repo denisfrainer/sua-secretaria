@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ status: 'ignored', reason: 'ai_paused_or_needs_human' }, { status: 200 });
         }
 
-        const instanceName = body.instance || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
+        const instanceName = body.instance || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
         const { data: config } = await supabaseAdmin
@@ -190,7 +190,7 @@ Use STRICTLY the following information to answer business-related questions:
         const maxDelay = 14000;
         const humanDelayMs = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 
-        await sendWhatsAppMessage(clientNumber, finalText, humanDelayMs);
+        await sendWhatsAppMessage(clientNumber, finalText, humanDelayMs, instanceName!);
 
         return NextResponse.json({ status: "success" });
     } catch (error: any) {

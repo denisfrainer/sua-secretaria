@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
         const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, "");
-        const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria';
+        const prefix = process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
 
         if (!baseUrl || !apiKey || !webhookUrl) {
             console.error('🚨 [EVOLUTION] Missing env credentials.');

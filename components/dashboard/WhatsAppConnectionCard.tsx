@@ -95,7 +95,7 @@ export function WhatsAppConnectionCard() {
 
       const businessName = user.user_metadata?.business_name || 'Minha Empresa';
       const slug = businessName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
-      const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria';
+      const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME;
       const name = `${prefix}-${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const initRes = await fetch('/api/instance/initialize', {

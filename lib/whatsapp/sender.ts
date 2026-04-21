@@ -4,7 +4,7 @@ import axios from 'axios';
 const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
 export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number, instanceName?: string) {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
 
@@ -52,7 +52,7 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
 }
 
 export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available', instanceName?: string) {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/chat/sendPresence/${targetInstance}`;
 
@@ -71,7 +71,7 @@ export async function sendWhatsAppPresence(phone: string, presence: 'composing' 
 }
 
 export async function checkWhatsAppNumber(phone: string, instanceName?: string): Promise<boolean> {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/chat/whatsappNumbers/${targetInstance}`;
 
