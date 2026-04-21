@@ -12,6 +12,6 @@ cmds = [
 # Build do TypeScript da Eliza
 cmds = ["npm run build"]
 
-[start]
-# Comando flexível para os outros scripts (Hunter/PageSpeed)
-cmd = "/opt/venv/bin/python3 -u $EXEC_SCRIPT"
+[phases.start]
+# Override the start phase to boot both the web server and the polling engine
+cmd = 'npx concurrently "next start -p $PORT" "npx tsx scripts/agents/eliza-worker.ts"'
