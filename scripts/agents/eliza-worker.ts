@@ -1,3 +1,4 @@
+import http from 'http';
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
@@ -7,6 +8,8 @@ import { hasAccess } from '../../lib/auth/access-control';
 import { PlanTier } from '../../lib/supabase/types';
 import { generateGoogleAuthUrl } from '../../lib/google/auth';
 
+console.log('[BOOT TRACE] 1. Imports and environment loaded');
+
 /**
  * ELIZA WORKER - THE SILVER EAR (V2)
  * Native Multimodal Audio Processing + State Machine
@@ -15,6 +18,7 @@ import { generateGoogleAuthUrl } from '../../lib/google/auth';
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
 });
+console.log('[BOOT TRACE] 2. AI SDK Initialized');
 
 process.env.TZ = 'America/Sao_Paulo';
 
@@ -223,7 +227,7 @@ async function processProfile(profile: any) {
 // ==============================================================
 let isPolling = false;
 
-async function startPolling() {
+function startPolling() {
     console.log('🚀 [BOOT] Eliza Multimodal Engine Polling...');
 
     setInterval(async () => {
@@ -249,4 +253,18 @@ async function startPolling() {
     }, 5000);
 }
 
-startPolling();
+// ==============================================================
+// 🌐 HEALTHCHECK SERVER (Required for Railway)
+// ==============================================================
+const PORT = process.env.PORT || 8080;
+
+console.log('[BOOT TRACE] 3. Initializing Healthcheck Server');
+
+http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('Eliza Worker Live');
+}).listen(PORT, () => {
+    console.log(`🌐 Healthcheck Server running on port ${PORT}`);
+    console.log('[BOOT TRACE] 4. Calling startPolling()');
+    startPolling();
+});
