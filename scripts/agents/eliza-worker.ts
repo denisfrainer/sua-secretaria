@@ -104,6 +104,20 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     }
 
     try {
+        // Resolve Instance Name with robust fallbacks
+        let targetInstance = profile.instance_name || null;
+        
+        // If profile doesn't have it, try finding it in business_config or env
+        if (!targetInstance) {
+            const { data: bConfig } = await supabaseAdmin
+                .from('business_config')
+                .select('instance_name')
+                .eq('owner_id', profile.id)
+                .maybeSingle();
+            
+            targetInstance = bConfig?.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME || `instance-${profile.phone}`;
+        }
+
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{ role: 'user', parts }],
@@ -118,20 +132,29 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
 
         console.log(`✅ [BRAIN:ONBOARDING] Data Extracted:`, extracted);
 
-        // 1. Update Business Config
+        // 1. Update Business Config (Preserve context_json)
+        // Fetch existing config first to avoid sending null for context_json or overwriting it
+        const { data: existingConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('context_json')
+            .eq('owner_id', profile.id)
+            .maybeSingle();
+
         const { error: configError } = await supabaseAdmin.from('business_config').upsert({
             owner_id: profile.id,
             business_name: extracted.businessName,
             primary_service: extracted.primaryService,
             price: extracted.price,
             duration_minutes: extracted.durationMinutes,
-            instance_name: profile.instance_name || `instance-${profile.phone}`,
+            instance_name: targetInstance,
+            // If we have no existing config, provide a basic non-null default
+            context_json: existingConfig?.context_json || { is_ai_enabled: true },
             updated_at: new Date().toISOString()
         }, { onConflict: 'owner_id' });
 
         if (configError) throw configError;
 
-        // 2. Update Placeholder in Messages (Context Persistence)
+        // 2. Update Placeholder in Messages
         if (messageData.messageId) {
             await supabaseAdmin
                 .from('messages')
@@ -149,11 +172,14 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         const syncUrl = await generateGoogleAuthUrl(profile.id);
         const msg = `✅ Perfeito! Perfil criado para *${extracted.businessName}*.\n\nEspecialidade: ${extracted.primaryService}\nPreço: R$ ${extracted.price}\n\n*PASSO 3 (O TESTE):* Chame o número 48998097754 para testar o bot atuando como sua secretária AGORA. Quando terminar, sincronize sua agenda aqui: ${syncUrl}`;
 
-        await sendWhatsAppMessage(profile.phone, msg);
+        // PROPAGATE INSTANCE NAME TO PREVENT 404
+        await sendWhatsAppMessage(profile.phone, msg, 1200, targetInstance!);
 
     } catch (err: any) {
+        // Resolve instance for error message as well
+        const errInstance = profile.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
         console.error(`❌ [BRAIN:ONBOARDING ERROR]`, err.message);
-        await sendWhatsAppMessage(profile.phone, "Não consegui processar seu áudio/mensagem. Pode tentar novamente?");
+        await sendWhatsAppMessage(profile.phone, "Não consegui processar seu áudio/mensagem. Pode tentar novamente?", 1200, errInstance!);
     }
 }
 
@@ -200,6 +226,9 @@ async function processProfile(profile: any) {
             }
         }
 
+        // Resolve Instance Name for this profile
+        const targetInstance = profile.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+
         switch (profile.conversation_state) {
             case 'ONBOARDING':
                 await handleOnboardingState(profile, messageData);
@@ -207,7 +236,7 @@ async function processProfile(profile: any) {
             default:
                 // For SIMULATION/PAYWALL/ACTIVE, we'd implement similar multimodal logic
                 console.log(`⏩ [STATE:${profile.conversation_state}] Logic not multimodal yet. Just answering...`);
-                await sendWhatsAppMessage(profile.phone, "Entendido! Estou processando seu teste. Siga as instruções acima.");
+                await sendWhatsAppMessage(profile.phone, "Entendido! Estou processando seu teste. Siga as instruções acima.", 1200, targetInstance!);
                 break;
         }
 

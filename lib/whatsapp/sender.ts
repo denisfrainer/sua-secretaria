@@ -8,6 +8,10 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
 
+    if (!targetInstance || targetInstance === 'undefined') {
+        console.error('💣 [SENDER FATAL] Instance Name is UNDEFINED. Current Path:', url);
+    }
+
     // Ensure number is strictly digits for Evolution v2
     const cleanNumber = phone.replace(/\D/g, '');
 
