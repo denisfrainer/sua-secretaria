@@ -1,7 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { cookies } from 'next/headers';
+import { verifyOnboardingToken } from '@/lib/auth/jwt';
+import { sendWhatsAppMessage } from '@/lib/whatsapp/sender';
+import { getPairingCode } from '@/lib/evolution/pairing';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,25 +12,27 @@ export async function GET(request: NextRequest) {
   const state = requestUrl.searchParams.get('state');
   const error = requestUrl.searchParams.get('error');
 
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get('oauth_state')?.value;
-
   // 1. Validate Google OAuth Errors
   if (error) {
     console.error('💥 [OAUTH:CALLBACK] Google reported an error:', error);
     return NextResponse.redirect(new URL(`/dashboard?error=${error}`, requestUrl.origin));
   }
 
-  // 2. Validate Security State (CSRF)
-  if (!storedState || state !== storedState) {
-    console.error('💥 [OAUTH:CALLBACK] State mismatch or expired. Stored:', storedState, 'Received:', state);
-    return NextResponse.redirect(new URL('/dashboard?error=invalid_state', requestUrl.origin));
+  // 2. Validate JWT State (Headless Identification)
+  if (!state) {
+    console.error('💥 [OAUTH:CALLBACK] No state provided.');
+    return NextResponse.redirect(new URL('/login?error=invalid_state', requestUrl.origin));
+  }
+
+  const profileId = await verifyOnboardingToken(state);
+  if (!profileId) {
+    console.error('💥 [OAUTH:CALLBACK] Invalid or expired JWT state.');
+    return NextResponse.redirect(new URL('/login?error=expired_state', requestUrl.origin));
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   
-  // STRICT URL RESOLUTION: Prevents Netlify Deploy Previews from hijacking the redirect URI
   const baseUrl = process.env.NODE_ENV === 'development'
     ? 'http://localhost:3000'
     : (process.env.NEXT_PUBLIC_SITE_URL || 'https://sua-secretaria.netlify.app');
@@ -37,9 +40,9 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
   try {
-    console.log('🔗 [OAUTH:CALLBACK] Exchanging code for tokens...');
+    console.log(`🔗 [OAUTH:CALLBACK] Exchanging code for profile: ${profileId}`);
     
-    // 3. Exchange Code for Tokens Natively (Bypassing Supabase managed flow)
+    // 3. Exchange Code for Tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -59,60 +62,52 @@ export async function GET(request: NextRequest) {
       throw new Error(tokenData.error_description || 'Token exchange failed');
     }
 
-    console.log('🔑 [OAUTH:CALLBACK] Refresh Token received:', !!tokenData.refresh_token);
-
-    // 4. Identify the Authenticated User (WhatsApp OTP session)
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, { ...options })
-            );
-          },
-        },
-      }
-    );
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.error('❌ [OAUTH:CALLBACK] No active Supabase session found.');
-      return NextResponse.redirect(new URL('/login?error=unauthorized_sync', requestUrl.origin));
+    if (!tokenData.refresh_token) {
+      console.warn('⚠️ [OAUTH:CALLBACK] No refresh token returned. User might need to re-consent.');
     }
 
-    console.log('👤 [OAUTH:CALLBACK] Linking token to user:', user.id);
+    // 4. Fetch Profile to get phone number
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('phone')
+      .eq('id', profileId)
+      .single();
 
-    // 5. Persist Refresh Token to profiles table
-    if (tokenData.refresh_token) {
-      const { error: updateError } = await supabaseAdmin
-        .from('profiles')
-        .update({ 
-          google_refresh_token: tokenData.refresh_token,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error('💥 [OAUTH:CALLBACK] Failed to save token to database:', updateError);
-        throw updateError;
-      }
-      console.log('✅ [OAUTH:CALLBACK] Token successfully persisted to profile.');
-    } else {
-      console.warn('⚠️ [OAUTH:CALLBACK] No refresh token returned. Did user already consent?');
+    if (!profile || !profile.phone) {
+      throw new Error('Profile or phone not found for token update');
     }
 
-    // Cleanup state cookie
-    cookieStore.delete('oauth_state');
+    // 5. Persist Refresh Token & Transition State
+    const { error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update({ 
+        google_refresh_token: tokenData.refresh_token || undefined,
+        conversation_state: 'PAYWALL',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profileId);
 
-    // Return to dashboard with success signal
-    return NextResponse.redirect(new URL('/dashboard?sync=success', requestUrl.origin));
+    if (updateError) {
+      console.error('💥 [OAUTH:CALLBACK] DB update failed:', updateError);
+      throw updateError;
+    }
+
+    console.log(`✅ [AUTH_SYNC] Refresh token captured for user: ${profileId}`);
+
+    // 6. TRIGGER ELIZA - Headless pairing and payment link
+    const pairingCode = await getPairingCode(profile.phone);
+    const checkoutLink = "https://suasecretaria.com.br/precos";
+    
+    const elizaMessage = `🎯 *Agenda Conectada com Sucesso!*\n\nAgora só falta o passo final para sua assistente começar a trabalhar no seu número oficial.\n\nFiz o seguinte:\n1. Gerei seu código de pareamento: *${pairingCode || 'GERANDO...'}*\n2. Liberei o acesso ao seu painel.\n\n*O que fazer agora?*\nNo seu WhatsApp, vá em *Aparelhos Conectados* > *Conectar com número de telefone* e insira o código acima.\n\nPara ativar o plano e começar hoje mesmo: ${checkoutLink}`;
+    
+    await sendWhatsAppMessage(profile.phone, elizaMessage);
+
+    // 7. Success Redirect
+    return NextResponse.redirect(new URL('/auth/success', requestUrl.origin));
 
   } catch (err: any) {
     console.error('💥 [OAUTH:CALLBACK] Unexpected error:', err.message);
     return NextResponse.redirect(new URL(`/dashboard?error=sync_failed&message=${encodeURIComponent(err.message)}`, requestUrl.origin));
   }
 }
+
