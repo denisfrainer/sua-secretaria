@@ -400,13 +400,26 @@ async function processLead(lead: any) {
             .eq('owner_id', lead.owner_id)
             .single();
 
+        // --- 🛡️ [AUTH_GATE BYPASS] ---
+        // We fetch the profile to check the conversation state.
+        // Onboarding and Simulation personas must be EXEMPT from paywall restrictions.
+        const { data: profileData } = await supabaseAdmin
+            .from('profiles')
+            .select('conversation_state')
+            .eq('id', lead.owner_id)
+            .single();
+
+        const conversationState = profileData?.conversation_state || 'ONBOARDING';
+        const isMasterInstance = instanceToUse === (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
+        const isOnboardingFlow = conversationState === 'ONBOARDING' || conversationState === 'SIMULATION' || isMasterInstance;
+
         let businessContext = "";
         let googleTokens = null;
         const currentTier = (configData?.plan_tier as PlanTier) || 'FREE';
         const trialEndsAt = configData?.trial_ends_at;
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
-        if (!hasAccess(currentTier, 'AI_CONFIGURATION', trialEndsAt)) {
+        if (!isOnboardingFlow && !hasAccess(currentTier, 'AI_CONFIGURATION', trialEndsAt)) {
             console.warn(`[ELIZA_ABORT] ❌ Access denied for ${instanceToUse}. Plan ${currentTier} expired or inactive.`);
 
             // Revert status to avoid constant polling of an unauthorized lead
@@ -416,6 +429,10 @@ async function processLead(lead: any) {
             }).eq('id', lead.id);
 
             return;
+        }
+
+        if (isOnboardingFlow) {
+            console.log(`🔓 [AUTH_GATE] Bypass granted for Onboarding/Simulation flow (State: ${conversationState}, Instance: ${instanceToUse})`);
         }
 
         if (configError || !configData) {
