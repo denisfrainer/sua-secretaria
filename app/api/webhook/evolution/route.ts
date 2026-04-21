@@ -32,12 +32,13 @@ export async function POST(req: Request) {
 
     console.log(`📡 [WEBHOOK] Inbound: ${phone} | Audio: ${isAudio} | Text: ${!!text}`);
 
-    // 2. ATOMIC UPSERT (Guarantees UUID exists)
+    // 2. IDENTITY UPSERT (Immutable)
+    // We do NOT set worker_status here to prevent the worker from polling 
+    // a profile before its message is persisted.
     const { data: profile, error: upsertError } = await supabaseAdmin
       .from('profiles')
       .upsert({ 
         phone,
-        worker_status: 'eliza_processing',
         updated_at: new Date().toISOString()
       }, { onConflict: 'phone' })
       .select()
@@ -48,8 +49,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Identity lock failed' }, { status: 200 });
     }
 
-    // 3. PERSIST MESSAGE (Context Window)
-    // We save text or special placeholder for media
+    // 3. PERSIST MESSAGE (Context Persistence)
+    // This MUST happen before reaching the Worker.
     let content = text;
     if (isAudio) content = "[AUDIO]";
     else if (isImage) content = "[IMAGE]";
@@ -63,10 +64,25 @@ export async function POST(req: Request) {
     });
 
     if (msgError) {
-      console.warn(`⚠️ [WEBHOOK:MSG_ERROR] Could not save message:`, msgError.message);
+      console.error(`❌ [WEBHOOK:MSG_ERROR] Critical failure persisting message:`, msgError.message);
+      return NextResponse.json({ success: false, error: 'Message persistence failed' }, { status: 200 });
     }
 
-    console.log(`✅ [WEBHOOK:SUCCESS] Profile locked: ${profile.id}. Worker triggered.`);
+    // 4. QUEUE TRIGGER (The Handover)
+    // Now that the context is safe in the DB, we signal the worker.
+    const { error: triggerError } = await supabaseAdmin
+      .from('profiles')
+      .update({ 
+        worker_status: 'eliza_processing',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profile.id);
+
+    if (triggerError) {
+      console.error(`❌ [WEBHOOK:TRIGGER_ERROR] Failed to signal worker:`, triggerError.message);
+    }
+
+    console.log(`✅ [WEBHOOK:SUCCESS] Message saved. Worker signaled for Profile: ${profile.id}`);
 
     return NextResponse.json({ success: true });
 
