@@ -5,16 +5,17 @@ import { normalizePhone } from '@/lib/utils/phone';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const data = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
-    const key = data.key;
     
-    // 🛡️ STEEL GATE: Absolute JID Filter (First line of logic)
-    const remoteJid = key?.remoteJid || "";
-    if (!remoteJid || (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid'))) {
-      console.log(`🛡️ [STEEL GATE] Dropping illegal JID: ${remoteJid}`);
-      return NextResponse.json({ success: true, status: 'ignored', reason: 'illegal_jid' });
+    // 🛡️ STEEL GATE: Absolute JID Filter (Directive: First line of logic)
+    const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
+    const remoteJid = dataObj?.key?.remoteJid || "";
+
+    if (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) {
+        console.log("🛡️ Dropping system/group message:", remoteJid);
+        return new Response('Ignored', { status: 200 });
     }
 
+    const key = dataObj.key;
     if (!key) return NextResponse.json({ success: true, message: 'No key found' });
 
     // 1. ATOMIC IDENTITY LOCK
