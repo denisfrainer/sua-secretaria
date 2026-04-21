@@ -7,19 +7,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
 
-    // 🚨 ABSOLUTE EMERGENCY STEEL GATE (Directive: First line of logic)
+    // 🚨 SURGICAL ISOLATION STRATEGY (Directive: Absolute first line of processing)
     const remoteJid = dataObj?.key?.remoteJid || dataObj?.remoteJid || "";
+    console.log("DEBUG_JID:", remoteJid);
 
-    if (!remoteJid || (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid'))) {
-        console.log("🛡️ [STEEL GATE] Dropping system/group message:", remoteJid);
-        return NextResponse.json({ status: 'ignored', jid: remoteJid });
+    if (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) {
+        console.log("🛑 [ISOLATION] JID REJECTED:", remoteJid);
+        return new Response(JSON.stringify({ status: 'ignored' }), { 
+            status: 200, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
     }
 
     // Secondary Length Guard (Stop 16-digit Mutant IDs)
     const numericPart = remoteJid.split('@')[0] || "";
     if (numericPart.length > 15) {
-        console.log("🛡️ [LENGTH GUARD] Dropping mutant ID:", remoteJid);
-        return NextResponse.json({ status: 'ignored', jid: remoteJid, reason: 'mutant' });
+        console.log("🛑 [ISOLATION:LENGTH] JID REJECTED (Too Long):", remoteJid);
+        return new Response(JSON.stringify({ status: 'ignored', reason: 'mutant' }), { 
+            status: 200, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
     }
 
     const key = dataObj.key;
