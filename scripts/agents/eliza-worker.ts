@@ -29,13 +29,13 @@ const onboardingSchema: any = {
     description: "Extract business metadata for onboarding",
     type: "OBJECT",
     properties: {
-        businessName: { type: "STRING" },
-        primaryService: { type: "STRING" },
-        price: { type: "NUMBER" },
-        durationMinutes: { type: "NUMBER" },
+        businessName: { type: "STRING", nullable: true },
+        primaryService: { type: "STRING", nullable: true },
+        price: { type: "NUMBER", nullable: true },
+        durationMinutes: { type: "NUMBER", nullable: true },
         summary: { type: "STRING", description: "A brief summary of what the user said in the audio/text" },
     },
-    required: ["businessName", "primaryService", "price", "durationMinutes", "summary"],
+    required: ["summary"],
 };
 
 // ==============================================================
@@ -83,7 +83,8 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         - Duration in Minutes (Number)
         - Summary: A 1-sentence transcription/summary of what they said.
 
-        If incomplete, use professional defaults for a beauty parlor (e.g., "Sua Clínica", "Serviço", 100, 60).
+        🛡️ GUARDRAIL: If the user is only greeting you (e.g., 'Oi', 'Bom dia') and has NOT provided business details, return the extraction fields (businessName, primaryService, price, durationMinutes) as null. 
+        DO NOT invent or assume default values like 100 or 60.
     `;
 
     const parts: any[] = [{ text: systemPrompt }];
@@ -131,6 +132,16 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         const extracted = JSON.parse(responseText);
 
         console.log(`✅ [BRAIN:ONBOARDING] Data Extracted:`, extracted);
+
+        // 🛡️ GREETING DETECTION: If critical data is missing, we send a welcome/guide message instead of transitioning
+        if (!extracted.businessName || !extracted.primaryService || !extracted.price) {
+            console.log(`👋 [BRAIN:ONBOARDING] Greeting or incomplete data detected for ${profile.phone}. Sending guide...`);
+            
+            const welcomeMsg = `Olá! 👋 Sou a Eliza, sua assistente inteligente. Notei que você ainda não configurou seu perfil.\n\nPara começarmos, por favor me conte (por áudio ou texto):\n\n1. O *Nome* da sua empresa\n2. Qual *Serviço* você oferece\n3. O *Preço* e a *Duração* média\n\nEstou aguardando para criarmos seu bot! 🐺`;
+            
+            await sendWhatsAppMessage(profile.phone, welcomeMsg, 1200, targetInstance!);
+            return; // EXIT: We stay in ONBOARDING state
+        }
 
         // 1. Update Business Config (Preserve context_json)
         // Fetch existing config first to avoid sending null for context_json or overwriting it
