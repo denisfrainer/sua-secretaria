@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const isFromMe = key.fromMe === true;
 
     // Detect message types
-    const messageObj = data.message || {};
+    const messageObj = dataObj.message || {};
     const text = messageObj.conversation || messageObj.extendedTextMessage?.text || "";
     const isAudio = !!messageObj.audioMessage;
     const isImage = !!messageObj.imageMessage;
