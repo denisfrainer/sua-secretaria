@@ -4,7 +4,7 @@ import axios from 'axios';
 const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
 export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number, instanceName?: string) {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME || 'agente-lobo';
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
 
