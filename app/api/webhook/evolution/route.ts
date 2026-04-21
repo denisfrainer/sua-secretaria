@@ -8,17 +8,16 @@ export async function POST(req: Request) {
     const data = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
     const key = data.key;
     
+    // 🛡️ STEEL GATE: Absolute JID Filter (First line of logic)
+    const remoteJid = key?.remoteJid || "";
+    if (!remoteJid || (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid'))) {
+      console.log(`🛡️ [STEEL GATE] Dropping illegal JID: ${remoteJid}`);
+      return NextResponse.json({ success: true, status: 'ignored', reason: 'illegal_jid' });
+    }
+
     if (!key) return NextResponse.json({ success: true, message: 'No key found' });
 
-    // 1. ATOMIC IDENTITY LOCK & JID FILTER
-    const remoteJid = key.remoteJid || "";
-
-    // 🛡️ GATEKEEPER: Drop non-standard JIDs (Groups, Broadcasts, Newsletters)
-    // We allow @s.whatsapp.net OR @lid (Linked Devices)
-    if (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) {
-      console.log(`🛡️ [WEBHOOK] Dropping non-standard JID: ${remoteJid}`);
-      return NextResponse.json({ success: true, message: 'Filtered: Non-standard JID' });
-    }
+    // 1. ATOMIC IDENTITY LOCK
 
     const rawPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@lid', '');
     const phone = normalizePhone(rawPhone);
