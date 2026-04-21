@@ -7,23 +7,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
 
-    // 🚨 SURGICAL ISOLATION STRATEGY (Directive: Absolute first line of processing)
+    // 🚨 GATEKEEPER ISOLATION (Directive: Absolute first line of processing)
     const remoteJid = dataObj?.key?.remoteJid || dataObj?.remoteJid || "";
-    console.log("DEBUG_JID:", remoteJid);
+    const rawNumber = remoteJid.split('@')[0] || "";
 
-    if (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) {
-        console.log("🛑 [ISOLATION] JID REJECTED:", remoteJid);
+    // Triple Filter: 1. Whitelisted family, 2. Human length (max 13), 3. Explicit Mutant block
+    if (
+        (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) || 
+        rawNumber.length > 13 || 
+        rawNumber === '5535902353092770' ||
+        rawNumber === '35902353092770'
+    ) {
+        console.log("🛑 [GATEKEEPER] Mutant/Group Rejected:", remoteJid);
         return new Response(JSON.stringify({ status: 'ignored' }), { 
-            status: 200, 
-            headers: { 'Content-Type': 'application/json' } 
-        });
-    }
-
-    // Secondary Length Guard (Stop 16-digit Mutant IDs)
-    const numericPart = remoteJid.split('@')[0] || "";
-    if (numericPart.length > 15) {
-        console.log("🛑 [ISOLATION:LENGTH] JID REJECTED (Too Long):", remoteJid);
-        return new Response(JSON.stringify({ status: 'ignored', reason: 'mutant' }), { 
             status: 200, 
             headers: { 'Content-Type': 'application/json' } 
         });
@@ -33,7 +29,7 @@ export async function POST(req: Request) {
     if (!key) return NextResponse.json({ success: true, message: 'No key found' });
 
     // 1. ATOMIC IDENTITY LOCK
-    const rawPhone = numericPart;
+    const rawPhone = rawNumber;
     const phone = normalizePhone(rawPhone);
     const isFromMe = key.fromMe === true;
 
