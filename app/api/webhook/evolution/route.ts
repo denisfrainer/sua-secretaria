@@ -1,106 +1,52 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { GoogleGenAI, Type } from '@google/genai';
-import { sendWhatsAppMessage } from '@/lib/whatsapp/sender';
-import { generateGoogleAuthUrl } from '@/lib/google/auth';
-import { getPairingCode } from '@/lib/evolution/pairing';
-
-// Configuration
-export const maxDuration = 60; // Timeout handling for LLM
-
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '' 
-});
+import { normalizePhone } from '@/lib/utils/phone';
 
 // JSON Schema for Onboarding Extraction
-const onboardingSchema: any = {
-  type: Type.OBJECT,
-  properties: {
-    businessName: {
-      type: Type.STRING,
-      description: "The name of the business or the professional's name.",
-    },
-    primaryService: {
-      type: Type.STRING,
-      description: "The main service offered (e.g., 'Pé e Mão', 'Corte de Cabelo').",
-    },
-    price: {
-      type: Type.NUMBER,
-      description: "The price of the primary service as a numeric value.",
-    },
-    durationMinutes: {
-      type: Type.INTEGER,
-      description: "The estimated duration of the service in minutes.",
-    }
-  },
-  required: ["businessName", "primaryService", "price", "durationMinutes"],
-};
+// (Move this to worker or keep here for shared use)
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log('📦 [WEBHOOK] Received payload:', JSON.stringify(body).substring(0, 200));
-
-    // Handle Evolution API structure (sometimes message is in data)
     const data = body.data || body;
     const key = data.key;
     if (!key) return NextResponse.json({ success: true, message: 'No key found' });
 
-    const phone = key.remoteJid.replace('@s.whatsapp.net', '');
+    // 1. ATOMIC IDENTITY LOCK
+    const rawPhone = key.remoteJid.replace('@s.whatsapp.net', '');
+    const phone = normalizePhone(rawPhone);
     const messageText = data.message?.conversation || 
-                       data.message?.extendedTextMessage?.text || 
-                       data.message?.imageMessage?.caption || "";
+                       data.message?.extendedTextMessage?.text || "";
 
     if (!messageText && !data.message?.imageMessage) {
       return NextResponse.json({ success: true, message: 'Empty message ignored' });
     }
 
-    // 1. Fetch or Create User State
-    let { data: user, error: fetchError } = await supabaseAdmin
+    console.log(`📡 [WEBHOOK] Inbound: ${phone} | State: Locking Profile...`);
+
+    // 2. ATOMIC UPSERT (Guarantees UUID exists)
+    const { data: user, error: upsertError } = await supabaseAdmin
       .from('profiles')
-      .select('*')
-      .eq('phone', phone)
-      .maybeSingle();
+      .upsert({ 
+        phone,
+        worker_status: 'eliza_processing',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'phone' })
+      .select()
+      .single();
 
-    if (!user) {
-      console.log(`🆕 [STATE] Creating new profile for ${phone}`);
-      const { data: newUser, error: createError } = await supabaseAdmin
-        .from('profiles')
-        .insert({ 
-          phone, 
-          conversation_state: 'ONBOARDING', 
-          simulation_count: 0,
-          full_name: 'New WhatsApp User',
-          email: `${phone}@whatsapp.com` // Placeholder
-        })
-        .select()
-        .single();
-      
-      if (createError) throw createError;
-      user = newUser;
+    if (upsertError || !user) {
+      console.error('💥 [WEBHOOK:UPSERT_ERROR]', upsertError);
+      throw new Error('Failed to lock profile identity');
     }
 
-    // 2. State Machine Routing
-    console.log(`🤖 [STATE] User ${phone} is in state: ${user.conversation_state}`);
-    
-    switch (user.conversation_state) {
-      case 'ONBOARDING':
-        await handleOnboarding(phone, messageText, user);
-        break;
-      case 'SIMULATION':
-        await handleSimulation(phone, messageText, user);
-        break;
-      case 'PAYWALL':
-        await handlePaywall(phone, messageText, user);
-        break;
-      default:
-        console.warn(`⚠️ [STATE] Unknown state: ${user.conversation_state}`);
-    }
+    console.log(`✅ [WEBHOOK:IDENTITY] Profile secured: ${user.id} | Status: eliza_processing`);
 
     return NextResponse.json({ success: true });
+
   } catch (error: any) {
     console.error('❌ [WEBHOOK ERROR]:', error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 200 }); // Always 200 for Evolution
+    return NextResponse.json({ success: false, error: error.message }, { status: 200 });
   }
 }
 
@@ -135,25 +81,40 @@ async function handleOnboarding(phone: string, text: string, user: any) {
     const responseText = result.text || "";
     const extractedData = JSON.parse(responseText);
 
-    console.log(`✅ [ONBOARDING] Extracted data:`, extractedData);
+    console.log('[AUDIT_STEP_1_2] Lead state: ONBOARDING -> SIMULATION. Extracted Data:', extractedData);
 
-    // Update Supabase with extracted data and switch state
-    const { error: updateError } = await supabaseAdmin
+    // 1. Update Profile State
+    const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
-        business_name: extractedData.businessName,
-        primary_service: extractedData.primaryService,
-        price: extractedData.price,
-        duration_minutes: extractedData.durationMinutes,
         conversation_state: 'SIMULATION',
         simulation_count: 0
       })
       .eq('phone', phone);
 
-    if (updateError) throw updateError;
+    if (profileError) throw profileError;
 
-    const transitionMsg = `✅ Perfeito! Perfil criado para a *${extractedData.businessName}*.\n\nEspecialidade: ${extractedData.primaryService}\nPreço: R$ ${extractedData.price}\nAvaliação: ${extractedData.durationMinutes} min\n\nAgora vamos testar? Me mande uma mensagem fingindo ser um cliente tentando marcar um horário para ver como eu respondo! 🚀`;
-    await sendWhatsAppMessage(phone, transitionMsg);
+    // 2. Persist Business Metadata strictly into business_config
+    const { error: configError } = await supabaseAdmin
+      .from('business_config')
+      .upsert({
+        owner_id: user.id,
+        business_name: extractedData.businessName,
+        primary_service: extractedData.primaryService,
+        price: extractedData.price,
+        duration_minutes: extractedData.durationMinutes,
+        instance_name: `instance-${phone}`, // Convention
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'owner_id' });
+
+    if (configError) throw configError;
+
+    // 3. Trigger Step 3 Mock Message
+    const syncUrl = await generateGoogleAuthUrl(user.id);
+    const mockMsg = `Seu negócio foi configurado! Chame o número 48998097754 para testar o bot atuando como sua secretária agora mesmo. Quando terminar o teste, clique aqui para conectar sua agenda do Google: ${syncUrl}`;
+    
+    await sendWhatsAppMessage(phone, mockMsg);
+    console.log('[AUDIT_STEP_3] Executing Mock Sandbox for phone:', phone);
 
   } catch (err: any) {
     console.error(`❌ [ONBOARDING ERROR]`, err.message);
@@ -164,46 +125,16 @@ async function handleOnboarding(phone: string, text: string, user: any) {
 /**
  * HANDLER: SIMULATION
  * Goal: Act as the AI assistant, increment count, and transition to PAYWALL
+ * MVP FIX: Mock Sandbox interceptor to bypass Gemini
  */
 async function handleSimulation(phone: string, text: string, user: any) {
-  const newCount = (user.simulation_count || 0) + 1;
-  console.log(`🧪 [SIMULATION] Count: ${newCount} for ${phone}`);
+  console.log(`[AUDIT_STEP_3] Executing Mock Sandbox for phone (Retry/Ongoing):`, phone);
 
-  // Base LLM logic (Conceptual)
-  const prompt = `
-    You are the AI assistant for "${user.business_name}".
-    You offer "${user.primary_service}" for R$ ${user.price} (${user.duration_minutes} min).
-    A potential client (the user) is testing you.
-    
-    Client says: "${text}"
-    
-    Respond naturally as a helpful receptionist. Keep it short and in Portuguese.
-  `;
-
-  const result = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [{ role: 'user', parts: [{ text: prompt }] }]
-  });
+  // Bypassing Gemini LLM strictly as requested for MVP validation
+  const syncUrl = await generateGoogleAuthUrl(user.id);
+  const mockMsg = `Seu negócio foi configurado! Chame o número 48998097754 para testar o bot atuando como sua secretária agora mesmo. Quando terminar o teste, clique aqui para conectar sua agenda do Google: ${syncUrl}`;
   
-  const response = result.text || "Entendido! Como posso ajudar mais?";
-
-  // Update count
-  await supabaseAdmin
-    .from('profiles')
-    .update({ simulation_count: newCount })
-    .eq('phone', phone)
-
-  if (newCount >= 3) {
-    const syncUrl = await generateGoogleAuthUrl(user.id);
-    const paywallMsg = `${response}\n\n--- \n🏁 *Simulação concluída!* Você viu como sou rápida e eficiente?\n\nO próximo passo agora é conectar sua agenda para que eu possa marcar horários de verdade.\n\n*Clique aqui para sincronizar:* ${syncUrl}`;
-    
-    // We don't transition to PAYWALL yet, we wait for the Google Sync callback
-    // But we update count so we don't repeat this
-    // (Actually the user said SIMULATION -> PAYWALL trigger after sync link click or sync success)
-    // The directive says: "The callback route updates the Supabase state to PAYWALL"
-  } else {
-    await sendWhatsAppMessage(phone, response);
-  }
+  await sendWhatsAppMessage(phone, mockMsg);
 }
 
 /**

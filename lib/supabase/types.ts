@@ -14,7 +14,7 @@ export type Database = {
           context_json: any;
           plan_tier: PlanTier;
           enable_smart_scarcity: boolean;
-          trial_ends_at: string | null;
+          duration_minutes: number | null;
           updated_at: string;
           // Add other fields as discovered/needed
         };
@@ -23,6 +23,9 @@ export type Database = {
           instance_name?: string;
           business_name?: string | null;
           business_niche?: string | null;
+          primary_service?: string | null;
+          price?: number | null;
+          duration_minutes?: number | null;
           custom_rules?: string | null;
           owner_id: string;
           context_json?: any;
@@ -35,6 +38,9 @@ export type Database = {
           instance_name?: string;
           business_name?: string | null;
           business_niche?: string | null;
+          primary_service?: string | null;
+          price?: number | null;
+          duration_minutes?: number | null;
           custom_rules?: string | null;
           owner_id?: string;
           context_json?: any;
@@ -55,11 +61,8 @@ export type Database = {
           trial_ends_at: string | null;
           phone: string | null;
           conversation_state: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
+          worker_status: 'idle' | 'eliza_processing' | 'waiting_reply' | 'error';
           simulation_count: number;
-          business_name: string | null;
-          primary_service: string | null;
-          price: number | null;
-          duration_minutes: number | null;
           google_refresh_token: string | null;
         };
         Insert: {
@@ -73,11 +76,8 @@ export type Database = {
           trial_ends_at?: string | null;
           phone?: string | null;
           conversation_state?: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
+          worker_status?: 'idle' | 'eliza_processing' | 'waiting_reply' | 'error';
           simulation_count?: number;
-          business_name?: string | null;
-          primary_service?: string | null;
-          price?: number | null;
-          duration_minutes?: number | null;
           google_refresh_token?: string | null;
         };
         Update: {
@@ -91,11 +91,8 @@ export type Database = {
           trial_ends_at?: string | null;
           phone?: string | null;
           conversation_state?: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
+          worker_status?: 'idle' | 'eliza_processing' | 'waiting_reply' | 'error';
           simulation_count?: number;
-          business_name?: string | null;
-          primary_service?: string | null;
-          price?: number | null;
-          duration_minutes?: number | null;
           google_refresh_token?: string | null;
         };
       };
