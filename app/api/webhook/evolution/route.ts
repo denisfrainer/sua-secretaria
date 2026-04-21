@@ -14,12 +14,13 @@ export async function POST(req: Request) {
     const remoteJid = key.remoteJid || "";
 
     // 🛡️ GATEKEEPER: Drop non-standard JIDs (Groups, Broadcasts, Newsletters)
-    if (!remoteJid.endsWith('@s.whatsapp.net')) {
+    // We allow @s.whatsapp.net OR @lid (Linked Devices)
+    if (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) {
       console.log(`🛡️ [WEBHOOK] Dropping non-standard JID: ${remoteJid}`);
       return NextResponse.json({ success: true, message: 'Filtered: Non-standard JID' });
     }
 
-    const rawPhone = remoteJid.replace('@s.whatsapp.net', '');
+    const rawPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@lid', '');
     const phone = normalizePhone(rawPhone);
     const isFromMe = key.fromMe === true;
 
