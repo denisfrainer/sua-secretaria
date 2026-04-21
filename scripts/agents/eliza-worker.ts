@@ -1,4 +1,4 @@
-import { GoogleGenAI, SchemaType } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
@@ -30,12 +30,12 @@ const oauth2Client = new google.auth.OAuth2(
 // ==============================================================
 const onboardingSchema: any = {
     description: "Extract business metadata for onboarding",
-    type: SchemaType.OBJECT,
+    type: "OBJECT",
     properties: {
-        businessName: { type: SchemaType.STRING },
-        primaryService: { type: SchemaType.STRING },
-        price: { type: SchemaType.NUMBER },
-        durationMinutes: { type: SchemaType.NUMBER },
+        businessName: { type: "STRING" },
+        primaryService: { type: "STRING" },
+        price: { type: "NUMBER" },
+        durationMinutes: { type: "NUMBER" },
     },
     required: ["businessName", "primaryService", "price", "durationMinutes"],
 };
@@ -61,16 +61,16 @@ async function handleOnboardingState(profile: any, lastMessage: string) {
     `;
 
     try {
-        const model = ai.getGenerativeModel({ 
+        const result = await ai.models.generateContent({ 
             model: "gemini-2.5-flash",
-            generationConfig: {
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: {
                 responseMimeType: "application/json",
                 responseSchema: onboardingSchema
             }
         });
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const responseText = result.text || "";
         const extracted = JSON.parse(responseText);
 
         console.log(`✅ [BRAIN:ONBOARDING] Data Extracted:`, extracted);
