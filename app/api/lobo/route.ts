@@ -9,32 +9,13 @@ import { createClient } from '../../../lib/supabase/server';
 
 const ALLOWED_EMAILS = ['lucassteiger@gmail.com', 'contato@wolfagency.com.br'];
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const runtime = 'nodejs';
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function parseSpintax(text: string): string {
-    const matches = text.match(/\{([^{}]+)\}/g);
-    if (!matches) return text;
-    let result = text;
-    for (const match of matches) {
-        const options = match.slice(1, -1).split('|');
-        const choice = options[Math.floor(Math.random() * options.length)];
-        result = result.replace(match, choice);
-    }
-    if (result.includes('{') && result.includes('}')) return parseSpintax(result);
-    return result;
-}
-
-function getBrazilDateString(): string {
-    const now = new Date();
-    const brTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    return brTime.toISOString().split('T')[0];
-}
-
 export async function POST(req: Request) {
+    return NextResponse.json({ status: 'deprecated', message: 'Legacy Wolf Prospector is disabled. Use the Profiles-driven funnel.' }, { status: 410 });
+}
+
+export async function GET(req: Request) {
+    return POST(req);
+}
     const cronId = Math.random().toString(36).substring(7);
     console.log(`\n--- 🐺 [${cronId}] WOLF AGENT PROSPECTOR ---`);
 

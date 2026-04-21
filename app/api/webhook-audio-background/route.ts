@@ -39,18 +39,18 @@ export async function POST(req: Request) {
         const clientNumber = normalizePhone(rawJid);
 
         // 🛡️ SILICON TWEAK DOUBLE LOCK: Check if AI is paused or needs human before processing audio
-        const { data: lead } = await supabaseAdmin
-            .from('leads_lobo')
-            .select('ai_paused, needs_human, instance_name')
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('id, ai_paused, needs_human')
             .eq('phone', clientNumber)
             .maybeSingle();
 
-        if (lead && (lead.ai_paused === true || lead.needs_human === true)) {
+        if (profile && (profile.ai_paused === true || profile.needs_human === true)) {
             console.log(`🛑 [SILICON TWEAK] Eliza silenciada para áudio em background de ${clientNumber} (AI Pausada ou Needs Human).`);
             return NextResponse.json({ status: 'ignored', reason: 'ai_paused_or_needs_human' }, { status: 200 });
         }
 
-        const instanceName = lead?.instance_name || body.instance || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
+        const instanceName = body.instance || (process.env.NEXT_PUBLIC_INSTANCE_NAME || 'secretaria');
 
         // --- 🛡️ TIER ACCESS CONTROL (L2 GATE) ---
         const { data: config } = await supabaseAdmin
