@@ -254,17 +254,23 @@ function startPolling() {
 }
 
 // ==============================================================
-// 🌐 HEALTHCHECK SERVER (Required for Railway)
+// 🌐 HEALTHCHECK SERVER (Optional)
 // ==============================================================
-const PORT = process.env.PORT || 8080;
+const WORKER_PORT = process.env.WORKER_PORT;
 
-console.log('[BOOT TRACE] 3. Initializing Healthcheck Server');
-
-http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end('Eliza Worker Live');
-}).listen(PORT, () => {
-    console.log(`🌐 Healthcheck Server running on port ${PORT}`);
+if (WORKER_PORT) {
+    console.log(`[BOOT TRACE] 3. Initializing Standalone Healthcheck Server on port ${WORKER_PORT}`);
+    http.createServer((req, res) => {
+        res.writeHead(200);
+        res.end('Eliza Worker Live');
+    }).listen(WORKER_PORT, () => {
+        console.log(`🌐 Healthcheck Server running on port ${WORKER_PORT}`);
+        console.log('[BOOT TRACE] 4. Calling startPolling()');
+        startPolling();
+    });
+} else {
+    // In concurrent mode (Railway), Next.js handles the $PORT signal
+    console.log('[BOOT TRACE] 3. Running alongside Next.js (Skipping separate port bind)');
     console.log('[BOOT TRACE] 4. Calling startPolling()');
     startPolling();
-});
+}

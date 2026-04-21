@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently \"next start\" \"tsx scripts/agents/eliza-worker.ts\"",
     "lint": "eslint",
     "eliza:start": "tsx scripts/agents/eliza-worker.ts"
   },
@@ -20,6 +20,7 @@
     "ai": "^6.0.116",
     "axios": "^1.14.0",
     "clsx": "^2.1.1",
+    "concurrently": "^9.1.2",
     "critters": "^0.0.23",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
