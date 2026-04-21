@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "concurrently \"next start\" \"tsx scripts/agents/eliza-worker.ts\"",
+    "start": "concurrently --prefix \"[{name}]\" --names \"WEB,WORKER\" --prefix-colors \"cyan,magenta\" \"next start\" \"tsx scripts/agents/eliza-worker.ts\"",
     "lint": "eslint",
     "eliza:start": "tsx scripts/agents/eliza-worker.ts"
   },

@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
 
   // Experimental: Otimização de CSS para PageSpeed
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false, // VETO: Disabling experimental feature to ensure boot reliability
   },
 };
 
