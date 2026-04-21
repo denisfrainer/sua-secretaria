@@ -32,9 +32,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ status: 'ignored', reason: 'invalid_format' });
         }
 
-        const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
+        const remoteJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
             ? String(dataObj.key.remoteJidAlt)
             : String(dataObj.key.remoteJid);
+
+        // 🛡️ GATEKEEPER: Drop non-standard JIDs (Groups, Broadcasts, Newsletters)
+        if (!remoteJid.endsWith('@s.whatsapp.net')) {
+            console.log(`🛡️ [BACKGROUND] Dropping non-standard JID: ${remoteJid}`);
+            return NextResponse.json({ status: 'ignored', reason: 'non_standard_jid' });
+        }
 
         const clientNumber = normalizePhone(rawJid);
 

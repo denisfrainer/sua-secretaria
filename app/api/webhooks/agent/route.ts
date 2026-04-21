@@ -16,9 +16,15 @@ export async function POST(req: Request) {
     const data = body.data || body;
     const key = data.key;
 
-    if (!key) return NextResponse.json({ success: true });
+    const remoteJid = key.remoteJid || "";
 
-    const phone = key.remoteJid.replace('@s.whatsapp.net', '');
+    // 🛡️ GATEKEEPER: Drop non-standard JIDs (Groups, Broadcasts, Newsletters)
+    if (!remoteJid.endsWith('@s.whatsapp.net')) {
+      console.log(`🛡️ [AGENT_WEBHOOK] Dropping non-standard JID: ${remoteJid}`);
+      return NextResponse.json({ success: true, message: 'Filtered: Non-standard JID' });
+    }
+
+    const phone = remoteJid.replace('@s.whatsapp.net', '');
     const fromMe = key.fromMe || false;
     const tenantId = new URL(req.url).searchParams.get('tenantId');
 

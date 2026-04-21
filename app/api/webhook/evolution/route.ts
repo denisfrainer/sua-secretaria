@@ -10,8 +10,16 @@ export async function POST(req: Request) {
     
     if (!key) return NextResponse.json({ success: true, message: 'No key found' });
 
-    // 1. ATOMIC IDENTITY LOCK
-    const rawPhone = key.remoteJid.replace('@s.whatsapp.net', '');
+    // 1. ATOMIC IDENTITY LOCK & JID FILTER
+    const remoteJid = key.remoteJid || "";
+
+    // 🛡️ GATEKEEPER: Drop non-standard JIDs (Groups, Broadcasts, Newsletters)
+    if (!remoteJid.endsWith('@s.whatsapp.net')) {
+      console.log(`🛡️ [WEBHOOK] Dropping non-standard JID: ${remoteJid}`);
+      return NextResponse.json({ success: true, message: 'Filtered: Non-standard JID' });
+    }
+
+    const rawPhone = remoteJid.replace('@s.whatsapp.net', '');
     const phone = normalizePhone(rawPhone);
     const isFromMe = key.fromMe === true;
 
