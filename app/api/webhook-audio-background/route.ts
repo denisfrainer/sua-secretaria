@@ -42,7 +42,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ status: 'ignored', reason: 'non_standard_jid' });
         }
 
-        const clientNumber = normalizePhone(rawJid);
+        const clientNumber = normalizePhone(remoteJid);
 
         // 🛡️ SILICON TWEAK DOUBLE LOCK: Check if AI is paused or needs human before processing audio
         const { data: profile } = await supabaseAdmin
