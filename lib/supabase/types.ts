@@ -54,7 +54,7 @@ export type Database = {
           avatar_url: string | null;
           trial_ends_at: string | null;
           phone: string | null;
-          conversation_state: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL';
+          conversation_state: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
           simulation_count: number;
           business_name: string | null;
           primary_service: string | null;
@@ -72,7 +72,7 @@ export type Database = {
           avatar_url?: string | null;
           trial_ends_at?: string | null;
           phone?: string | null;
-          conversation_state?: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL';
+          conversation_state?: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
           simulation_count?: number;
           business_name?: string | null;
           primary_service?: string | null;
@@ -90,13 +90,36 @@ export type Database = {
           avatar_url?: string | null;
           trial_ends_at?: string | null;
           phone?: string | null;
-          conversation_state?: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL';
+          conversation_state?: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
           simulation_count?: number;
           business_name?: string | null;
           primary_service?: string | null;
           price?: number | null;
           duration_minutes?: number | null;
           google_refresh_token?: string | null;
+        };
+      };
+      chat_sessions: {
+        Row: {
+          id: number;
+          profile_id: string;
+          lead_phone: string;
+          paused_until: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          profile_id: string;
+          lead_phone: string;
+          paused_until?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          profile_id?: string;
+          lead_phone?: string;
+          paused_until?: string | null;
+          created_at?: string;
         };
       };
       // ... more tables

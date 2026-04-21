@@ -53,7 +53,7 @@ export async function POST(request: Request) {
             ? instanceName 
             : `${prefix}-${instanceName}`;
 
-        const webhookFullUrl = `${webhookUrl}/api/webhook?tenantId=${tenantId}`;
+        const webhookFullUrl = `${webhookUrl}/api/webhooks/agent?tenantId=${tenantId}`;
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Prefix: ${prefix} | Tenant: ${tenantId}`);
         console.log(`🔗 [EVOLUTION_API] Webhook target: ${webhookFullUrl}`);
