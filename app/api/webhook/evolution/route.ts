@@ -5,21 +5,21 @@ import { normalizePhone } from '@/lib/utils/phone';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
-    // 🛡️ TITANIUM GATE: Absolute JID & Length Filter (Directive: First line of logic)
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
-    const remoteJid = dataObj?.key?.remoteJid || "";
 
-    // 1. Check Suffix (Whitelist)
-    const isWhitelisted = remoteJid.endsWith('@s.whatsapp.net') || remoteJid.endsWith('@lid');
-    
-    // 2. Check Length (Guard against Mutant IDs like 5535902353092770)
+    // 🚨 ABSOLUTE EMERGENCY STEEL GATE (Directive: First line of logic)
+    const remoteJid = dataObj?.key?.remoteJid || dataObj?.remoteJid || "";
+
+    if (!remoteJid || (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid'))) {
+        console.log("🛡️ [STEEL GATE] Dropping system/group message:", remoteJid);
+        return NextResponse.json({ status: 'ignored', jid: remoteJid });
+    }
+
+    // Secondary Length Guard (Stop 16-digit Mutant IDs)
     const numericPart = remoteJid.split('@')[0] || "";
-    const isMutant = numericPart.length > 15;
-
-    if (!isWhitelisted || isMutant) {
-        console.log(`🛡️ [TITANIUM GATE] Dropping illegal JID: ${remoteJid} (Whitelisted: ${isWhitelisted}, Mutant: ${isMutant})`);
-        return new Response('Ignored', { status: 200 });
+    if (numericPart.length > 15) {
+        console.log("🛡️ [LENGTH GUARD] Dropping mutant ID:", remoteJid);
+        return NextResponse.json({ status: 'ignored', jid: remoteJid, reason: 'mutant' });
     }
 
     const key = dataObj.key;
