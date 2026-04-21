@@ -56,7 +56,7 @@ async function getAudioBase64(messageId: string, instanceName: string) {
         });
 
         if (!response.ok) throw new Error(`Evolution API error: ${response.status}`);
-        
+
         const data = await response.json();
         return data.base64; // Evolution returns the base64 string
     } catch (err: any) {
@@ -71,7 +71,7 @@ async function getAudioBase64(messageId: string, instanceName: string) {
 
 async function handleOnboardingState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
     console.log(`🎯 [BRAIN:ONBOARDING] Processing for ${profile.phone}`);
-    
+
     const systemPrompt = `
         You are a sales rep for Sua SecretarIA. 
         Extract business metadata for this new partner based on their input (audio or text).
@@ -87,7 +87,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     `;
 
     const parts: any[] = [{ text: systemPrompt }];
-    
+
     if (messageData.audioBase64) {
         parts.push({
             inlineData: {
@@ -104,8 +104,8 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     }
 
     try {
-        const result = await ai.models.generateContent({ 
-            model: "gemini-2.5-flash",
+        const result = await ai.models.generateContent({
+            model: "gemini-3.1-flash-lite-preview",
             contents: [{ role: 'user', parts }],
             config: {
                 responseMimeType: "application/json",
@@ -148,7 +148,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         // 4. Send Response
         const syncUrl = await generateGoogleAuthUrl(profile.id);
         const msg = `✅ Perfeito! Perfil criado para *${extracted.businessName}*.\n\nEspecialidade: ${extracted.primaryService}\nPreço: R$ ${extracted.price}\n\n*PASSO 3 (O TESTE):* Chame o número 48998097754 para testar o bot atuando como sua secretária AGORA. Quando terminar, sincronize sua agenda aqui: ${syncUrl}`;
-        
+
         await sendWhatsAppMessage(profile.phone, msg);
 
     } catch (err: any) {
@@ -184,9 +184,9 @@ async function processProfile(profile: any) {
             return;
         }
 
-        let messageData: any = { 
-            text: lastMessage.content, 
-            messageId: lastMessage.message_id 
+        let messageData: any = {
+            text: lastMessage.content,
+            messageId: lastMessage.message_id
         };
 
         // Handle Audio Multimodal
@@ -211,7 +211,7 @@ async function processProfile(profile: any) {
                 break;
         }
 
-        await supabaseAdmin.from('profiles').update({ 
+        await supabaseAdmin.from('profiles').update({
             worker_status: 'waiting_reply',
             updated_at: new Date().toISOString()
         }).eq('id', profile.id);
