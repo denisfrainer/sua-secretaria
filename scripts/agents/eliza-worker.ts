@@ -38,9 +38,9 @@ async function resolveInstance(profile: any): Promise<string> {
     if (bConfig?.instance_name) return bConfig.instance_name;
 
     // Fallback 2: Env Vars Target
-    return process.env.EVOLUTION_INSTANCE_NAME || 
-           process.env.NEXT_PUBLIC_INSTANCE_NAME || 
-           `instance-${profile.phone}`;
+    return process.env.EVOLUTION_INSTANCE_NAME ||
+        process.env.NEXT_PUBLIC_INSTANCE_NAME ||
+        `instance-${profile.phone}`;
 }
 
 // ==============================================================
@@ -130,7 +130,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         const targetInstance = await resolveInstance(profile);
 
         const result = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: [{ role: 'user', parts }],
             config: {
                 responseMimeType: "application/json",
@@ -146,9 +146,9 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         // 🛡️ GREETING DETECTION: If critical data is missing, we send a welcome/guide message instead of transitioning
         if (!extracted.businessName || !extracted.primaryService || !extracted.price) {
             console.log(`👋 [BRAIN:ONBOARDING] Greeting or incomplete data detected for ${profile.phone}. Sending guide...`);
-            
+
             const welcomeMsg = `Olá! 👋 Sou a Eliza, sua assistente inteligente. Notei que você ainda não configurou seu perfil.\n\nPara começarmos, por favor me conte (por áudio ou texto):\n\n1. O *Nome* da sua empresa\n2. Qual *Serviço* você oferece\n3. O *Preço* e a *Duração* média\n\nEstou aguardando para criarmos seu bot! 🐺`;
-            
+
             await sendWhatsAppMessage(profile.phone, welcomeMsg, 1200, targetInstance!);
             return; // EXIT: We stay in ONBOARDING state
         }
