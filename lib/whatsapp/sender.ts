@@ -108,18 +108,19 @@ export async function sendWhatsAppImage(phone: string, base64: string, caption: 
     // Ensure number is strictly digits
     const cleanNumber = phone.replace(/\D/g, '');
 
-    // Ensure Base64 has the correct prefix
-    const finalBase64 = base64.startsWith('data:image/') ? base64 : `data:image/png;base64,${base64}`;
+    // Ensure Base64 is clean (No prefix for v2 media field if already declared as mediatype)
+    const rawBase64 = base64.replace(/^data:image\/[a-z]+;base64,/, '');
 
     const payload = {
         number: cleanNumber,
-        media: finalBase64,
+        media: rawBase64,
         mediatype: "image", // FORCE LOWERCASE for v2 compatibility
         caption: caption,
         fileName: "qrcode.png"
     };
 
     try {
+        console.log(`[DEBUG] Media Payload (first 100 chars):`, JSON.stringify({ ...payload, media: payload.media.substring(0, 100) + '...' }));
         console.log(`📤 [SENDER:IMAGE] Attempting QR send to ${cleanNumber} (Instance: ${targetInstance})`);
         
         const res = await axios.post(url, payload, {

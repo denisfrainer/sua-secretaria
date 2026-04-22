@@ -66,18 +66,18 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
 
 /**
  * Normalizes phone numbers to handle the Brazilian 9th digit discrepancy.
- * Ensures the format is strictly digits and correctly aligned with Meta JIDs.
+ * SPECIFIC FIX: For DDD 48, we must REMOVE the 9th digit if present (stripping to 12 digits).
  */
 function normalizePhoneNumber(phone: string): string {
     let clean = phone.replace(/\D/g, '');
     
-    // Brazilian logic: 55 + DDD (2 digits) + Number
-    // Mobile numbers in Brazil have 9 digits. If entry has 8, we add the 9.
-    if (clean.startsWith('55') && clean.length === 12) {
-        const ddd = clean.substring(2, 4);
-        const number = clean.substring(4);
-        console.log(`[JID_FIX] Normalizing Brazilian number: Adding 9th digit to DDD ${ddd}`);
-        return `55${ddd}9${number}`;
+    // Brazilian logic for Users with DDD 48
+    // If it has 13 digits (55 48 9 XXXX XXXX), strip the 5th digit (the '9').
+    if (clean.startsWith('5548') && clean.length === 13) {
+        const prefix = clean.substring(0, 4); // 5548
+        const remainder = clean.substring(5); // Everything after the '9'
+        console.log(`[JID_FIX] Normalizing DDD 48: Stripping 9th digit. Result: ${prefix}${remainder}`);
+        return `${prefix}${remainder}`;
     }
     
     return clean;
