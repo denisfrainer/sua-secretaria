@@ -16,21 +16,32 @@ export async function POST(req: Request) {
       console.log(`📡 [CONNECTION_UPDATE] Instance: ${instanceName} | State: ${state}`);
 
       if (state === "open" || state === "connected") {
-        console.log("🔓 [HANDSHAKE] Connection established. Promoting instance to CONNECTED.");
-        
-        // Use UPSERT to ensure the record is finalized and associated with the unique instanceName
-        const { error } = await supabaseAdmin
-          .from('business_config')
-          .upsert({ 
-            instance_name: instanceName,
-            status: 'CONNECTED',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'instance_name' });
+        try {
+          console.log("🔓 [HANDSHAKE] Connection established. Promoting instance to CONNECTED.");
+          
+          const defaultContext = {
+            business_info: { name: "Nova SecretarIA", description: "Configuração em andamento" },
+            services: [],
+            faq: []
+          };
 
-        if (error) {
-          console.error("❌ [DB_SYNC_ERROR] Failed to promote instance:", error);
-        } else {
-          console.log("✅ [DB_SYNC_SUCCESS] Instance is now officially CONNECTED.");
+          // Use UPSERT to ensure the record is finalized and seeded with default context
+          const { error } = await supabaseAdmin
+            .from('business_config')
+            .upsert({ 
+              instance_name: instanceName,
+              status: 'CONNECTED',
+              context_json: defaultContext,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'instance_name' });
+
+          if (error) {
+            console.error("❌ [DB_SYNC_ERROR] Failed to promote instance:", error);
+          } else {
+            console.log("✅ [DB_SYNC_SUCCESS] Instance is now officially CONNECTED and seeded.");
+          }
+        } catch (innerErr: any) {
+          console.error("❌ [HANDSHAKE_ERROR] Failed during promotion logic (state was open):", innerErr.message);
         }
       }
       return NextResponse.json({ success: true });

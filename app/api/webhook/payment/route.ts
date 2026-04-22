@@ -56,12 +56,20 @@ export async function POST(req: Request) {
     // 5.1 SYNC DATABASE (business_config)
     if (instanceName) {
       console.log(`📡 [WEBHOOK] Syncing unique instance to DB (UPSERT): ${instanceName}`);
+      
+      const defaultContext = {
+        business_info: { name: "Nova SecretarIA", description: "Configuração em andamento" },
+        services: [],
+        faq: []
+      };
+
       const { error: syncError } = await supabaseAdmin
         .from('business_config')
         .upsert({ 
           owner_id: profile.id,
           instance_name: instanceName,
           status: 'CONNECTING',
+          context_json: defaultContext,
           updated_at: new Date().toISOString()
         }, { onConflict: 'owner_id' });
 
