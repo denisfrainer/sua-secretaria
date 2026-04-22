@@ -1,4 +1,4 @@
-import http from 'http';
+import * as http from 'http';
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
@@ -21,6 +21,27 @@ const ai = new GoogleGenAI({
 console.log('[BOOT TRACE] 2. AI SDK Initialized');
 
 process.env.TZ = 'America/Sao_Paulo';
+
+// ==========================================
+// 🛠️ UTILS: INSTANCE RESOLVER
+// ==========================================
+async function resolveInstance(profile: any): Promise<string> {
+    if (profile.instance_name) return profile.instance_name;
+
+    // Fallback 1: Database business_config
+    const { data: bConfig } = await supabaseAdmin
+        .from('business_config')
+        .select('instance_name')
+        .eq('owner_id', profile.id)
+        .maybeSingle();
+
+    if (bConfig?.instance_name) return bConfig.instance_name;
+
+    // Fallback 2: Env Vars Target
+    return process.env.EVOLUTION_INSTANCE_NAME || 
+           process.env.NEXT_PUBLIC_INSTANCE_NAME || 
+           `instance-${profile.phone}`;
+}
 
 // ==============================================================
 // 🔧 CONFIG & SCHEMAS
@@ -106,21 +127,10 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
 
     try {
         // Resolve Instance Name with robust fallbacks
-        let targetInstance = profile.instance_name || null;
-        
-        // If profile doesn't have it, try finding it in business_config or env
-        if (!targetInstance) {
-            const { data: bConfig } = await supabaseAdmin
-                .from('business_config')
-                .select('instance_name')
-                .eq('owner_id', profile.id)
-                .maybeSingle();
-            
-            targetInstance = bConfig?.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME || `instance-${profile.phone}`;
-        }
+        const targetInstance = await resolveInstance(profile);
 
         const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.0-flash",
             contents: [{ role: 'user', parts }],
             config: {
                 responseMimeType: "application/json",
@@ -188,9 +198,9 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
 
     } catch (err: any) {
         // Resolve instance for error message as well
-        const errInstance = profile.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+        const errInstance = await resolveInstance(profile);
         console.error(`❌ [BRAIN:ONBOARDING ERROR]`, err.message);
-        await sendWhatsAppMessage(profile.phone, "Não consegui processar seu áudio/mensagem. Pode tentar novamente?", 1200, errInstance!);
+        await sendWhatsAppMessage(profile.phone, "Não consegui processar seu áudio/mensagem. Pode tentar novamente?", 1200, errInstance);
     }
 }
 
@@ -228,8 +238,8 @@ async function processProfile(profile: any) {
 
         // Handle Audio Multimodal
         if (lastMessage.content === "[AUDIO]") {
-            const instanceName = profile.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
-            const base64 = await getAudioBase64(lastMessage.message_id, instanceName!);
+            const instanceName = await resolveInstance(profile);
+            const base64 = await getAudioBase64(lastMessage.message_id, instanceName);
             if (base64) {
                 messageData.audioBase64 = base64;
             } else {
@@ -238,7 +248,7 @@ async function processProfile(profile: any) {
         }
 
         // Resolve Instance Name for this profile
-        const targetInstance = profile.instance_name || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+        const targetInstance = await resolveInstance(profile);
 
         switch (profile.conversation_state) {
             case 'ONBOARDING':

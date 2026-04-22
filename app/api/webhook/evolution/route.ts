@@ -7,22 +7,22 @@ export async function POST(req: Request) {
     const body = await req.json();
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
 
-    // 🚨 GATEKEEPER ISOLATION (Directive: Absolute first line of processing)
-    const remoteJid = dataObj?.key?.remoteJid || dataObj?.remoteJid || "";
-    const rawNumber = remoteJid.split('@')[0] || "";
+    // 1. A "Gambiarra" Oficial: Procura o número real na gaveta alternativa se o principal for um @lid
+    let remoteJid = dataObj?.key?.remoteJid || dataObj?.remoteJid || "";
+    if (dataObj?.key?.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net')) {
+        remoteJid = String(dataObj.key.remoteJidAlt);
+    }
 
-    // Triple Filter: 1. Whitelisted family, 2. Human length (max 13), 3. Explicit Mutant block
+    const rawNumber = remoteJid.split('@')[0];
+
+    // 2. O Gatekeeper (Agora olhando para o número certo)
     if (
-        (!remoteJid.endsWith('@s.whatsapp.net') && !remoteJid.endsWith('@lid')) || 
+        !remoteJid.endsWith('@s.whatsapp.net') || 
         rawNumber.length > 13 || 
-        rawNumber === '5535902353092770' ||
-        rawNumber === '35902353092770'
+        rawNumber === '5535902353092770'
     ) {
         console.log("🛑 [GATEKEEPER] Mutant/Group Rejected:", remoteJid);
-        return new Response(JSON.stringify({ status: 'ignored' }), { 
-            status: 200, 
-            headers: { 'Content-Type': 'application/json' } 
-        });
+        return new Response(JSON.stringify({ status: 'ignored' }), { status: 200 });
     }
 
     const key = dataObj.key;
