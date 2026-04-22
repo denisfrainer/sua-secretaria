@@ -6,42 +6,43 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const event = body.event || body.type; // Evolution v2 uses 'event'
+    
+    // 1. Safe extraction of Instance and State (handles nesting and direct properties)
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
+    const instanceName = body.instance || dataObj.instanceName || body.instanceName || dataObj.instance;
+    const state = dataObj.state || body.state || dataObj.status || body.status;
 
     console.log(`📡 [EVOLUTION_WEBHOOK] Event received: ${event}`);
 
     // --- CASE A: CONNECTION UPDATE (Handshake Lifecycle) ---
     if (event === "connection.update" || event === "CONNECTION_UPDATE") {
-      const { state, instanceName } = dataObj;
+      // 2. Fallback observability
+      if (!instanceName) {
+          console.error("❌ [WEBHOOK_ERROR] Instance name missing. Raw body:", JSON.stringify(body, null, 2));
+          return NextResponse.json({ error: "Missing instance name" }, { status: 200 });
+      }
+
       console.log(`📡 [CONNECTION_UPDATE] Instance: ${instanceName} | State: ${state}`);
 
-      if (state === "open" || state === "connected") {
+      if (state === "open") {
         try {
-          console.log(`🔓 [HANDSHAKE] Connection established for ${instanceName}. Promoting to CONNECTED.`);
+          console.log(`🔓 [HANDSHAKE] Confirmed for ${instanceName}. Syncing to Supabase...`);
           
-          const defaultContext = {
-            business_info: { name: "Nova SecretarIA", description: "Configuração em andamento" },
-            services: [],
-            faq: []
-          };
-
-          // Use UPSERT to ensure the record is finalized and seeded with default context
           const { error } = await supabaseAdmin
             .from('business_config')
-            .upsert({ 
-              instance_name: instanceName,
+            .update({ 
               status: 'CONNECTED',
-              context_json: defaultContext,
               updated_at: new Date().toISOString()
-            }, { onConflict: 'instance_name' });
+            })
+            .eq('instance_name', instanceName);
 
           if (error) {
             console.error("❌ [DB_SYNC_ERROR] Failed to promote instance:", error);
           } else {
-            console.log("✅ [DB_SYNC_SUCCESS] Instance is now officially CONNECTED and seeded.");
+            console.log(`✅ [DB_SYNC_SUCCESS] ${instanceName} is now CONNECTED.`);
           }
         } catch (innerErr: any) {
-          console.error("❌ [HANDSHAKE_ERROR] Failed during promotion logic (state was open):", innerErr.message);
+          console.error("❌ [HANDSHAKE_ERROR] Failed during promotion logic:", innerErr.message);
         }
       }
       return NextResponse.json({ success: true });
