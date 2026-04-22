@@ -43,6 +43,36 @@ async function resolveInstance(profile: any): Promise<string> {
         `instance-${profile.phone}`;
 }
 
+/**
+ * RESILIENCE: Exponential Backoff for AI Calls
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+    const delays = [2000, 4000, 8000];
+    let lastError: any;
+
+    for (let i = 0; i <= maxRetries; i++) {
+        try {
+            return await fn();
+        } catch (err: any) {
+            lastError = err;
+            // Catch transient 503, 500, or rate limit errors
+            const isTransient = 
+                err.message?.includes('503') || 
+                err.message?.includes('504') || 
+                err.message?.includes('500') || 
+                err.message?.includes('429');
+            
+            if (i < maxRetries && isTransient) {
+                console.warn(`⚠️ [AI:RETRY] Attempt ${i + 1} failed (Transient Error). Retrying in ${delays[i]}ms...`);
+                await new Promise(res => setTimeout(res, delays[i]));
+            } else {
+                break;
+            }
+        }
+    }
+    throw lastError;
+}
+
 // ==============================================================
 // 🔧 CONFIG & SCHEMAS
 // ==============================================================
@@ -104,6 +134,9 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         - Duration in Minutes (Number)
         - Summary: A 1-sentence transcription/summary of what they said.
 
+        🛡️ STRICT DIRECTIVE: You MUST extract and return all values EXACTLY as spoken in Portuguese. 
+        DO NOT translate terms like 'corte de cabelo' to English.
+
         🛡️ GUARDRAIL: If the user is only greeting you (e.g., 'Oi', 'Bom dia') and has NOT provided business details, return the extraction fields (businessName, primaryService, price, durationMinutes) as null. 
         DO NOT invent or assume default values like 100 or 60.
     `;
@@ -126,16 +159,74 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     }
 
     try {
-        // Resolve Instance Name with robust fallbacks
         const targetInstance = await resolveInstance(profile);
 
-        const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [{ role: 'user', parts }],
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: onboardingSchema
+        // 1. VIRTUAL STATE CHECK: Are we awaiting confirmation?
+        const { data: config } = await supabaseAdmin
+            .from('business_config')
+            .select('*')
+            .eq('owner_id', profile.id)
+            .maybeSingle();
+
+        const context = config?.context_json || {};
+        const isAwaitingConfirmation = context.pending_confirmation === true;
+
+        if (isAwaitingConfirmation) {
+            const userText = (messageData.text || "").toUpperCase().trim();
+            console.log(`🧐 [BRAIN:ONBOARDING] Confirmation response from ${profile.phone}: ${userText}`);
+
+            if (userText.includes('SIM') || userText.includes('CORRETO') || userText.includes('OK')) {
+                // COMMIT DATA
+                const pending = context.pending_metadata;
+                console.log(`✅ [BRAIN:ONBOARDING] Data confirmed for ${profile.phone}. Committing...`);
+
+                const { error: commitError } = await supabaseAdmin.from('business_config').upsert({
+                    owner_id: profile.id,
+                    business_name: pending.businessName,
+                    primary_service: pending.primaryService,
+                    price: pending.price,
+                    duration_minutes: pending.durationMinutes,
+                    instance_name: targetInstance,
+                    context_json: { ...context, pending_confirmation: false, pending_metadata: null },
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'owner_id' });
+
+                if (commitError) throw commitError;
+
+                // Transition to SIMULATION
+                await supabaseAdmin.from('profiles').update({
+                    conversation_state: 'SIMULATION',
+                    updated_at: new Date().toISOString()
+                }).eq('id', profile.id);
+
+                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sua-secretaria.netlify.app';
+                const connectUrl = `${baseUrl}/api/auth/connect?id=${profile.id}`;
+                const successMsg = `Excelente! 🎉 Seus dados foram salvos com sucesso.\n\n*PASSO FINAL:* Conecte sua agenda Google para que eu possa organizar seus horários automaticamente:\n\n🔗 ${connectUrl}`;
+                await sendWhatsAppMessage(profile.phone, successMsg, 1200, targetInstance);
+                return;
+            } else {
+                // REJECTED or UNKNOWN
+                console.log(`❌ [BRAIN:ONBOARDING] Confirmation rejected by ${profile.phone}. Clearing and restarting...`);
+                await supabaseAdmin.from('business_config').update({
+                    context_json: { ...context, pending_confirmation: false, pending_metadata: null }
+                }).eq('owner_id', profile.id);
+
+                const retryMsg = "Sem problemas! Vamos recomeçar. Por favor, me envie novamente o Nome da empresa, o Serviço que você oferece e o Valor.";
+                await sendWhatsAppMessage(profile.phone, retryMsg, 1200, targetInstance);
+                return;
             }
+        }
+
+        // 2. EXTRACTION LOGIC (Standard Onboarding with Resilience)
+        const result = await withRetry(async () => {
+            return await ai.models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: [{ role: 'user', parts }],
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: onboardingSchema
+                }
+            });
         });
 
         const responseText = result.text || "";
@@ -143,127 +234,117 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
 
         console.log(`✅ [BRAIN:ONBOARDING] Data Extracted:`, extracted);
 
-        // 🛡️ GREETING DETECTION: If critical data is missing, we send a welcome/guide message instead of transitioning
+        // 🛡️ GREETING DETECTION
         if (!extracted.businessName || !extracted.primaryService || !extracted.price) {
-            console.log(`👋 [BRAIN:ONBOARDING] Greeting or incomplete data detected for ${profile.phone}. Sending guide...`);
-
-            const welcomeMsg = `Olá! 👋 Sou a Eliza, sua assistente inteligente. Notei que você ainda não configurou seu perfil.\n\nPara começarmos, por favor me conte (por áudio ou texto):\n\n1. O *Nome* da sua empresa\n2. Qual *Serviço* você oferece\n3. O *Preço* e a *Duração* média\n\nEstou aguardando para criarmos seu bot! 🐺`;
-
-            await sendWhatsAppMessage(profile.phone, welcomeMsg, 1200, targetInstance!);
-            return; // EXIT: We stay in ONBOARDING state
+            console.log(`👋 [BRAIN:ONBOARDING] Greeting or incomplete data detected for ${profile.phone}.`);
+            const welcomeMsg = `Olá! 👋 Sou a Eliza. Notei que você ainda não configurou seu perfil.\n\nPara começarmos, por favor me conte:\n\n1. O *Nome* da sua empresa\n2. Qual *Serviço* você oferece\n3. O *Preço* e a *Duração* média`;
+            await sendWhatsAppMessage(profile.phone, welcomeMsg, 1200, targetInstance);
+            return;
         }
 
-        // 1. Update Business Config (Preserve context_json)
-        // Fetch existing config first to avoid sending null for context_json or overwriting it
-        const { data: existingConfig } = await supabaseAdmin
-            .from('business_config')
-            .select('context_json')
-            .eq('owner_id', profile.id)
-            .maybeSingle();
-
-        const { error: configError } = await supabaseAdmin.from('business_config').upsert({
+        // 3. SET VIRTUAL CONFIRMATION STATE
+        console.log(`⏳ [BRAIN:ONBOARDING] Data extracted for ${profile.phone}. Awaiting confirmation...`);
+        
+        await supabaseAdmin.from('business_config').upsert({
             owner_id: profile.id,
-            business_name: extracted.businessName,
-            primary_service: extracted.primaryService,
-            price: extracted.price,
-            duration_minutes: extracted.durationMinutes,
-            instance_name: targetInstance,
-            // If we have no existing config, provide a basic non-null default
-            context_json: existingConfig?.context_json || { is_ai_enabled: true },
+            context_json: { ...context, pending_confirmation: true, pending_metadata: extracted },
             updated_at: new Date().toISOString()
         }, { onConflict: 'owner_id' });
 
-        if (configError) throw configError;
+        const confirmationMsg = `Entendi! Só para confirmar, os dados da sua empresa são:\n\n🏢 *Nome:* ${extracted.businessName}\n🛠️ *Serviço:* ${extracted.primaryService}\n💰 *Preço:* R$ ${extracted.price}\n⏱️ *Duração:* ${extracted.durationMinutes} min\n\n*Está tudo correto?* (Responda SIM ou NÃO)`;
+        await sendWhatsAppMessage(profile.phone, confirmationMsg, 1200, targetInstance);
 
-        // 2. Update Placeholder in Messages
+        // Update Placeholder in Messages
         if (messageData.messageId) {
             await supabaseAdmin
                 .from('messages')
-                .update({ content: `[AUDIO TRANSCRIPT]: ${extracted.summary}` })
+                .update({ content: `[DATA EXTRACTED]: ${extracted.summary}` })
                 .eq('message_id', messageData.messageId);
         }
 
-        // 3. Transition State to SIMULATION
-        await supabaseAdmin.from('profiles').update({
-            conversation_state: 'SIMULATION',
-            updated_at: new Date().toISOString()
-        }).eq('id', profile.id);
-
-        // 4. Send Response
-        const syncUrl = await generateGoogleAuthUrl(profile.id);
-        const msg = `✅ Perfeito! Perfil criado para *${extracted.businessName}*.\n\nEspecialidade: ${extracted.primaryService}\nPreço: R$ ${extracted.price}\n\n*PASSO 3 (O TESTE):* Chame o número 48998097754 para testar o bot atuando como sua secretária AGORA. Quando terminar, sincronize sua agenda aqui: ${syncUrl}`;
-
-        // PROPAGATE INSTANCE NAME TO PREVENT 404
-        await sendWhatsAppMessage(profile.phone, msg, 1200, targetInstance!);
-
     } catch (err: any) {
+        console.error("💥 [ONBOARDING FATAL ERROR] Trace:", err);
         // Resolve instance for error message as well
         const errInstance = await resolveInstance(profile);
-        console.error(`❌ [BRAIN:ONBOARDING ERROR]`, err.message);
-        await sendWhatsAppMessage(profile.phone, "Não consegui processar seu áudio/mensagem. Pode tentar novamente?", 1200, errInstance);
+        
+        // Fallback message for user after retries failed
+        const fallbackMsg = "Sistema com alto volume de mensagens agora. Eliza está respirando um pouco, mas já te respondo! (Pode tentar mandar de novo em 1 minuto)";
+        await sendWhatsAppMessage(profile.phone, fallbackMsg, 1200, errInstance);
     }
 }
 
 async function handleSimulationState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
-    console.log(`🎯 [BRAIN:SIMULATION] Processing for ${profile.phone}`);
-    const targetInstance = await resolveInstance(profile);
+    try {
+        console.log(`🎯 [BRAIN:SIMULATION] Processing for ${profile.phone}`);
+        const targetInstance = await resolveInstance(profile);
 
-    // 1. INTENT CLASSIFICATION: Decide if we transition to checkout or continue simulation
-    const intentPrompt = `
-        Analise a mensagem do usuário. 
-        Se ele expressar que gostou do teste, quiser comprar, assinar, ou avançar (ex: 'gostei', 'como pago', 'quero continuar'), retorne APENAS a palavra 'PROCEED'. 
-        Se ele estiver apenas conversando ou testando o bot (ex: 'qual o valor do corte?', 'tem horário?'), retorne APENAS 'SIMULATE'.
-    `;
+        // 1. INTENT CLASSIFICATION: Decide if we transition to checkout or continue simulation
+        const intentPrompt = `
+            Analise a mensagem do usuário. 
+            Se ele expressar que gostou do teste, quiser comprar, assinar, ou avançar (ex: 'gostei', 'como pago', 'quero continuar'), retorne APENAS a palavra 'PROCEED'. 
+            Se ele estiver apenas conversando ou testando o bot (ex: 'qual o valor do corte?', 'tem horário?'), retorne APENAS 'SIMULATE'.
+        `;
 
-    const userContent = messageData.text || "[AUDIO]";
-    const intentResult = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }]
-    });
+        const userContent = messageData.text || "[AUDIO]";
+        const intentResult = await withRetry(async () => {
+            return await ai.models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }]
+            });
+        });
 
-    const intent = (intentResult.text || "").toUpperCase().trim();
-    console.log(`📡 [STATE:SIMULATION] Intent detected for ${profile.phone}: ${intent}`);
+        const intent = (intentResult.text || "").toUpperCase().trim();
+        console.log(`📡 [STATE:SIMULATION] Intent detected for ${profile.phone}: ${intent}`);
 
-    if (intent.includes('PROCEED')) {
-        console.log(`🚀 [STATE:SIMULATION] Transitioning ${profile.phone} to PAYWALL`);
-        // Escalate to Payment (PAYWALL state as per lib/supabase/types.ts)
-        await supabaseAdmin.from('profiles').update({ 
-            conversation_state: 'PAYWALL',
-            updated_at: new Date().toISOString()
-        }).eq('id', profile.id);
+        if (intent.includes('PROCEED')) {
+            console.log(`🚀 [STATE:SIMULATION] Transitioning ${profile.phone} to PAYWALL`);
+            // Escalate to Payment (PAYWALL state as per lib/supabase/types.ts)
+            await supabaseAdmin.from('profiles').update({ 
+                conversation_state: 'PAYWALL',
+                updated_at: new Date().toISOString()
+            }).eq('id', profile.id);
 
-        const checkoutMsg = "Que excelente notícia! 🎉 Para ativar sua secretária oficial e gerar seu código de pareamento, conclua sua assinatura no link abaixo:\n\n🔗 https://sua-plataforma.com/checkout";
-        await sendWhatsAppMessage(profile.phone, checkoutMsg, 1200, targetInstance);
-        return;
-    }
+            const pixPayload = `00020126580014br.gov.bcb.pix0136[MOCK-PIX-KEY-123456789]5204000053039865802BR5916SUA SECRETARIA6009SAO PAULO62070503***63041A2B`;
+            const checkoutMsg = `Excelente! Para ativar sua secretária inteligente, realize o pagamento via PIX Copia e Cola abaixo:\n\n\`${pixPayload}\`\n\n*(Ambiente de Testes: Aguardando confirmação do Webhook...)*`;
+            
+            await sendWhatsAppMessage(profile.phone, checkoutMsg, 1200, targetInstance);
+            return;
+        }
 
-    // 2. SECRETARY SIMULATION: Execute the "Simulation" of the bot acting on behalf of the user
-    console.log(`🤖 [STATE:SIMULATION] Continuing simulation for ${profile.phone}`);
-    
-    // Fetch business context for the simulation
-    const { data: bConfig } = await supabaseAdmin
-        .from('business_config')
-        .select('*')
-        .eq('owner_id', profile.id)
-        .maybeSingle();
-
-    const simPrompt = `
-        Você é uma secretária virtual para a empresa ${bConfig?.business_name || 'sua empresa'}.
-        Seu objetivo é ser gentil, profissional e responder baseado nestas informações:
-        - Serviço principal: ${bConfig?.primary_service || 'serviços gerais'}
-        - Preço: R$ ${bConfig?.price || 'sob consulta'}
-        - Duração: ${bConfig?.duration_minutes || '30'} min
+        // 2. SECRETARY SIMULATION: Execute the "Simulation" of the bot acting on behalf of the user
+        console.log(`🤖 [STATE:SIMULATION] Continuing simulation for ${profile.phone}`);
         
-        🛡️ GUARDRAIL: Mantenha a resposta curta. Seu objetivo é ajudar o cliente fictício a testar o bot.
-    `;
+        // Fetch business context for the simulation
+        const { data: bConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('*')
+            .eq('owner_id', profile.id)
+            .maybeSingle();
 
-    const simResult = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }]
-    });
+        const simPrompt = `
+            Você é uma secretária virtual para a empresa ${bConfig?.business_name || 'sua empresa'}.
+            Seu objetivo é ser gentil, profissional e responder baseado nestas informações:
+            - Serviço principal: ${bConfig?.primary_service || 'serviços gerais'}
+            - Preço: R$ ${bConfig?.price || 'sob consulta'}
+            - Duração: ${bConfig?.duration_minutes || '30'} min
+            
+            🛡️ GUARDRAIL: Mantenha a resposta curta. Seu objetivo é ajudar o cliente fictício a testar o bot.
+        `;
 
-    const responseText = simResult.text || "Entendido! Como posso te ajudar hoje?";
-    await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
+        const simResult = await withRetry(async () => {
+            return await ai.models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }]
+            });
+        });
+
+        const responseText = simResult.text || "Entendido! Como posso te ajudar hoje?";
+        await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
+    } catch (err: any) {
+        console.error("💥 [SIMULATION FATAL ERROR] Trace:", err);
+        const errInstance = await resolveInstance(profile);
+        await sendWhatsAppMessage(profile.phone, "Tive um probleminha técnico no seu teste. Pode tentar de novo em instantes?", 1200, errInstance);
+    }
 }
 
 // ==============================================================
