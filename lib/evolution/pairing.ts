@@ -141,7 +141,8 @@ export async function getPairingData(phone: string) {
 
     return { 
         pairingCode: finalPairingCode || null, 
-        qrBase64: qrBase64 || null 
+        qrBase64: qrBase64 || null,
+        instanceName: uniqueInstanceName
     };
   } catch (error: any) {
     if (error.response) {
@@ -149,7 +150,7 @@ export async function getPairingData(phone: string) {
     } else {
       console.error(`❌ [EVOLUTION_PAIRING] Request Error:`, error.message);
     }
-    return { pairingCode: null, qrBase64: null };
+    return { pairingCode: null, qrBase64: null, instanceName: null };
   }
 }
 

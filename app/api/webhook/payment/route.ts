@@ -48,10 +48,29 @@ export async function POST(req: Request) {
     console.log(`✅ [PAGARME_WEBHOOK] Profile ${profile.id} promoted to ACTIVE.`);
 
     // 5. Trigger Pairing Data (Step 5)
-    // Now returns both pairing code and QR base64
-    const { pairingCode, qrBase64 } = await getPairingData(phone);
+    // Now returns both pairing code, QR base64 and the Unique Instance Name
+    const { pairingCode, qrBase64, instanceName } = await getPairingData(phone);
     
     console.log(`📡 [WEBHOOK] Executing multimodal delivery check (QR: ${!!qrBase64}, Code: ${!!pairingCode})`);
+
+    // 5.1 SYNC DATABASE (business_config)
+    if (instanceName) {
+      console.log(`📡 [WEBHOOK] Syncing unique instance to DB: ${instanceName}`);
+      const { error: syncError } = await supabaseAdmin
+        .from('business_config')
+        .update({ 
+          instance_name: instanceName,
+          status: 'CONNECTING',
+          updated_at: new Date().toISOString()
+        })
+        .eq('owner_id', profile.id);
+
+      if (syncError) {
+        console.error('❌ [WEBHOOK] Failed to sync business_config:', syncError);
+      } else {
+        console.log(`✅ [WEBHOOK] business_config updated for owner ${profile.id}`);
+      }
+    }
 
     // 6. MULTIMODAL DELIVERY
     
