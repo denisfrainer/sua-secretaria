@@ -37,16 +37,17 @@ async function nuclearResetInstance(instanceName: string) {
 /**
  * Creates an instance in Evolution API.
  */
-async function createInstance(instanceName: string) {
+async function createInstance(instanceName: string, phoneNumber?: string) {
   const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   const url = `${getBaseUrl()}/instance/create`;
 
-  console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName}`);
+  console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
   console.log(`🔑 [DEBUG] Create Key prefix: ${globalApiKey?.substring(0, 5)}...`);
 
   try {
     const res = await axios.post(url, {
       instanceName: instanceName,
+      number: phoneNumber ? phoneNumber.replace(/\D/g, '') : undefined,
       token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
       qrcode: false,
       integration: "WHATSAPP-BAILEYS"
@@ -82,7 +83,7 @@ export async function getPairingData(phone: string) {
   const uniqueInstanceName = `${instanceName}-${timestamp}`;
   console.log(`🚀 [EVOLUTION_PAIRING] Generating unique instance: ${uniqueInstanceName}`);
   
-  await createInstance(uniqueInstanceName);
+  await createInstance(uniqueInstanceName, cleanPhone);
 
   // 4. Stablization Delay (Wait for session registration with Meta)
   console.log(`⏳ [EVOLUTION_PAIRING] Waiting 2 seconds for session stabilization...`);

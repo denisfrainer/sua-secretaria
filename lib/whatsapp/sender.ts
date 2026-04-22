@@ -103,7 +103,7 @@ export async function checkWhatsAppNumber(phone: string, instanceName?: string):
 export async function sendWhatsAppImage(phone: string, base64: string, caption: string, instanceName?: string) {
     const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME || 'agente-lobo';
     const apikey = process.env.EVOLUTION_API_KEY;
-    const url = `${getBaseUrl()}/message/sendMediaBase64/${targetInstance}`;
+    const url = `${getBaseUrl()}/message/sendMedia/${targetInstance}`;
 
     // Ensure number is strictly digits
     const cleanNumber = phone.replace(/\D/g, '');
@@ -114,7 +114,7 @@ export async function sendWhatsAppImage(phone: string, base64: string, caption: 
     const payload = {
         number: cleanNumber,
         media: finalBase64,
-        mediatype: "image",
+        mediaType: "image", // Strictly camelCase for v2
         caption: caption,
         fileName: "qrcode.png"
     };
