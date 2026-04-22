@@ -51,6 +51,8 @@ export async function POST(req: Request) {
     // Now returns both pairing code and QR base64
     const { pairingCode, qrBase64 } = await getPairingData(phone);
     
+    console.log(`📡 [WEBHOOK] Executing multimodal delivery check (QR: ${!!qrBase64}, Code: ${!!pairingCode})`);
+
     // 6. MULTIMODAL DELIVERY
     
     // Case A: Image (Plan B)

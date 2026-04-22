@@ -42,12 +42,11 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
   const url = `${getBaseUrl()}/instance/create`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
-  console.log(`🔑 [DEBUG] Create Key prefix: ${globalApiKey?.substring(0, 5)}...`);
-
+  
   try {
     const res = await axios.post(url, {
       instanceName: instanceName,
-      number: phoneNumber ? phoneNumber.replace(/\D/g, '') : undefined,
+      number: phoneNumber,
       token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
       qrcode: false,
       integration: "WHATSAPP-BAILEYS"
@@ -66,15 +65,38 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
 }
 
 /**
+ * Normalizes phone numbers to handle the Brazilian 9th digit discrepancy.
+ * Ensures the format is strictly digits and correctly aligned with Meta JIDs.
+ */
+function normalizePhoneNumber(phone: string): string {
+    let clean = phone.replace(/\D/g, '');
+    
+    // Brazilian logic: 55 + DDD (2 digits) + Number
+    // Mobile numbers in Brazil have 9 digits. If entry has 8, we add the 9.
+    if (clean.startsWith('55') && clean.length === 12) {
+        const ddd = clean.substring(2, 4);
+        const number = clean.substring(4);
+        console.log(`[JID_FIX] Normalizing Brazilian number: Adding 9th digit to DDD ${ddd}`);
+        return `55${ddd}9${number}`;
+    }
+    
+    return clean;
+}
+
+/**
  * Generates an 8-character pairing code AND QR Base64 for an instance.
  */
 export async function getPairingData(phone: string) {
-  // 1. Normalize Phone (Strictly numeric)
-  const cleanPhone = phone.replace(/\D/g, '');
+  // 1. Dual-Number Normalization (Critical JID Alignment)
+  const cleanPhone = normalizePhoneNumber(phone);
   const prefix = process.env.EVOLUTION_INSTANCE_PREFIX || 'secretaria';
+  
+  // Use a base instance name linked to the normalized phone
   const instanceName = `${prefix}-${cleanPhone}`;
   const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   
+  console.log(`🚀 [HOLY_GRAIL] Target JID: ${cleanPhone}`);
+
   // 2. NUCLEAR RESET (Wipe existing base session for cleanup)
   await nuclearResetInstance(instanceName);
 
@@ -92,8 +114,7 @@ export async function getPairingData(phone: string) {
   // 5. Request pairing code (Step B)
   const url = `${getBaseUrl()}/instance/connect/${uniqueInstanceName}?number=${cleanPhone}`;
 
-  console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${phone} (Instance: ${uniqueInstanceName})`);
-  console.log(`🔗 [DEBUG:URL] ${url}`);
+  console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${cleanPhone} (Instance: ${uniqueInstanceName})`);
 
   try {
     const res = await axios.get(url, {
@@ -103,19 +124,25 @@ export async function getPairingData(phone: string) {
       }
     });
 
-    // 6. Extract Dual Properties
-    const pairingCode = res.data?.pairingCode || res.data?.pairing_code;
-    const qrBase64 = res.data?.base64 || res.data?.qrcode; // Adjust based on exact response schema
+    // 6. Extract Dual Properties (Exhaustive extraction)
+    const pairingCode = res.data?.pairingCode || res.data?.pairing_code || res.data?.code;
+    const qrBase64 = res.data?.base64 || res.data?.qrcode || res.data?.code; 
     
+    console.log(`[EVOLUTION_PAIRING] API Response Keys:`, Object.keys(res.data || {}));
     console.log(`[EVOLUTION_PAIRING] Extracted Pairing Code: ${pairingCode}`);
     console.log(`[EVOLUTION_PAIRING] QR Base64 Available: ${!!qrBase64}`);
 
-    if (!pairingCode || typeof pairingCode !== 'string' || pairingCode.length > 20) {
-       console.error(`❌ [EVOLUTION_PAIRING] Invalid Pairing Code extracted. Got: ${String(pairingCode).substring(0,20)}...`);
-       return { pairingCode: null, qrBase64: qrBase64 || null };
+    // If pairingCode is a long string, it might actually be the QR code
+    let finalPairingCode = pairingCode;
+    if (pairingCode && pairingCode.length > 20) {
+        console.warn(`⚠️ [EVOLUTION_PAIRING] Detected QR string in pairingCode field. Nulling code.`);
+        finalPairingCode = null;
     }
 
-    return { pairingCode, qrBase64: qrBase64 || null };
+    return { 
+        pairingCode: finalPairingCode || null, 
+        qrBase64: qrBase64 || null 
+    };
   } catch (error: any) {
     if (error.response) {
       console.error(`❌ [EVOLUTION_PAIRING] API Error (${error.response.status}):`, JSON.stringify(error.response.data));
@@ -126,7 +153,7 @@ export async function getPairingData(phone: string) {
   }
 }
 
-// Keep backward compatibility for now if needed, but we should update callers
+// Keep backward compatibility
 export async function getPairingCode(phone: string) {
     const data = await getPairingData(phone);
     return data.pairingCode;

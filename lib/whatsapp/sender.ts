@@ -114,13 +114,14 @@ export async function sendWhatsAppImage(phone: string, base64: string, caption: 
     const payload = {
         number: cleanNumber,
         media: finalBase64,
-        mediatype: "image", // Fixed casing: lowercase is required by Evolution schema
+        mediatype: "image", // FORCE LOWERCASE for v2 compatibility
         caption: caption,
         fileName: "qrcode.png"
     };
 
     try {
-        console.log(`📤 [SENDER:IMAGE] Sending QR to ${cleanNumber} via ${targetInstance}`);
+        console.log(`📤 [SENDER:IMAGE] Attempting QR send to ${cleanNumber} (Instance: ${targetInstance})`);
+        
         const res = await axios.post(url, payload, {
             headers: {
                 'apikey': apikey as string,
@@ -128,13 +129,14 @@ export async function sendWhatsAppImage(phone: string, base64: string, caption: 
             },
             timeout: 60000
         });
-        console.log(`✅ [SENDER:IMAGE] Success:`, res.status);
+        
+        console.log(`✅ [SENDER:IMAGE] Success. Status: ${res.status}. Data:`, JSON.stringify(res.data));
         return res.data;
     } catch (error: any) {
         if (error.response) {
-            console.error(`❌ [SENDER:IMAGE ERROR] (${error.response.status}):`, JSON.stringify(error.response.data));
+            console.error(`❌ [SENDER:IMAGE FATAL] API Error (${error.response.status}):`, JSON.stringify(error.response.data));
         } else {
-            console.error(`❌ [SENDER:IMAGE ERROR] Failed: ${error.message}`);
+            console.error(`❌ [SENDER:IMAGE FATAL] Connection Error: ${error.message}`);
         }
         throw error;
     }
