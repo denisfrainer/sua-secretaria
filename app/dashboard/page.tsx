@@ -127,7 +127,10 @@ export default async function DashboardPage() {
       <UpcomingAppointments initialAgenda={initialAgenda} initialIntegrated={isIntegrated} />
 
       {/* 5. Quick Actions Grid (2x2) */}
-      <QuickActions />
+      <QuickActions 
+        planTier={profile?.plan_tier} 
+        trialEndsAt={profile?.trial_ends_at} 
+      />
 
     </div>
   );

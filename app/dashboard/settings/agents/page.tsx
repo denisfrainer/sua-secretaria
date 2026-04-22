@@ -11,13 +11,39 @@ import {
   Loader2, 
   CheckCircle2, 
   Zap,
-  Target
+  Target,
+  ArrowLeft,
+  Bot
 } from 'lucide-react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MinimalistHeader } from '@/components/dashboard/MinimalistHeader';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
 import { AutoResizeTextarea } from '@/components/dashboard/settings/AutoResizeTextarea';
 import { OutreachManager } from '@/components/dashboard/OutreachManager';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      duration: 0.5, 
+      ease: [0.25, 0.1, 0.25, 1.0] as const
+    }
+  }
+};
 
 function AgentsSettingsContent() {
   const [config, setConfig] = useState<any>(null);
@@ -70,6 +96,14 @@ function AgentsSettingsContent() {
       context_json: { ...(config.context_json || {}), scheduling_rules: lines }
     });
   };
+  
+  const toggleAi = (enabled: boolean) => {
+    if (!config) return;
+    setConfig({
+      ...config,
+      context_json: { ...(config.context_json || {}), is_ai_enabled: enabled }
+    });
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -96,7 +130,12 @@ function AgentsSettingsContent() {
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-600 opacity-20" size={32} /></div>;
 
   return (
-    <div className="flex flex-col gap-10 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-10 pb-32"
+    >
       
       {/* Tab Switcher */}
       <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
@@ -118,20 +157,59 @@ function AgentsSettingsContent() {
         <OutreachManager />
       ) : (
         <>
-          <MinimalistHeader title="Personalidade da Eliza" />
-          
-          {/* Header Description */}
-          <div className="flex flex-col gap-2 -mt-6 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 border border-purple-500/10">
-                <Sparkles size={20} />
+          {/* Custom Header with Back Button */}
+          <motion.div variants={itemVariants} className="flex flex-col gap-6">
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/dashboard"
+                className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-all active:scale-95"
+              >
+                <ArrowLeft size={20} className="text-gray-900" />
+              </Link>
+              <div className="flex flex-col">
+                <h1 className="text-3xl font-black text-gray-950 tracking-tight leading-none">Agente IA</h1>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">
+                  PERSONALIDADE & COMPORTAMENTO
+                </p>
               </div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight">Personalidade da Eliza</h2>
             </div>
-            <p className="text-sm font-medium text-gray-400 max-w-lg">
-              Personalize a forma como a Eliza conversa com seus clientes. Defina o tom de voz, gírias preferidas e as regras de agendamento que ela deve seguir.
-            </p>
-          </div>
+          </motion.div>
+
+          {/* iOS STYLE TOGGLE CARD */}
+          <motion.div 
+            variants={itemVariants}
+            onClick={() => toggleAi(!config?.context_json?.is_ai_enabled)}
+            className={`group flex items-center justify-between p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer ${
+              config?.context_json?.is_ai_enabled 
+              ? 'bg-fuchsia-50/50 border-fuchsia-600/20 shadow-xl shadow-fuchsia-500/5' 
+              : 'bg-white border-gray-100 hover:border-gray-200'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${config?.context_json?.is_ai_enabled ? 'bg-fuchsia-100 text-fuchsia-600' : 'bg-slate-50 text-slate-400'}`}>
+                <Bot size={28} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h3 className="font-black text-gray-950 flex items-center gap-2">
+                  Status do Agente
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-widest font-black ${
+                    config?.context_json?.is_ai_enabled ? 'bg-fuchsia-600 text-white' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    {config?.context_json?.is_ai_enabled ? 'Ativo' : 'Pausado'}
+                  </span>
+                </h3>
+                <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                  {config?.context_json?.is_ai_enabled 
+                    ? 'A Eliza está respondendo suas clientes automaticamente.' 
+                    : 'A Eliza está pausada e não responderá nenhuma mensagem.'}
+                </p>
+              </div>
+            </div>
+            {/* iOS Toggle Switch */}
+            <div className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${config?.context_json?.is_ai_enabled ? 'bg-fuchsia-600' : 'bg-gray-200'}`}>
+               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${config?.context_json?.is_ai_enabled ? 'left-7' : 'left-1'}`} />
+            </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 gap-10">
             {/* TONE OF VOICE */}
@@ -190,15 +268,15 @@ function AgentsSettingsContent() {
             <button
               onClick={() => handleSubmit()}
               disabled={saving}
-              className={`w-full h-16 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl transition-all ${success ? 'bg-green-500' : 'bg-purple-600 shadow-purple-500/20'} text-white active:scale-95 disabled:opacity-50`}
+              className={`w-full h-16 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl transition-all ${success ? 'bg-green-500' : 'bg-fuchsia-600 shadow-fuchsia-500/20'} text-white active:scale-95 disabled:opacity-50`}
             >
               {saving ? <Loader2 className="animate-spin" size={20} /> : success ? <CheckCircle2 size={20} /> : <Save size={20} />}
-              {saving ? 'Guardando...' : success ? 'Personalidade Salva!' : 'Salvar Alterações'}
+              {saving ? 'Guardando...' : success ? 'Configurações Salvas!' : 'Salvar Alterações'}
             </button>
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
 

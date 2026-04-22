@@ -99,11 +99,14 @@ export function DashboardHeaderMenu({ email }: { email: string }) {
           </button>
           
           <button 
-            disabled
-            className="w-full text-left px-4 py-2 text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed"
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition"
+            onClick={() => {
+              setIsOpen(false);
+              router.push('/dashboard/settings/payments');
+            }}
           >
-            <CreditCard size={16} className="text-gray-300" />
-            Assinatura (Em breve)
+            <CreditCard size={16} className="text-gray-400" />
+            Planos & Assinatura
           </button>
 
           <div className="h-px bg-gray-100 my-1"></div>

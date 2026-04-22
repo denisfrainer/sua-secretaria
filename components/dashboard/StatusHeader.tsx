@@ -115,8 +115,16 @@ export function StatusHeader() {
 
   if (loading) {
     return (
-      <div className="w-full h-28 rounded-3xl bg-slate-100 animate-pulse flex items-center justify-center">
-        <Loader2 className="animate-spin text-slate-300" size={24} />
+      <div className="w-full min-h-[190px] rounded-[2rem] bg-slate-100 animate-pulse p-6 flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div className="w-24 h-5 bg-slate-200 rounded-full" />
+          <div className="w-16 h-5 bg-slate-200 rounded-full" />
+        </div>
+        <div className="space-y-2 mt-2">
+          <div className="h-7 w-3/4 bg-slate-200 rounded-lg" />
+          <div className="h-4 w-1/2 bg-slate-200 rounded-md" />
+        </div>
+        <div className="mt-auto h-14 w-full bg-slate-200 rounded-2xl" />
       </div>
     );
   }
@@ -126,6 +134,8 @@ export function StatusHeader() {
   const isActive = status.isConnected && status.isAiEnabled;
   const isConnectedButPaused = status.isConnected && !status.isAiEnabled;
 
+  if (!status.isConnected) return null;
+
   return (
     <>
       <motion.div
@@ -133,7 +143,7 @@ export function StatusHeader() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
         className={`
-          w-full rounded-3xl p-6 relative overflow-hidden transition-colors duration-500
+          w-full rounded-[2rem] p-6 relative overflow-hidden transition-colors duration-500
           ${isActive
             ? 'bg-emerald-500 text-white'
             : isConnectedButPaused

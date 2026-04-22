@@ -28,11 +28,11 @@ export default function ProfileSettingsPage() {
         {/* Navigation / Header */}
         <div className="flex flex-col gap-4">
           <Link 
-            href="/dashboard/settings"
+            href="/dashboard"
             className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors w-fit group"
           >
             <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-bold uppercase tracking-widest">Configurações</span>
+            <span className="text-sm font-bold uppercase tracking-widest">Dashboard</span>
           </Link>
           
           <div className="flex items-center gap-4">

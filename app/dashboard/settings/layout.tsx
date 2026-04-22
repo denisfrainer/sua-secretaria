@@ -37,7 +37,8 @@ export default function SettingsLayout({
     '/dashboard/settings/studio',
     '/dashboard/settings/whatsapp',
     '/dashboard/settings/catalog',
-    '/dashboard/settings/agents'
+    '/dashboard/settings/agents',
+    '/dashboard/settings/integrations'
   ].some(route => pathname.startsWith(route));
   
   // Back button always goes to the Dashboard as requested

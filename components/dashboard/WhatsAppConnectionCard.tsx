@@ -137,14 +137,23 @@ export function WhatsAppConnectionCard() {
 
   if (loading) {
     return (
-      <div className="w-full h-48 bg-white rounded-3xl border border-slate-100 flex items-center justify-center">
-        <Loader2 className="animate-spin text-indigo-200" size={32} />
+      <div className="w-full min-h-[280px] bg-white rounded-[2.5rem] border border-slate-100 p-7 flex flex-col gap-5 animate-pulse">
+        <div className="flex justify-between items-start">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100" />
+          <div className="w-24 h-6 rounded-full bg-slate-50" />
+        </div>
+        <div className="space-y-3">
+          <div className="h-7 w-48 bg-slate-100 rounded-lg" />
+          <div className="h-4 w-full bg-slate-50 rounded-md" />
+          <div className="h-4 w-2/3 bg-slate-50 rounded-md" />
+        </div>
+        <div className="mt-auto h-14 w-full bg-slate-100 rounded-2xl" />
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative w-full mb-8">
+    <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative w-full mb-8">
       <AnimatePresence mode="wait">
         
         {/* STATE: IDLE */}

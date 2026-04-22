@@ -20,7 +20,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { StudioInput } from '@/components/dashboard/settings/StudioInput';
-import { WhatsAppConnectionCard } from '@/components/dashboard/WhatsAppConnectionCard';
 
 // ────────────────────────────────────────────────────────
 // DB STATE INTERFACE
@@ -158,10 +157,9 @@ export default function WhatsAppSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32 font-sans bg-slate-50 min-h-screen -mx-6 px-6 -mt-8 pt-8 overflow-x-hidden">
-      <MinimalistHeader title="WhatsApp & Agente" />
+      <MinimalistHeader title="Robô de menu" />
 
-      {/* SECTION 1: THE SHARED CONNECTION CARD */}
-      <WhatsAppConnectionCard />
+      {/* SECTION 1 REMOVED - NOW IN CONNECTIONS PAGE */}
 
 
       {/* ──────────────────────────────────────────────────────── */}
@@ -190,7 +188,7 @@ export default function WhatsAppSettingsPage() {
 
           {/* Row 2: Title & Desc */}
           <div className="flex flex-col w-full">
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight text-left">Menu de Transbordo</h2>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight text-left">Robô de menu</h2>
             <p className="text-sm font-medium text-slate-500 mt-1 text-left leading-relaxed">
               Configure números de escape e redirecionamentos manuais.
             </p>

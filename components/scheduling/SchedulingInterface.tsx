@@ -26,15 +26,16 @@ interface SchedulingInterfaceProps {
   businessConfig?: any;
 }
 
-type Step = 'select' | 'form' | 'success';
+type Step = 'services' | 'select' | 'form' | 'success';
 
 export default function SchedulingInterface({ profile, businessConfig }: SchedulingInterfaceProps) {
   // --- State ---
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [step, setStep] = useState<Step>('select');
+  const [step, setStep] = useState<Step>('services');
   const [isBooking, setIsBooking] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -49,20 +50,17 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
 
   // --- Logic: Fetch Availability ---
   useEffect(() => {
+    if (step !== 'select') return;
+
     async function fetchAvailability() {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      console.log(`[UI_SCHEDULING] Fetching slots for date: ${formattedDate}`);
-      
       setLoadingSlots(true);
-      setSelectedSlot(null); // Reset slot when date changes
+      setSelectedSlot(null);
       
       try {
         const response = await fetch(`/api/calendar/availability?profileId=${profile.id}&date=${formattedDate}`);
         const data = await response.json();
-        
-        const slots = data.availableSlots || [];
-        console.log(`[UI_SCHEDULING] API returned ${slots.length} slots.`);
-        setAvailableSlots(slots);
+        setAvailableSlots(data.availableSlots || []);
       } catch (error) {
         console.error('[UI_SCHEDULING] Fetch error:', error);
         setAvailableSlots([]);
@@ -72,7 +70,7 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
     }
 
     fetchAvailability();
-  }, [selectedDate, profile.id]);
+  }, [selectedDate, profile.id, step]);
 
   // --- Logic: Submit Booking ---
   const handleBooking = async (e: React.FormEvent) => {
@@ -85,9 +83,9 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
       time: selectedSlot,
       clientName: formData.name,
       clientPhone: formData.phone,
+      serviceType: selectedService?.name
     };
 
-    console.log('[UI_SCHEDULING] Executing booking payload:', payload);
     setIsBooking(true);
 
     try {
@@ -98,7 +96,6 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
       });
 
       if (!response.ok) throw new Error('Falha no agendamento');
-      
       setStep('success');
     } catch (error) {
       console.error('[UI_SCHEDULING] Booking error:', error);
@@ -109,19 +106,108 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
   };
 
   // --- UI Components ---
+
+  const renderProfileHeader = () => (
+    <div className="flex flex-col mb-8">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+          <User size={32} className="text-gray-300" />
+        </div>
+        <div className="flex flex-col">
+          <h1 className="text-xl font-bold text-gray-900 leading-tight">
+            {profile.display_name || profile.full_name}
+          </h1>
+          <p className="text-sm text-gray-500 leading-tight mt-0.5">
+            {businessConfig?.context_json?.business_info?.description || 'Profissional qualificado'}
+          </p>
+          <div className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5 w-fit">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            Online para Agendamento
+          </div>
+        </div>
+      </div>
+      
+      <button 
+        onClick={() => window.open(`https://wa.me/${profile.phone}`, '_blank')}
+        className="w-full mt-5 h-11 border border-gray-300 bg-white rounded-xl text-sm font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
+      >
+        <MessageSquare size={18} />
+        Falar pelo WhatsApp
+      </button>
+    </div>
+  );
+
+  const renderServiceSelection = () => {
+    const services = businessConfig?.context_json?.services || [
+      { id: '1', name: 'Atendimento Geral', duration: 30, price: 0, description: 'Agende seu horário para um atendimento personalizado.' }
+    ];
+
+    return (
+      <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Selecione um serviço</h2>
+          <p className="text-sm text-gray-500">Escolha a melhor opção para você</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {services.map((service: any) => (
+            <div key={service.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
+              <div className="flex gap-4">
+                <div className="w-16 h-16 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                  <Scissors size={28} />
+                </div>
+                <div className="flex flex-col flex-1">
+                  <h3 className="text-base font-bold text-gray-900">{service.name}</h3>
+                  <p className="text-xs text-gray-500 leading-snug line-clamp-2 mt-0.5">
+                    {service.description || 'Nenhuma descrição fornecida.'}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 mt-2">
+                    <Clock size={12} />
+                    {service.duration} min
+                    <span className="text-gray-300">•</span>
+                    <span className="text-purple-600">
+                      {service.price > 0 ? `R$ ${service.price}` : 'Consultar valor'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedService(service);
+                  setStep('select');
+                }}
+                className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
+              >
+                Escolher horário
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer Trust Badge */}
+        <div className="flex items-center gap-3 p-4 mt-8 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+          <Shield size={24} className="text-purple-600" />
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-purple-900 uppercase tracking-tight">Agendamento Seguro</span>
+            <span className="text-[10px] font-bold text-purple-700/70 uppercase tracking-widest">Sua reserva está garantida</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
   
   const renderDateSelector = () => (
-    <div className="w-full mb-10">
-      <div className="flex items-center justify-between mb-4 px-2">
-        <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">
-          {format(selectedDate, 'MMMM yyyy', { locale: ptBR })}
-        </h2>
+    <div className="w-full mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col">
+          <h2 className="text-lg font-bold text-gray-900">Data do Atendimento</h2>
+          <p className="text-sm text-gray-500">{format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}</p>
+        </div>
       </div>
       
       <div 
         ref={scrollRef}
         className="flex gap-3 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {dates.map((date) => {
           const isSelected = isSameDay(date, selectedDate);
@@ -132,15 +218,15 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
               className={`
                 flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center rounded-2xl border-2 transition-all snap-center
                 ${isSelected 
-                  ? 'bg-black border-black text-white shadow-lg' 
-                  : 'bg-white border-gray-100 text-gray-500 hover:border-gray-300'
+                  ? 'bg-purple-600 border-purple-600 text-white shadow-md' 
+                  : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'
                 }
               `}
             >
-              <span className="text-[10px] font-black uppercase tracking-tighter mb-1 opacity-70">
+              <span className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-70">
                 {format(date, 'eee', { locale: ptBR })}
               </span>
-              <span className="text-xl font-black">
+              <span className="text-xl font-bold">
                 {format(date, 'd')}
               </span>
             </button>
@@ -151,19 +237,21 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
   );
 
   const renderSlotList = () => (
-    <div className="w-full flex-1 flex flex-col gap-3">
-      <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-2 px-2">
-        Horários Disponíveis
-      </h3>
+    <div className="w-full flex-1 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">
+          Horários disponíveis
+        </h3>
+      </div>
       
       {loadingSlots ? (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-14 w-full bg-gray-50 animate-pulse rounded-xl" />
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="h-12 bg-white border border-gray-100 animate-pulse rounded-xl" />
           ))}
         </div>
       ) : availableSlots.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {availableSlots.map((slot) => {
             const isSelected = selectedSlot === slot;
             return (
@@ -171,58 +259,77 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
                 key={slot}
                 onClick={() => setSelectedSlot(slot)}
                 className={`
-                  w-full h-14 px-6 flex items-center justify-between rounded-xl border-2 transition-all
+                  h-12 flex items-center justify-center rounded-xl border font-bold text-sm transition-all
                   ${isSelected 
-                    ? 'bg-gray-100 border-black text-black' 
+                    ? 'bg-purple-600 border-purple-600 text-white shadow-sm' 
                     : 'bg-white border-gray-100 text-gray-700 hover:border-gray-200'
                   }
                 `}
               >
-                <span className="text-base font-black">{slot}</span>
-                {isSelected && <Check size={20} className="text-black" />}
+                {slot}
               </button>
             );
           })}
         </div>
       ) : (
-        <div className="w-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-3xl">
+        <div className="w-full py-12 flex flex-col items-center justify-center bg-white border border-dashed border-gray-200 rounded-2xl">
           <Clock size={24} className="text-gray-300 mb-2" />
-          <p className="text-sm font-bold text-gray-300 uppercase tracking-widest">Sem horários para hoje</p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sem horários para hoje</p>
         </div>
       )}
+
+      <div className="flex flex-col gap-3 mt-6">
+        <button
+          onClick={() => setStep('form')}
+          disabled={!selectedSlot}
+          className="w-full h-14 bg-purple-600 text-white rounded-xl font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+        >
+          Próximo passo
+          <ArrowRight size={20} />
+        </button>
+        <button
+          onClick={() => setStep('services')}
+          className="w-full h-10 text-gray-400 font-bold text-xs uppercase tracking-widest hover:text-gray-600 transition-colors"
+        >
+          Voltar para serviços
+        </button>
+      </div>
     </div>
   );
 
   const renderForm = () => (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Finalizar Agendamento</h2>
-        <p className="text-sm font-medium text-gray-500 mt-1">
-          {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedSlot}
-        </p>
+        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Finalizar Reserva</h2>
+        <div className="flex flex-col gap-1 mt-2 p-4 bg-purple-50 rounded-xl border border-purple-100">
+           <span className="text-xs font-bold text-purple-700 uppercase tracking-widest">{selectedService?.name}</span>
+           <span className="text-sm font-bold text-purple-900">
+             {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedSlot}
+           </span>
+        </div>
       </div>
 
-      <form onSubmit={handleBooking} className="flex flex-col gap-6">
-        <div className="space-y-2">
-          <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 px-1">Seu Nome</label>
+      <form onSubmit={handleBooking} className="flex flex-col gap-5">
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-gray-500 pl-1">Seu Nome Completo</label>
           <input 
             required
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
-            className="w-full h-14 px-5 bg-white border-2 border-gray-100 rounded-xl focus:border-black transition-all outline-none text-base font-bold shadow-sm"
-            placeholder="Ex: João Silva"
+            className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-50 transition-all outline-none text-sm font-semibold shadow-sm"
+            placeholder="Como podemos te chamar?"
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 px-1">Seu WhatsApp</label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-gray-500 pl-1">Seu WhatsApp</label>
           <input 
             required
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData({...formData, phone: e.target.value})}
-            className="w-full h-14 px-5 bg-white border-2 border-gray-100 rounded-xl focus:border-black transition-all outline-none text-base font-bold shadow-sm"
+            className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-50 transition-all outline-none text-sm font-semibold shadow-sm"
             placeholder="(00) 00000-0000"
           />
         </div>
@@ -231,15 +338,15 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
           <button
             type="submit"
             disabled={isBooking}
-            className="w-full h-16 bg-black text-white rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full h-14 bg-purple-600 text-white rounded-xl font-bold text-base flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            {isBooking ? <Loader2 className="animate-spin" /> : 'Confirmar Agendamento'}
+            {isBooking ? <Loader2 className="animate-spin" /> : 'Confirmar Reserva'}
           </button>
           
           <button
             type="button"
             onClick={() => setStep('select')}
-            className="w-full h-12 text-gray-400 font-bold text-sm uppercase tracking-widest hover:text-black transition-colors"
+            className="w-full h-10 text-gray-400 font-bold text-xs uppercase tracking-widest hover:text-gray-600 transition-colors"
           >
             Voltar
           </button>
@@ -249,107 +356,72 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
   );
 
   const renderSuccess = () => (
-    <div className="w-full py-12 flex flex-col items-center text-center animate-in zoom-in duration-500">
-      <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-6 shadow-xl leading-none">
+    <div className="w-full py-8 flex flex-col items-center text-center animate-in zoom-in duration-500">
+      <div className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-green-200">
         <Check size={40} strokeWidth={3} />
       </div>
-      <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Agendamento Realizado!</h2>
-      <p className="text-gray-500 font-medium mb-10">Tudo pronto. Enviamos os detalhes para o seu WhatsApp.</p>
+      <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-2">Reserva Confirmada!</h2>
+      <p className="text-gray-500 text-sm font-medium mb-10 max-w-[280px] mx-auto">
+        Tudo certo! Você receberá os detalhes e o lembrete direto no seu WhatsApp.
+      </p>
       
-      <div className="w-full p-6 border-2 border-gray-100 rounded-3xl mb-8">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Data e Hora</span>
-          <span className="text-base font-black text-gray-900">
-            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedSlot}
-          </span>
+      <div className="w-full p-6 bg-white border border-gray-100 rounded-2xl shadow-sm mb-10 text-left">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Serviço</span>
+            <span className="text-sm font-bold text-gray-900 uppercase">{selectedService?.name}</span>
+          </div>
+          <div className="w-full h-px bg-gray-50" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Horário</span>
+            <span className="text-sm font-bold text-gray-900">
+              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedSlot}
+            </span>
+          </div>
         </div>
       </div>
 
       <button
         onClick={() => {
-          setStep('select');
+          setStep('services');
           setSelectedSlot(null);
+          setSelectedService(null);
         }}
-        className="px-8 py-4 border-2 border-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all"
+        className="w-full h-14 border border-gray-200 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
       >
-        Novo Agendamento
+        Fazer outra reserva
       </button>
     </div>
   );
 
-  // --- Main Layout ---
   return (
-    <div className="w-full max-w-xl mx-auto py-8">
-      {/* Wireframe Container */}
-      <div className="bg-white border-2 border-black rounded-[2.5rem] p-8 md:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,0.03)]">
-        
-        {/* Header: Professional Info */}
-        {step !== 'success' && (
-          <div className="flex flex-col items-start mb-12">
-            <h1 className="text-3xl font-black tracking-tight text-gray-900 leading-none mb-2">
-              {profile.display_name || profile.full_name}
-            </h1>
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em]">Agende seu Atendimento</p>
-          </div>
-        )}
+    <div className="w-full max-w-md mx-auto min-h-screen bg-[#f8f9fa] p-5 font-sans flex flex-col">
+      {renderProfileHeader()}
 
-        <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+          className="flex-1 flex flex-col"
+        >
+          {step === 'services' && renderServiceSelection()}
           {step === 'select' && (
-            <motion.div 
-              key="select"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="flex flex-col h-full"
-            >
+            <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
               {renderDateSelector()}
               {renderSlotList()}
-              
-              {selectedSlot && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-10"
-                >
-                  <button
-                    onClick={() => setStep('form')}
-                    className="w-full h-16 bg-black text-white rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all"
-                  >
-                    Continuar
-                    <ArrowRight size={20} />
-                  </button>
-                </motion.div>
-              )}
-            </motion.div>
+            </div>
           )}
+          {step === 'form' && renderForm()}
+          {step === 'success' && renderSuccess()}
+        </motion.div>
+      </AnimatePresence>
 
-          {step === 'form' && (
-            <motion.div 
-              key="form"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-            >
-              {renderForm()}
-            </motion.div>
-          )}
-
-          {step === 'success' && (
-            <motion.div 
-              key="success"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              {renderSuccess()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Footer Branding (Subtle Wireframe) */}
-      <div className="mt-10 flex flex-col items-center gap-2 opacity-20">
-         <div className="w-12 h-px bg-black" />
-         <span className="text-[10px] font-black uppercase tracking-widest text-black">Sua SecretarIA</span>
+      {/* App-like Branding */}
+      <div className="mt-12 flex flex-col items-center gap-2 opacity-30 pb-4">
+         <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-500">Desenvolvido por Sua SecretarIA</span>
       </div>
 
       <style jsx global>{`
@@ -364,3 +436,5 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
     </div>
   );
 }
+
+import { Scissors, Shield } from 'lucide-react';
