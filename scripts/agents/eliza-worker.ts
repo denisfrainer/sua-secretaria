@@ -1,7 +1,7 @@
 import * as http from 'http';
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
-import { sendWhatsAppMessage, sendWhatsAppPresence } from '../../lib/whatsapp/sender';
+import { sendWhatsAppMessage, sendWhatsAppPresence, getBaseUrl } from '../../lib/whatsapp/sender';
 import { normalizePhone } from '../../lib/utils/phone';
 import { google } from 'googleapis';
 import { hasAccess } from '../../lib/auth/access-control';
@@ -37,10 +37,9 @@ async function resolveInstance(profile: any): Promise<string> {
 
     if (bConfig?.instance_name) return bConfig.instance_name;
 
-    // Fallback 2: Env Vars Target
-    return process.env.EVOLUTION_INSTANCE_NAME ||
-        process.env.NEXT_PUBLIC_INSTANCE_NAME ||
-        `instance-${profile.phone}`;
+    // Fallback 2: Dynamic Pattern
+    const phone = profile.phone || 'unknown';
+    return `instance-${phone}`;
 }
 
 /**
@@ -94,7 +93,7 @@ const onboardingSchema: any = {
 // ==============================================================
 
 async function getAudioBase64(messageId: string, instanceName: string) {
-    const evoUrl = process.env.EVOLUTION_API_URL || 'https://api.revivafotos.com.br';
+    const evoUrl = getBaseUrl();
     const evoKey = process.env.EVOLUTION_API_KEY || '';
 
     console.log(`📡 [MEDIA] Fetching audio for message: ${messageId} (Instance: ${instanceName})`);

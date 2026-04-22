@@ -29,14 +29,17 @@ export default function ServicesPage() {
         .from('business_config')
         .select('id, context_json')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (configError) throw configError;
 
       if (configData) {
         setConfigId(configData.id);
-        const servicesList = (configData.context_json as any).services || [];
+        const servicesList = (configData.context_json as any)?.services || [];
+        console.log(`📡 [SERVICES] Fetched ${servicesList.length} services for config ${configData.id}`);
         setServices(servicesList);
+      } else {
+        console.log('📡 [SERVICES] No config found for this user.');
       }
     } catch (err: any) {
       console.error('❌ [SERVICES] Fetch error:', err.message);

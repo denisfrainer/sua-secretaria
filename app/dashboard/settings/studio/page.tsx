@@ -103,13 +103,11 @@ export default function BusinessSettingsPage() {
   const [originalSlug, setOriginalSlug] = useState('');
   const [activeTab, setActiveTab] = useState<'studio' | 'services'>('studio');
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return;
-      }
+      if (!user) return;
 
       const { data, error } = await supabase
         .from('business_config')
@@ -117,12 +115,19 @@ export default function BusinessSettingsPage() {
         .eq('owner_id', user.id)
         .maybeSingle();
 
+      if (error && error.code !== 'PGRST116') {
+        console.error('❌ [STUDIO_FETCH] Error fetching config:', error);
+        setError(`Erro ao carregar configurações: ${error.message}`);
+        return;
+      }
+
       if (data) {
+        console.log('📡 [STUDIO_FETCH] Config loaded:', data.id);
         setConfig(data);
       } else {
-        // Initialize local state for a NEW business profile
+        console.log('📡 [STUDIO_FETCH] No config found, initializing default...');
         setConfig({
-          id: 0, // Temporary ID
+          id: 0,
           owner_id: user.id,
           context_json: {
             business_info: { name: '', address: '', parking: '', handoff_phone: '', description: '' },
@@ -144,9 +149,8 @@ export default function BusinessSettingsPage() {
           }
         } as any);
       }
-      setLoading(false);
 
-      // 3. Fetch Slug from Profiles
+      // Fetch Slug
       const { data: profile } = await supabase
         .from('profiles')
         .select('slug')
@@ -157,33 +161,44 @@ export default function BusinessSettingsPage() {
         setSlug(profile.slug);
         setOriginalSlug(profile.slug);
       }
+    } catch (err: any) {
+      console.error('❌ [STUDIO_FETCH] Catch error:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchData();
-  }, [supabase, router]);
+  }, [supabase]);
 
   // UPDATE HELPERS
   const updateBusinessInfo = (field: string, value: string) => {
-    if (!config) return;
-    setConfig({
-      ...config,
-      context_json: {
-        ...config.context_json,
-        business_info: { ...(config.context_json?.business_info || {}), [field]: value }
-      }
+    setConfig(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        context_json: {
+          ...prev.context_json,
+          business_info: { ...(prev.context_json?.business_info || {}), [field]: value }
+        }
+      };
     });
   };
 
   const updateOperatingHours = (day: 'weekdays' | 'saturday' | 'sunday', field: 'open' | 'close' | 'is_closed', value: any) => {
-    if (!config) return;
-    setConfig({
-      ...config,
-      context_json: {
-        ...config.context_json,
-        operating_hours: {
-          ...(config.context_json?.operating_hours || {}),
-          [day]: { ...(config.context_json?.operating_hours?.[day] || {}), [field]: value }
+    setConfig(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        context_json: {
+          ...prev.context_json,
+          operating_hours: {
+            ...(prev.context_json?.operating_hours || {}),
+            [day]: { ...(prev.context_json?.operating_hours?.[day] || {}), [field]: value }
+          }
         }
-      }
+      };
     });
   };
 
@@ -202,12 +217,14 @@ export default function BusinessSettingsPage() {
   };
 
   const updateFaq = (index: number, field: keyof FAQItem, value: string) => {
-    if (!config) return;
-    const newFaq = [...(config.context_json?.faq || [])];
-    newFaq[index] = { ...(newFaq[index] || {}), [field]: value } as any;
-    setConfig({
-      ...config,
-      context_json: { ...(config.context_json || {}), faq: newFaq } as any
+    setConfig(prev => {
+      if (!prev) return prev;
+      const newFaq = [...(prev.context_json?.faq || [])];
+      newFaq[index] = { ...(newFaq[index] || {}), [field]: value } as any;
+      return {
+        ...prev,
+        context_json: { ...(prev.context_json || {}), faq: newFaq } as any
+      };
     });
   };
 
@@ -245,16 +262,18 @@ export default function BusinessSettingsPage() {
   };
 
   const updateServices = (newServices: Service[]) => {
-    if (!config) return;
-    setConfig({
-      ...config,
-      context_json: { ...(config.context_json || {}), services: newServices }
+    setConfig(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        context_json: { ...(prev.context_json || {}), services: newServices }
+      };
     });
   };
 
   const addService = () => {
     const newService: Service = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       name: '',
       price: 0,
       duration: 30,
@@ -293,12 +312,11 @@ export default function BusinessSettingsPage() {
 
     setSaving(true);
     setError(null);
+    console.log('💾 [STUDIO_SAVE] Attempting to save config:', config);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
-
-      let finalConfig = config;
 
       // 1. If ID is 0, this is a NEW business -> Initial Setup Flow
       if (config.id === 0) {
@@ -345,8 +363,11 @@ export default function BusinessSettingsPage() {
           })
           .eq('id', config.id);
 
-        if (updateError) throw updateError;
-
+        if (updateError) {
+          console.error('❌ [STUDIO_SAVE] Update error:', updateError);
+          throw updateError;
+        }
+        console.log('✅ [STUDIO_SAVE] Update successful for ID:', config.id);
       }
 
       // 3. Update Slug in Profiles (only if changed)
@@ -377,6 +398,9 @@ export default function BusinessSettingsPage() {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+      
+      // Re-fetch to sync state
+      await fetchData();
       router.refresh();
 
     } catch (err: any) {

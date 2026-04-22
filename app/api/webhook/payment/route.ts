@@ -80,6 +80,8 @@ export async function POST(req: Request) {
       }
     }
 
+    const masterInstance = `${process.env.NEXT_PUBLIC_INSTANCE_PREFIX || 'secretaria'}-master`;
+
     // 6. MULTIMODAL DELIVERY
     
     // Case A: Image (Plan B)
@@ -88,7 +90,8 @@ export async function POST(req: Request) {
         await sendWhatsAppImage(
           phone, 
           qrBase64, 
-          "📸 Escaneie este QR Code com outro aparelho para conectar agora."
+          "📸 Escaneie este QR Code com outro aparelho para conectar agora.",
+          masterInstance
         );
       } catch (err) {
         console.error("⚠️ [WEBHOOK] Failed to send QR Image, continuing to text.");
@@ -110,7 +113,7 @@ export async function POST(req: Request) {
       elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nNotei que a geração do seu código está demorando um pouco mais que o esperado. ⏳\n\nNão se preocupe, sua conta já está ATIVA! Nosso suporte entrará em contato em instantes com seu código de acesso manual.`;
     }
     
-    await sendWhatsAppMessage(phone, elizaMessage);
+    await sendWhatsAppMessage(phone, elizaMessage, undefined, masterInstance);
 
     return NextResponse.json({ success: true });
 

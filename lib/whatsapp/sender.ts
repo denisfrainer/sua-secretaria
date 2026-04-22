@@ -1,16 +1,18 @@
 // lib/whatsapp/sender.ts
 import axios from 'axios';
 
-const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
+export const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
 export async function sendWhatsAppMessage(phone: string, text: string, delayMs?: number, instanceName?: string) {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+    const targetInstance = instanceName;
     const apikey = process.env.EVOLUTION_API_KEY;
-    const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
-
+    
     if (!targetInstance || targetInstance === 'undefined') {
-        console.error('💣 [SENDER FATAL] Instance Name is UNDEFINED. Current Path:', url);
+        console.error('💣 [SENDER FATAL] Instance Name is MISSING or UNDEFINED. Cannot send message.');
+        throw new Error("Missing Evolution Instance Name");
     }
+
+    const url = `${getBaseUrl()}/message/sendText/${targetInstance}`;
 
     // Ensure number is strictly digits for Evolution v2
     const cleanNumber = phone.replace(/\D/g, '');
@@ -56,7 +58,11 @@ export async function sendWhatsAppMessage(phone: string, text: string, delayMs?:
 }
 
 export async function sendWhatsAppPresence(phone: string, presence: 'composing' | 'recording_audio' | 'available', instanceName?: string) {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+    const targetInstance = instanceName;
+    if (!targetInstance) {
+        console.error('💣 [PRESENCE FATAL] Instance Name is MISSING.');
+        return;
+    }
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/chat/sendPresence/${targetInstance}`;
 
@@ -75,7 +81,11 @@ export async function sendWhatsAppPresence(phone: string, presence: 'composing' 
 }
 
 export async function checkWhatsAppNumber(phone: string, instanceName?: string): Promise<boolean> {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+    const targetInstance = instanceName;
+    if (!targetInstance) {
+        console.error('💣 [CHECK_NUMBER FATAL] Instance Name is MISSING.');
+        return false;
+    }
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/chat/whatsappNumbers/${targetInstance}`;
 
@@ -101,7 +111,11 @@ export async function checkWhatsAppNumber(phone: string, instanceName?: string):
 }
 
 export async function sendWhatsAppImage(phone: string, base64: string, caption: string, instanceName?: string) {
-    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+    const targetInstance = instanceName;
+    if (!targetInstance) {
+        console.error('💣 [SENDER:IMAGE FATAL] Instance Name is MISSING.');
+        throw new Error("Missing Evolution Instance Name");
+    }
     const apikey = process.env.EVOLUTION_API_KEY;
     const url = `${getBaseUrl()}/message/sendMedia/${targetInstance}`;
 

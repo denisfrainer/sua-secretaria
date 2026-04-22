@@ -82,7 +82,8 @@ export async function POST(req: Request) {
 
             try {
                 // TENTA ENVIAR PRIMEIRO
-                await sendWhatsAppMessage(normalizedPhone, message);
+                const targetInstance = `${process.env.NEXT_PUBLIC_INSTANCE_PREFIX || 'secretaria'}-master`;
+                await sendWhatsAppMessage(normalizedPhone, message, undefined, targetInstance);
                 console.log(`✅ Follow-up enviado para ${lead.name || 'Desconhecido'}`);
 
                 // SE DEU CERTO, ATUALIZA PARA FOLLOW_UP

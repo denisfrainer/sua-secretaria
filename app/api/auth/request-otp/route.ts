@@ -73,12 +73,21 @@ export async function POST(request: Request) {
     }
     console.log(`[AUTH:OTP-REQ] Latência para inserir OTP: ${(performance.now() - startInsertLat).toFixed(2)}ms`);
 
-    // 4. Dispatch via Evolution API
+    // 4. Resolve Instance for Sending
+    const { data: bConfig } = await supabaseAdmin
+      .from('business_config')
+      .select('instance_name')
+      .eq('owner_id', userId)
+      .maybeSingle();
+
+    const targetInstance = bConfig?.instance_name || `${process.env.NEXT_PUBLIC_INSTANCE_PREFIX || 'secretaria'}-master`;
+
+    // 5. Dispatch via Evolution API
     const message = `Seu código de acesso para a SecretarIA é: *${otpCode}*`;
     
     const startEvoLat = performance.now();
-    await sendWhatsAppMessage(normalizedPhone, message);
-    console.log(`[AUTH:OTP-REQ] Latência Evolution API: ${(performance.now() - startEvoLat).toFixed(2)}ms`);
+    await sendWhatsAppMessage(normalizedPhone, message, undefined, targetInstance);
+    console.log(`[AUTH:OTP-REQ] Latência Evolution API (${targetInstance}): ${(performance.now() - startEvoLat).toFixed(2)}ms`);
 
     return NextResponse.json({ success: true, message: 'Código enviado com sucesso.' });
 

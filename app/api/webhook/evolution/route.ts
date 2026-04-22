@@ -13,8 +13,23 @@ export async function POST(req: Request) {
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
     const instanceName = body.instance || dataObj.instanceName || body.instanceName || dataObj.instance;
     const state = dataObj.state || body.state || dataObj.status || body.status;
+    const tenantId = url.searchParams.get('tenantId');
 
-    console.log(`📡 [EVOLUTION_WEBHOOK] Event received: ${event}`);
+    console.log(`📡 [EVOLUTION_WEBHOOK] Event: ${event} | Instance: ${instanceName}`);
+    
+    // 2. Safety Check: Verify if instance exists in our DB
+    if (instanceName) {
+      const { data: exists } = await supabaseAdmin
+        .from('business_config')
+        .select('id')
+        .eq('instance_name', instanceName)
+        .maybeSingle();
+
+      if (!exists) {
+        console.warn(`🚨 [SECURITY_WARNING] Webhook received for UNKNOWN instance: ${instanceName}. Dropping request.`);
+        return NextResponse.json({ error: "Unknown instance" }, { status: 200 });
+      }
+    }
 
     // --- CASE A: CONNECTION UPDATE (Handshake Lifecycle) ---
     if (event === "connection.update" || event === "CONNECTION_UPDATE") {
@@ -94,19 +109,34 @@ export async function POST(req: Request) {
 
       console.log(`📡 [WEBHOOK] Inbound: ${phone} | Audio: ${isAudio} | Text: ${!!text}`);
 
-      // 2. IDENTITY UPSERT (Immutable)
-      const { data: profile, error: upsertError } = await supabaseAdmin
-        .from('profiles')
-        .upsert({ 
-          phone,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'phone' })
-        .select()
-        .single();
+      // 2. IDENTITY LOCK (Multi-Tenant)
+      // We prioritize the tenantId from the webhook URL to know WHICH account this message belongs to.
+      let profile;
+      if (tenantId) {
+        const { data: tProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('id', tenantId)
+          .single();
+        profile = tProfile;
+      }
 
-      if (upsertError || !profile) {
-        console.error('💥 [WEBHOOK:UPSERT_ERROR]', upsertError);
-        return NextResponse.json({ success: false, error: 'Identity lock failed' }, { status: 200 });
+      // Fallback: If no tenantId, try to find profile by phone (legacy/onboarding)
+      if (!profile) {
+        const { data: pProfile, error: upsertError } = await supabaseAdmin
+          .from('profiles')
+          .upsert({ 
+            phone,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'phone' })
+          .select()
+          .single();
+        profile = pProfile;
+        
+        if (upsertError || !profile) {
+          console.error('💥 [WEBHOOK:UPSERT_ERROR]', upsertError);
+          return NextResponse.json({ success: false, error: 'Identity lock failed' }, { status: 200 });
+        }
       }
 
       // 3. PERSIST MESSAGE (Context Persistence)

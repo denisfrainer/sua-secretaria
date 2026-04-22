@@ -95,12 +95,20 @@ export async function GET(request: NextRequest) {
     console.log(`✅ [AUTH_SYNC] Refresh token captured for user: ${profileId}`);
 
     // 6. TRIGGER ELIZA - Headless pairing and payment link
+    const { data: bConfig } = await supabaseAdmin
+      .from('business_config')
+      .select('instance_name')
+      .eq('owner_id', profileId)
+      .maybeSingle();
+
+    const targetInstance = bConfig?.instance_name || `${process.env.NEXT_PUBLIC_INSTANCE_PREFIX || 'secretaria'}-master`;
+
     const pairingCode = await getPairingCode(profile.phone);
     const checkoutLink = "https://suasecretaria.com.br/precos";
     
     const elizaMessage = `🎯 *Agenda Conectada com Sucesso!*\n\nAgora só falta o passo final para sua assistente começar a trabalhar no seu número oficial.\n\nFiz o seguinte:\n1. Gerei seu código de pareamento: *${pairingCode || 'GERANDO...'}*\n2. Liberei o acesso ao seu painel.\n\n*O que fazer agora?*\nNo seu WhatsApp, vá em *Aparelhos Conectados* > *Conectar com número de telefone* e insira o código acima.\n\nPara ativar o plano e começar hoje mesmo: ${checkoutLink}`;
     
-    await sendWhatsAppMessage(profile.phone, elizaMessage);
+    await sendWhatsAppMessage(profile.phone, elizaMessage, undefined, targetInstance);
 
     // 7. Success Redirect
     return NextResponse.redirect(new URL('/auth/success', requestUrl.origin));
