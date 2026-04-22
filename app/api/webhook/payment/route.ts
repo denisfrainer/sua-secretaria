@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { sendWhatsAppMessage } from '@/lib/whatsapp/sender';
-import { getPairingCode } from '@/lib/evolution/pairing';
+import { sendWhatsAppMessage, sendWhatsAppImage } from '@/lib/whatsapp/sender';
+import { getPairingData } from '@/lib/evolution/pairing';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,6 @@ export async function POST(req: Request) {
     // 1. Mock Secret Validation
     if (webhookSecret && signature !== webhookSecret) {
       console.warn('⚠️ [PAGARME_WEBHOOK] Signature mismatch. (Proceeding for mock/dev)');
-      // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('📦 [PAGARME_WEBHOOK] Received payload:', body.type);
@@ -25,7 +24,6 @@ export async function POST(req: Request) {
     }
 
     // 3. Identify User
-    // In Pagar.me v5, we often use metadata or customer details
     const customer = body.data?.customer;
     const phone = customer?.phones?.mobile_phone?.number || body.data?.metadata?.phone;
 
@@ -49,14 +47,38 @@ export async function POST(req: Request) {
 
     console.log(`✅ [PAGARME_WEBHOOK] Profile ${profile.id} promoted to ACTIVE.`);
 
-    // 5. Trigger Pairing Code Asynchronously (Simplified here)
-    const pairingCode = await getPairingCode(phone);
+    // 5. Trigger Pairing Data (Step 5)
+    // Now returns both pairing code and QR base64
+    const { pairingCode, qrBase64 } = await getPairingData(phone);
     
-    // 6. Send Eliza Message
-    let elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nSua assistente já está pronta para trabalhar. Como sua conta é nova, você precisa conectar seu WhatsApp no nosso painel.\n\n*Seu Código de Pareamento:* *${pairingCode}*\n\nNo seu WhatsApp, vá em *Aparelhos Conectados* > *Conectar com número de telefone* e insira esse código agora mesmo.`;
+    // 6. MULTIMODAL DELIVERY
+    
+    // Case A: Image (Plan B)
+    if (qrBase64) {
+      try {
+        await sendWhatsAppImage(
+          phone, 
+          qrBase64, 
+          "📸 Escaneie este QR Code com outro aparelho para conectar agora."
+        );
+      } catch (err) {
+        console.error("⚠️ [WEBHOOK] Failed to send QR Image, continuing to text.");
+      }
+    }
+
+    // Small delay between image and text
+    await new Promise(res => setTimeout(res, 2000));
+
+    // Case B: Text (Plan A - Pairing Code)
+    let elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nSua assistente já está pronta para trabalhar. Como sua conta é nova, você precisa conectar seu WhatsApp no nosso painel.\n\n` +
+      `Tente o *Código de Pareamento* abaixo primeiro (mais fácil):\n` +
+      `👉 *${pairingCode || 'GERANDO...'}*\n\n` +
+      `*Como fazer:* WhatsApp > Aparelhos Conectados > Conectar com número.\n\n` +
+      `---\n` +
+      `*PLAN B:* Se o código der erro, use o *QR Code* que enviei acima!`;
     
     if (!pairingCode) {
-      elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nSua assistente já está pronta para trabalhar. Notei que a geração do seu código de conexão está demorando um pouco mais que o esperado. ⏳\n\nNão se preocupe, sua conta já está ATIVA! Nosso suporte entrará em contato em instantes com seu código de acesso manual.`;
+      elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nNotei que a geração do seu código está demorando um pouco mais que o esperado. ⏳\n\nNão se preocupe, sua conta já está ATIVA! Nosso suporte entrará em contato em instantes com seu código de acesso manual.`;
     }
     
     await sendWhatsAppMessage(phone, elizaMessage);

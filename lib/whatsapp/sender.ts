@@ -99,3 +99,43 @@ export async function checkWhatsAppNumber(phone: string, instanceName?: string):
         return false;
     }
 }
+
+export async function sendWhatsAppImage(phone: string, base64: string, caption: string, instanceName?: string) {
+    const targetInstance = instanceName || process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME || 'agente-lobo';
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const url = `${getBaseUrl()}/message/sendMediaBase64/${targetInstance}`;
+
+    // Ensure number is strictly digits
+    const cleanNumber = phone.replace(/\D/g, '');
+
+    // Ensure Base64 has the correct prefix
+    const finalBase64 = base64.startsWith('data:image/') ? base64 : `data:image/png;base64,${base64}`;
+
+    const payload = {
+        number: cleanNumber,
+        media: finalBase64,
+        mediatype: "image",
+        caption: caption,
+        fileName: "qrcode.png"
+    };
+
+    try {
+        console.log(`📤 [SENDER:IMAGE] Sending QR to ${cleanNumber} via ${targetInstance}`);
+        const res = await axios.post(url, payload, {
+            headers: {
+                'apikey': apikey as string,
+                'Content-Type': 'application/json'
+            },
+            timeout: 60000
+        });
+        console.log(`✅ [SENDER:IMAGE] Success:`, res.status);
+        return res.data;
+    } catch (error: any) {
+        if (error.response) {
+            console.error(`❌ [SENDER:IMAGE ERROR] (${error.response.status}):`, JSON.stringify(error.response.data));
+        } else {
+            console.error(`❌ [SENDER:IMAGE ERROR] Failed: ${error.message}`);
+        }
+        throw error;
+    }
+}
