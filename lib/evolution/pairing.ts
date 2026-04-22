@@ -34,29 +34,44 @@ async function nuclearResetInstance(instanceName: string) {
   }
 }
 
-/**
- * Creates an instance in Evolution API.
- */
 async function createInstance(instanceName: string, phoneNumber?: string) {
   const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   const url = `${getBaseUrl()}/instance/create`;
+  const WEBHOOK_URL = "https://sua-secretaria.up.railway.app/api/webhook/evolution";
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
   
   try {
-    const res = await axios.post(url, {
+    const payload = {
       instanceName: instanceName,
       number: phoneNumber,
       token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
       qrcode: false,
-      integration: "WHATSAPP-BAILEYS"
-    }, {
+      integration: "WHATSAPP-BAILEYS",
+      webhook: {
+        enabled: true,
+        url: WEBHOOK_URL,
+        byEvents: true,
+        base64: true,
+        events: [
+          "CONNECTION_UPDATE",
+          "MESSAGES_UPSERT",
+          "MESSAGES_UPDATE",
+          "SEND_MESSAGES"
+        ]
+      }
+    };
+
+    console.log("📤 [EVOLUTION_CREATE] Sending payload:", JSON.stringify(payload, null, 2));
+
+    const res = await axios.post(url, payload, {
       headers: {
         'apikey': globalApiKey as string,
         'Content-Type': 'application/json'
       }
     });
-    console.log(`✅ [EVOLUTION_PAIRING] Instance creation effort finished:`, res.data?.status || 'Sent');
+
+    console.log(`✅ [EVOLUTION_PAIRING] Response Status:`, res.status);
     return true;
   } catch (error: any) {
     console.error(`⚠️ [EVOLUTION_PAIRING] Instance creation warning:`, error.response?.data || error.message);

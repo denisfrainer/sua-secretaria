@@ -55,20 +55,20 @@ export async function POST(req: Request) {
 
     // 5.1 SYNC DATABASE (business_config)
     if (instanceName) {
-      console.log(`📡 [WEBHOOK] Syncing unique instance to DB: ${instanceName}`);
+      console.log(`📡 [WEBHOOK] Syncing unique instance to DB (UPSERT): ${instanceName}`);
       const { error: syncError } = await supabaseAdmin
         .from('business_config')
-        .update({ 
+        .upsert({ 
+          owner_id: profile.id,
           instance_name: instanceName,
           status: 'CONNECTING',
           updated_at: new Date().toISOString()
-        })
-        .eq('owner_id', profile.id);
+        }, { onConflict: 'owner_id' });
 
       if (syncError) {
-        console.error('❌ [WEBHOOK] Failed to sync business_config:', syncError);
+        console.error('❌ [WEBHOOK] [DB_SYNC_ERROR]', syncError);
       } else {
-        console.log(`✅ [WEBHOOK] business_config updated for owner ${profile.id}`);
+        console.log(`✅ [WEBHOOK] [DB_SYNC_SUCCESS] Instance saved to business_config for owner ${profile.id}`);
       }
     }
 
