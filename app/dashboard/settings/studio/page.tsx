@@ -307,7 +307,7 @@ export default function BusinessSettingsPage() {
         const instanceName = generateInstanceName(businessName);
 
         // a. Initialize instance via Evolution wrapper
-        const initRes = await fetch('/api/instance/initialize', {
+        const initRes = await fetch('/api/instance/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

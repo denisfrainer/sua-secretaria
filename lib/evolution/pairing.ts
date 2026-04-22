@@ -1,14 +1,19 @@
 import axios from 'axios';
 
-const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
+const getBaseUrl = () => (process.env.EVOLUTION_API_URL || "").replace(/\/$/, "");
 
 /**
  * NUCLEAR RESET: Ensures every pairing starts from a clean slate.
  * Logs out and deletes any existing instance with this name.
  */
 async function nuclearResetInstance(instanceName: string) {
-  const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
+  const globalApiKey = process.env.EVOLUTION_API_KEY;
   const baseUrl = getBaseUrl();
+
+  if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
+    console.error('🛑 [FATAL] EVOLUTION_API_KEY is missing or invalid in pairing.ts');
+    return;
+  }
 
   console.log(`\n🗑️ [NUCLEAR RESET] Wiping instance: ${instanceName}`);
   console.log(`🔑 [DEBUG] Reset Key prefix: ${globalApiKey?.substring(0, 5)}...`);
@@ -35,8 +40,12 @@ async function nuclearResetInstance(instanceName: string) {
 }
 
 async function createInstance(instanceName: string, phoneNumber?: string) {
-  const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
+  const globalApiKey = process.env.EVOLUTION_API_KEY;
   const url = `${getBaseUrl()}/instance/create`;
+
+  if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
+    throw new Error("Missing or invalid EVOLUTION_API_KEY for instance creation");
+  }
   const WEBHOOK_URL = "https://sua-secretaria.up.railway.app/api/webhook/evolution";
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
@@ -108,8 +117,12 @@ export async function getPairingData(phone: string) {
   
   // Use a base instance name linked to the normalized phone
   const instanceName = `${prefix}-${cleanPhone}`;
-  const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
+  const globalApiKey = process.env.EVOLUTION_API_KEY;
   
+  if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
+    throw new Error("Missing or invalid EVOLUTION_API_KEY for pairing data");
+  }
+
   console.log(`🚀 [HOLY_GRAIL] Target JID: ${cleanPhone}`);
 
   // 2. NUCLEAR RESET (Wipe existing base session for cleanup)

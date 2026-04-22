@@ -11,7 +11,7 @@ export interface Appointment {
   appointment_date: string;
   start_time: string;
   end_time: string;
-  status: 'confirmed' | 'cancelled' | 'completed' | 'BLOCKED';
+  status: 'confirmed' | 'cancelled' | 'completed' | 'blocked';
   notes: string | null;
   created_at: string;
 }
@@ -73,7 +73,7 @@ export function useAppointments(selectedDate: Date) {
       appointment_date: dateStr,
       start_time: slot.toISOString(),
       end_time: new Date(slot.getTime() + 30 * 60000).toISOString(), // 30 min block
-      status: 'BLOCKED' as const,
+      status: 'blocked' as const,
       client_name: 'Bloqueio de Agenda',
       lead_phone: '00000000000',
       service_type: 'BLOCK'

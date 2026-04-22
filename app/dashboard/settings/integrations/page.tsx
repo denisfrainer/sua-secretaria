@@ -89,18 +89,18 @@ export default function IntegrationsSettingsPage() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 24 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
-      transition: { 
-        duration: 0.5, 
+      transition: {
+        duration: 0.5,
         ease: [0.25, 0.1, 0.25, 1.0] as const
       }
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -110,7 +110,7 @@ export default function IntegrationsSettingsPage() {
       {/* Header com Botão de Voltar */}
       <motion.div variants={itemVariants} className="flex flex-col gap-6">
         <div className="flex items-center gap-4">
-          <Link 
+          <Link
             href="/dashboard"
             className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-all active:scale-95"
           >
@@ -129,9 +129,9 @@ export default function IntegrationsSettingsPage() {
         <motion.div variants={itemVariants}>
           <WhatsAppConnectionCard />
         </motion.div>
-        
+
         {/* GOOGLE CALENDAR CARD */}
-        <motion.div 
+        <motion.div
           variants={itemVariants}
           className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative w-full p-7"
         >
@@ -154,7 +154,7 @@ export default function IntegrationsSettingsPage() {
           <div className="flex flex-col gap-2 mb-6">
             <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
               <CalendarIcon size={22} className="text-blue-500" />
-              Google Agenda
+              Conecte sua Agenda
             </h2>
             <p className="text-sm text-slate-500 leading-relaxed font-medium">
               Sincronize sua agenda para que a IA verifique sua disponibilidade e crie agendamentos em tempo real.

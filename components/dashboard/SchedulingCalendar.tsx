@@ -113,7 +113,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
           start_time: startTimeISO,
           end_time: endTimeISO,
           appointment_date: appDate,
-          status: data.type === 'BLOCK' ? 'BLOCKED' : 'confirmed'
+          status: data.type === 'BLOCK' ? 'blocked' : 'confirmed'
         });
       } else if (data.type === 'BLOCK') {
         await blockSlots(selectedSlots, ownerId);
@@ -135,7 +135,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
       setSelectedSlots([]);
       setActiveAppointment(null);
     } catch (e) {
-      alert("Erro ao salvar agendamento. Verifique se o status 'BLOCKED' está configurado no banco.");
+      alert("Erro ao salvar agendamento. Verifique se o status 'blocked' está configurado no banco.");
     }
   };
 
@@ -291,7 +291,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
           phone: activeAppointment.lead_phone,
           notes: activeAppointment.notes || '',
           service_type: activeAppointment.service_type || '',
-          type: activeAppointment.status === 'BLOCKED' ? 'BLOCK' : 'SCHEDULE',
+          type: activeAppointment.status === 'blocked' ? 'BLOCK' : 'SCHEDULE',
           startTime: activeAppointment.start_time,
           appointmentDate: activeAppointment.appointment_date
         } : undefined}

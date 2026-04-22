@@ -11,13 +11,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ state: 'DISCONNECTED', message: 'Aguardando nome da instância...' }, { status: 200 });
     }
 
-    const evoUrl = process.env.EVOLUTION_URL || process.env.NEXT_PUBLIC_EVOLUTION_URL || '';
+    const evoUrl = process.env.EVOLUTION_API_URL || '';
     const evoKey = process.env.EVOLUTION_API_KEY || '';
 
-    // PROTEÇÃO PRIMATA: Se a URL não existir, não deixa o replace() quebrar o servidor
-    if (!evoUrl) {
-      console.error("❌ Erro: Variável EVOLUTION_URL não configurada no Netlify");
-      return NextResponse.json({ state: 'ERROR', message: 'Configuração ausente' }, { status: 200 });
+    if (!evoUrl || !evoKey) {
+      console.error("[API/STATUS] Missing EVOLUTION_API_URL or EVOLUTION_API_KEY in environment");
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
     }
 
     const baseUrl = evoUrl.replace(/\/$/, '');

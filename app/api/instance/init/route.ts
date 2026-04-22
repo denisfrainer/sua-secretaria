@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
+    console.log('🚀 [API/INIT] Request received');
     try {
         const { instanceName } = await request.json();
 
@@ -37,14 +38,24 @@ export async function POST(request: Request) {
             }, { status: 409 });
         }
 
-        // 3. Validate env
+        // 3. Pre-Flight Validation
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
         const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, "");
-        const prefix = process.env.EVOLUTION_INSTANCE_NAME || process.env.NEXT_PUBLIC_INSTANCE_NAME;
+        const prefix = process.env.NEXT_PUBLIC_INSTANCE_PREFIX || "secretaria";
 
-        if (!baseUrl || !apiKey || !webhookUrl) {
-            console.error('🚨 [EVOLUTION] Missing env credentials.');
+        console.log(`🔑 [PRE-FLIGHT] Checking API Key: ${apiKey?.substring(0, 5)}...`);
+
+        if (!apiKey || apiKey === "PASTE_YOUR_KEY_HERE" || apiKey === "SUA_CHAVE_AQUI") {
+            console.error('🛑 [FATAL] EVOLUTION_API_KEY is missing or contains a placeholder!');
+            return NextResponse.json({ 
+                error: 'Evolution API Global Key not configured. Please check your .env.local file.',
+                code: 'MISSING_API_KEY'
+            }, { status: 500 });
+        }
+
+        if (!baseUrl || !webhookUrl) {
+            console.error('🚨 [EVOLUTION] Missing env credentials (URL or Webhook).');
             return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
         }
 
@@ -59,6 +70,7 @@ export async function POST(request: Request) {
         console.log(`🔗 [EVOLUTION_API] Webhook target: ${webhookFullUrl}`);
 
         // 4. Ensure instance exists on Evolution
+        console.log(`📡 [EVOLUTION] POST /instance/create for ${finalInstanceName}`);
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
@@ -75,9 +87,19 @@ export async function POST(request: Request) {
             }),
         });
 
-        // (We ignore creation errors since it might just mean it already exists on Evolution)
         if (!createRes.ok) {
-           console.warn(`⚠️ [EVOLUTION] Instance creation warned (might exist):`, await createRes.text());
+            const errorText = await createRes.text();
+            
+            // STRICT ERROR BOUNDARY: Handle 401 Unauthorized
+            if (createRes.status === 401) {
+                console.error(`🛑 [FATAL] Evolution API returned 401 Unauthorized. Key is likely invalid.`);
+                return NextResponse.json({ 
+                    error: 'Evolution API authentication failed. Verify your Global API Key.',
+                    details: errorText
+                }, { status: 401 });
+            }
+
+            console.warn(`⚠️ [EVOLUTION] Instance creation warned (status ${createRes.status}):`, errorText);
         }
 
         // 5. PURGE: Force logout to clear any stuck 440 conflict sessions
@@ -91,7 +113,6 @@ export async function POST(request: Request) {
              console.log(`⚠️ [EVOLUTION] Logout returned exception (safe to ignore):`, e.message);
         }
 
-        // Wait 1 second as strictly requested
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // 6. GENERATE: Fetch fresh QR code via connect endpoint
@@ -131,10 +152,6 @@ export async function POST(request: Request) {
             console.warn(`⚠️ [EVOLUTION] webhook/set failed (non-fatal):`, e.message);
         }
 
-        // ============================================================
-        // 6. DB WRITE — ONLY instance_name. NEVER touch context_json.
-        //    The webhook on Railway is the sole owner of connection_status.
-        // ============================================================
         if (existingConfig) {
             const { error } = await supabaseAdmin
                 .from('business_config')
@@ -149,7 +166,6 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Failed to save instance name' }, { status: 500 });
             }
         } else {
-            // First-time user: insert with default context (no connection_status override risk)
             const { error } = await supabaseAdmin
                 .from('business_config')
                 .insert({
@@ -176,9 +192,6 @@ export async function POST(request: Request) {
             }
         }
 
-        console.log(`✅ [EVOLUTION] instance_name saved. Webhook owns connection_status.`);
-
-        // 7. Return to client — done
         return NextResponse.json({
             success: true,
             instance: connectData.instance || connectData,
@@ -189,4 +202,8 @@ export async function POST(request: Request) {
         console.error('💥 [EVOLUTION] Exception:', error);
         return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 });
     }
+}
+
+export async function GET() {
+    return NextResponse.json({ message: 'Init route is alive' });
 }

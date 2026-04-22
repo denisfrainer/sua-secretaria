@@ -95,10 +95,10 @@ export function WhatsAppConnectionCard() {
 
       const businessName = user.user_metadata?.business_name || 'Minha Empresa';
       const slug = businessName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
-      const prefix = process.env.NEXT_PUBLIC_INSTANCE_NAME;
+      const prefix = process.env.NEXT_PUBLIC_INSTANCE_PREFIX || 'secretaria';
       const name = `${prefix}-${slug || 'studio'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const initRes = await fetch('/api/instance/initialize', {
+      const initRes = await fetch('/api/instance/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instanceName: name }),
@@ -155,7 +155,7 @@ export function WhatsAppConnectionCard() {
   return (
     <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative w-full mb-8">
       <AnimatePresence mode="wait">
-        
+
         {/* STATE: IDLE */}
         {!hasInstance && !initializing && (
           <motion.div
@@ -175,13 +175,13 @@ export function WhatsAppConnectionCard() {
             </div>
 
             <div className="flex flex-col gap-2">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                    <Image src="/assets/whatsapp.svg" alt="WA" width={22} height={22} />
-                    Atendimento IA
-                </h2>
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    Conecte seu WhatsApp para que a IA atenda suas clientes 24h por dia.
-                </p>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                <Image src="/assets/whatsapp.svg" alt="WA" width={22} height={22} />
+                Conecte seu WhatsApp
+              </h2>
+              <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                Para automatizar o seu WhatsApp clique no botão abaixo.
+              </p>
             </div>
 
             <button
@@ -221,10 +221,10 @@ export function WhatsAppConnectionCard() {
               onReProvision={handleInitializeInstance}
             />
             <div className="text-center">
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Escaneie o QR Code</h3>
-                <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-[240px] mx-auto">
-                    Abra o WhatsApp, vá em "Aparelhos Conectados" e escaneie o código acima.
-                </p>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Escaneie o QR Code</h3>
+              <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-[240px] mx-auto">
+                Abra o WhatsApp, vá em "Aparelhos Conectados" e escaneie o código acima.
+              </p>
             </div>
             <button
               onClick={handleDeleteInstance}
@@ -255,13 +255,13 @@ export function WhatsAppConnectionCard() {
             </div>
 
             <div className="flex flex-col gap-2">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                    <Image src="/assets/whatsapp.svg" alt="WA" width={22} height={22} />
-                    WhatsApp Conectado
-                </h2>
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    Sua IA está ativa e atendendo clientes normalmente.
-                </p>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                <Image src="/assets/whatsapp.svg" alt="WA" width={22} height={22} />
+                WhatsApp Conectado
+              </h2>
+              <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                Sua IA está ativa e atendendo clientes normalmente.
+              </p>
             </div>
 
             <button

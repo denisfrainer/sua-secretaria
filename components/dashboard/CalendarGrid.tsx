@@ -63,7 +63,7 @@ export function CalendarGrid({
         {filteredSlots.map((slot) => {
           const appointment = getAppointmentForSlot(slot);
           const selected = isSelected(slot);
-          const isBlocked = appointment?.status === 'BLOCKED';
+          const isBlocked = appointment?.status === 'blocked';
           const isHourStart = slot.getMinutes() === 0;
 
           return (
