@@ -204,6 +204,68 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     }
 }
 
+async function handleSimulationState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+    console.log(`🎯 [BRAIN:SIMULATION] Processing for ${profile.phone}`);
+    const targetInstance = await resolveInstance(profile);
+
+    // 1. INTENT CLASSIFICATION: Decide if we transition to checkout or continue simulation
+    const intentPrompt = `
+        Analise a mensagem do usuário. 
+        Se ele expressar que gostou do teste, quiser comprar, assinar, ou avançar (ex: 'gostei', 'como pago', 'quero continuar'), retorne APENAS a palavra 'PROCEED'. 
+        Se ele estiver apenas conversando ou testando o bot (ex: 'qual o valor do corte?', 'tem horário?'), retorne APENAS 'SIMULATE'.
+    `;
+
+    const userContent = messageData.text || "[AUDIO]";
+    const intentResult = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }]
+    });
+
+    const intent = (intentResult.text || "").toUpperCase().trim();
+    console.log(`📡 [STATE:SIMULATION] Intent detected for ${profile.phone}: ${intent}`);
+
+    if (intent.includes('PROCEED')) {
+        console.log(`🚀 [STATE:SIMULATION] Transitioning ${profile.phone} to PAYWALL`);
+        // Escalate to Payment (PAYWALL state as per lib/supabase/types.ts)
+        await supabaseAdmin.from('profiles').update({ 
+            conversation_state: 'PAYWALL',
+            updated_at: new Date().toISOString()
+        }).eq('id', profile.id);
+
+        const checkoutMsg = "Que excelente notícia! 🎉 Para ativar sua secretária oficial e gerar seu código de pareamento, conclua sua assinatura no link abaixo:\n\n🔗 https://sua-plataforma.com/checkout";
+        await sendWhatsAppMessage(profile.phone, checkoutMsg, 1200, targetInstance);
+        return;
+    }
+
+    // 2. SECRETARY SIMULATION: Execute the "Simulation" of the bot acting on behalf of the user
+    console.log(`🤖 [STATE:SIMULATION] Continuing simulation for ${profile.phone}`);
+    
+    // Fetch business context for the simulation
+    const { data: bConfig } = await supabaseAdmin
+        .from('business_config')
+        .select('*')
+        .eq('owner_id', profile.id)
+        .maybeSingle();
+
+    const simPrompt = `
+        Você é uma secretária virtual para a empresa ${bConfig?.business_name || 'sua empresa'}.
+        Seu objetivo é ser gentil, profissional e responder baseado nestas informações:
+        - Serviço principal: ${bConfig?.primary_service || 'serviços gerais'}
+        - Preço: R$ ${bConfig?.price || 'sob consulta'}
+        - Duração: ${bConfig?.duration_minutes || '30'} min
+        
+        🛡️ GUARDRAIL: Mantenha a resposta curta. Seu objetivo é ajudar o cliente fictício a testar o bot.
+    `;
+
+    const simResult = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }]
+    });
+
+    const responseText = simResult.text || "Entendido! Como posso te ajudar hoje?";
+    await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
+}
+
 // ==============================================================
 // 🧠 MAIN PROCESSING LOGIC
 // ==============================================================
@@ -254,10 +316,11 @@ async function processProfile(profile: any) {
             case 'ONBOARDING':
                 await handleOnboardingState(profile, messageData);
                 break;
+            case 'SIMULATION':
+                await handleSimulationState(profile, messageData);
+                break;
             default:
-                // For SIMULATION/PAYWALL/ACTIVE, we'd implement similar multimodal logic
-                console.log(`⏩ [STATE:${profile.conversation_state}] Logic not multimodal yet. Just answering...`);
-                await sendWhatsAppMessage(profile.phone, "Entendido! Estou processando seu teste. Siga as instruções acima.", 1200, targetInstance!);
+                console.log(`⏩ [STATE:${profile.conversation_state}] Logic and transitions coming soon.`);
                 break;
         }
 
