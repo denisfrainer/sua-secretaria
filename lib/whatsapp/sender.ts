@@ -114,7 +114,7 @@ export async function sendWhatsAppImage(phone: string, base64: string, caption: 
     const payload = {
         number: cleanNumber,
         media: finalBase64,
-        mediaType: "image", // Strictly camelCase for v2
+        mediatype: "image", // Fixed casing: lowercase is required by Evolution schema
         caption: caption,
         fileName: "qrcode.png"
     };

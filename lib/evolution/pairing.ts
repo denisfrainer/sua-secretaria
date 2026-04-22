@@ -86,8 +86,8 @@ export async function getPairingData(phone: string) {
   await createInstance(uniqueInstanceName, cleanPhone);
 
   // 4. Stablization Delay (Wait for session registration with Meta)
-  console.log(`⏳ [EVOLUTION_PAIRING] Waiting 2 seconds for session stabilization...`);
-  await new Promise(res => setTimeout(res, 2000));
+  console.log(`⏳ [EVOLUTION_PAIRING] Waiting 5 seconds for session stabilization...`);
+  await new Promise(res => setTimeout(res, 5000));
 
   // 5. Request pairing code (Step B)
   const url = `${getBaseUrl()}/instance/connect/${uniqueInstanceName}?number=${cleanPhone}`;
