@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizePhone } from '@/lib/utils/phone';
-import { sendWhatsAppMessage } from '@/lib/evolution/sender';
+import { sendWhatsAppMessage } from '@/lib/whatsapp/sender';
 
 export async function POST(request: Request) {
   try {
