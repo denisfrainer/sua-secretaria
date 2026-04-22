@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 export async function POST(request: Request) {
     console.log('🚀 [API/INIT] Request received');
     try {
-        const { instanceName } = await request.json();
+        const body = await request.json();
 
         // 1. Auth
         const supabase = await createClient();
@@ -17,59 +17,67 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized: Session required' }, { status: 401 });
         }
 
-        if (!instanceName) {
-            return NextResponse.json({ error: 'instanceName is required' }, { status: 400 });
-        }
+        // 2. Null-Safe Instance Generation (Step 1)
+        const prefix = process.env.NEXT_PUBLIC_INSTANCE_PREFIX || "secretaria";
+        const fallbackName = `user-${tenantId.split('-')[0]}`;
+        const rawName = body.instanceName || body.companyName || fallbackName;
+        
+        // Sanitize and build name (strip special chars, lowercase)
+        const cleanName = rawName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const finalInstanceName = cleanName.startsWith(prefix) 
+            ? cleanName 
+            : `${prefix}-${cleanName}`;
 
-        // 2. Anti-abuse: block if user already has an instance
-        const { data: existingConfig } = await supabaseAdmin
-            .from('business_config')
-            .select('id, instance_name, context_json')
-            .eq('owner_id', tenantId)
-            .maybeSingle();
-
-        if (existingConfig?.instance_name?.trim()) {
-            const cs = (existingConfig.context_json as any)?.connection_status;
-            console.warn(`🛡️ [ANTI-ABUSE] User ${tenantId} already has "${existingConfig.instance_name}" (${cs}). Blocked.`);
-            return NextResponse.json({
-                error: 'Você já possui uma instância. Exclua a atual antes de criar uma nova.',
-                existingInstance: existingConfig.instance_name,
-                status: cs
-            }, { status: 409 });
-        }
-
-        // 3. Pre-Flight Validation
+        // 3. Pre-Flight Validation (URLs & Keys)
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
         const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
-        const prefix = process.env.NEXT_PUBLIC_INSTANCE_PREFIX || "secretaria";
-
-        console.log(`🔑 [PRE-FLIGHT] Checking API Key: ${apiKey?.substring(0, 5)}...`);
 
         if (!apiKey || apiKey === "PASTE_YOUR_KEY_HERE" || apiKey === "SUA_CHAVE_AQUI") {
-            console.error('🛑 [FATAL] EVOLUTION_API_KEY is missing or contains a placeholder!');
-            return NextResponse.json({ 
-                error: 'Evolution API Global Key not configured. Please check your .env.local file.',
-                code: 'MISSING_API_KEY'
-            }, { status: 500 });
+            throw new Error("Evolution API Global Key not configured.");
         }
 
         if (!baseUrl || !appUrl) {
-            console.error('🚨 [EVOLUTION] Missing env credentials (URL or App URL).');
-            return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
+            throw new Error("Missing Evolution API URL or App URL configuration.");
         }
 
-        // Force naming convention: secretaria-uuid or provided name with prefix
-        const finalInstanceName = instanceName.startsWith(prefix) 
-            ? instanceName 
-            : `${prefix}-${instanceName}`;
+        // 4. Auto-Seed Database (Step 2: UPSERT)
+        // Ensure baseline record exists BEFORE calling the Evolution API
+        const defaultContext = {
+            is_ai_enabled: true,
+            business_info: { name: '', handoff_phone: '', scheduling_link: '' },
+            operating_hours: {
+                weekdays: { open: "09:00", close: "18:00", is_closed: false },
+                saturday: { open: "09:00", close: "13:00", is_closed: false },
+                sunday: { open: "00:00", close: "00:00", is_closed: true }
+            },
+            services: [],
+            faq: []
+        };
+
+        const { data: config, error: upsertError } = await supabaseAdmin
+            .from('business_config')
+            .upsert({
+                owner_id: tenantId,
+                instance_name: finalInstanceName,
+                status: 'CONNECTING',
+                context_json: defaultContext,
+                plan_tier: 'ELITE', // Defaulting for new users
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'owner_id' })
+            .select()
+            .single();
+
+        if (upsertError) {
+            console.error('❌ [API/INIT] DB Upsert failed:', upsertError);
+            throw new Error(`Falha ao preparar registro: ${upsertError.message}`);
+        }
 
         const webhookFullUrl = `${appUrl}/api/webhook/evolution?tenantId=${tenantId}`;
         
-        console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Prefix: ${prefix} | Tenant: ${tenantId}`);
-        console.log(`🔗 [EVOLUTION_API] Webhook target: ${webhookFullUrl}`);
+        console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Tenant: ${tenantId}`);
 
-        // 4. Ensure instance exists on Evolution
+        // 5. Evolution API Handshake
         console.log(`📡 [EVOLUTION] POST /instance/create for ${finalInstanceName}`);
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
@@ -87,36 +95,21 @@ export async function POST(request: Request) {
             }),
         });
 
-        if (!createRes.ok) {
-            const errorText = await createRes.text();
-            
-            // STRICT ERROR BOUNDARY: Handle 401 Unauthorized
-            if (createRes.status === 401) {
-                console.error(`🛑 [FATAL] Evolution API returned 401 Unauthorized. Key is likely invalid.`);
-                return NextResponse.json({ 
-                    error: 'Evolution API authentication failed. Verify your Global API Key.',
-                    details: errorText
-                }, { status: 401 });
-            }
-
-            console.warn(`⚠️ [EVOLUTION] Instance creation warned (status ${createRes.status}):`, errorText);
+        if (!createRes.ok && createRes.status === 401) {
+            throw new Error("Evolution API authentication failed (401).");
         }
 
-        // 5. PURGE: Force logout to clear any stuck 440 conflict sessions
-        console.log(`🧹 [EVOLUTION] Purging potentially stuck connection for ${finalInstanceName}...`);
+        // Force logout to clear any stuck sessions
         try {
              await fetch(`${baseUrl}/instance/logout/${finalInstanceName}`, {
-                 method: 'DELETE',
-                 headers: { 'apikey': apiKey }
+                 method: 'DELETE', headers: { 'apikey': apiKey }
              });
-        } catch (e: any) {
-             console.log(`⚠️ [EVOLUTION] Logout returned exception (safe to ignore):`, e.message);
-        }
+        } catch (e) {}
 
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // 6. GENERATE: Fetch fresh QR code via connect endpoint
-        console.log(`🔗 [EVOLUTION] Generating fresh QR code for ${finalInstanceName}...`);
+        // 6. Generate QR Code
+        console.log(`🔗 [EVOLUTION] Generating QR code for ${finalInstanceName}...`);
         const connectRes = await fetch(`${baseUrl}/instance/connect/${finalInstanceName}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey }
@@ -125,15 +118,12 @@ export async function POST(request: Request) {
         const connectData = await connectRes.json();
 
         if (!connectRes.ok) {
-            console.error('❌ [EVOLUTION] Failed to connect instance:', connectData);
-            return NextResponse.json({ error: 'Failed to fetch fresh QR code', details: connectData }, { status: connectRes.status });
+            throw new Error(`Failed to fetch fresh QR code: ${JSON.stringify(connectData)}`);
         }
 
-        console.log(`✅ [EVOLUTION] Instance ${finalInstanceName} created.`);
-
-        // 5. Belt-and-suspenders: explicit webhook/set (non-fatal)
+        // Set webhook explicitly (Belt-and-suspenders)
         try {
-            const wRes = await fetch(`${baseUrl}/webhook/set/${finalInstanceName}`, {
+            await fetch(`${baseUrl}/webhook/set/${finalInstanceName}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
                 body: JSON.stringify({
@@ -146,53 +136,9 @@ export async function POST(request: Request) {
                     }
                 }),
             });
-            if (!wRes.ok) console.warn('⚠️ [EVOLUTION] webhook/set non-200:', await wRes.text());
-            else console.log(`✅ [EVOLUTION] webhook/set confirmed for ${instanceName}`);
-        } catch (e: any) {
-            console.warn(`⚠️ [EVOLUTION] webhook/set failed (non-fatal):`, e.message);
-        }
+        } catch (e) {}
 
-        if (existingConfig) {
-            const { error } = await supabaseAdmin
-                .from('business_config')
-                .update({
-                    instance_name: finalInstanceName,
-                    status: 'CONNECTING',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('owner_id', tenantId);
-
-            if (error) {
-                console.error('❌ [EVOLUTION] DB update failed:', error);
-                return NextResponse.json({ error: 'Failed to save instance name' }, { status: 500 });
-            }
-        } else {
-            const { error } = await supabaseAdmin
-                .from('business_config')
-                .insert({
-                    owner_id: tenantId,
-                    instance_name: finalInstanceName,
-                    status: 'CONNECTING',
-                    plan_tier: 'ELITE',
-                    context_json: {
-                        is_ai_enabled: true,
-                        business_info: { name: '', handoff_phone: '', scheduling_link: '' },
-                        operating_hours: {
-                            weekdays: { open: "09:00", close: "18:00", is_closed: false },
-                            saturday: { open: "09:00", close: "13:00", is_closed: false },
-                            sunday: { open: "00:00", close: "00:00", is_closed: true }
-                        },
-                        services: [],
-                        faq: []
-                    },
-                    updated_at: new Date().toISOString()
-                });
-
-            if (error) {
-                console.error('❌ [EVOLUTION] DB insert failed:', error);
-                return NextResponse.json({ error: 'Failed to create config' }, { status: 500 });
-            }
-        }
+        console.log(`✅ [EVOLUTION] Instance ${finalInstanceName} initialized successfully.`);
 
         return NextResponse.json({
             success: true,
@@ -201,8 +147,14 @@ export async function POST(request: Request) {
         });
 
     } catch (error: any) {
-        console.error('💥 [EVOLUTION] Exception:', error);
-        return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 });
+        console.error("❌ [API/INIT_CRASH] Failed for user. Error:", error.message);
+        return NextResponse.json(
+            { 
+                error: "Erro de inicialização: Dados da empresa incompletos ou falha na API.", 
+                details: error.message 
+            }, 
+            { status: 400 }
+        );
     }
 }
 
