@@ -73,7 +73,9 @@ export async function POST(request: Request) {
             throw new Error(`Falha ao preparar registro: ${upsertError.message}`);
         }
 
-        const webhookFullUrl = `${appUrl}/api/webhook/evolution?tenantId=${tenantId}`;
+        // Force the Railway URL for the Webhook Payload
+        const WEBHOOK_TARGET = "https://sua-secretaria.up.railway.app";
+        const webhookFullUrl = `${WEBHOOK_TARGET}/api/webhook/evolution?tenantId=${tenantId}`;
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Tenant: ${tenantId}`);
 

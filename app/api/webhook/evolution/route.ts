@@ -121,7 +121,26 @@ export async function POST(req: Request) {
         profile = tProfile;
       }
 
-      // Fallback: If no tenantId, try to find profile by phone (legacy/onboarding)
+      // Fallback 1: Resolve by Instance Name (Legacy/Missing Param Support)
+      if (!profile && instanceName) {
+        const { data: bConfig } = await supabaseAdmin
+          .from('business_config')
+          .select('owner_id')
+          .eq('instance_name', instanceName)
+          .maybeSingle();
+        
+        if (bConfig?.owner_id) {
+          const { data: lProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('id', bConfig.owner_id)
+            .single();
+          profile = lProfile;
+          if (profile) console.log(`🔄 [WEBHOOK] Profile resolved via Instance Name: ${instanceName}`);
+        }
+      }
+
+      // Fallback 2: If no profile yet, try to find profile by phone (onboarding)
       if (!profile) {
         const { data: pProfile, error: upsertError } = await supabaseAdmin
           .from('profiles')
