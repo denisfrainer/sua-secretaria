@@ -7,15 +7,16 @@ const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION
  * Logs out and deletes any existing instance with this name.
  */
 async function nuclearResetInstance(instanceName: string) {
-  const apikey = process.env.EVOLUTION_API_KEY;
+  const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   const baseUrl = getBaseUrl();
 
   console.log(`🗑️ [NUCLEAR RESET] Wiping instance: ${instanceName}`);
+  console.log(`🔑 [DEBUG] Reset Key prefix: ${globalApiKey?.substring(0, 5)}...`);
 
   // 1. Logout
   try {
     await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, {
-      headers: { 'apikey': apikey as string }
+      headers: { 'apikey': globalApiKey as string }
     });
     console.log(`📡 [NUCLEAR RESET] Logout sent for ${instanceName}`);
   } catch (err: any) {
@@ -25,7 +26,7 @@ async function nuclearResetInstance(instanceName: string) {
   // 2. Delete
   try {
     await axios.delete(`${baseUrl}/instance/delete/${instanceName}`, {
-      headers: { 'apikey': apikey as string }
+      headers: { 'apikey': globalApiKey as string }
     });
     console.log(`📡 [NUCLEAR RESET] Delete sent for ${instanceName}`);
   } catch (err: any) {
@@ -37,10 +38,11 @@ async function nuclearResetInstance(instanceName: string) {
  * Creates an instance in Evolution API.
  */
 async function createInstance(instanceName: string) {
-  const apikey = process.env.EVOLUTION_API_KEY;
+  const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   const url = `${getBaseUrl()}/instance/create`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName}`);
+  console.log(`🔑 [DEBUG] Create Key prefix: ${globalApiKey?.substring(0, 5)}...`);
 
   try {
     const res = await axios.post(url, {
@@ -50,7 +52,7 @@ async function createInstance(instanceName: string) {
       integration: "WHATSAPP-BAILEYS"
     }, {
       headers: {
-        'apikey': apikey as string,
+        'apikey': globalApiKey as string,
         'Content-Type': 'application/json'
       }
     });
@@ -70,7 +72,7 @@ export async function getPairingCode(phone: string) {
   const cleanPhone = phone.replace(/\D/g, '');
   const prefix = process.env.EVOLUTION_INSTANCE_PREFIX || 'secretaria';
   const instanceName = `${prefix}-${cleanPhone}`;
-  const apikey = process.env.EVOLUTION_API_KEY;
+  const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   
   // 2. NUCLEAR RESET (Wipe existing session)
   await nuclearResetInstance(instanceName);
@@ -90,7 +92,7 @@ export async function getPairingCode(phone: string) {
   try {
     const res = await axios.get(url, {
       headers: {
-        'apikey': apikey as string,
+        'apikey': globalApiKey as string,
         'Content-Type': 'application/json'
       }
     });
