@@ -15,7 +15,8 @@ async function createInstance(instanceName: string) {
     const res = await axios.post(url, {
       instanceName: instanceName,
       token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
-      qrcode: false
+      qrcode: false,
+      integration: "WHATSAPP-BAILEYS"
     }, {
       headers: {
         'apikey': apikey as string,
@@ -49,7 +50,7 @@ export async function getPairingCode(phone: string) {
   await createInstance(instanceName);
 
   // 2. Request pairing code (Step B)
-  const url = `${getBaseUrl()}/instance/connect/phone/${instanceName}?number=${cleanPhone}`;
+  const url = `${getBaseUrl()}/instance/connect/${instanceName}?number=${cleanPhone}`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${phone} (Instance: ${instanceName})`);
 
