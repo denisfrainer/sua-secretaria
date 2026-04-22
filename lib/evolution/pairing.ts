@@ -74,20 +74,24 @@ export async function getPairingCode(phone: string) {
   const instanceName = `${prefix}-${cleanPhone}`;
   const globalApiKey = process.env.EVOLUTION_GLOBAL_API_KEY || process.env.EVOLUTION_API_KEY;
   
-  // 2. NUCLEAR RESET (Wipe existing session)
+  // 2. NUCLEAR RESET (Wipe existing base session for cleanup)
   await nuclearResetInstance(instanceName);
 
-  // 3. Create Fresh Instance
-  await createInstance(instanceName);
+  // 3. Create Fresh UNIQUE Instance (to bypass cleanup lag)
+  const timestamp = Date.now();
+  const uniqueInstanceName = `${instanceName}-${timestamp}`;
+  console.log(`🚀 [EVOLUTION_PAIRING] Generating unique instance: ${uniqueInstanceName}`);
+  
+  await createInstance(uniqueInstanceName);
 
   // 4. Stablization Delay (Wait for session registration with Meta)
   console.log(`⏳ [EVOLUTION_PAIRING] Waiting 2 seconds for session stabilization...`);
   await new Promise(res => setTimeout(res, 2000));
 
   // 5. Request pairing code (Step B)
-  const url = `${getBaseUrl()}/instance/connect/${instanceName}?number=${cleanPhone}`;
+  const url = `${getBaseUrl()}/instance/connect/${uniqueInstanceName}?number=${cleanPhone}`;
 
-  console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${phone} (Instance: ${instanceName})`);
+  console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${phone} (Instance: ${uniqueInstanceName})`);
 
   try {
     const res = await axios.get(url, {
