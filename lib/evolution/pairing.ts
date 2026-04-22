@@ -62,14 +62,17 @@ export async function getPairingCode(phone: string) {
       }
     });
 
-    const code = res.data?.code;
+    // 3. Extract Correct Property (Force pairingCode logic)
+    const finalCode = res.data?.pairingCode || res.data?.pairing_code;
     
-    if (code) {
-      console.log(`✅ [EVOLUTION_PAIRING] Code received: ${code}`);
-      return code;
+    console.log(`[EVOLUTION_PAIRING] Extracted Pairing Code: ${finalCode}`);
+
+    if (!finalCode || typeof finalCode !== 'string' || finalCode.length > 20) {
+       console.error(`❌ [EVOLUTION_PAIRING] Invalid Pairing Code extracted. Got: ${String(finalCode).substring(0,20)}...`);
+       throw new Error('Invalid Pairing Code format received from Evolution API');
     }
 
-    throw new Error('No pairing code returned from Evolution API');
+    return finalCode;
   } catch (error: any) {
     if (error.response) {
       console.error(`❌ [EVOLUTION_PAIRING] API Error (${error.response.status}):`, JSON.stringify(error.response.data));
