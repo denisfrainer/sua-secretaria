@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizePhone } from '@/lib/utils/phone';
 
 export async function POST(req: Request) {
+  const url = new URL(req.url);
+  console.log(`📡 [WEB HEARTBEAT] Hit: ${url.pathname}${url.search}`);
   try {
     const body = await req.json();
     const event = body.event || body.type; // Evolution v2 uses 'event'
@@ -61,8 +63,7 @@ export async function POST(req: Request) {
       // 2. O Gatekeeper (Agora olhando para o número certo)
       if (
           !remoteJid.endsWith('@s.whatsapp.net') || 
-          rawNumber.length > 13 || 
-          rawNumber === '5535902353092770'
+          rawNumber.length > 13
       ) {
           console.log("🛑 [GATEKEEPER] Mutant/Group Rejected:", remoteJid);
           return new Response(JSON.stringify({ status: 'ignored' }), { status: 200 });

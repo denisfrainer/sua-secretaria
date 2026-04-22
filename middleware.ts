@@ -21,7 +21,7 @@ export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
   // ⚡ INFRASTRUCTURE TRACE: Inbound Heartbeat
-  console.log(`📡 [WEB HEARTBEAT] Hit: ${pathname}`);
+  console.log(`📡 [WEB HEARTBEAT] Hit: ${pathname}${request.nextUrl.search}`);
 
   // 1. NEGATIVE MATCHER: Fast-track public routes
   // If the path is NOT reserved AND is not the root landing page, skip middleware entirely.
