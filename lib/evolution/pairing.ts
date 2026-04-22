@@ -3,7 +3,38 @@ import axios from 'axios';
 const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
 /**
- * Creates an instance in Evolution API if it doesn't exist.
+ * NUCLEAR RESET: Ensures every pairing starts from a clean slate.
+ * Logs out and deletes any existing instance with this name.
+ */
+async function nuclearResetInstance(instanceName: string) {
+  const apikey = process.env.EVOLUTION_API_KEY;
+  const baseUrl = getBaseUrl();
+
+  console.log(`🗑️ [NUCLEAR RESET] Wiping instance: ${instanceName}`);
+
+  // 1. Logout
+  try {
+    await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, {
+      headers: { 'apikey': apikey as string }
+    });
+    console.log(`📡 [NUCLEAR RESET] Logout sent for ${instanceName}`);
+  } catch (err: any) {
+    // Ignore error if instance doesn't exist
+  }
+
+  // 2. Delete
+  try {
+    await axios.delete(`${baseUrl}/instance/delete/${instanceName}`, {
+      headers: { 'apikey': apikey as string }
+    });
+    console.log(`📡 [NUCLEAR RESET] Delete sent for ${instanceName}`);
+  } catch (err: any) {
+    // Ignore error if instance doesn't exist
+  }
+}
+
+/**
+ * Creates an instance in Evolution API.
  */
 async function createInstance(instanceName: string) {
   const apikey = process.env.EVOLUTION_API_KEY;
@@ -26,12 +57,6 @@ async function createInstance(instanceName: string) {
     console.log(`✅ [EVOLUTION_PAIRING] Instance creation effort finished:`, res.data?.status || 'Sent');
     return true;
   } catch (error: any) {
-    // If instance already exists, it might return 403 or specific error message.
-    // We log and continue, as we want to get the pairing code regardless.
-    if (error.response?.status === 403 || error.response?.data?.message?.includes('already exists')) {
-      console.log(`ℹ️ [EVOLUTION_PAIRING] Instance ${instanceName} already exists. Continuing.`);
-      return true;
-    }
     console.error(`⚠️ [EVOLUTION_PAIRING] Instance creation warning:`, error.response?.data || error.message);
     return false;
   }
@@ -41,15 +66,23 @@ async function createInstance(instanceName: string) {
  * Generates an 8-character pairing code for an instance using a phone number.
  */
 export async function getPairingCode(phone: string) {
+  // 1. Normalize Phone (Strictly numeric)
   const cleanPhone = phone.replace(/\D/g, '');
   const prefix = process.env.EVOLUTION_INSTANCE_PREFIX || 'secretaria';
   const instanceName = `${prefix}-${cleanPhone}`;
   const apikey = process.env.EVOLUTION_API_KEY;
   
-  // 1. Ensure instance exists
+  // 2. NUCLEAR RESET (Wipe existing session)
+  await nuclearResetInstance(instanceName);
+
+  // 3. Create Fresh Instance
   await createInstance(instanceName);
 
-  // 2. Request pairing code (Step B)
+  // 4. Stablization Delay (Wait for session registration with Meta)
+  console.log(`⏳ [EVOLUTION_PAIRING] Waiting 2 seconds for session stabilization...`);
+  await new Promise(res => setTimeout(res, 2000));
+
+  // 5. Request pairing code (Step B)
   const url = `${getBaseUrl()}/instance/connect/${instanceName}?number=${cleanPhone}`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${phone} (Instance: ${instanceName})`);
@@ -62,7 +95,7 @@ export async function getPairingCode(phone: string) {
       }
     });
 
-    // 3. Extract Correct Property (Force pairingCode logic)
+    // 6. Extract Correct Property (Force pairingCode logic)
     const finalCode = res.data?.pairingCode || res.data?.pairing_code;
     
     console.log(`[EVOLUTION_PAIRING] Extracted Pairing Code: ${finalCode}`);
