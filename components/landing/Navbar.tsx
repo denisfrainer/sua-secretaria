@@ -37,7 +37,7 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/login"
+            href="/login?mode=signup"
             className="hidden sm:flex items-center justify-center bg-purple-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-purple-100 hover:bg-purple-700 active:scale-95 transition-all"
           >
             Testar grátis

@@ -46,7 +46,8 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
   if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
     throw new Error("Missing or invalid EVOLUTION_API_KEY for instance creation");
   }
-  const WEBHOOK_URL = `${process.env.WEBHOOK_URL}/evolution`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+  const WEBHOOK_URL = `${appUrl}/api/webhook/evolution`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
   

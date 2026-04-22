@@ -23,7 +23,16 @@ export default async function LoginPage() {
             </Suspense>
 
             <div className="w-full max-w-sm">
-                <UnifiedAuthForm />
+                <Suspense fallback={
+                    <div className="bg-white rounded-[32px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 w-full min-h-[400px] flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 rounded-full border-4 border-indigo-50 border-t-indigo-600 animate-spin" />
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Carregando...</p>
+                        </div>
+                    </div>
+                }>
+                    <UnifiedAuthForm />
+                </Suspense>
 
                 <div className="flex flex-col items-center gap-2 text-center opacity-30 mt-10 font-bold uppercase tracking-widest text-[11px] text-slate-500">
                     Sua SecretarIA &copy; {new Date().getFullYear()}

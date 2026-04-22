@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         // 3. Pre-Flight Validation
         const baseUrl = process.env.EVOLUTION_API_URL;
         const apiKey = process.env.EVOLUTION_API_KEY;
-        const webhookUrl = process.env.WEBHOOK_URL?.replace(/\/$/, "");
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
         const prefix = process.env.NEXT_PUBLIC_INSTANCE_PREFIX || "secretaria";
 
         console.log(`🔑 [PRE-FLIGHT] Checking API Key: ${apiKey?.substring(0, 5)}...`);
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
             }, { status: 500 });
         }
 
-        if (!baseUrl || !webhookUrl) {
-            console.error('🚨 [EVOLUTION] Missing env credentials (URL or Webhook).');
+        if (!baseUrl || !appUrl) {
+            console.error('🚨 [EVOLUTION] Missing env credentials (URL or App URL).');
             return NextResponse.json({ error: 'Evolution API credentials not configured.' }, { status: 500 });
         }
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
             ? instanceName 
             : `${prefix}-${instanceName}`;
 
-        const webhookFullUrl = `${webhookUrl}/evolution?tenantId=${tenantId}`;
+        const webhookFullUrl = `${appUrl}/api/webhook/evolution?tenantId=${tenantId}`;
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Prefix: ${prefix} | Tenant: ${tenantId}`);
         console.log(`🔗 [EVOLUTION_API] Webhook target: ${webhookFullUrl}`);

@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Smartphone, Lock, ArrowRight, CheckCircle2, Loader2, KeyRound } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { normalizePhone } from '@/lib/utils/phone';
 
 export default function UnifiedAuthForm() {
-  const [mode, setMode] = useState<'login' | 'signup' | 'otp-request' | 'otp-verify'>('login');
+  const searchParams = useSearchParams();
+  const initialMode = (searchParams.get('mode') as 'login' | 'signup') || 'login';
+
+  const [mode, setMode] = useState<'login' | 'signup' | 'otp-request' | 'otp-verify'>(initialMode);
   const [formData, setFormData] = useState({
     fullName: '',
     whatsapp: '',
@@ -83,7 +87,7 @@ export default function UnifiedAuthForm() {
               email: emailMask,
               phone: normalized,
             });
-          
+
           if (profileError) console.error('Error updating profile:', profileError);
         }
 
@@ -95,7 +99,7 @@ export default function UnifiedAuthForm() {
         });
 
         if (signInError) throw signInError;
-        
+
         window.location.href = '/dashboard';
       } else if (mode === 'otp-request') {
         const res = await fetch('/api/auth/request-otp', {
@@ -149,7 +153,7 @@ export default function UnifiedAuthForm() {
             onClick={() => window.location.href = '/dashboard'}
             className="w-full h-16 bg-[#533AFD] text-white rounded-2xl font-bold text-base flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-indigo-100"
           >
-            Ir para o Dashboard
+            Acesse o painel administrativo
             <ArrowRight size={18} />
           </button>
         </motion.div>
@@ -168,7 +172,7 @@ export default function UnifiedAuthForm() {
 
   const getHeaderSubtitle = () => {
     switch (mode) {
-      case 'login': 
+      case 'login':
       case 'signup': return 'Comece agora e use grátis por 30 dias.';
       case 'otp-request': return 'Insira seu WhatsApp para receber seu código.';
       case 'otp-verify': return `Enviamos um código para o WhatsApp ${formData.whatsapp}`;
@@ -180,15 +184,15 @@ export default function UnifiedAuthForm() {
       {/* BRAND HEADER */}
       <div className="flex flex-col items-center text-center gap-6">
         <button onClick={() => window.location.href = '/'} className="w-20 h-20 rounded-full bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer text-5xl">
-            👩🏼‍💼
+          👩🏼‍💼
         </button>
         <div className="flex flex-col gap-2">
-            <h1 className="text-[32px] font-extrabold tracking-tight text-slate-900">
-                {getHeaderTitle()}
-            </h1>
-            <p className="text-[17px] font-medium text-slate-500">
-                {getHeaderSubtitle()}
-            </p>
+          <h1 className="text-[32px] font-extrabold tracking-tight text-slate-900">
+            {getHeaderTitle()}
+          </h1>
+          <p className="text-[17px] font-medium text-slate-500">
+            {getHeaderSubtitle()}
+          </p>
         </div>
       </div>
 

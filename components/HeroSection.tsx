@@ -53,7 +53,7 @@ export function HeroSection() {
                 href="/dashboard"
                 className="flex items-center justify-center w-full px-8 h-14 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-md shadow-md text-[16px] font-bold transition-all duration-200 ease-in-out hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
               >
-                Ir para o Dashboard
+                Ir para o Painel Administrativo
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -67,7 +67,7 @@ export function HeroSection() {
                   Contratar Agora
                 </a>
                 <Link
-                  href="/login"
+                  href="/login?mode=signup"
                   className="flex items-center justify-center w-full sm:w-1/2 px-4 h-14 bg-white border border-gray-200 rounded-md shadow-sm text-[16px] font-bold text-slate-900 transition-all duration-200 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-100 peer-hover:border-gray-300 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md"
                 >
                   teste grátis
