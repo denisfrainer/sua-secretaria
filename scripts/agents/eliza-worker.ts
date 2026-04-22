@@ -56,12 +56,12 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
         } catch (err: any) {
             lastError = err;
             // Catch transient 503, 500, or rate limit errors
-            const isTransient = 
-                err.message?.includes('503') || 
-                err.message?.includes('504') || 
-                err.message?.includes('500') || 
+            const isTransient =
+                err.message?.includes('503') ||
+                err.message?.includes('504') ||
+                err.message?.includes('500') ||
                 err.message?.includes('429');
-            
+
             if (i < maxRetries && isTransient) {
                 console.warn(`⚠️ [AI:RETRY] Attempt ${i + 1} failed (Transient Error). Retrying in ${delays[i]}ms...`);
                 await new Promise(res => setTimeout(res, delays[i]));
@@ -220,7 +220,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         // 2. EXTRACTION LOGIC (Standard Onboarding with Resilience)
         const result = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-2.0-flash",
+                model: "gemini-2.5-flash",
                 contents: [{ role: 'user', parts }],
                 config: {
                     responseMimeType: "application/json",
@@ -244,7 +244,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
 
         // 3. SET VIRTUAL CONFIRMATION STATE
         console.log(`⏳ [BRAIN:ONBOARDING] Data extracted for ${profile.phone}. Awaiting confirmation...`);
-        
+
         await supabaseAdmin.from('business_config').upsert({
             owner_id: profile.id,
             context_json: { ...context, pending_confirmation: true, pending_metadata: extracted },
@@ -266,7 +266,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         console.error("💥 [ONBOARDING FATAL ERROR] Trace:", err);
         // Resolve instance for error message as well
         const errInstance = await resolveInstance(profile);
-        
+
         // Fallback message for user after retries failed
         const fallbackMsg = "Sistema com alto volume de mensagens agora. Eliza está respirando um pouco, mas já te respondo! (Pode tentar mandar de novo em 1 minuto)";
         await sendWhatsAppMessage(profile.phone, fallbackMsg, 1200, errInstance);
@@ -288,7 +288,7 @@ async function handleSimulationState(profile: any, messageData: { text?: string,
         const userContent = messageData.text || "[AUDIO]";
         const intentResult = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-2.0-flash",
+                model: "gemini-2.5-flash",
                 contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }]
             });
         });
@@ -299,21 +299,21 @@ async function handleSimulationState(profile: any, messageData: { text?: string,
         if (intent.includes('PROCEED')) {
             console.log(`🚀 [STATE:SIMULATION] Transitioning ${profile.phone} to PAYWALL`);
             // Escalate to Payment (PAYWALL state as per lib/supabase/types.ts)
-            await supabaseAdmin.from('profiles').update({ 
+            await supabaseAdmin.from('profiles').update({
                 conversation_state: 'PAYWALL',
                 updated_at: new Date().toISOString()
             }).eq('id', profile.id);
 
             const pixPayload = `00020126580014br.gov.bcb.pix0136[MOCK-PIX-KEY-123456789]5204000053039865802BR5916SUA SECRETARIA6009SAO PAULO62070503***63041A2B`;
             const checkoutMsg = `Excelente! Para ativar sua secretária inteligente, realize o pagamento via PIX Copia e Cola abaixo:\n\n\`${pixPayload}\`\n\n*(Ambiente de Testes: Aguardando confirmação do Webhook...)*`;
-            
+
             await sendWhatsAppMessage(profile.phone, checkoutMsg, 1200, targetInstance);
             return;
         }
 
         // 2. SECRETARY SIMULATION: Execute the "Simulation" of the bot acting on behalf of the user
         console.log(`🤖 [STATE:SIMULATION] Continuing simulation for ${profile.phone}`);
-        
+
         // Fetch business context for the simulation
         const { data: bConfig } = await supabaseAdmin
             .from('business_config')
@@ -333,7 +333,7 @@ async function handleSimulationState(profile: any, messageData: { text?: string,
 
         const simResult = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-2.0-flash",
+                model: "gemini-2.5-flash",
                 contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }]
             });
         });
