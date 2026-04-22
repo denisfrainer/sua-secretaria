@@ -347,6 +347,15 @@ async function handleSimulationState(profile: any, messageData: { text?: string,
     }
 }
 
+async function handlePaywallState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+    console.log(`⏳ [STATE:PAYWALL] User ${profile.phone} sent message while waiting for payment.`);
+    const targetInstance = await resolveInstance(profile);
+
+    const waitingPayload = "Ainda estou aguardando a confirmação do seu pagamento pelo banco. ⏳\nAssim que compensar, te enviarei o código de acesso automático!\n\nCaso precise da chave PIX novamente:\n`00020126580014br.gov.bcb.pix0136[MOCK-PIX-KEY-123456789]5204000053039865802BR5916SUA SECRETARIA6009SAO PAULO62070503***63041A2B`";
+    
+    await sendWhatsAppMessage(profile.phone, waitingPayload, 1200, targetInstance);
+}
+
 // ==============================================================
 // 🧠 MAIN PROCESSING LOGIC
 // ==============================================================
@@ -399,6 +408,9 @@ async function processProfile(profile: any) {
                 break;
             case 'SIMULATION':
                 await handleSimulationState(profile, messageData);
+                break;
+            case 'PAYWALL':
+                await handlePaywallState(profile, messageData);
                 break;
             default:
                 console.log(`⏩ [STATE:${profile.conversation_state}] Logic and transitions coming soon.`);

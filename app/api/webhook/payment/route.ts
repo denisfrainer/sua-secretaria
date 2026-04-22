@@ -53,7 +53,11 @@ export async function POST(req: Request) {
     const pairingCode = await getPairingCode(phone);
     
     // 6. Send Eliza Message
-    const elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nSua assistente já está pronta para trabalhar. Como sua conta é nova, você precisa conectar seu WhatsApp no nosso painel.\n\n*Seu Código de Pareamento:* *${pairingCode || 'GERANDO...'}*\n\nNo seu WhatsApp, vá em *Aparelhos Conectados* > *Conectar com número de telefone* e insira esse código agora mesmo.`;
+    let elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nSua assistente já está pronta para trabalhar. Como sua conta é nova, você precisa conectar seu WhatsApp no nosso painel.\n\n*Seu Código de Pareamento:* *${pairingCode}*\n\nNo seu WhatsApp, vá em *Aparelhos Conectados* > *Conectar com número de telefone* e insira esse código agora mesmo.`;
+    
+    if (!pairingCode) {
+      elizaMessage = `✅ *Pagamento Confirmado!* Parabéns, agora você é um cliente ELITE da Sua SecretarIA.\n\nSua assistente já está pronta para trabalhar. Notei que a geração do seu código de conexão está demorando um pouco mais que o esperado. ⏳\n\nNão se preocupe, sua conta já está ATIVA! Nosso suporte entrará em contato em instantes com seu código de acesso manual.`;
+    }
     
     await sendWhatsAppMessage(phone, elizaMessage);
 

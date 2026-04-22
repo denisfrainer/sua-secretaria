@@ -3,20 +3,58 @@ import axios from 'axios';
 const getBaseUrl = () => (process.env.EVOLUTION_API_URL || process.env.EVOLUTION_URL || "").replace(/\/$/, "");
 
 /**
+ * Creates an instance in Evolution API if it doesn't exist.
+ */
+async function createInstance(instanceName: string) {
+  const apikey = process.env.EVOLUTION_API_KEY;
+  const url = `${getBaseUrl()}/instance/create`;
+
+  console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName}`);
+
+  try {
+    const res = await axios.post(url, {
+      instanceName: instanceName,
+      token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
+      qrcode: false
+    }, {
+      headers: {
+        'apikey': apikey as string,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log(`✅ [EVOLUTION_PAIRING] Instance creation effort finished:`, res.data?.status || 'Sent');
+    return true;
+  } catch (error: any) {
+    // If instance already exists, it might return 403 or specific error message.
+    // We log and continue, as we want to get the pairing code regardless.
+    if (error.response?.status === 403 || error.response?.data?.message?.includes('already exists')) {
+      console.log(`ℹ️ [EVOLUTION_PAIRING] Instance ${instanceName} already exists. Continuing.`);
+      return true;
+    }
+    console.error(`⚠️ [EVOLUTION_PAIRING] Instance creation warning:`, error.response?.data || error.message);
+    return false;
+  }
+}
+
+/**
  * Generates an 8-character pairing code for an instance using a phone number.
- * Pattern: instance-{phone}
  */
 export async function getPairingCode(phone: string) {
-  const instanceName = `instance-${phone.replace(/\D/g, '')}`;
+  const cleanPhone = phone.replace(/\D/g, '');
+  const prefix = process.env.EVOLUTION_INSTANCE_PREFIX || 'secretaria';
+  const instanceName = `${prefix}-${cleanPhone}`;
   const apikey = process.env.EVOLUTION_API_KEY;
-  const url = `${getBaseUrl()}/instance/connect/phone/${instanceName}`;
+  
+  // 1. Ensure instance exists
+  await createInstance(instanceName);
+
+  // 2. Request pairing code (Step B)
+  const url = `${getBaseUrl()}/instance/connect/phone/${instanceName}?number=${cleanPhone}`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Requesting code for: ${phone} (Instance: ${instanceName})`);
 
   try {
-    const res = await axios.post(url, {
-      number: phone.replace(/\D/g, '')
-    }, {
+    const res = await axios.get(url, {
       headers: {
         'apikey': apikey as string,
         'Content-Type': 'application/json'
