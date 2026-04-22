@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
       if (state === "open" || state === "connected") {
         try {
-          console.log("🔓 [HANDSHAKE] Connection established. Promoting instance to CONNECTED.");
+          console.log(`🔓 [HANDSHAKE] Connection established for ${instanceName}. Promoting to CONNECTED.`);
           
           const defaultContext = {
             business_info: { name: "Nova SecretarIA", description: "Configuração em andamento" },

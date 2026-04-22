@@ -64,7 +64,7 @@ export async function POST(request: Request) {
             ? instanceName 
             : `${prefix}-${instanceName}`;
 
-        const webhookFullUrl = `${webhookUrl}/api/webhooks/agent?tenantId=${tenantId}`;
+        const webhookFullUrl = `${webhookUrl}/evolution?tenantId=${tenantId}`;
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Prefix: ${prefix} | Tenant: ${tenantId}`);
         console.log(`🔗 [EVOLUTION_API] Webhook target: ${webhookFullUrl}`);
@@ -157,6 +157,7 @@ export async function POST(request: Request) {
                 .from('business_config')
                 .update({
                     instance_name: finalInstanceName,
+                    status: 'CONNECTING',
                     updated_at: new Date().toISOString()
                 })
                 .eq('owner_id', tenantId);
@@ -171,6 +172,7 @@ export async function POST(request: Request) {
                 .insert({
                     owner_id: tenantId,
                     instance_name: finalInstanceName,
+                    status: 'CONNECTING',
                     plan_tier: 'ELITE',
                     context_json: {
                         is_ai_enabled: true,
