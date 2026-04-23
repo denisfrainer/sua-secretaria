@@ -13,7 +13,20 @@ export async function POST(req: Request) {
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
     const instanceName = body.instance || dataObj.instanceName || body.instanceName || dataObj.instance;
     const state = dataObj.state || body.state || dataObj.status || body.status;
-    const tenantId = url.searchParams.get('tenantId');
+    let tenantId = url.searchParams.get('tenantId');
+
+    // 🛡️ THE MASTER KEY (Legacy Bypass)
+    if (!tenantId) {
+      if (instanceName === 'agente-lobo') {
+        // Hardcode Denis's master owner_id
+        tenantId = '465fb2df-d57d-4567-9be8-261dcd105094';
+        console.log(`🔓 [MASTER_KEY] Authorized legacy root instance: ${instanceName} -> mapped to ${tenantId}`);
+      } else {
+        // Strict drop for any other instance lacking a tenantId
+        console.error(`🚨 [SECURITY_WARNING] Missing tenantId for instance: ${instanceName}. Dropping request.`);
+        return new Response('Unauthorized: Missing tenantId', { status: 401 });
+      }
+    }
 
     console.log(`📡 [EVOLUTION_WEBHOOK] Event: ${event} | Instance: ${instanceName}`);
     
