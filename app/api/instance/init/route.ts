@@ -117,6 +117,7 @@ export async function POST(request: Request) {
             token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
             qrcode: true,
             integration: "WHATSAPP-BAILEYS",
+            webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
             webhook: {
                 enabled: true,
                 url: webhookFullUrl,
@@ -189,6 +190,7 @@ export async function POST(request: Request) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
                 body: JSON.stringify({
+                    webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
                     webhook: {
                         enabled: true,
                         url: webhookFullUrl,
