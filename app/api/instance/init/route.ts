@@ -108,19 +108,39 @@ export async function POST(request: Request) {
              });
         } catch (e) {}
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Mandatory propagation gap
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // 6. Generate QR Code
-        console.log(`🔗 [EVOLUTION] Generating QR code for ${finalInstanceName}...`);
-        const connectRes = await fetch(`${baseUrl}/instance/connect/${finalInstanceName}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'apikey': apiKey }
-        });
+        // 6. Generate QR Code with Retry logic
+        let connectData: any;
+        let qrRetries = 0;
+        const maxQrRetries = 3;
 
-        const connectData = await connectRes.json();
+        while (qrRetries < maxQrRetries) {
+            console.log(`🔗 [EVOLUTION] Fetching QR code for ${finalInstanceName} (Attempt ${qrRetries + 1})...`);
+            const connectRes = await fetch(`${baseUrl}/instance/connect/${finalInstanceName}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json', 'apikey': apiKey }
+            });
 
-        if (!connectRes.ok) {
-            throw new Error(`Failed to fetch fresh QR code: ${JSON.stringify(connectData)}`);
+            if (connectRes.ok) {
+                connectData = await connectRes.json();
+                break;
+            }
+
+            if (connectRes.status === 404) {
+                qrRetries++;
+                console.warn(`⚠️ [EVOLUTION] Instance not found (404) during QR fetch. Retrying in 2s... (${qrRetries}/${maxQrRetries})`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
+            }
+
+            const errorData = await connectRes.json();
+            throw new Error(`Failed to fetch fresh QR code: ${JSON.stringify(errorData)}`);
+        }
+
+        if (!connectData) {
+            throw new Error(`Instance failed to initialize after ${maxQrRetries} attempts. Final 404.`);
         }
 
         // Set webhook explicitly (Belt-and-suspenders)
