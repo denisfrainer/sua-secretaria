@@ -111,8 +111,10 @@ export async function POST(req: Request) {
       const isAudio = !!messageObj.audioMessage;
       const isImage = !!messageObj.imageMessage;
 
+      // 1. ANTI-LOOP GATEKEEPER (Strict fromMe only)
+      // DO NOT drop messages from other tenants. Only drop if originated from THIS instance.
       if (isFromMe) {
-        console.log(`🛡️ [WEBHOOK] Dropping self-originated message.`);
+        console.log(`🛡️ [WEBHOOK] Dropping self-originated message (fromMe: true).`);
         return NextResponse.json({ success: true });
       }
 

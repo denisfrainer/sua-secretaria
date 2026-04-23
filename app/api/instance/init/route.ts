@@ -90,9 +90,9 @@ export async function POST(request: Request) {
                 integration: "WHATSAPP-BAILEYS",
                 webhook: {
                     url: webhookFullUrl,
-                    byEvents: false,
-                    base64: false,
-                    events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
+                    enabled: true,
+                    webhookByEvents: true,
+                    events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
                 }
             }),
         });
@@ -132,9 +132,9 @@ export async function POST(request: Request) {
                     webhook: {
                         enabled: true,
                         url: webhookFullUrl,
-                        webhookByEvents: false,
+                        webhookByEvents: true,
                         webhookBase64: false,
-                        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
+                        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
                     }
                 }),
             });
