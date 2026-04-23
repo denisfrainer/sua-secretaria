@@ -123,52 +123,30 @@ export async function POST(req: Request) {
       console.log(`📡 [WEBHOOK] Inbound: ${phone} | Audio: ${isAudio} | Text: ${!!text}`);
 
       // 2. IDENTITY LOCK (Multi-Tenant)
-      // We prioritize the tenantId from the webhook URL to know WHICH account this message belongs to.
-      let profile;
-      if (tenantId) {
-        const { data: tProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('*')
-          .eq('id', tenantId)
-          .single();
-        profile = tProfile;
-      }
-
-      // Fallback 1: Resolve by Instance Name (Legacy/Missing Param Support)
-      if (!profile && instanceName) {
+      // Resolve Business Owner (Tenant) to verify context, but we signal the CUSTOMER profile
+      let ownerId = tenantId;
+      if (!ownerId && instanceName) {
         const { data: bConfig } = await supabaseAdmin
           .from('business_config')
           .select('owner_id')
           .eq('instance_name', instanceName)
           .maybeSingle();
-        
-        if (bConfig?.owner_id) {
-          const { data: lProfile } = await supabaseAdmin
-            .from('profiles')
-            .select('*')
-            .eq('id', bConfig.owner_id)
-            .single();
-          profile = lProfile;
-          if (profile) console.log(`🔄 [WEBHOOK] Profile resolved via Instance Name: ${instanceName}`);
-        }
+        ownerId = bConfig?.owner_id;
       }
 
-      // Fallback 2: If no profile yet, try to find profile by phone (onboarding)
-      if (!profile) {
-        const { data: pProfile, error: upsertError } = await supabaseAdmin
-          .from('profiles')
-          .upsert({ 
-            phone,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'phone' })
-          .select()
-          .single();
-        profile = pProfile;
-        
-        if (upsertError || !profile) {
-          console.error('💥 [WEBHOOK:UPSERT_ERROR]', upsertError);
-          return NextResponse.json({ success: false, error: 'Identity lock failed' }, { status: 200 });
-        }
+      // Resolve Customer (Lead) Profile
+      const { data: customerProfile, error: customerError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({ 
+          phone,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'phone' })
+        .select()
+        .single();
+
+      if (customerError || !customerProfile) {
+        console.error('💥 [WEBHOOK:CUSTOMER_ERROR]', customerError);
+        return NextResponse.json({ success: false, error: 'Identity lock failed' }, { status: 200 });
       }
 
       // 3. PERSIST MESSAGE (Context Persistence)
@@ -181,6 +159,7 @@ export async function POST(req: Request) {
         role: 'user',
         content: content,
         message_id: key.id || Math.random().toString(36).substring(7),
+        instance_name: instanceName, // CRITICAL: For worker owner resolution
         created_at: new Date().toISOString()
       });
 
@@ -190,19 +169,20 @@ export async function POST(req: Request) {
       }
 
       // 4. QUEUE TRIGGER (The Handover)
+      // We signal the CUSTOMER profile, the worker will resolve the owner via instance_name
       const { error: triggerError } = await supabaseAdmin
         .from('profiles')
         .update({ 
           worker_status: 'eliza_processing',
           updated_at: new Date().toISOString()
         })
-        .eq('id', profile.id);
+        .eq('id', customerProfile.id);
 
       if (triggerError) {
         console.error(`❌ [WEBHOOK:TRIGGER_ERROR] Failed to signal worker:`, triggerError.message);
       }
 
-      console.log(`✅ [WEBHOOK:SUCCESS] Message saved. Worker signaled for Profile: ${profile.id}`);
+      console.log(`✅ [WEBHOOK:SUCCESS] Message saved. Worker signaled for Customer Profile: ${customerProfile.id} (Owner: ${ownerId})`);
       return NextResponse.json({ success: true });
     }
 

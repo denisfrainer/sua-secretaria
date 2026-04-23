@@ -23,23 +23,41 @@ console.log('[BOOT TRACE] 2. AI SDK Initialized');
 process.env.TZ = 'America/Sao_Paulo';
 
 // ==========================================
-// 🛠️ UTILS: INSTANCE RESOLVER
+// 🛠️ UTILS: IDENTITY & INSTANCE RESOLVER
 // ==========================================
-async function resolveInstance(profile: any): Promise<string> {
-    if (profile.instance_name) return profile.instance_name;
+async function resolveOwnerId(profile: any, lastMessage?: any): Promise<string> {
+    // 1. If message has instance_name, resolve via business_config
+    if (lastMessage?.instance_name) {
+        // Master Key Bypass (Legacy)
+        if (lastMessage.instance_name === 'agente-lobo') return '465fb2df-d57d-4567-9be8-261dcd105094';
 
-    // Fallback 1: Database business_config
+        const { data: bConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('owner_id')
+            .eq('instance_name', lastMessage.instance_name)
+            .maybeSingle();
+        if (bConfig?.owner_id) {
+            console.log(`🔗 [RESOLVER] Owner found via Message Instance: ${lastMessage.instance_name} -> ${bConfig.owner_id}`);
+            return bConfig.owner_id;
+        }
+    }
+
+    // 2. Fallback to profile ID (assumes sender is owner - onboarding case)
+    return profile.id;
+}
+
+async function resolveInstance(ownerId: string): Promise<string> {
+    // Database business_config lookup
     const { data: bConfig } = await supabaseAdmin
         .from('business_config')
         .select('instance_name')
-        .eq('owner_id', profile.id)
+        .eq('owner_id', ownerId)
         .maybeSingle();
 
     if (bConfig?.instance_name) return bConfig.instance_name;
 
-    // Fallback 2: Dynamic Pattern
-    const phone = profile.phone || 'unknown';
-    return `instance-${phone}`;
+    // Fallback: Dynamic Pattern (less ideal)
+    return `instance-${ownerId.split('-')[0]}`;
 }
 
 /**
@@ -119,7 +137,7 @@ async function getAudioBase64(messageId: string, instanceName: string) {
 // 🧠 STATE-DRIVEN BRAIN HANDLERS
 // ==============================================================
 
-async function handleOnboardingState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handleOnboardingState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
     console.log(`🎯 [BRAIN:ONBOARDING] Processing for ${profile.phone}`);
 
     const systemPrompt = `
@@ -158,13 +176,13 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     }
 
     try {
-        const targetInstance = await resolveInstance(profile);
+        const targetInstance = await resolveInstance(ownerId);
 
         // 1. VIRTUAL STATE CHECK: Are we awaiting confirmation?
         const { data: config } = await supabaseAdmin
             .from('business_config')
             .select('*')
-            .eq('owner_id', profile.id)
+            .eq('owner_id', ownerId)
             .maybeSingle();
 
         const context = config?.context_json || {};
@@ -180,7 +198,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
                 console.log(`✅ [BRAIN:ONBOARDING] Data confirmed for ${profile.phone}. Committing...`);
 
                 const { error: commitError } = await supabaseAdmin.from('business_config').upsert({
-                    owner_id: profile.id,
+                    owner_id: ownerId,
                     business_name: pending.businessName,
                     primary_service: pending.primaryService,
                     price: pending.price,
@@ -208,7 +226,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
                 console.log(`❌ [BRAIN:ONBOARDING] Confirmation rejected by ${profile.phone}. Clearing and restarting...`);
                 await supabaseAdmin.from('business_config').update({
                     context_json: { ...context, pending_confirmation: false, pending_metadata: null }
-                }).eq('owner_id', profile.id);
+                }).eq('owner_id', ownerId);
 
                 const retryMsg = "Sem problemas! Vamos recomeçar. Por favor, me envie novamente o Nome da empresa, o Serviço que você oferece e o Valor.";
                 await sendWhatsAppMessage(profile.phone, retryMsg, 1200, targetInstance);
@@ -245,7 +263,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
         console.log(`⏳ [BRAIN:ONBOARDING] Data extracted for ${profile.phone}. Awaiting confirmation...`);
 
         await supabaseAdmin.from('business_config').upsert({
-            owner_id: profile.id,
+            owner_id: ownerId,
             context_json: { ...context, pending_confirmation: true, pending_metadata: extracted },
             updated_at: new Date().toISOString()
         }, { onConflict: 'owner_id' });
@@ -264,7 +282,7 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     } catch (err: any) {
         console.error("💥 [ONBOARDING FATAL ERROR] Trace:", err);
         // Resolve instance for error message as well
-        const errInstance = await resolveInstance(profile);
+        const errInstance = await resolveInstance(ownerId);
 
         // Fallback message for user after retries failed
         const fallbackMsg = "Sistema com alto volume de mensagens agora. Eliza está respirando um pouco, mas já te respondo! (Pode tentar mandar de novo em 1 minuto)";
@@ -272,10 +290,10 @@ async function handleOnboardingState(profile: any, messageData: { text?: string,
     }
 }
 
-async function handleSimulationState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handleSimulationState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
     try {
         console.log(`🎯 [BRAIN:SIMULATION] Processing for ${profile.phone}`);
-        const targetInstance = await resolveInstance(profile);
+        const targetInstance = await resolveInstance(ownerId);
 
         // 1. INTENT CLASSIFICATION: Decide if we transition to checkout or continue simulation
         const intentPrompt = `
@@ -317,7 +335,7 @@ async function handleSimulationState(profile: any, messageData: { text?: string,
         const { data: bConfig } = await supabaseAdmin
             .from('business_config')
             .select('*')
-            .eq('owner_id', profile.id)
+            .eq('owner_id', ownerId)
             .maybeSingle();
 
         const simPrompt = `
@@ -341,14 +359,14 @@ async function handleSimulationState(profile: any, messageData: { text?: string,
         await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
     } catch (err: any) {
         console.error("💥 [SIMULATION FATAL ERROR] Trace:", err);
-        const errInstance = await resolveInstance(profile);
+        const errInstance = await resolveInstance(ownerId);
         await sendWhatsAppMessage(profile.phone, "Tive um probleminha técnico no seu teste. Pode tentar de novo em instantes?", 1200, errInstance);
     }
 }
 
-async function handlePaywallState(profile: any, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handlePaywallState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
     console.log(`⏳ [STATE:PAYWALL] User ${profile.phone} sent message while waiting for payment.`);
-    const targetInstance = await resolveInstance(profile);
+    const targetInstance = await resolveInstance(ownerId);
 
     const waitingPayload = "Ainda estou aguardando a confirmação do seu pagamento pelo banco. ⏳\nAssim que compensar, te enviarei o código de acesso automático!\n\nCaso precise da chave PIX novamente:\n`00020126580014br.gov.bcb.pix0136[MOCK-PIX-KEY-123456789]5204000053039865802BR5916SUA SECRETARIA6009SAO PAULO62070503***63041A2B`";
     
@@ -387,10 +405,16 @@ async function processProfile(profile: any) {
             messageId: lastMessage.message_id
         };
 
+        // Resolve Owner ID for business context lookups
+        const ownerId = await resolveOwnerId(profile, lastMessage);
+        console.log(`🔗 [ELIZA] Resolved Owner Context: ${ownerId}`);
+
+        // Resolve Instance Name for this business
+        const targetInstance = await resolveInstance(ownerId);
+
         // Handle Audio Multimodal
         if (lastMessage.content === "[AUDIO]") {
-            const instanceName = await resolveInstance(profile);
-            const base64 = await getAudioBase64(lastMessage.message_id, instanceName);
+            const base64 = await getAudioBase64(lastMessage.message_id, targetInstance);
             if (base64) {
                 messageData.audioBase64 = base64;
             } else {
@@ -398,18 +422,15 @@ async function processProfile(profile: any) {
             }
         }
 
-        // Resolve Instance Name for this profile
-        const targetInstance = await resolveInstance(profile);
-
         switch (profile.conversation_state) {
             case 'ONBOARDING':
-                await handleOnboardingState(profile, messageData);
+                await handleOnboardingState(profile, ownerId, messageData);
                 break;
             case 'SIMULATION':
-                await handleSimulationState(profile, messageData);
+                await handleSimulationState(profile, ownerId, messageData);
                 break;
             case 'PAYWALL':
-                await handlePaywallState(profile, messageData);
+                await handlePaywallState(profile, ownerId, messageData);
                 break;
             default:
                 console.log(`⏩ [STATE:${profile.conversation_state}] Logic and transitions coming soon.`);
