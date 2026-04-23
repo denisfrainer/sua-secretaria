@@ -404,10 +404,10 @@ async function handleLeadActiveState(profile: any, ownerId: string, messageData:
             - Nunca mencione que você é um teste ou que estamos em simulação. Você é a secretária real.
         `;
 
-        console.log(`[LLM_INIT] Triggering Google GenAI with model: gemini-1.5-flash`);
+        console.log(`[LLM_INIT] Triggering Google GenAI with model: gemini-2.5-flash`);
         const result = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-1.5-flash",
+                model: "gemini-2.5-flash",
                 contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nCliente: "${userContent}"` }] }]
             });
         });
