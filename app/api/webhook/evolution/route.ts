@@ -124,29 +124,64 @@ export async function POST(req: Request) {
 
       // 2. IDENTITY LOCK (Multi-Tenant)
       // Resolve Business Owner (Tenant) to verify context, but we signal the CUSTOMER profile
+      // 2. IDENTITY LOCK (Multi-Tenant)
+      // Resolve Business Owner (Tenant) context
       let ownerId = tenantId;
-      if (!ownerId && instanceName) {
-        const { data: bConfig } = await supabaseAdmin
-          .from('business_config')
-          .select('owner_id')
-          .eq('instance_name', instanceName)
-          .maybeSingle();
-        ownerId = bConfig?.owner_id;
+      
+      let query = supabaseAdmin.from('business_config').select('*');
+      if (ownerId && instanceName) {
+          query = query.or(`owner_id.eq.${ownerId},instance_name.eq.${instanceName}`);
+      } else if (ownerId) {
+          query = query.eq('owner_id', ownerId);
+      } else if (instanceName) {
+          query = query.eq('instance_name', instanceName);
       }
 
-      // Resolve Customer (Lead) Profile
-      const { data: customerProfile, error: customerError } = await supabaseAdmin
-        .from('profiles')
-        .upsert({ 
-          phone,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'phone' })
-        .select()
-        .single();
+      const { data: bConfig } = await query.maybeSingle();
+      
+      ownerId = bConfig?.owner_id || ownerId;
+      const isBusinessLive = !!bConfig?.primary_service;
 
-      if (customerError || !customerProfile) {
-        console.error('💥 [WEBHOOK:CUSTOMER_ERROR]', customerError);
-        return NextResponse.json({ success: false, error: 'Identity lock failed' }, { status: 200 });
+      // Determine if sender is the owner to avoid putting customers in ONBOARDING
+      let isOwner = false;
+      if (ownerId) {
+          const { data: oProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('phone')
+            .eq('id', ownerId)
+            .maybeSingle();
+          isOwner = phone === oProfile?.phone;
+      }
+
+      // Explicitly separate B2B (Owner) and B2C (Lead) lifecycles
+      const profileType = isOwner ? 'OWNER' : 'LEAD';
+      const initialState = isOwner ? 'ONBOARDING' : 'LEAD_ACTIVE';
+
+      // Resolve Customer (Lead) Profile
+      let { data: customerProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (!customerProfile) {
+        console.log(`🆕 [IDENTITY] Creating new ${profileType} profile for ${phone}. Default state: ${initialState}`);
+        const { data: newProfile, error: createError } = await supabaseAdmin
+          .from('profiles')
+          .insert({ 
+            phone,
+            profile_type: profileType,
+            conversation_state: initialState,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (createError || !newProfile) {
+          console.error('💥 [WEBHOOK:CREATE_ERROR]', createError);
+          return NextResponse.json({ success: false, error: 'Identity creation failed' }, { status: 200 });
+        }
+        customerProfile = newProfile;
       }
 
       // 3. PERSIST MESSAGE (Context Persistence)

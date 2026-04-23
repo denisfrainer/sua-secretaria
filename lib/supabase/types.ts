@@ -60,7 +60,8 @@ export type Database = {
           avatar_url: string | null;
           trial_ends_at: string | null;
           phone: string | null;
-          conversation_state: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE';
+          conversation_state: 'ONBOARDING' | 'SIMULATION' | 'PAYWALL' | 'ACTIVE' | 'LEAD_ACTIVE' | 'LEAD_HANDOFF';
+          profile_type: 'OWNER' | 'LEAD';
           worker_status: 'idle' | 'eliza_processing' | 'waiting_reply' | 'error';
           simulation_count: number;
           google_refresh_token: string | null;

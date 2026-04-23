@@ -47,6 +47,9 @@ async function resolveOwnerId(profile: any, lastMessage?: any): Promise<string> 
 }
 
 async function resolveInstance(ownerId: string): Promise<string> {
+    // Master Key Bypass (Legacy)
+    if (ownerId === '7fd87d77-53a5-408b-9339-474fbdad07d4') return 'agente-lobo';
+
     // Database business_config lookup
     const { data: bConfig } = await supabaseAdmin
         .from('business_config')
@@ -56,7 +59,7 @@ async function resolveInstance(ownerId: string): Promise<string> {
 
     if (bConfig?.instance_name) return bConfig.instance_name;
 
-    // Fallback: Dynamic Pattern (less ideal)
+    // Fallback: This is what caused the 404s before. We should be very careful here.
     return `instance-${ownerId.split('-')[0]}`;
 }
 
@@ -73,11 +76,14 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
         } catch (err: any) {
             lastError = err;
             // Catch transient 503, 500, or rate limit errors
+            const errMsg = err.message || String(err);
             const isTransient =
-                err.message?.includes('503') ||
-                err.message?.includes('504') ||
-                err.message?.includes('500') ||
-                err.message?.includes('429');
+                errMsg.includes('503') ||
+                errMsg.includes('504') ||
+                errMsg.includes('500') ||
+                errMsg.includes('429') ||
+                errMsg.includes('Service Unavailable') ||
+                errMsg.includes('Deadline Exceeded');
 
             if (i < maxRetries && isTransient) {
                 console.warn(`⚠️ [AI:RETRY] Attempt ${i + 1} failed (Transient Error). Retrying in ${delays[i]}ms...`);
@@ -364,12 +370,58 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
     }
 }
 
+async function handleLeadActiveState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+    try {
+        console.log(`👤 [BRAIN:LEAD_ACTIVE] Customer ${profile.phone} talking to business ${ownerId}`);
+        const targetInstance = await resolveInstance(ownerId);
+
+        // Fetch business context
+        const { data: bConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('*')
+            .eq('owner_id', ownerId)
+            .maybeSingle();
+
+        const userContent = messageData.text || "[AUDIO]";
+
+        const systemPrompt = `
+            Você é a secretária virtual oficial da empresa ${bConfig?.business_name || 'nossa empresa'}.
+            Seu objetivo é atender o cliente de forma profissional, gentil e eficiente.
+            
+            Informações da Empresa:
+            - Serviço: ${bConfig?.primary_service || 'Consultar atendente'}
+            - Preço: R$ ${bConfig?.price || 'Sob consulta'}
+            - Duração: ${bConfig?.duration_minutes || '30'} min
+            
+            🛡️ DIRETRIZES:
+            - Responda de forma curta e objetiva.
+            - Seja prestativa e foque em resolver a dúvida do cliente.
+            - Nunca mencione que você é um teste ou que estamos em simulação. Você é a secretária real.
+        `;
+
+        const result = await withRetry(async () => {
+            return await ai.models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nCliente: "${userContent}"` }] }]
+            });
+        });
+
+        const responseText = result.text || "Entendido! Como posso te ajudar?";
+        await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
+
+    } catch (err: any) {
+        console.error("💥 [LEAD_ACTIVE FATAL ERROR] Trace:", err);
+        const errInstance = await resolveInstance(ownerId);
+        await sendWhatsAppMessage(profile.phone, "Desculpe, tive um erro momentâneo. Pode repetir sua mensagem?", 1200, errInstance);
+    }
+}
+
 async function handlePaywallState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
     console.log(`⏳ [STATE:PAYWALL] User ${profile.phone} sent message while waiting for payment.`);
     const targetInstance = await resolveInstance(ownerId);
 
     const waitingPayload = "Ainda estou aguardando a confirmação do seu pagamento pelo banco. ⏳\nAssim que compensar, te enviarei o código de acesso automático!\n\nCaso precise da chave PIX novamente:\n`00020126580014br.gov.bcb.pix0136[MOCK-PIX-KEY-123456789]5204000053039865802BR5916SUA SECRETARIA6009SAO PAULO62070503***63041A2B`";
-    
+
     await sendWhatsAppMessage(profile.phone, waitingPayload, 1200, targetInstance);
 }
 
@@ -407,10 +459,11 @@ async function processProfile(profile: any) {
 
         // Resolve Owner ID for business context lookups
         const ownerId = await resolveOwnerId(profile, lastMessage);
-        console.log(`🔗 [ELIZA] Resolved Owner Context: ${ownerId}`);
 
-        // Resolve Instance Name for this business
-        const targetInstance = await resolveInstance(ownerId);
+        // Resolve Instance Name: Prioritize the instance where the message actually arrived
+        const targetInstance = lastMessage.instance_name || await resolveInstance(ownerId);
+
+        console.log(`🔗 [ELIZA] Resolved Context -> Owner: ${ownerId} | Instance: ${targetInstance}`);
 
         // Handle Audio Multimodal
         if (lastMessage.content === "[AUDIO]") {
@@ -426,6 +479,10 @@ async function processProfile(profile: any) {
             case 'ONBOARDING':
                 await handleOnboardingState(profile, ownerId, messageData);
                 break;
+            case 'LEAD_ACTIVE':
+                await handleLeadActiveState(profile, ownerId, messageData);
+                break;
+            case 'ACTIVE':
             case 'SIMULATION':
                 await handleSimulationState(profile, ownerId, messageData);
                 break;
