@@ -24,9 +24,10 @@ export async function POST(request: Request) {
         
         // Sanitize and build name (strip special chars, lowercase)
         const cleanName = rawName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        const finalInstanceName = cleanName.startsWith(prefix) 
+        const rawInstanceName = cleanName.startsWith(prefix) 
             ? cleanName 
             : `${prefix}-${cleanName}`;
+        const finalInstanceName = rawInstanceName.substring(0, 20); // Limit to 20 chars for Baileys compatibility
 
         // 3. Pre-Flight Validation (URLs & Keys)
         const baseUrl = process.env.EVOLUTION_API_URL;
@@ -74,7 +75,12 @@ export async function POST(request: Request) {
         }
 
         // Force the Railway URL for the Webhook Payload
-        const WEBHOOK_TARGET = "https://sua-secretaria.up.railway.app";
+        // Dynamic Webhook Target Resolution
+        const host = request.headers.get('host');
+        const protocol = host?.includes('localhost') ? 'http' : 'https';
+        const dynamicUrl = host ? `${protocol}://${host}` : "";
+        const WEBHOOK_TARGET = (process.env.WEBHOOK_URL || process.env.NEXT_PUBLIC_APP_URL || dynamicUrl).replace(/\/$/, "");
+        
         const webhookFullUrl = `${WEBHOOK_TARGET}/api/webhook/evolution?tenantId=${tenantId}`;
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Tenant: ${tenantId}`);
@@ -97,8 +103,12 @@ export async function POST(request: Request) {
             }),
         });
 
-        if (!createRes.ok && createRes.status === 401) {
-            throw new Error("Evolution API authentication failed (401).");
+        const createData = await createRes.json();
+        console.log(`📡 [EVOLUTION_DEBUG] Creation Status: ${createRes.status}`);
+        console.log(`📡 [EVOLUTION_DEBUG] Creation Body: ${JSON.stringify(createData)}`);
+
+        if (!createRes.ok) {
+            throw new Error(`Evolution API Instance Creation Failed (${createRes.status}): ${JSON.stringify(createData)}`);
         }
 
         // Force logout to clear any stuck sessions

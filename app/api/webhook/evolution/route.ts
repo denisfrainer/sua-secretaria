@@ -15,16 +15,29 @@ export async function POST(req: Request) {
     const state = dataObj.state || body.state || dataObj.status || body.status;
     let tenantId = url.searchParams.get('tenantId');
 
-    // 🛡️ THE MASTER KEY (Legacy Bypass)
+    // 🛡️ THE MASTER KEY (Resilient Resolution)
     if (!tenantId) {
-      if (instanceName === 'agente-lobo') {
-        // Hardcode Denis's master owner_id
-        tenantId = '7fd87d77-53a5-408b-9339-474fbdad07d4';
-        console.log(`[IDENTITY_SYNC] Master key applied for agente-lobo -> ${tenantId}`);
-      } else {
-        // Strict drop for any other instance lacking a tenantId
-        console.error(`🚨 [SECURITY_WARNING] Missing tenantId for instance: ${instanceName}. Dropping request.`);
-        return new Response('Unauthorized: Missing tenantId', { status: 401 });
+      if (instanceName) {
+        const { data: bConfig } = await supabaseAdmin
+          .from('business_config')
+          .select('owner_id')
+          .eq('instance_name', instanceName)
+          .maybeSingle();
+        
+        if (bConfig?.owner_id) {
+          tenantId = bConfig.owner_id;
+          console.log(`[IDENTITY_SYNC] Resolved tenantId from instanceName: ${instanceName} -> ${tenantId}`);
+        }
+      }
+
+      if (!tenantId) {
+        if (instanceName === 'agente-lobo') {
+          tenantId = '7fd87d77-53a5-408b-9339-474fbdad07d4';
+          console.log(`[IDENTITY_SYNC] Master key fallback for agente-lobo -> ${tenantId}`);
+        } else {
+          console.error(`🚨 [SECURITY_WARNING] Missing tenantId for instance: ${instanceName}. Dropping request.`);
+          return new Response('Unauthorized: Missing tenantId', { status: 401 });
+        }
       }
     }
 
@@ -185,9 +198,11 @@ export async function POST(req: Request) {
       if (isAudio) content = "[AUDIO]";
       else if (isImage) content = "[IMAGE]";
 
+      const role = isFromMe ? 'assistant' : 'user';
+
       const { error: msgError } = await supabaseAdmin.from('messages').insert({
         lead_phone: phone,
-        role: 'user',
+        role: role,
         content: content,
         message_id: key.id || Math.random().toString(36).substring(7),
         instance_name: instanceName, // CRITICAL: For worker owner resolution
@@ -199,7 +214,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'Message persistence failed' }, { status: 200 });
       }
 
-      // 4. QUEUE TRIGGER (The Handover)
+      // 4. ANTI-LOOP SHIELD
+      if (isFromMe) {
+          console.log(`🛡️ [ANTI-LOOP] Message from me (${phone}). Saved but skipping worker.`);
+          return NextResponse.json({ success: true, message: 'Message saved, loop prevented' });
+      }
+
+      // 5. QUEUE TRIGGER (The Handover)
       // We signal the CUSTOMER profile, the worker will resolve the owner via instance_name
       const { error: triggerError } = await supabaseAdmin
         .from('profiles')
