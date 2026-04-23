@@ -246,13 +246,15 @@ async function handleOnboardingState(profile: any, ownerId: string, messageData:
         }
 
         // 2. EXTRACTION LOGIC (Standard Onboarding with Resilience)
+        console.log(`[LLM_INIT] Extracting metadata with model: gemini-3.1-flash-lite-preview`);
         const result = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.1-flash-lite-preview",
                 contents: [{ role: 'user', parts }],
                 config: {
                     responseMimeType: "application/json",
-                    responseSchema: onboardingSchema
+                    responseSchema: onboardingSchema,
+                    thinking_config: { thinking_level: "medium" }
                 }
             });
         });
@@ -314,10 +316,14 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
         `;
 
         const userContent = messageData.text || "[AUDIO]";
+        console.log(`[LLM_INIT] Classifying intent with model: gemini-3.1-flash-lite-preview`);
         const intentResult = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }]
+                model: "gemini-3.1-flash-lite-preview",
+                contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }],
+                config: {
+                    thinking_config: { thinking_level: "low" }
+                }
             });
         });
 
@@ -360,9 +366,13 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
         `;
 
         const simResult = await withRetry(async () => {
+            console.log(`[LLM_INIT] Simulating response with model: gemini-3.1-flash-lite-preview`);
             return await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }]
+                model: "gemini-3.1-flash-lite-preview",
+                contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }],
+                config: {
+                    thinking_config: { thinking_level: "medium" }
+                }
             });
         });
 
@@ -404,11 +414,14 @@ async function handleLeadActiveState(profile: any, ownerId: string, messageData:
             - Nunca mencione que você é um teste ou que estamos em simulação. Você é a secretária real.
         `;
 
-        console.log(`[LLM_INIT] Triggering Google GenAI with model: gemini-2.5-flash`);
+        console.log(`[LLM_INIT] Triggering Google GenAI with model: gemini-3.1-flash-lite-preview`);
         const result = await withRetry(async () => {
             return await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nCliente: "${userContent}"` }] }]
+                model: "gemini-3.1-flash-lite-preview",
+                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nCliente: "${userContent}"` }] }],
+                config: {
+                    thinking_config: { thinking_level: "medium" }
+                }
             });
         });
 
