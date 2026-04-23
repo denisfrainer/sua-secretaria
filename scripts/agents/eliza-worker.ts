@@ -173,6 +173,7 @@ async function getAudioBase64(messageId: string, instanceName: string) {
 // 🧠 STATE-DRIVEN BRAIN HANDLERS
 // ==============================================================
 
+/* 
 async function handleHeadlessAgentState(profile: any, ownerId: string, messageData: any, bConfig: any, targetInstance: string) {
     console.log(`⚙️ [HEADLESS] Processing command from Admin...`);
 
@@ -194,6 +195,7 @@ async function handleHeadlessAgentState(profile: any, ownerId: string, messageDa
     const responseText = result.text || "Command acknowledged.";
     await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
 }
+*/
 
 async function handleOnboardingState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }, bConfig?: any) {
     console.log(`🎯 [BRAIN:ONBOARDING] Processing for ${profile.phone}`);
@@ -506,7 +508,8 @@ async function processProfile(profile: any) {
             .eq('owner_id', ownerId)
             .maybeSingle();
 
-        // 🛡️ HEADLESS AGENT FORK
+        // 🛡️ HEADLESS AGENT FORK [DISABLED FOR TACTICAL SIMPLIFICATION]
+        /*
         const isAdmin = bConfig?.admin_phone && profile.phone === bConfig.admin_phone;
 
         if (isAdmin) {
@@ -520,6 +523,7 @@ async function processProfile(profile: any) {
             }).eq('id', profile.id);
             return; 
         }
+        */
 
         // Handle Audio Multimodal
         if (lastMessage.content === "[AUDIO]") {
@@ -545,8 +549,12 @@ async function processProfile(profile: any) {
             case 'PAYWALL':
                 await handlePaywallState(profile, ownerId, messageData, bConfig);
                 break;
+            case 'UNKNOWN':
+            case 'IDLE':
+            case null:
             default:
-                console.log(`⏩ [STATE:${profile.conversation_state}] Logic and transitions coming soon.`);
+                console.log(`⏩ [STATE:${profile.conversation_state}] Fallback to LEAD_ACTIVE (Legacy Logic)`);
+                await handleLeadActiveState(profile, ownerId, messageData, bConfig);
                 break;
         }
 

@@ -104,12 +104,9 @@ export async function POST(req: NextRequest) {
 
       const rawNumber = remoteJid.split('@')[0];
 
-      // 2. O Gatekeeper (Agora olhando para o número certo)
-      if (
-          !remoteJid.endsWith('@s.whatsapp.net') || 
-          rawNumber.length > 13
-      ) {
-          console.log("🛑 [GATEKEEPER] Mutant/Group Rejected:", remoteJid);
+      // 2. O Gatekeeper (Sempre priorizando liberação em vez de bloqueio preventivo)
+      if (!remoteJid.endsWith('@s.whatsapp.net')) {
+          console.log("🛑 [GATEKEEPER] Non-individual JID (Group or Broadcast) Rejected:", remoteJid);
           return new Response(JSON.stringify({ status: 'ignored' }), { status: 200 });
       }
 
@@ -135,8 +132,6 @@ export async function POST(req: NextRequest) {
       console.log(`📡 [WEBHOOK] Inbound: ${phone} | Audio: ${isAudio} | Text: ${!!text}`);
 
       // 2. IDENTITY LOCK (Multi-Tenant)
-      // Resolve Business Owner (Tenant) to verify context, but we signal the CUSTOMER profile
-      // 2. IDENTITY LOCK (Multi-Tenant)
       // Resolve Business Owner (Tenant) context
       let ownerId = tenantId;
       
@@ -152,7 +147,10 @@ export async function POST(req: NextRequest) {
       const { data: bConfig } = await query.maybeSingle();
       
       ownerId = bConfig?.owner_id || ownerId;
-      const isBusinessLive = !!bConfig?.primary_service;
+
+      if (!ownerId) {
+        console.warn(`⚠️ [WEBHOOK:IDENTITY_WARNING] Could not resolve ownerId for instance ${instanceName}. Proceeding with lead creation but worker might fail.`);
+      }
 
       // Determine if sender is the owner to avoid putting customers in ONBOARDING
       let isOwner = false;
@@ -184,6 +182,8 @@ export async function POST(req: NextRequest) {
             phone,
             profile_type: profileType,
             conversation_state: initialState,
+            ai_paused: false,
+            needs_human: false,
             updated_at: new Date().toISOString()
           })
           .select()
@@ -224,11 +224,13 @@ export async function POST(req: NextRequest) {
       }
 
       // 5. QUEUE TRIGGER (The Handover)
-      // We signal the CUSTOMER profile, the worker will resolve the owner via instance_name
+      // Force AI resume on any new inbound message (Mimics Legacy reliability)
       const { error: triggerError } = await supabaseAdmin
         .from('profiles')
         .update({ 
           worker_status: 'eliza_processing',
+          ai_paused: false,
+          needs_human: false,
           updated_at: new Date().toISOString()
         })
         .eq('id', customerProfile.id);
