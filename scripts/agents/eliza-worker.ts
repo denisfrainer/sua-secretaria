@@ -101,6 +101,42 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
     throw lastError;
 }
 
+const MODEL_TIERS = [
+    'gemini-3.1-flash-lite-preview', 
+    'gemini-3-flash-preview',
+    'gemini-2.5-flash'
+];
+
+async function generateWithFallback(params: { contents: any[] }, config?: any) {
+    let lastError: any;
+    for (const modelName of MODEL_TIERS) {
+        try {
+            console.log(`[LLM_INIT] Triggering Google GenAI with model: ${modelName}`);
+            return await ai.models.generateContent({
+                ...params,
+                model: modelName,
+                config: config
+            });
+        } catch (err: any) {
+            lastError = err;
+            const errMsg = err.message || String(err);
+            const isFallbackable = 
+                errMsg.includes('503') || 
+                errMsg.includes('500') || 
+                errMsg.includes('404') || 
+                errMsg.includes('not found') ||
+                errMsg.includes('Service Unavailable');
+
+            if (isFallbackable && modelName !== MODEL_TIERS[MODEL_TIERS.length - 1]) {
+                console.warn(`⚠️ [FALLBACK] Model ${modelName} failed. Shifting to next tier...`);
+                continue;
+            }
+            throw err;
+        }
+    }
+    throw lastError;
+}
+
 // ==============================================================
 // 🔧 CONFIG & SCHEMAS
 // ==============================================================
@@ -246,17 +282,15 @@ async function handleOnboardingState(profile: any, ownerId: string, messageData:
         }
 
         // 2. EXTRACTION LOGIC (Standard Onboarding with Resilience)
-        console.log(`[LLM_INIT] Extracting metadata with model: gemini-3.1-flash-lite-preview`);
         const result = await withRetry(async () => {
-            return await ai.models.generateContent({
-                model: "gemini-3.1-flash-lite-preview",
-                contents: [{ role: 'user', parts }],
-                config: {
+            return await generateWithFallback(
+                { contents: [{ role: 'user', parts }] },
+                {
                     responseMimeType: "application/json",
                     responseSchema: onboardingSchema,
                     thinking_config: { thinking_level: "medium" }
                 }
-            });
+            );
         });
 
         const responseText = result.text || "";
@@ -316,15 +350,11 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
         `;
 
         const userContent = messageData.text || "[AUDIO]";
-        console.log(`[LLM_INIT] Classifying intent with model: gemini-3.1-flash-lite-preview`);
         const intentResult = await withRetry(async () => {
-            return await ai.models.generateContent({
-                model: "gemini-3.1-flash-lite-preview",
-                contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }],
-                config: {
-                    thinking_config: { thinking_level: "low" }
-                }
-            });
+            return await generateWithFallback(
+                { contents: [{ role: 'user', parts: [{ text: `${intentPrompt}\n\nMensagem do usuário: "${userContent}"` }] }] },
+                { thinking_config: { thinking_level: "low" } }
+            );
         });
 
         const intent = (intentResult.text || "").toUpperCase().trim();
@@ -366,14 +396,10 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
         `;
 
         const simResult = await withRetry(async () => {
-            console.log(`[LLM_INIT] Simulating response with model: gemini-3.1-flash-lite-preview`);
-            return await ai.models.generateContent({
-                model: "gemini-3.1-flash-lite-preview",
-                contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }],
-                config: {
-                    thinking_config: { thinking_level: "medium" }
-                }
-            });
+            return await generateWithFallback(
+                { contents: [{ role: 'user', parts: [{ text: `${simPrompt}\n\nCliente: "${userContent}"` }] }] },
+                { thinking_config: { thinking_level: "medium" } }
+            );
         });
 
         const responseText = simResult.text || "Entendido! Como posso te ajudar hoje?";
@@ -414,15 +440,11 @@ async function handleLeadActiveState(profile: any, ownerId: string, messageData:
             - Nunca mencione que você é um teste ou que estamos em simulação. Você é a secretária real.
         `;
 
-        console.log(`[LLM_INIT] Triggering Google GenAI with model: gemini-3.1-flash-lite-preview`);
         const result = await withRetry(async () => {
-            return await ai.models.generateContent({
-                model: "gemini-3.1-flash-lite-preview",
-                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nCliente: "${userContent}"` }] }],
-                config: {
-                    thinking_config: { thinking_level: "medium" }
-                }
-            });
+            return await generateWithFallback(
+                { contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nCliente: "${userContent}"` }] }] },
+                { thinking_config: { thinking_level: "medium" } }
+            );
         });
 
         const responseText = result.text || "Entendido! Como posso te ajudar?";
