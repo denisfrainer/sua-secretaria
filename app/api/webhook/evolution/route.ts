@@ -19,8 +19,8 @@ export async function POST(req: Request) {
     if (!tenantId) {
       if (instanceName === 'agente-lobo') {
         // Hardcode Denis's master owner_id
-        tenantId = '465fb2df-d57d-4567-9be8-261dcd105094';
-        console.log(`🔓 [MASTER_KEY] Authorized legacy root instance: ${instanceName} -> mapped to ${tenantId}`);
+        tenantId = '7fd87d77-53a5-408b-9339-474fbdad07d4';
+        console.log(`[IDENTITY_SYNC] Master key applied for agente-lobo -> ${tenantId}`);
       } else {
         // Strict drop for any other instance lacking a tenantId
         console.error(`🚨 [SECURITY_WARNING] Missing tenantId for instance: ${instanceName}. Dropping request.`);

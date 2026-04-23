@@ -29,7 +29,11 @@ async function resolveOwnerId(profile: any, lastMessage?: any): Promise<string> 
     // 1. If message has instance_name, resolve via business_config
     if (lastMessage?.instance_name) {
         // Master Key Bypass (Legacy)
-        if (lastMessage.instance_name === 'agente-lobo') return '465fb2df-d57d-4567-9be8-261dcd105094';
+        if (lastMessage.instance_name === 'agente-lobo') {
+            const masterId = '7fd87d77-53a5-408b-9339-474fbdad07d4';
+            console.log(`[IDENTITY_SYNC] Master key applied for agente-lobo -> ${masterId}`);
+            return masterId;
+        }
 
         const { data: bConfig } = await supabaseAdmin
             .from('business_config')
@@ -59,8 +63,9 @@ async function resolveInstance(ownerId: string): Promise<string> {
 
     if (bConfig?.instance_name) return bConfig.instance_name;
 
-    // Fallback: This is what caused the 404s before. We should be very careful here.
-    return `instance-${ownerId.split('-')[0]}`;
+    // Fallback: Default to master if unsure
+    console.error(`⚠️ [RESOLVER:FAIL] No instance found for owner ${ownerId}. Failing safe.`);
+    return 'agente-lobo';
 }
 
 /**
@@ -399,6 +404,7 @@ async function handleLeadActiveState(profile: any, ownerId: string, messageData:
             - Nunca mencione que você é um teste ou que estamos em simulação. Você é a secretária real.
         `;
 
+        console.log(`[LLM_INIT] Triggering Google GenAI with model: gemini-1.5-flash`);
         const result = await withRetry(async () => {
             return await ai.models.generateContent({
                 model: "gemini-1.5-flash",
@@ -407,11 +413,13 @@ async function handleLeadActiveState(profile: any, ownerId: string, messageData:
         });
 
         const responseText = result.text || "Entendido! Como posso te ajudar?";
+        console.log(`[SENDER_PAYLOAD] Dispatching message via Evolution API to instance: ${targetInstance}`);
         await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
 
     } catch (err: any) {
         console.error("💥 [LEAD_ACTIVE FATAL ERROR] Trace:", err);
         const errInstance = await resolveInstance(ownerId);
+        console.log(`[SENDER_PAYLOAD] Dispatching error message to instance: ${errInstance}`);
         await sendWhatsAppMessage(profile.phone, "Desculpe, tive um erro momentâneo. Pode repetir sua mensagem?", 1200, errInstance);
     }
 }
