@@ -105,10 +105,14 @@ export function WhatsAppConnectionCard() {
       });
 
       if (initRes.status === 409) {
-        const data = await initRes.json();
+        const data = await initRes.json().catch(() => ({}));
         alert(data.error || 'Instância já existe.');
+        return;
       } else if (!initRes.ok) {
-        throw new Error('Erro ao inicializar.');
+        const data = await initRes.json().catch(() => ({}));
+        console.error('[WA_CARD_INIT] Server error:', data);
+        alert(`Erro ao inicializar: ${data.details || data.error || 'Falha no servidor'}`);
+        return;
       }
 
       await fetchFromDb(false);

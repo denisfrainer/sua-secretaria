@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
     const instanceName = body.instance || dataObj.instanceName || body.instanceName || dataObj.instance;
     const state = dataObj.state || body.state || dataObj.status || body.status;
-    let tenantId = url.searchParams.get('tenantId');
+    let tenantId = url.searchParams.get('tenantId')?.split('/')[0];
 
     // 🛡️ THE MASTER KEY (Resilient Resolution)
     if (!tenantId) {

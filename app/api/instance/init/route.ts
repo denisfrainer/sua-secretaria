@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         const finalInstanceName = rawInstanceName.substring(0, 20); // Limit to 20 chars for Baileys compatibility
 
         // 3. Pre-Flight Validation (URLs & Keys)
-        const baseUrl = process.env.EVOLUTION_API_URL;
+        const baseUrl = (process.env.EVOLUTION_API_URL || "").replace(/\/$/, "");
         const apiKey = process.env.EVOLUTION_API_KEY;
         const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
 
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         const envWebhook = (process.env.WEBHOOK_URL && process.env.WEBHOOK_URL !== "undefined") ? process.env.WEBHOOK_URL : null;
         const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL !== "undefined") ? process.env.NEXT_PUBLIC_APP_URL : null;
         
-        const WEBHOOK_TARGET = (envWebhook || envAppUrl || dynamicUrl || "").replace(/\/$/, "");
+        const WEBHOOK_TARGET = (envWebhook || envAppUrl || dynamicUrl || "").replace(/\/$/, "").replace(/\/api\/webhook.*$/, "");
 
         if (!WEBHOOK_TARGET || WEBHOOK_TARGET === "undefined") {
             console.error("🚨 [FATAL_CONFIG] Webhook URL resolution failed.");
@@ -114,14 +114,19 @@ export async function POST(request: Request) {
         console.log(`📡 [EVOLUTION] POST /instance/create for ${finalInstanceName}`);
         const payload = {
             instanceName: finalInstanceName,
+            token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
             qrcode: true,
             integration: "WHATSAPP-BAILEYS",
-            webhook: true,
-            webhook_url: webhookFullUrl,
-            webhook_by_events: true,
-            webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+            webhook: {
+                enabled: true,
+                url: webhookFullUrl,
+                byEvents: true,
+                base64: true,
+                events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGES"]
+            }
         };
 
+        console.log(`📤 [EVOLUTION] Sending payload:`, JSON.stringify(payload, null, 2));
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
@@ -187,8 +192,9 @@ export async function POST(request: Request) {
                     webhook: {
                         enabled: true,
                         url: webhookFullUrl,
-                        webhook_by_events: true,
-                        webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+                        byEvents: true,
+                        base64: true,
+                        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGES"]
                     }
                 }),
             });
