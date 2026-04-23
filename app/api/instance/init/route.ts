@@ -74,14 +74,27 @@ export async function POST(request: Request) {
             throw new Error(`Falha ao preparar registro: ${upsertError.message}`);
         }
 
-        // Force the Railway URL for the Webhook Payload
         // Dynamic Webhook Target Resolution
         const host = request.headers.get('host');
         const protocol = host?.includes('localhost') ? 'http' : 'https';
         const dynamicUrl = host ? `${protocol}://${host}` : "";
-        const WEBHOOK_TARGET = (process.env.WEBHOOK_URL || process.env.NEXT_PUBLIC_APP_URL || dynamicUrl).replace(/\/$/, "");
+        
+        // 🛡️ SANITIZATION: Avoid "undefined" string literal from environment variables
+        const envWebhook = (process.env.WEBHOOK_URL && process.env.WEBHOOK_URL !== "undefined") ? process.env.WEBHOOK_URL : null;
+        const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL !== "undefined") ? process.env.NEXT_PUBLIC_APP_URL : null;
+        
+        const WEBHOOK_TARGET = (envWebhook || envAppUrl || dynamicUrl || "").replace(/\/$/, "");
+
+        if (!WEBHOOK_TARGET || WEBHOOK_TARGET === "undefined") {
+            console.error("🚨 [FATAL_CONFIG] Webhook URL resolution failed.");
+            throw new Error("FATAL: Webhook URL is undefined. Check Netlify/Railway environment variables.");
+        }
         
         const webhookFullUrl = `${WEBHOOK_TARGET}/api/webhook/evolution?tenantId=${tenantId}`;
+        
+        if (!webhookFullUrl || webhookFullUrl.includes("undefined")) {
+             throw new Error(`FATAL: Generated Webhook URL is invalid: ${webhookFullUrl}`);
+        }
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Tenant: ${tenantId}`);
 
