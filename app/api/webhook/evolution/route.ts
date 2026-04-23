@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizePhone } from '@/lib/utils/phone';
 
-export async function POST(req: Request) {
-  const url = new URL(req.url);
-  console.log(`📡 [WEB HEARTBEAT] Hit: ${url.pathname}${url.search}`);
+export async function POST(req: NextRequest) {
+  console.log(`📡 [WEB HEARTBEAT] Hit: ${req.nextUrl.pathname}${req.nextUrl.search}`);
   try {
     const body = await req.json();
     const event = body.event || body.type; // Evolution v2 uses 'event'
@@ -13,7 +12,15 @@ export async function POST(req: Request) {
     const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
     const instanceName = body.instance || dataObj.instanceName || body.instanceName || dataObj.instance;
     const state = dataObj.state || body.state || dataObj.status || body.status;
-    let tenantId = url.searchParams.get('tenantId')?.split('/')[0];
+    let rawTenantId = req.nextUrl.searchParams.get("tenantId");
+    let tenantId = rawTenantId ? rawTenantId.split('/')[0] : null;
+
+    // 3. Graceful Error Handling for UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (tenantId && !uuidRegex.test(tenantId)) {
+      console.error(`🚨 [SECURITY_WARNING] Invalid tenantId format received: ${tenantId}`);
+      tenantId = null;
+    }
 
     // 🛡️ THE MASTER KEY (Resilient Resolution)
     if (!tenantId) {
