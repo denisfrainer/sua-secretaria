@@ -6,6 +6,7 @@ export async function POST(req: NextRequest) {
   console.log(`📡 [WEB HEARTBEAT] Hit: ${req.nextUrl.pathname}${req.nextUrl.search}`);
   try {
     const body = await req.json();
+    console.log(`[WEBHOOK INBOUND] Clean URL: ${req.nextUrl.search} | Event: ${body.event || body.type}`);
     const event = body.event || body.type; // Evolution v2 uses 'event'
     
     // 1. Safe extraction of Instance and State (handles nesting and direct properties)
@@ -38,13 +39,8 @@ export async function POST(req: NextRequest) {
       }
 
       if (!tenantId) {
-        if (instanceName === 'agente-lobo') {
-          tenantId = '7fd87d77-53a5-408b-9339-474fbdad07d4';
-          console.log(`[IDENTITY_SYNC] Master key fallback for agente-lobo -> ${tenantId}`);
-        } else {
-          console.error(`🚨 [SECURITY_WARNING] Missing tenantId for instance: ${instanceName}. Dropping request.`);
-          return new Response('Unauthorized: Missing tenantId', { status: 401 });
-        }
+        console.error(`🚨 [SECURITY_WARNING] Missing tenantId for instance: ${instanceName}. Dropping request.`);
+        return new Response('Unauthorized: Missing tenantId', { status: 401 });
       }
     }
 

@@ -28,13 +28,6 @@ process.env.TZ = 'America/Sao_Paulo';
 async function resolveOwnerId(profile: any, lastMessage?: any): Promise<string> {
     // 1. If message has instance_name, resolve via business_config
     if (lastMessage?.instance_name) {
-        // Master Key Bypass (Legacy)
-        if (lastMessage.instance_name === 'agente-lobo') {
-            const masterId = '7fd87d77-53a5-408b-9339-474fbdad07d4';
-            console.log(`[IDENTITY_SYNC] Master key applied for agente-lobo -> ${masterId}`);
-            return masterId;
-        }
-
         const { data: bConfig } = await supabaseAdmin
             .from('business_config')
             .select('owner_id')
@@ -46,14 +39,14 @@ async function resolveOwnerId(profile: any, lastMessage?: any): Promise<string> 
         }
     }
 
-    // 2. Fallback to profile ID (assumes sender is owner - onboarding case)
-    return profile.id;
+    // 2. Fallback to profile's linked owner
+    if (profile.owner_id || profile.tenant_id) {
+        return profile.owner_id || profile.tenant_id;
+    }
+    throw new Error(`[FATAL] Cannot resolve owner for profile ${profile.id}`);
 }
 
 async function resolveInstance(ownerId: string): Promise<string> {
-    // Master Key Bypass (Legacy)
-    if (ownerId === '7fd87d77-53a5-408b-9339-474fbdad07d4') return 'agente-lobo';
-
     // Database business_config lookup
     const { data: bConfig } = await supabaseAdmin
         .from('business_config')
@@ -61,11 +54,10 @@ async function resolveInstance(ownerId: string): Promise<string> {
         .eq('owner_id', ownerId)
         .maybeSingle();
 
-    if (bConfig?.instance_name) return bConfig.instance_name;
-
-    // Fallback: Default to master if unsure
-    console.error(`⚠️ [RESOLVER:FAIL] No instance found for owner ${ownerId}. Failing safe.`);
-    return 'agente-lobo';
+    if (!bConfig?.instance_name) {
+        throw new Error(`[FATAL] Instance Resolution Failed: No instance_name mapped for owner_id: ${ownerId}`);
+    }
+    return bConfig.instance_name;
 }
 
 /**

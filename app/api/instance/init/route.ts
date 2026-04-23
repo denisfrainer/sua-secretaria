@@ -120,7 +120,7 @@ export async function POST(request: Request) {
             webhook: {
                 enabled: true,
                 url: webhookFullUrl,
-                byEvents: true,
+                byEvents: false,
                 base64: true,
                 events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
             }
@@ -192,7 +192,7 @@ export async function POST(request: Request) {
                     webhook: {
                         enabled: true,
                         url: webhookFullUrl,
-                        byEvents: true,
+                        byEvents: false,
                         base64: true,
                         events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
                     }
