@@ -24,6 +24,12 @@ process.env.TZ = 'America/Sao_Paulo';
 // ==========================================
 // 🛠️ UTILS: MEDIA RETRIEVAL
 // ==========================================
+interface Message {
+    role: string;
+    content: string;
+    created_at: string;
+}
+
 async function getAudioBase64(messageId: string, instanceName: string) {
     const evoUrl = getBaseUrl();
     const evoKey = process.env.EVOLUTION_API_KEY || '';
@@ -54,15 +60,19 @@ async function processLead(lead: any) {
 
     try {
         // 1. Lock lead
-        await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
+        console.log(`🔒 [ELIZA] Locking lead ${lead.id}...`);
+        const { error: lockError } = await supabaseAdmin.from('leads_lobo').update({ status: 'eliza_analyzing' }).eq('id', lead.id);
+        if (lockError) throw new Error(`Lock failed: ${lockError.message}`);
 
         // 2. Fetch Business Config
-        const { data: bConfig } = await supabaseAdmin
+        console.log(`📡 [ELIZA] Fetching config for ${instanceName}...`);
+        const { data: bConfig, error: configError } = await supabaseAdmin
             .from('business_config')
             .select('*')
             .eq('instance_name', instanceName)
             .maybeSingle();
 
+        if (configError) throw new Error(`Config fetch error: ${configError.message}`);
         if (!bConfig) {
             console.error(`❌ [ELIZA] No business_config found for ${instanceName}`);
             await supabaseAdmin.from('leads_lobo').update({ status: 'error' }).eq('id', lead.id);
@@ -70,15 +80,25 @@ async function processLead(lead: any) {
         }
 
         // 3. Fetch History
-        const { data: rawHistory } = await supabaseAdmin
+        console.log(`📜 [ELIZA] Fetching history for ${phone}...`);
+        const { data: rawHistory, error: historyError } = await supabaseAdmin
             .from('messages')
             .select('role, content, created_at')
             .eq('lead_phone', phone)
             .order('created_at', { ascending: false })
             .limit(10);
 
-        const chatHistory = (rawHistory || []).reverse();
-        const lastUserMsg = chatHistory.filter(m => m.role === 'user').pop();
+        if (historyError) throw new Error(`History fetch error: ${historyError.message}`);
+
+        const chatHistory = (rawHistory as unknown as Message[] || []).reverse();
+        
+        // If history is empty, use a fallback
+        if (chatHistory.length === 0) {
+            console.warn(`⚠️ [ELIZA] No history found for ${phone}, starting fresh.`);
+            chatHistory.push({ role: 'user', content: 'Olá', created_at: new Date().toISOString() });
+        }
+
+        const lastUserMsg = [...chatHistory].reverse().find((m: Message) => m.role === 'user');
         const currentMessage = lastUserMsg?.content || "Olá";
 
         // 4. Construct System Prompt
@@ -100,29 +120,32 @@ async function processLead(lead: any) {
         `;
 
         // 5. LLM Call
+        console.log(`🤖 [ELIZA] Generating AI response for: "${currentMessage.substring(0, 50)}..."`);
         let responseText = "";
         for (const modelName of MODEL_TIERS) {
             try {
                 const result = await ai.models.generateContent({
                     model: modelName,
-                    systemInstruction: systemInstruction,
-                    contents: chatHistory.map(m => ({
+                    contents: chatHistory.map((m: Message) => ({
                         role: m.role === 'assistant' ? 'model' : 'user',
                         parts: [{ text: m.content }]
-                    }))
+                    })),
+                    config: {
+                        systemInstruction: systemInstruction,
+                    }
                 });
                 responseText = result.text || "";
                 if (responseText) break;
-            } catch (err) {
-                console.warn(`⚠️ [ELIZA] Model ${modelName} failed, trying next...`);
+            } catch (err: any) {
+                console.warn(`⚠️ [ELIZA] Model ${modelName} failed: ${err.message}`);
             }
         }
 
-        if (!responseText) throw new Error("AI failed to generate response");
+        if (!responseText) throw new Error("AI failed to generate response across all models");
 
         // 6. Send Response
-        console.log(`📤 [ELIZA] Sending: "${responseText.substring(0, 50)}..."`);
-        await sendWhatsAppMessage(phone, responseText, 1200, instanceName);
+        console.log(`📤 [ELIZA] Sending to ${phone}: "${responseText.substring(0, 50)}..."`);
+        await sendWhatsAppMessage(phone, responseText, 1000, instanceName);
 
         // 7. Update Status
         await supabaseAdmin.from('leads_lobo').update({ 
@@ -133,8 +156,11 @@ async function processLead(lead: any) {
         console.log(`✅ [ELIZA] Lead ${phone} processed successfully.`);
 
     } catch (error: any) {
-        console.error(`💥 [ELIZA FATAL]`, error.message);
-        await supabaseAdmin.from('leads_lobo').update({ status: 'error' }).eq('id', lead.id);
+        console.error(`💥 [ELIZA FATAL] ${phone}:`, error.message);
+        await supabaseAdmin.from('leads_lobo').update({ 
+            status: 'error',
+            updated_at: new Date().toISOString()
+        }).eq('id', lead.id);
     }
 }
 
