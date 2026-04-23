@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "concurrently \"next start\" \"tsx scripts/agents/eliza-worker.ts\"",
+    "start": "tsx scripts/agents/eliza-worker.ts",
     "lint": "eslint",
     "eliza:start": "tsx scripts/agents/eliza-worker.ts"
   },
@@ -24,6 +24,7 @@
     "concurrently": "^9.2.1",
     "critters": "^0.0.23",
     "date-fns": "^4.1.0",
+    "express": "^4.22.1",
     "framer-motion": "^12.38.0",
     "googleapis": "^171.4.0",
     "libphonenumber-js": "^1.12.41",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/express": "^4.17.25",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
