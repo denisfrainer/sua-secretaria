@@ -45,15 +45,27 @@ export async function POST(request: Request) {
         // 4. Auto-Seed Database (Step 2: UPSERT)
         // Ensure baseline record exists BEFORE calling the Evolution API
         const defaultContext = {
+            faq: [],
+            services: [
+                {
+                    name: "Serviço Base",
+                    price: 0,
+                    duration: "1h",
+                    description: "Configure este serviço no painel."
+                }
+            ],
+            business_info: {
+                name: "Nova Empresa",
+                handoff_phone: "5500000000000",
+                scheduling_link: ""
+            },
             is_ai_enabled: true,
-            business_info: { name: '', handoff_phone: '', scheduling_link: '' },
             operating_hours: {
                 weekdays: { open: "09:00", close: "18:00", is_closed: false },
                 saturday: { open: "09:00", close: "13:00", is_closed: false },
                 sunday: { open: "00:00", close: "00:00", is_closed: true }
             },
-            services: [],
-            faq: []
+            connection_status: "CONNECTING"
         };
 
         const { data: config, error: upsertError } = await supabaseAdmin
@@ -100,20 +112,20 @@ export async function POST(request: Request) {
 
         // 5. Evolution API Handshake
         console.log(`📡 [EVOLUTION] POST /instance/create for ${finalInstanceName}`);
+        const payload = {
+            instanceName: finalInstanceName,
+            qrcode: true,
+            integration: "WHATSAPP-BAILEYS",
+            webhook: true,
+            webhook_url: webhookFullUrl,
+            webhook_by_events: true,
+            webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+        };
+
         const createRes = await fetch(`${baseUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
-            body: JSON.stringify({
-                instanceName: finalInstanceName,
-                qrcode: true,
-                integration: "WHATSAPP-BAILEYS",
-                webhook: {
-                    url: webhookFullUrl,
-                    enabled: true,
-                    webhook_by_events: true,
-                    webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
-                }
-            }),
+            body: JSON.stringify(payload),
         });
 
         const createData = await createRes.json();
