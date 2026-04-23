@@ -173,7 +173,29 @@ async function getAudioBase64(messageId: string, instanceName: string) {
 // 🧠 STATE-DRIVEN BRAIN HANDLERS
 // ==============================================================
 
-async function handleOnboardingState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handleHeadlessAgentState(profile: any, ownerId: string, messageData: any, bConfig: any, targetInstance: string) {
+    console.log(`⚙️ [HEADLESS] Processing command from Admin...`);
+
+    const systemPrompt = `
+        You are the internal Headless AI Assistant for the business owner of ${bConfig?.business_name || 'the business'}.
+        The user speaking to you is the BOSS.
+        Your job is to execute internal system commands, parse metrics, or manage the calendar.
+        Do NOT act like a receptionist. Do NOT greet the user. Be direct, technical, and precise.
+    `;
+
+    // Trigger Gemini with the specific Headless Prompt
+    const result = await withRetry(async () => {
+        return await generateWithFallback(
+            { contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nBoss Command: "${messageData.text || '[AUDIO]'}"` }] }] },
+            { thinking_config: { thinking_level: "high" } }
+        );
+    });
+
+    const responseText = result.text || "Command acknowledged.";
+    await sendWhatsAppMessage(profile.phone, responseText, 1200, targetInstance);
+}
+
+async function handleOnboardingState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }, bConfig?: any) {
     console.log(`🎯 [BRAIN:ONBOARDING] Processing for ${profile.phone}`);
 
     const systemPrompt = `
@@ -214,14 +236,7 @@ async function handleOnboardingState(profile: any, ownerId: string, messageData:
     try {
         const targetInstance = await resolveInstance(ownerId);
 
-        // 1. VIRTUAL STATE CHECK: Are we awaiting confirmation?
-        const { data: config } = await supabaseAdmin
-            .from('business_config')
-            .select('*')
-            .eq('owner_id', ownerId)
-            .maybeSingle();
-
-        const context = config?.context_json || {};
+        const context = bConfig?.context_json || {};
         const isAwaitingConfirmation = context.pending_confirmation === true;
 
         if (isAwaitingConfirmation) {
@@ -326,7 +341,7 @@ async function handleOnboardingState(profile: any, ownerId: string, messageData:
     }
 }
 
-async function handleSimulationState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handleSimulationState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }, bConfig?: any) {
     try {
         console.log(`🎯 [BRAIN:SIMULATION] Processing for ${profile.phone}`);
         const targetInstance = await resolveInstance(ownerId);
@@ -367,13 +382,6 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
         // 2. SECRETARY SIMULATION: Execute the "Simulation" of the bot acting on behalf of the user
         console.log(`🤖 [STATE:SIMULATION] Continuing simulation for ${profile.phone}`);
 
-        // Fetch business context for the simulation
-        const { data: bConfig } = await supabaseAdmin
-            .from('business_config')
-            .select('*')
-            .eq('owner_id', ownerId)
-            .maybeSingle();
-
         const simPrompt = `
             Você é uma secretária virtual para a empresa ${bConfig?.business_name || 'sua empresa'}.
             Seu objetivo é ser gentil, profissional e responder baseado nestas informações:
@@ -400,18 +408,12 @@ async function handleSimulationState(profile: any, ownerId: string, messageData:
     }
 }
 
-async function handleLeadActiveState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handleLeadActiveState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }, bConfig?: any) {
     try {
         console.log(`👤 [BRAIN:LEAD_ACTIVE] Customer ${profile.phone} talking to business ${ownerId}`);
         const targetInstance = await resolveInstance(ownerId);
 
-        // Fetch business context
-        const { data: bConfig } = await supabaseAdmin
-            .from('business_config')
-            .select('*')
-            .eq('owner_id', ownerId)
-            .maybeSingle();
-
+        // 2. RECEPTIONIST FLOW
         const userContent = messageData.text || "[AUDIO]";
 
         const systemPrompt = `
@@ -448,7 +450,7 @@ async function handleLeadActiveState(profile: any, ownerId: string, messageData:
     }
 }
 
-async function handlePaywallState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }) {
+async function handlePaywallState(profile: any, ownerId: string, messageData: { text?: string, audioBase64?: string, messageId?: string }, bConfig?: any) {
     console.log(`⏳ [STATE:PAYWALL] User ${profile.phone} sent message while waiting for payment.`);
     const targetInstance = await resolveInstance(ownerId);
 
@@ -497,6 +499,28 @@ async function processProfile(profile: any) {
 
         console.log(`🔗 [ELIZA] Resolved Context -> Owner: ${ownerId} | Instance: ${targetInstance}`);
 
+        // Fetch Business Context once
+        const { data: bConfig } = await supabaseAdmin
+            .from('business_config')
+            .select('*')
+            .eq('owner_id', ownerId)
+            .maybeSingle();
+
+        // 🛡️ HEADLESS AGENT FORK
+        const isAdmin = bConfig?.admin_phone && profile.phone === bConfig.admin_phone;
+
+        if (isAdmin) {
+            console.log(`👑 [BRAIN:HEADLESS_AGENT] Commander recognized: ${profile.phone}`);
+            await handleHeadlessAgentState(profile, ownerId, messageData, bConfig, targetInstance);
+            
+            // Update worker status and EXIT. Do NOT process normal customer states.
+            await supabaseAdmin.from('profiles').update({ 
+                worker_status: 'waiting_reply',
+                updated_at: new Date().toISOString()
+            }).eq('id', profile.id);
+            return; 
+        }
+
         // Handle Audio Multimodal
         if (lastMessage.content === "[AUDIO]") {
             const base64 = await getAudioBase64(lastMessage.message_id, targetInstance);
@@ -509,17 +533,17 @@ async function processProfile(profile: any) {
 
         switch (profile.conversation_state) {
             case 'ONBOARDING':
-                await handleOnboardingState(profile, ownerId, messageData);
+                await handleOnboardingState(profile, ownerId, messageData, bConfig);
                 break;
             case 'LEAD_ACTIVE':
-                await handleLeadActiveState(profile, ownerId, messageData);
+                await handleLeadActiveState(profile, ownerId, messageData, bConfig);
                 break;
             case 'ACTIVE':
             case 'SIMULATION':
-                await handleSimulationState(profile, ownerId, messageData);
+                await handleSimulationState(profile, ownerId, messageData, bConfig);
                 break;
             case 'PAYWALL':
-                await handlePaywallState(profile, ownerId, messageData);
+                await handlePaywallState(profile, ownerId, messageData, bConfig);
                 break;
             default:
                 console.log(`⏩ [STATE:${profile.conversation_state}] Logic and transitions coming soon.`);
