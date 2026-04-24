@@ -86,27 +86,17 @@ export async function POST(request: Request) {
             throw new Error(`Falha ao preparar registro: ${upsertError.message}`);
         }
 
-        // Dynamic Webhook Target Resolution
-        const host = request.headers.get('host');
-        const protocol = host?.includes('localhost') ? 'http' : 'https';
-        const dynamicUrl = host ? `${protocol}://${host}` : "";
-        
-        // 🛡️ SANITIZATION: Avoid "undefined" string literal from environment variables
-        const envWebhook = (process.env.WEBHOOK_URL && process.env.WEBHOOK_URL !== "undefined") ? process.env.WEBHOOK_URL : null;
-        const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL !== "undefined") ? process.env.NEXT_PUBLIC_APP_URL : null;
-        
-        const WEBHOOK_TARGET = (envWebhook || envAppUrl || dynamicUrl || "").replace(/\/$/, "").replace(/\/api\/webhook.*$/, "");
-
-        if (!WEBHOOK_TARGET || WEBHOOK_TARGET === "undefined") {
-            console.error("🚨 [FATAL_CONFIG] Webhook URL resolution failed.");
-            throw new Error("FATAL: Webhook URL is undefined. Check Netlify/Railway environment variables.");
+        // 🛡️ Webhook Target Resolution (Unified Express Monolith)
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
+        if (!appUrl) {
+            console.error("🚨 [FATAL_CONFIG] Webhook URL resolution failed: Missing environment variables.");
+            throw new Error("FATAL: NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_SITE_URL is undefined.");
         }
         
-        const webhookFullUrl = `${WEBHOOK_TARGET}/api/webhook/evolution?tenantId=${tenantId}`;
+        const WEBHOOK_TARGET = appUrl.replace(/\/$/, "");
+        const webhookFullUrl = `${WEBHOOK_TARGET}/webhook/evolution`;
         
-        if (!webhookFullUrl || webhookFullUrl.includes("undefined")) {
-             throw new Error(`FATAL: Generated Webhook URL is invalid: ${webhookFullUrl}`);
-        }
+        console.log(`[INSTANCE FACTORY] Webhook Target: ${webhookFullUrl}`);
         
         console.log(`[EVOLUTION_API] Initiating creation for instance: ${finalInstanceName} | Tenant: ${tenantId}`);
 
@@ -117,13 +107,14 @@ export async function POST(request: Request) {
             token: process.env.WOLF_SECRET_TOKEN || 'wolfagent2026',
             qrcode: true,
             integration: "WHATSAPP-BAILEYS",
-            webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
             webhook: {
-                enabled: true,
                 url: webhookFullUrl,
-                byEvents: false,
-                base64: true,
-                events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
+                enabled: true,
+                webhookByEvents: false,
+                events: [
+                    "MESSAGES_UPSERT",
+                    "CONNECTION_UPDATE"
+                ]
             }
         };
 
@@ -190,13 +181,14 @@ export async function POST(request: Request) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
                 body: JSON.stringify({
-                    webhook_events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
                     webhook: {
-                        enabled: true,
                         url: webhookFullUrl,
-                        byEvents: false,
-                        base64: true,
-                        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
+                        enabled: true,
+                        webhookByEvents: false,
+                        events: [
+                            "MESSAGES_UPSERT",
+                            "CONNECTION_UPDATE"
+                        ]
                     }
                 }),
             });

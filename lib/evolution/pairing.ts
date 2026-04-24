@@ -46,8 +46,8 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
   if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
     throw new Error("Missing or invalid EVOLUTION_API_KEY for instance creation");
   }
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
-  const WEBHOOK_URL = `${appUrl}/api/webhook/evolution`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+  const WEBHOOK_URL = `${appUrl}/webhook/evolution`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
   
@@ -59,15 +59,12 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
       qrcode: false,
       integration: "WHATSAPP-BAILEYS",
       webhook: {
-        enabled: true,
         url: WEBHOOK_URL,
-        byEvents: true,
-        base64: true,
+        enabled: true,
+        webhookByEvents: false,
         events: [
-          "CONNECTION_UPDATE",
           "MESSAGES_UPSERT",
-          "MESSAGES_UPDATE",
-          "SEND_MESSAGES"
+          "CONNECTION_UPDATE"
         ]
       }
     };
