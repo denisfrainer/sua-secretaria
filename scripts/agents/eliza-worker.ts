@@ -29,6 +29,9 @@ process.env.TZ = 'America/Sao_Paulo';
 // ==========================================
 
 app.post('/webhook/evolution', async (req, res) => {
+    console.log('\n--- 🛡️ INBOUND RAW PAYLOAD START ---');
+    console.log(JSON.stringify(req.body, null, 2));
+    console.log('--- 🛡️ INBOUND RAW PAYLOAD END ---\n');
     try {
         const body = req.body;
         const searchParams = new URL(req.url, `http://${req.headers.host}`).searchParams;

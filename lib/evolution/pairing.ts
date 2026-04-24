@@ -39,7 +39,7 @@ async function nuclearResetInstance(instanceName: string) {
   }
 }
 
-async function createInstance(instanceName: string, phoneNumber?: string) {
+async function createInstance(instanceName: string, phoneNumber?: string, tenantId?: string) {
   const globalApiKey = process.env.EVOLUTION_API_KEY;
   const url = `${getBaseUrl()}/instance/create`;
 
@@ -47,9 +47,9 @@ async function createInstance(instanceName: string, phoneNumber?: string) {
     throw new Error("Missing or invalid EVOLUTION_API_KEY for instance creation");
   }
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
-  const WEBHOOK_URL = `${appUrl}/webhook/evolution`;
+  const WEBHOOK_URL = `${appUrl}/webhook/evolution${tenantId ? `?tenantId=${tenantId}` : ''}`;
 
-  console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'}`);
+  console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'} | Webhook: ${WEBHOOK_URL}`);
   
   try {
     const payload = {
@@ -108,7 +108,7 @@ function normalizePhoneNumber(phone: string): string {
 /**
  * Generates an 8-character pairing code AND QR Base64 for an instance.
  */
-export async function getPairingData(phone: string) {
+export async function getPairingData(phone: string, tenantId?: string) {
   // 1. Dual-Number Normalization (Critical JID Alignment)
   const cleanPhone = normalizePhoneNumber(phone);
   const prefix = process.env.EVOLUTION_INSTANCE_PREFIX || 'secretaria';
@@ -131,7 +131,7 @@ export async function getPairingData(phone: string) {
   const uniqueInstanceName = `${instanceName}-${timestamp}`;
   console.log(`🚀 [EVOLUTION_PAIRING] Generating unique instance: ${uniqueInstanceName}`);
   
-  await createInstance(uniqueInstanceName, cleanPhone);
+  await createInstance(uniqueInstanceName, cleanPhone, tenantId);
 
   // 4. Stablization Delay (Wait for session registration with Meta)
   console.log(`⏳ [EVOLUTION_PAIRING] Waiting 5 seconds for session stabilization...`);

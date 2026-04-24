@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     // 5. Trigger Pairing Data (Step 5)
     // Now returns both pairing code, QR base64 and the Unique Instance Name
-    const { pairingCode, qrBase64, instanceName } = await getPairingData(phone);
+    const { pairingCode, qrBase64, instanceName } = await getPairingData(phone, profile.id);
     
     console.log(`📡 [WEBHOOK] Executing multimodal delivery check (QR: ${!!qrBase64}, Code: ${!!pairingCode})`);
 

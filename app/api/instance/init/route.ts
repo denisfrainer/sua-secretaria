@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         }
         
         const WEBHOOK_TARGET = appUrl.replace(/\/$/, "");
-        const webhookFullUrl = `${WEBHOOK_TARGET}/webhook/evolution`;
+        const webhookFullUrl = `${WEBHOOK_TARGET}/webhook/evolution?tenantId=${tenantId}`;
         
         console.log(`[INSTANCE FACTORY] Webhook Target: ${webhookFullUrl}`);
         
