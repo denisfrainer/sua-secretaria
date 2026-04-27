@@ -72,19 +72,24 @@ app.post('/webhook/evolution', async (req, res) => {
         if (event === 'messages.upsert' || event === 'messages_upsert' || event === 'message' || event === 'messages') {
             console.log(`💬 [WEBHOOK] Message event detected: "${event}"`);
 
-            // Exhaustive message extraction (v1 vs v2 payloads)
-            // v1: body.data.messages[0]
-            // v2: body.data (direct object)
-            // Fallback: body itself
-            const msgItem = dataObj?.messages?.[0] 
-                || dataObj?.message 
-                || dataObj;
+            // Evolution API 'messages.upsert' payload usually puts the message directly in 'data'
+            // Or sometimes wraps it in a 'messages' array depending on the exact version/event.
+            const payloadData = body.data || body;
+            if (!payloadData) {
+                console.warn('⚠️ [WEBHOOK] No data object found. Dropping.');
+                return res.status(200).json({ status: 'ignored', reason: 'no_data' });
+            }
+
+            // Normalize the message object (handles both array wrap and direct object)
+            // msgItem should be the container that HAS the 'key' and 'message' properties as siblings.
+            const msgItem = (payloadData.messages && Array.isArray(payloadData.messages)) 
+                ? payloadData.messages[0] 
+                : payloadData;
 
             console.log(`💬 [WEBHOOK] msgItem keys: [${Object.keys(msgItem || {}).join(', ')}]`);
-            console.log(`💬 [WEBHOOK] msgItem.key:`, JSON.stringify(msgItem?.key || 'MISSING'));
 
-            if (!msgItem?.key) {
-                console.warn(`⚠️ [WEBHOOK] No 'key' in msgItem. Dropping.`);
+            if (!msgItem || !msgItem.key) {
+                console.warn(`⚠️ [WEBHOOK] No 'key' found in msgItem. Dropping.`, JSON.stringify(msgItem));
                 return res.status(200).json({ status: 'ignored', reason: 'no_key' });
             }
 
