@@ -26,31 +26,42 @@ export default function BookingLinkPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('slug')
-          .eq('id', user.id)
-          .single();
+      setIsLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          // Prioritize profiles table as requested in directives
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('slug')
+            .eq('id', user.id)
+            .single();
 
-        if (profile) {
-          setSlug(profile.slug || '');
-          setOriginalSlug(profile.slug || '');
+          if (profile?.slug) {
+            setSlug(profile.slug);
+            setOriginalSlug(profile.slug);
+          }
         }
+      } catch (error) {
+        console.error('[BOOKING_LINK] Initial fetch error:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     fetchData();
   }, [supabase]);
 
+  // Dynamic URL construction
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://sua-secretaria.netlify.app';
+  const fullUrl = `${baseUrl}/${slug}`;
+
   const handleSave = async () => {
-    if (!userId || isSaving) return;
+    if (!userId || isSaving || !slug) return;
 
     setIsSaving(true);
     try {
-      const normalizedSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const normalizedSlug = slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
 
       const { error } = await supabase
         .from('profiles')
@@ -63,17 +74,17 @@ export default function BookingLinkPage() {
       setSlug(normalizedSlug);
       setShowSaveSuccess(true);
       setTimeout(() => setShowSaveSuccess(false), 3000);
-      console.log('[BOOKING_LINK] Slug updated to:', normalizedSlug);
+      console.log('[BOOKING_LINK] Slug updated successfully:', normalizedSlug);
     } catch (err) {
       console.error('[BOOKING_LINK] Error saving slug:', err);
-      alert('Erro ao salvar o link. Tente novamente.');
+      alert('Erro ao salvar o link. Verifique se o nome já está em uso.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCopy = async () => {
-    const fullUrl = `sua-secretaria.netlify.app/${slug}`;
+    if (!slug) return;
     try {
       await navigator.clipboard.writeText(fullUrl);
       setShowCopySuccess(true);
@@ -84,14 +95,14 @@ export default function BookingLinkPage() {
   };
 
   const handleTestLink = () => {
-    window.open(`https://sua-secretaria.netlify.app/${slug}`, '_blank');
+    if (!slug) return;
+    window.open(fullUrl, '_blank');
   };
 
   const handleWhatsAppShare = () => {
-    const fullUrl = `https://sua-secretaria.netlify.app/${slug}`;
-    const text = `Confira meu link de agendamento online: ${fullUrl}`;
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(waUrl, '_blank');
+    if (!slug) return;
+    const message = encodeURIComponent(`Olá! Agende seu horário comigo através do link: ${fullUrl}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
   };
 
   if (isLoading) {

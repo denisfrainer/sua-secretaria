@@ -2,6 +2,9 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import SchedulingInterface from '@/components/scheduling/SchedulingInterface';
 
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 /**
  * UNIVERSAL ROOT SCHEDULING ROUTE
  * This is the primary entry point for personalized booking links (e.g., sua-secretaria.netlify.app/rubia-beauty).
