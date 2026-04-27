@@ -1,17 +1,15 @@
-import express from 'express';
+import http from 'http';
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
-import { sendWhatsAppMessage, getBaseUrl } from '../../lib/whatsapp/sender';
+import { sendWhatsAppMessage } from '../../lib/whatsapp/sender';
 import { processMenuState } from '../handlers/menu-handler';
-import { normalizePhone } from '../../lib/utils/phone';
 
 /**
- * ELIZA MONOLITH - UNIFIED WEBHOOK & POLLING
- * Handles: Evolution API Webhooks & Background Db Polling
+ * ELIZA WORKER - PURE POLLING ENGINE
+ * Webhook ingestion is now handled by the Next.js API route
+ * at app/api/webhook/evolution/route.ts
+ * This worker ONLY polls leads_lobo and processes AI responses.
  */
-
-const app = express();
-app.use(express.json());
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
@@ -24,191 +22,6 @@ const MODEL_TIERS = [
 ];
 
 process.env.TZ = 'America/Sao_Paulo';
-
-// ==========================================
-// 🛠️ WEBHOOK ROUTE (Ported from Next.js)
-// ==========================================
-
-app.post('/webhook/evolution', async (req, res) => {
-    // ============================================================
-    // 🔬 UNIVERSAL RAW LOG — OUTSIDE try/catch, OUTSIDE if/else
-    // This line MUST execute for every single POST, no exceptions.
-    // ============================================================
-    const rawEvent = req.body?.event || req.body?.type || req.body?.apiType || 'UNKNOWN';
-    const rawInstance = req.body?.instance || req.body?.instanceName || 'UNKNOWN';
-    const rawDataKeys = req.body?.data ? Object.keys(req.body.data) : [];
-    console.log(`\n📡 [WEBHOOK_RAW] Event: "${rawEvent}" | Instance: "${rawInstance}" | Data Keys: [${rawDataKeys.join(', ')}]`);
-    console.log(`📡 [WEBHOOK_RAW] Full Body:`, JSON.stringify(req.body, null, 2));
-
-    try {
-        const body = req.body;
-        const searchParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
-        
-        // 1. Core Identification (Exhaustive event extraction)
-        const event = (body.event || body.type || body.apiType || '').toLowerCase().trim();
-        const instanceName = body.instance || body.instanceName || body.data?.instance || searchParams.get('instance');
-        const tenantId = searchParams.get('tenantId');
-
-        console.log(`🏷️ [WEBHOOK] Normalized Event: "${event}" | Instance: "${instanceName}" | Tenant: "${tenantId}"`);
-
-        // 2. Normalize Data Object (handles v1, v2, and array-wrapped payloads)
-        const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
-
-        // 3. Connection Lifecycle
-        if (event === 'connection.update' || event === 'connection_update') {
-            const state = dataObj.state || body.state || dataObj.status || body.status;
-            console.log(`🔌 [WEBHOOK] Connection event. State: "${state}" | Instance: "${instanceName}"`);
-            if (state === 'open' && instanceName) {
-                console.log(`✅ [WEBHOOK] Connection OPEN for instance: ${instanceName}`);
-                await supabaseAdmin
-                    .from('business_config')
-                    .update({ status: 'CONNECTED', updated_at: new Date().toISOString() })
-                    .eq('instance_name', instanceName);
-            }
-            return res.status(200).json({ success: true });
-        }
-
-        // 4. Message Processing (Exhaustive event matching)
-        if (event === 'messages.upsert' || event === 'messages_upsert' || event === 'message' || event === 'messages') {
-            console.log(`💬 [WEBHOOK] Message event detected: "${event}"`);
-
-            // Evolution API 'messages.upsert' payload usually puts the message directly in 'data'
-            // Or sometimes wraps it in a 'messages' array depending on the exact version/event.
-            const payloadData = body.data || body;
-            if (!payloadData) {
-                console.warn('⚠️ [WEBHOOK] No data object found. Dropping.');
-                return res.status(200).json({ status: 'ignored', reason: 'no_data' });
-            }
-
-            // Normalize the message object (handles both array wrap and direct object)
-            // msgItem should be the container that HAS the 'key' and 'message' properties as siblings.
-            const msgItem = (payloadData.messages && Array.isArray(payloadData.messages)) 
-                ? payloadData.messages[0] 
-                : payloadData;
-
-            console.log(`💬 [WEBHOOK] msgItem keys: [${Object.keys(msgItem || {}).join(', ')}]`);
-
-            if (!msgItem || !msgItem.key) {
-                console.warn(`⚠️ [WEBHOOK] No 'key' found in msgItem. Dropping.`, JSON.stringify(msgItem));
-                return res.status(200).json({ status: 'ignored', reason: 'no_key' });
-            }
-
-            let remoteJid = msgItem.key.remoteJid || "";
-            if (msgItem.key.remoteJidAlt && String(msgItem.key.remoteJidAlt).includes('@s.whatsapp.net')) {
-                remoteJid = String(msgItem.key.remoteJidAlt);
-            }
-
-            if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) {
-                console.warn(`⚠️ [WEBHOOK] Invalid remoteJid: "${remoteJid}". Dropping (likely a group message).`);
-                return res.status(200).json({ status: 'ignored', reason: 'invalid_jid' });
-            }
-
-            const rawNumber = remoteJid.split('@')[0];
-            const phone = normalizePhone(rawNumber);
-            const isFromMe = msgItem.key.fromMe === true;
-
-            // Exhaustive text extraction (covers all Evolution API message types)
-            const messageObj = msgItem.message || {};
-            const text = messageObj.conversation 
-                || messageObj.extendedTextMessage?.text 
-                || messageObj.imageMessage?.caption
-                || messageObj.videoMessage?.caption
-                || messageObj.buttonsResponseMessage?.selectedDisplayText
-                || messageObj.listResponseMessage?.title
-                || messageObj.templateButtonReplyMessage?.selectedDisplayText
-                || "";
-            const isAudio = !!messageObj.audioMessage;
-            const isImage = !!messageObj.imageMessage;
-            const isVideo = !!messageObj.videoMessage;
-            const isDocument = !!messageObj.documentMessage;
-            const isSticker = !!messageObj.stickerMessage;
-
-            console.log('[DEBUG PARSING]', { phone, text, instanceName });
-            console.log(`💬 [WEBHOOK] Phone: ${phone} | fromMe: ${isFromMe} | Text: "${text.substring(0, 80)}" | Audio: ${isAudio} | Image: ${isImage}`);
-
-            if (!text && !isAudio && !isImage && !isVideo && !isDocument) {
-                console.log(`⏭️ [WEBHOOK] No processable content (sticker/reaction/etc). Skipping.`);
-                return res.status(200).json({ success: true, message: 'No processable content' });
-            }
-
-            // 5. PERSIST MESSAGE
-            let content = text;
-            if (isAudio) content = "[AUDIO]";
-            else if (isImage) content = "[IMAGE]";
-            else if (isVideo) content = "[VIDEO]";
-            else if (isDocument) content = "[DOCUMENT]";
-
-            const messageId = msgItem.key.id || `gen_${Math.random().toString(36).substring(7)}`;
-
-            const { error: msgError } = await supabaseAdmin.from('messages').upsert({
-                lead_phone: phone,
-                role: isFromMe ? 'assistant' : 'user',
-                content: content,
-                message_id: messageId,
-                instance_name: instanceName,
-                created_at: new Date().toISOString()
-            }, { onConflict: 'message_id' });
-
-            if (msgError) {
-                console.error(`❌ [WEBHOOK] Message persist error:`, msgError.message);
-            } else {
-                console.log(`💾 [WEBHOOK] Message persisted: ${messageId}`);
-            }
-
-            // 6. ANTI-LOOP & WORKER SIGNAL
-            if (isFromMe) {
-                console.log(`🔄 [WEBHOOK] Outbound message logged. Skipping worker signal.`);
-                return res.status(200).json({ success: true, message: 'Outbound logged' });
-            }
-
-            // 7. Resolve Owner & Queue for Eliza
-            let activeOwnerId = tenantId;
-            if (!activeOwnerId && instanceName) {
-                const { data: bConfig } = await supabaseAdmin
-                    .from('business_config')
-                    .select('owner_id')
-                    .eq('instance_name', instanceName)
-                    .maybeSingle();
-                activeOwnerId = bConfig?.owner_id;
-            }
-
-            if (!activeOwnerId) {
-                console.error(`❌ [WEBHOOK] Could not resolve owner_id for instance: ${instanceName}. Lead NOT queued.`);
-                return res.status(200).json({ success: false, reason: 'no_owner_id' });
-            }
-
-            const { data: upsertData, error: upsertError } = await supabaseAdmin
-                .from('leads_lobo')
-                .upsert({
-                    phone: phone,
-                    status: 'eliza_processing',
-                    instance_name: instanceName,
-                    owner_id: activeOwnerId,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'phone' })
-                .select();
-
-            if (upsertError) {
-                console.error('❌ [DB INSERT ERROR - leads_lobo]:', upsertError);
-            } else {
-                console.log(`✅ [WEBHOOK:SUCCESS] Lead ${phone} queued for Eliza Worker in leads_lobo. Data:`, upsertData);
-            }
-
-            return res.status(200).json({ success: true });
-        }
-
-        // 5. Unmatched Event (Log it so we can see what we're missing)
-        console.log(`⏭️ [WEBHOOK] Unhandled event: "${event}". Ignoring.`);
-        return res.status(200).json({ success: true, message: 'Event ignored' });
-
-    } catch (error: any) {
-        console.error('❌ [WEBHOOK ERROR]:', error.stack || error.message);
-        return res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Healthcheck
-app.get('/health', (req, res) => res.status(200).send('Eliza Monolith Live'));
 
 // ==============================================================
 // 🧠 MAIN PROCESSING LOGIC
@@ -400,6 +213,7 @@ async function pollLeads() {
             .from('leads_lobo')
             .select('*')
             .eq('status', 'eliza_processing')
+            .eq('ai_paused', false)
             .limit(2); // Small batch to keep it fast
 
         if (error) {
@@ -433,11 +247,22 @@ async function pollLeads() {
 }
 
 // ==============================================================
-// 🚀 SERVER BOOT
+// 🚀 BOOT: PURE POLLING ENGINE + MINIMAL HEALTHCHECK
 // ==============================================================
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`\n🌐 Server (Webhook & Health) running on port ${PORT}`);
-    console.log('🚀 [BOOT] Server started. Igniting immortal polling engine...');
+// Healthcheck on a background port so Railway knows the process is alive.
+// Webhook ingestion is handled by the Next.js API route.
+const HEALTH_PORT = process.env.ELIZA_PORT || 3001;
+
+http.createServer((req, res) => {
+    if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
+        res.writeHead(200);
+        res.end('Eliza Polling Engine Online');
+        return;
+    }
+    res.writeHead(404);
+    res.end();
+}).listen(HEALTH_PORT, () => {
+    console.log(`\n🌐 Healthcheck listening on port ${HEALTH_PORT}`);
+    console.log('🚀 [BOOT] Igniting immortal polling engine...');
     pollLeads(); // Start the recursive loop
 });

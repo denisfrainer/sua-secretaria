@@ -90,7 +90,7 @@ export async function POST(request: Request) {
         }
 
         // 5. Webhook Target Resolution
-        const webhookFullUrl = `${appUrl}/webhook/evolution?tenantId=${tenantId}`;
+        const webhookFullUrl = `${appUrl}/api/webhook/evolution?tenantId=${tenantId}`;
         console.log(`[INSTANCE_FACTORY] Webhook Target: ${webhookFullUrl}`);
 
         // ============================================================

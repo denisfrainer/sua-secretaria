@@ -28,7 +28,7 @@ if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY || !WEBHOOK_TARGET) {
 }
 
 async function main() {
-    const webhookUrl = `${WEBHOOK_TARGET}/webhook/evolution`;
+    const webhookUrl = `${WEBHOOK_TARGET}/api/webhook/evolution`;
 
     console.log(`\n🔧 [RESYNC] Instance: ${INSTANCE_NAME}`);
     console.log(`🔧 [RESYNC] Evolution API: ${EVOLUTION_API_URL}`);
