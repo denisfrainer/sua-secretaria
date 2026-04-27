@@ -17,9 +17,13 @@ import {
   Clock, 
   User, 
   MessageSquare,
-  ArrowRight
+  ArrowRight,
+  CalendarOff,
+  Scissors,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface SchedulingInterfaceProps {
   profile: any;
@@ -107,35 +111,42 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
 
   // --- UI Components ---
 
-  const renderProfileHeader = () => (
-    <div className="flex flex-col mb-8">
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
-          <User size={32} className="text-gray-300" />
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold text-gray-900 leading-tight">
-            {profile.display_name || profile.full_name}
-          </h1>
-          <p className="text-sm text-gray-500 leading-tight mt-0.5">
-            {businessConfig?.context_json?.business_info?.description || 'Profissional qualificado'}
-          </p>
-          <div className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5 w-fit">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            Online para Agendamento
+  const renderProfileHeader = () => {
+    const businessInfo = businessConfig?.context_json?.business_info;
+    const businessName = businessInfo?.name || profile.display_name || profile.full_name;
+    const logoUrl = businessInfo?.logo_url;
+
+    return (
+      <div className="flex flex-col mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-24 h-24 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden relative">
+            {logoUrl ? (
+              <Image 
+                src={logoUrl} 
+                alt={businessName} 
+                fill 
+                className="object-cover"
+              />
+            ) : (
+              <User size={32} className="text-gray-300" />
+            )}
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">
+              {businessName}
+            </h1>
+            <p className="text-sm text-gray-500 leading-tight mt-0.5">
+              {businessInfo?.description || 'Profissional qualificado'}
+            </p>
+            <div className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5 w-fit">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              Online para Agendamento
+            </div>
           </div>
         </div>
       </div>
-      
-      <button 
-        onClick={() => window.open(`https://wa.me/${profile.phone}`, '_blank')}
-        className="w-full mt-5 h-11 border border-gray-300 bg-white rounded-xl text-sm font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
-      >
-        <MessageSquare size={18} />
-        Falar pelo WhatsApp
-      </button>
-    </div>
-  );
+    );
+  };
 
   const renderServiceSelection = () => {
     const services = businessConfig?.context_json?.services || [
@@ -153,8 +164,17 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
           {services.map((service: any) => (
             <div key={service.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
               <div className="flex gap-4">
-                <div className="w-16 h-16 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
-                  <Scissors size={28} />
+                <div className="w-16 h-16 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0 overflow-hidden relative border border-purple-100">
+                  {service.image_url ? (
+                    <Image 
+                      src={service.image_url} 
+                      alt={service.name} 
+                      fill 
+                      className="object-cover"
+                    />
+                  ) : (
+                    <Scissors size={28} />
+                  )}
                 </div>
                 <div className="flex flex-col flex-1">
                   <h3 className="text-base font-bold text-gray-900">{service.name}</h3>
@@ -272,9 +292,10 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
           })}
         </div>
       ) : (
-        <div className="w-full py-12 flex flex-col items-center justify-center bg-white border border-dashed border-gray-200 rounded-2xl">
-          <Clock size={24} className="text-gray-300 mb-2" />
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sem horários para hoje</p>
+        <div className="w-full py-12 flex flex-col items-center justify-center bg-white border border-dashed border-gray-200 rounded-2xl text-center px-4">
+          <CalendarOff size={32} className="text-gray-300 mb-3" />
+          <p className="text-sm font-bold text-gray-600">Infelizmente a agenda está lotada hoje.</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Selecione outra data acima</p>
         </div>
       )}
 
@@ -436,5 +457,3 @@ export default function SchedulingInterface({ profile, businessConfig }: Schedul
     </div>
   );
 }
-
-import { Scissors, Shield } from 'lucide-react';

@@ -151,8 +151,13 @@ export async function GET(req: NextRequest) {
         // If today, block past slots
         let isPast = false;
         if (isToday) {
-          // Use the adjusted 'now' for BR time
-          isPast = isBefore(currentSlot, now);
+          // Get current time in Brazil explicitly
+          const nowInBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const slotTimeInMinutes = currentSlot.getHours() * 60 + currentSlot.getMinutes();
+          const nowTimeInMinutes = nowInBR.getHours() * 60 + nowInBR.getMinutes();
+          
+          // If the slot starts before or exactly at the current time, it's past
+          isPast = slotTimeInMinutes <= nowTimeInMinutes;
         }
 
         if (!isPast && !isInLunch) {
@@ -165,29 +170,48 @@ export async function GET(req: NextRequest) {
     
     console.log(`[ENGINE_DEBUG] Slots generated before Google overlap filter:`, slots);
 
-    // 4. Google API Integration (FreeBusy)
-    let busyIntervals: { start: string; end: string }[] = [];
+    // 4. Time Boundaries for Queries
+    const timeMin = startOfDay(requestedDate).toISOString();
+    const timeMax = endOfDay(requestedDate).toISOString();
+
+    // 5. Fetch Internal Appointments (Supabase)
+    let internalBusyIntervals: { start: string; end: string }[] = [];
+    const { data: internalAppointments, error: appointmentsError } = await supabaseAdmin
+      .from('appointments')
+      .select('start_time, end_time, status')
+      .eq('owner_id', profileId)
+      .gte('start_time', timeMin)
+      .lt('start_time', timeMax)
+      .in('status', ['confirmed', 'blocked']);
+
+    if (appointmentsError) {
+      console.error('[API_AVAILABILITY] Failed to fetch internal appointments:', appointmentsError.message);
+    } else if (internalAppointments) {
+      internalBusyIntervals = internalAppointments.map((app: any) => ({
+        start: app.start_time,
+        end: app.end_time || addMinutes(new Date(app.start_time), duration).toISOString()
+      }));
+    }
+
+    // 6. Google API Integration (FreeBusy)
+    let googleBusyIntervals: { start: string; end: string }[] = [];
 
     if (refreshToken) {
       try {
         const authClient = await getGoogleAuthClient(businessConfig.id, contextJson);
         const calendar = google.calendar({ version: 'v3', auth: authClient });
 
-        const timeMin = startOfDay(requestedDate).toISOString();
-        const timeMax = endOfDay(requestedDate).toISOString();
-
         const freeBusyRes = await calendar.freebusy.query({
           requestBody: {
             timeMin,
             timeMax,
+            timeZone: 'America/Sao_Paulo',
             items: [{ id: 'primary' }],
           },
         });
 
-        console.log('[BOOKING_FLOW] Google FreeBusy response status:', freeBusyRes.status);
-
         const busy = freeBusyRes.data.calendars?.primary?.busy || [];
-        busyIntervals = busy.map((b: any) => ({
+        googleBusyIntervals = busy.map((b: any) => ({
           start: b.start as string,
           end: b.end as string,
         }));
@@ -196,7 +220,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 5. Filter slots against busy intervals
+    // 7. Merge & Filter Logic
+    const combinedBusyIntervals = [...internalBusyIntervals, ...googleBusyIntervals];
+    
     let availableSlots = slots.filter(slotTime => {
       const [slotH, slotM] = slotTime.split(':').map(Number);
       const slotStart = new Date(requestedDate);
@@ -204,14 +230,23 @@ export async function GET(req: NextRequest) {
       
       const slotEnd = addMinutes(slotStart, duration);
 
-      const isBusy = busyIntervals.some(interval => {
+      const isBusy = combinedBusyIntervals.some(interval => {
         const busyStart = new Date(interval.start);
         const busyEnd = new Date(interval.end);
+        // Overlap condition: (StartA < EndB) and (StartB < EndA)
         return isBefore(slotStart, busyEnd) && isBefore(busyStart, slotEnd);
       });
 
       return !isBusy;
     });
+
+    // Inject Observability
+    console.log('\n--- 📡 AVAILABILITY SYNC AUDIT ---');
+    console.log(`1. Target Date: ${dateStr}`);
+    console.log(`2. GCal Busy Intervals Found:`, googleBusyIntervals.length);
+    console.log(`3. Internal Busy Intervals Found:`, internalBusyIntervals.length);
+    console.log(`4. Final Available Slots Count:`, availableSlots.length);
+    console.log('----------------------------------\n');
 
     // 6. Smart Scarcity Guardrail Approach
     if (isScarcityEnabled && availableSlots.length > 3) {

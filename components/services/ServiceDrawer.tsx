@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Drawer } from 'vaul';
-import { X, Save, Trash2, Clock, DollarSign, Edit3, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Save, Trash2, Clock, DollarSign, Edit3, CheckCircle2, AlertCircle, Image as ImageIcon, Plus, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 
 interface Service {
   id: string;
@@ -12,6 +13,7 @@ interface Service {
   price: number;
   duration: number;
   status: 'active' | 'inactive';
+  image_url?: string;
 }
 
 export function ServiceDrawer({ 
@@ -35,9 +37,14 @@ export function ServiceDrawer({
     duration: 30,
     price: 0,
     status: 'active' as 'active' | 'inactive',
+    image_url: '',
   });
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const supabase = createClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (service) {
@@ -47,6 +54,7 @@ export function ServiceDrawer({
         duration: service.duration,
         price: service.price,
         status: service.status,
+        image_url: service.image_url || '',
       });
     } else {
       setFormData({
@@ -55,9 +63,60 @@ export function ServiceDrawer({
         duration: 30,
         price: 0,
         status: 'active',
+        image_url: '',
       });
     }
   }, [service, isOpen]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('service_images')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const { data: publicData } = supabase.storage
+        .from('service_images')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, image_url: publicData.publicUrl }));
+    } catch (error: any) {
+      console.error('❌ [STORAGE] Upload error:', error);
+      alert('Erro ao fazer upload da imagem: ' + error.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (formData.image_url) {
+      try {
+        const urlObj = new URL(formData.image_url);
+        const pathSegments = urlObj.pathname.split('/');
+        const filePath = pathSegments.slice(pathSegments.indexOf('service_images') + 1).join('/');
+        
+        await supabase.storage.from('service_images').remove([filePath]);
+      } catch (err) {
+        console.error('Failed to delete old image from storage', err);
+      }
+    }
+    setFormData(prev => ({ ...prev, image_url: '' }));
+  };
 
   const handleSave = () => {
     onSave(formData);
@@ -104,6 +163,66 @@ export function ServiceDrawer({
 
           {/* Form Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth">
+            {/* Image Upload */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-blue-600">
+                <ImageIcon size={16} />
+                <h3 className="text-xs font-black uppercase tracking-widest">Capa do Serviço</h3>
+              </div>
+              <div className="w-full">
+                <input 
+                  type="file" 
+                  accept="image/png, image/jpeg, image/webp" 
+                  className="hidden" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                />
+                
+                {formData.image_url ? (
+                  <div className="relative w-full h-40 rounded-2xl overflow-hidden group border border-black/5 shadow-sm">
+                    <img 
+                      src={formData.image_url} 
+                      alt="Capa do serviço" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                      <button 
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="w-12 h-12 bg-white/20 hover:bg-red-500 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-95"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      console.log('📸 [UPLOAD] Triggering file input click');
+                      fileInputRef.current?.click();
+                    }}
+                    disabled={isUploading}
+                    className="w-full h-40 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-3 bg-gray-50/50 hover:bg-blue-50/50 hover:border-blue-500/30 transition-all text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 size={28} className="animate-spin text-blue-500" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Enviando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-black/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Plus size={20} />
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-widest">Upload Foto</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </section>
+
             {/* Main Info */}
             <section className="space-y-4">
               <div className="flex items-center gap-2 text-blue-600">
@@ -213,7 +332,7 @@ export function ServiceDrawer({
           <div className="p-6 border-t border-black/5 bg-gray-50/50 group">
             <button
               onClick={handleSave}
-              disabled={externalSaving}
+              disabled={externalSaving || isUploading}
               className="w-full flex items-center justify-center gap-3 py-4 bg-black text-white rounded-2xl shadow-xl shadow-black/10 text-sm font-black active:scale-[0.98] transition-all hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
             >
               {externalSaving ? (

@@ -29,6 +29,7 @@ interface Service {
   duration: number;
   description: string;
   status: 'active' | 'inactive';
+  image_url?: string;
 }
 
 interface FAQItem {
@@ -102,6 +103,54 @@ export default function BusinessSettingsPage() {
   const [slug, setSlug] = useState('');
   const [originalSlug, setOriginalSlug] = useState('');
   const [activeTab, setActiveTab] = useState<'studio' | 'services'>('studio');
+  const [uploadingServiceId, setUploadingServiceId] = useState<string | null>(null);
+
+  const handleServiceImageUpload = async (serviceId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingServiceId(serviceId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('service_images')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const { data: publicData } = supabase.storage
+        .from('service_images')
+        .getPublicUrl(filePath);
+
+      updateServiceField(serviceId, 'image_url', publicData.publicUrl);
+    } catch (error: any) {
+      console.error('❌ [STORAGE] Upload error:', error);
+      alert('Erro ao fazer upload da imagem: ' + error.message);
+    } finally {
+      setUploadingServiceId(null);
+    }
+  };
+
+  const handleRemoveServiceImage = async (serviceId: string, imageUrl: string) => {
+    if (imageUrl) {
+      try {
+        const urlObj = new URL(imageUrl);
+        const pathSegments = urlObj.pathname.split('/');
+        const filePath = pathSegments.slice(pathSegments.indexOf('service_images') + 1).join('/');
+        
+        await supabase.storage.from('service_images').remove([filePath]);
+      } catch (err) {
+        console.error('Failed to delete old image from storage', err);
+      }
+    }
+    updateServiceField(serviceId, 'image_url', '');
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -280,7 +329,7 @@ export default function BusinessSettingsPage() {
       description: '',
       status: 'active'
     };
-    updateServices([...(config?.context_json?.services || []), newService]);
+    updateServices([newService, ...(config?.context_json?.services || [])]);
   };
 
   const removeService = (id: string) => {
@@ -729,17 +778,13 @@ export default function BusinessSettingsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-8">
-          <div className="flex items-center justify-between border-b border-black/5 pb-3">
-            <div className="flex items-center gap-3">
-              <List size={20} className="text-blue-600 shrink-0" />
-              <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Seus Serviços</h2>
-            </div>
+          <div className="flex flex-col gap-4 border-b border-black/5 pb-6">
             <button
               onClick={addService}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 w-full py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-500/20"
             >
-              <Plus size={14} />
-              Novo Serviço
+              <Plus size={18} />
+              Cadastrar novo serviço
             </button>
           </div>
 
@@ -761,23 +806,70 @@ export default function BusinessSettingsPage() {
               (config?.context_json?.services || []).map((service) => (
                 <motion.div
                   layout
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
                   key={service.id}
-                  className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 relative flex flex-col gap-5"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 relative flex flex-col gap-5 mt-2"
                 >
-                  {/* Delete Action (Trash Icon Top-Right) */}
+                  {/* Delete Action (Trash Icon Top-Right Outside) */}
                   <button
                     onClick={() => removeService(service.id)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors p-2"
+                    className="absolute -top-3 -right-3 bg-white hover:bg-red-500 text-gray-400 hover:text-white rounded-full p-2.5 shadow-md border border-gray-100 transition-all z-10 active:scale-95 group/trash"
                     title="Excluir serviço"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={20} className="group-hover/trash:text-white transition-colors" />
                   </button>
 
                   <div className="flex flex-col gap-5">
                     {/* PHOTO UPLOAD (COMPACT RECTANGULAR) */}
-                    <div className="w-full h-28 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors group cursor-pointer">
-                      <Plus size={20} className="text-gray-400 group-hover:scale-110 transition-transform mb-1" />
-                      <span className="text-xs font-medium">Upload Foto</span>
+                    <div className="w-full">
+                      <input 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/webp" 
+                        className="hidden" 
+                        id={`upload-${service.id}`}
+                        onChange={(e) => handleServiceImageUpload(service.id, e)}
+                      />
+                      
+                      {service.image_url ? (
+                        <div className="relative w-[80%] mx-auto aspect-square rounded-lg overflow-hidden group border border-gray-200 shadow-sm">
+                          <img 
+                            src={service.image_url} 
+                            alt="Capa do serviço" 
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                            <button 
+                              type="button"
+                              onClick={() => handleRemoveServiceImage(service.id, service.image_url!)}
+                              className="w-10 h-10 bg-white/20 hover:bg-red-500 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-95 shadow-sm"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label 
+                          htmlFor={`upload-${service.id}`}
+                          className={`w-[80%] mx-auto aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:bg-blue-50/50 hover:border-blue-400 hover:text-blue-500 transition-all group cursor-pointer ${uploadingServiceId === service.id ? 'opacity-50 pointer-events-none' : ''}`}
+                        >
+                          {uploadingServiceId === service.id ? (
+                            <>
+                              <Loader2 size={24} className="animate-spin text-blue-500 mb-2" />
+                              <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Enviando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform group-hover:bg-white shadow-sm border border-transparent group-hover:border-blue-100">
+                                <Plus size={18} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                              </div>
+                              <span className="text-xs font-bold uppercase tracking-widest">Upload Foto</span>
+                            </>
+                          )}
+                        </label>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-4">
