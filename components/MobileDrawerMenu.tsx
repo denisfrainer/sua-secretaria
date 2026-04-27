@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, X, LayoutDashboard, Settings, LogOut, History, User, CreditCard } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Settings, LogOut, History, User, CreditCard, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
@@ -36,10 +36,10 @@ export function MobileDrawerMenu({ email }: { email: string }) {
   };
 
   const navLinks = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Agenda', href: '/dashboard/agenda', icon: History },
+    { label: 'Página Inicial', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Perfil', href: '/dashboard/settings/profile', icon: User },
     { label: 'Planos', href: '/dashboard/settings/payments', icon: CreditCard },
+    { label: 'Alterar senha', href: '/dashboard/settings/profile', icon: Lock },
   ];
 
   const [tier, setTier] = useState<string>('STARTER');

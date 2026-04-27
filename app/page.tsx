@@ -8,10 +8,7 @@ export default function Home() {
     <>
       <Navbar />
       <main className="min-h-screen bg-slate-50/50 overflow-hidden text-black font-sans">
-        {/* New Hero Section with integrated Logo Carousel */}
         <Hero />
-
-        {/* Existing Content */}
         <LandingSections />
       </main>
     </>

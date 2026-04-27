@@ -2,6 +2,7 @@ import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage, getBaseUrl } from '../../lib/whatsapp/sender';
+import { processMenuState } from '../handlers/menu-handler';
 import { normalizePhone } from '../../lib/utils/phone';
 
 /**
@@ -29,26 +30,36 @@ process.env.TZ = 'America/Sao_Paulo';
 // ==========================================
 
 app.post('/webhook/evolution', async (req, res) => {
-    console.log('\n--- 🛡️ INBOUND RAW PAYLOAD START ---');
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log('--- 🛡️ INBOUND RAW PAYLOAD END ---\n');
+    // ============================================================
+    // 🔬 UNIVERSAL RAW LOG — OUTSIDE try/catch, OUTSIDE if/else
+    // This line MUST execute for every single POST, no exceptions.
+    // ============================================================
+    const rawEvent = req.body?.event || req.body?.type || req.body?.apiType || 'UNKNOWN';
+    const rawInstance = req.body?.instance || req.body?.instanceName || 'UNKNOWN';
+    const rawDataKeys = req.body?.data ? Object.keys(req.body.data) : [];
+    console.log(`\n📡 [WEBHOOK_RAW] Event: "${rawEvent}" | Instance: "${rawInstance}" | Data Keys: [${rawDataKeys.join(', ')}]`);
+    console.log(`📡 [WEBHOOK_RAW] Full Body:`, JSON.stringify(req.body, null, 2));
+
     try {
         const body = req.body;
         const searchParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
         
-        // 1. Core Identification
-        const event = body.event || body.type;
-        const instanceName = body.instance || body.instanceName || searchParams.get('instance');
+        // 1. Core Identification (Exhaustive event extraction)
+        const event = (body.event || body.type || body.apiType || '').toLowerCase().trim();
+        const instanceName = body.instance || body.instanceName || body.data?.instance || searchParams.get('instance');
         const tenantId = searchParams.get('tenantId');
 
-        // 2. Normalize Data Object
+        console.log(`🏷️ [WEBHOOK] Normalized Event: "${event}" | Instance: "${instanceName}" | Tenant: "${tenantId}"`);
+
+        // 2. Normalize Data Object (handles v1, v2, and array-wrapped payloads)
         const dataObj = (Array.isArray(body.data) ? body.data[0] : body.data) || body;
 
         // 3. Connection Lifecycle
-        if (event === "connection.update" || event === "CONNECTION_UPDATE") {
+        if (event === 'connection.update' || event === 'connection_update') {
             const state = dataObj.state || body.state || dataObj.status || body.status;
-            if (state === "open" && instanceName) {
-                console.log(`🔌 [WEBHOOK] Connection OPEN for instance: ${instanceName}`);
+            console.log(`🔌 [WEBHOOK] Connection event. State: "${state}" | Instance: "${instanceName}"`);
+            if (state === 'open' && instanceName) {
+                console.log(`✅ [WEBHOOK] Connection OPEN for instance: ${instanceName}`);
                 await supabaseAdmin
                     .from('business_config')
                     .update({ status: 'CONNECTED', updated_at: new Date().toISOString() })
@@ -57,11 +68,23 @@ app.post('/webhook/evolution', async (req, res) => {
             return res.status(200).json({ success: true });
         }
 
-        // 4. Message Processing
-        if (event === "messages.upsert" || event === "MESSAGES_UPSERT") {
-            const msgItem = dataObj?.messages?.[0] || dataObj;
+        // 4. Message Processing (Exhaustive event matching)
+        if (event === 'messages.upsert' || event === 'messages_upsert' || event === 'message' || event === 'messages') {
+            console.log(`💬 [WEBHOOK] Message event detected: "${event}"`);
+
+            // Exhaustive message extraction (v1 vs v2 payloads)
+            // v1: body.data.messages[0]
+            // v2: body.data (direct object)
+            // Fallback: body itself
+            const msgItem = dataObj?.messages?.[0] 
+                || dataObj?.message 
+                || dataObj;
+
+            console.log(`💬 [WEBHOOK] msgItem keys: [${Object.keys(msgItem || {}).join(', ')}]`);
+            console.log(`💬 [WEBHOOK] msgItem.key:`, JSON.stringify(msgItem?.key || 'MISSING'));
 
             if (!msgItem?.key) {
+                console.warn(`⚠️ [WEBHOOK] No 'key' in msgItem. Dropping.`);
                 return res.status(200).json({ status: 'ignored', reason: 'no_key' });
             }
 
@@ -71,32 +94,48 @@ app.post('/webhook/evolution', async (req, res) => {
             }
 
             if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) {
-                return res.status(200).json({ status: 'ignored' });
+                console.warn(`⚠️ [WEBHOOK] Invalid remoteJid: "${remoteJid}". Dropping (likely a group message).`);
+                return res.status(200).json({ status: 'ignored', reason: 'invalid_jid' });
             }
 
             const rawNumber = remoteJid.split('@')[0];
             const phone = normalizePhone(rawNumber);
             const isFromMe = msgItem.key.fromMe === true;
 
+            // Exhaustive text extraction (covers all Evolution API message types)
             const messageObj = msgItem.message || {};
-            const text = messageObj.conversation || messageObj.extendedTextMessage?.text || "";
+            const text = messageObj.conversation 
+                || messageObj.extendedTextMessage?.text 
+                || messageObj.imageMessage?.caption
+                || messageObj.videoMessage?.caption
+                || messageObj.buttonsResponseMessage?.selectedDisplayText
+                || messageObj.listResponseMessage?.title
+                || messageObj.templateButtonReplyMessage?.selectedDisplayText
+                || "";
             const isAudio = !!messageObj.audioMessage;
             const isImage = !!messageObj.imageMessage;
+            const isVideo = !!messageObj.videoMessage;
+            const isDocument = !!messageObj.documentMessage;
+            const isSticker = !!messageObj.stickerMessage;
 
-            if (!text && !isAudio && !isImage) {
+            console.log('[DEBUG PARSING]', { phone, text, instanceName });
+            console.log(`💬 [WEBHOOK] Phone: ${phone} | fromMe: ${isFromMe} | Text: "${text.substring(0, 80)}" | Audio: ${isAudio} | Image: ${isImage}`);
+
+            if (!text && !isAudio && !isImage && !isVideo && !isDocument) {
+                console.log(`⏭️ [WEBHOOK] No processable content (sticker/reaction/etc). Skipping.`);
                 return res.status(200).json({ success: true, message: 'No processable content' });
             }
-
-            console.log(`📡 [WEBHOOK] Inbound: ${phone} | fromMe: ${isFromMe} | Instance: ${instanceName}`);
 
             // 5. PERSIST MESSAGE
             let content = text;
             if (isAudio) content = "[AUDIO]";
             else if (isImage) content = "[IMAGE]";
+            else if (isVideo) content = "[VIDEO]";
+            else if (isDocument) content = "[DOCUMENT]";
 
             const messageId = msgItem.key.id || `gen_${Math.random().toString(36).substring(7)}`;
 
-            await supabaseAdmin.from('messages').upsert({
+            const { error: msgError } = await supabaseAdmin.from('messages').upsert({
                 lead_phone: phone,
                 role: isFromMe ? 'assistant' : 'user',
                 content: content,
@@ -105,12 +144,19 @@ app.post('/webhook/evolution', async (req, res) => {
                 created_at: new Date().toISOString()
             }, { onConflict: 'message_id' });
 
+            if (msgError) {
+                console.error(`❌ [WEBHOOK] Message persist error:`, msgError.message);
+            } else {
+                console.log(`💾 [WEBHOOK] Message persisted: ${messageId}`);
+            }
+
             // 6. ANTI-LOOP & WORKER SIGNAL
             if (isFromMe) {
+                console.log(`🔄 [WEBHOOK] Outbound message logged. Skipping worker signal.`);
                 return res.status(200).json({ success: true, message: 'Outbound logged' });
             }
 
-            // Rollback logic: Populate leads_lobo
+            // 7. Resolve Owner & Queue for Eliza
             let activeOwnerId = tenantId;
             if (!activeOwnerId && instanceName) {
                 const { data: bConfig } = await supabaseAdmin
@@ -121,7 +167,12 @@ app.post('/webhook/evolution', async (req, res) => {
                 activeOwnerId = bConfig?.owner_id;
             }
 
-            const { error: upsertError } = await supabaseAdmin
+            if (!activeOwnerId) {
+                console.error(`❌ [WEBHOOK] Could not resolve owner_id for instance: ${instanceName}. Lead NOT queued.`);
+                return res.status(200).json({ success: false, reason: 'no_owner_id' });
+            }
+
+            const { data: upsertData, error: upsertError } = await supabaseAdmin
                 .from('leads_lobo')
                 .upsert({
                     phone: phone,
@@ -129,17 +180,20 @@ app.post('/webhook/evolution', async (req, res) => {
                     instance_name: instanceName,
                     owner_id: activeOwnerId,
                     updated_at: new Date().toISOString()
-                }, { onConflict: 'phone' });
+                }, { onConflict: 'phone' })
+                .select();
 
             if (upsertError) {
-                console.error(`❌ [WEBHOOK:UPSERT_ERROR]`, upsertError.message);
+                console.error('❌ [DB INSERT ERROR - leads_lobo]:', upsertError);
             } else {
-                console.log(`✅ [WEBHOOK:SUCCESS] Lead ${phone} queued for Eliza Worker in leads_lobo`);
+                console.log(`✅ [WEBHOOK:SUCCESS] Lead ${phone} queued for Eliza Worker in leads_lobo. Data:`, upsertData);
             }
 
             return res.status(200).json({ success: true });
         }
 
+        // 5. Unmatched Event (Log it so we can see what we're missing)
+        console.log(`⏭️ [WEBHOOK] Unhandled event: "${event}". Ignoring.`);
         return res.status(200).json({ success: true, message: 'Event ignored' });
 
     } catch (error: any) {
@@ -185,6 +239,61 @@ async function processLead(lead: any) {
             await supabaseAdmin.from('leads_lobo').update({ status: 'error' }).eq('id', lead.id);
             return;
         }
+
+        // ============================================================
+        // 🚪 GATEKEEPER: Menu FSM (runs BEFORE AI to save LLM costs)
+        // ============================================================
+        const menuStep = lead.menu_step ?? 0;
+
+        // Resolve the business slug for booking link generation
+        let businessSlug = '';
+        if (bConfig.owner_id) {
+            const { data: profileData } = await supabaseAdmin
+                .from('profiles')
+                .select('slug')
+                .eq('id', bConfig.owner_id)
+                .maybeSingle();
+            businessSlug = profileData?.slug || '';
+        }
+
+        // Get the latest user message for menu evaluation
+        const { data: latestMsg } = await supabaseAdmin
+            .from('messages')
+            .select('content')
+            .eq('lead_phone', phone)
+            .eq('role', 'user')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        const incomingText = latestMsg?.content || '';
+
+        const menuResult = processMenuState(menuStep, incomingText, businessSlug);
+
+        console.log(`🚪 [GATEKEEPER] Step: ${menuStep} → useAI: ${menuResult.useAI} | nextStep: ${menuResult.nextStep}`);
+
+        if (!menuResult.useAI) {
+            // ---- DETERMINISTIC PATH: Send menu reply & return early ----
+            if (menuResult.reply) {
+                await sendWhatsAppMessage(phone, menuResult.reply, 1000, instanceName);
+                console.log(`📤 [MENU] Sent to ${phone}: "${menuResult.reply.substring(0, 60)}..."`);
+            }
+
+            // Persist the new menu_step and mark as replied
+            await supabaseAdmin.from('leads_lobo').update({
+                menu_step: menuResult.nextStep,
+                status: 'replied',
+                updated_at: new Date().toISOString()
+            }).eq('id', lead.id);
+
+            console.log(`✅ [MENU] Lead ${phone} handled by FSM. No LLM invoked. 💰`);
+            return; // ⛔ CRITICAL: Early return. Gemini is never called.
+        }
+
+        // ============================================================
+        // 🧠 AI PATH: Menu is done (step 99). Fall through to Eliza.
+        // ============================================================
+        console.log(`🧠 [AI_PASSTHROUGH] Lead ${phone} is in step 99. Invoking Eliza LLM...`);
 
         // 3. Fetch History
         const { data: rawHistory, error: historyError } = await supabaseAdmin

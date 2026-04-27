@@ -46,11 +46,11 @@ async function createInstance(instanceName: string, phoneNumber?: string, tenant
   if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
     throw new Error("Missing or invalid EVOLUTION_API_KEY for instance creation");
   }
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
   const WEBHOOK_URL = `${appUrl}/webhook/evolution${tenantId ? `?tenantId=${tenantId}` : ''}`;
 
   console.log(`📡 [EVOLUTION_PAIRING] Creating instance: ${instanceName} for number: ${phoneNumber || 'N/A'} | Webhook: ${WEBHOOK_URL}`);
-  
+
   try {
     const payload = {
       instanceName: instanceName,
@@ -91,18 +91,18 @@ async function createInstance(instanceName: string, phoneNumber?: string, tenant
  * SPECIFIC FIX: For DDD 48, we must REMOVE the 9th digit if present (stripping to 12 digits).
  */
 function normalizePhoneNumber(phone: string): string {
-    let clean = phone.replace(/\D/g, '');
-    
-    // Brazilian logic for Users with DDD 48
-    // If it has 13 digits (55 48 9 XXXX XXXX), strip the 5th digit (the '9').
-    if (clean.startsWith('5548') && clean.length === 13) {
-        const prefix = clean.substring(0, 4); // 5548
-        const remainder = clean.substring(5); // Everything after the '9'
-        console.log(`[JID_FIX] Normalizing DDD 48: Stripping 9th digit. Result: ${prefix}${remainder}`);
-        return `${prefix}${remainder}`;
-    }
-    
-    return clean;
+  let clean = phone.replace(/\D/g, '');
+
+  // Brazilian logic for Users with DDD 48
+  // If it has 13 digits (55 48 9 XXXX XXXX), strip the 5th digit (the '9').
+  if (clean.startsWith('5548') && clean.length === 13) {
+    const prefix = clean.substring(0, 4); // 5548
+    const remainder = clean.substring(5); // Everything after the '9'
+    console.log(`[JID_FIX] Normalizing DDD 48: Stripping 9th digit. Result: ${prefix}${remainder}`);
+    return `${prefix}${remainder}`;
+  }
+
+  return clean;
 }
 
 /**
@@ -112,11 +112,11 @@ export async function getPairingData(phone: string, tenantId?: string) {
   // 1. Dual-Number Normalization (Critical JID Alignment)
   const cleanPhone = normalizePhoneNumber(phone);
   const prefix = process.env.EVOLUTION_INSTANCE_PREFIX || 'secretaria';
-  
+
   // Use a base instance name linked to the normalized phone
   const instanceName = `${prefix}-${cleanPhone}`;
   const globalApiKey = process.env.EVOLUTION_API_KEY;
-  
+
   if (!globalApiKey || globalApiKey === "PASTE_YOUR_KEY_HERE" || globalApiKey === "SUA_CHAVE_AQUI") {
     throw new Error("Missing or invalid EVOLUTION_API_KEY for pairing data");
   }
@@ -130,7 +130,7 @@ export async function getPairingData(phone: string, tenantId?: string) {
   const timestamp = Date.now();
   const uniqueInstanceName = `${instanceName}-${timestamp}`;
   console.log(`🚀 [EVOLUTION_PAIRING] Generating unique instance: ${uniqueInstanceName}`);
-  
+
   await createInstance(uniqueInstanceName, cleanPhone, tenantId);
 
   // 4. Stablization Delay (Wait for session registration with Meta)
@@ -152,8 +152,8 @@ export async function getPairingData(phone: string, tenantId?: string) {
 
     // 6. Extract Dual Properties (Exhaustive extraction)
     const pairingCode = res.data?.pairingCode || res.data?.pairing_code || res.data?.code;
-    const qrBase64 = res.data?.base64 || res.data?.qrcode || res.data?.code; 
-    
+    const qrBase64 = res.data?.base64 || res.data?.qrcode || res.data?.code;
+
     console.log(`[EVOLUTION_PAIRING] API Response Keys:`, Object.keys(res.data || {}));
     console.log(`[EVOLUTION_PAIRING] Extracted Pairing Code: ${pairingCode}`);
     console.log(`[EVOLUTION_PAIRING] QR Base64 Available: ${!!qrBase64}`);
@@ -161,14 +161,14 @@ export async function getPairingData(phone: string, tenantId?: string) {
     // If pairingCode is a long string, it might actually be the QR code
     let finalPairingCode = pairingCode;
     if (pairingCode && pairingCode.length > 20) {
-        console.warn(`⚠️ [EVOLUTION_PAIRING] Detected QR string in pairingCode field. Nulling code.`);
-        finalPairingCode = null;
+      console.warn(`⚠️ [EVOLUTION_PAIRING] Detected QR string in pairingCode field. Nulling code.`);
+      finalPairingCode = null;
     }
 
-    return { 
-        pairingCode: finalPairingCode || null, 
-        qrBase64: qrBase64 || null,
-        instanceName: uniqueInstanceName
+    return {
+      pairingCode: finalPairingCode || null,
+      qrBase64: qrBase64 || null,
+      instanceName: uniqueInstanceName
     };
   } catch (error: any) {
     if (error.response) {
@@ -182,6 +182,6 @@ export async function getPairingData(phone: string, tenantId?: string) {
 
 // Keep backward compatibility
 export async function getPairingCode(phone: string) {
-    const data = await getPairingData(phone);
-    return data.pairingCode;
+  const data = await getPairingData(phone);
+  return data.pairingCode;
 }
