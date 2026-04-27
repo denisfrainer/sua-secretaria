@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         // 3. Pre-Flight Validation (URLs & Keys)
         const baseUrl = (process.env.EVOLUTION_API_URL || "").replace(/\/$/, "");
         const apiKey = process.env.EVOLUTION_API_KEY;
-        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 
         if (!apiKey || apiKey === "PASTE_YOUR_KEY_HERE" || apiKey === "SUA_CHAVE_AQUI") {
             throw new Error("Evolution API Global Key not configured.");
@@ -87,13 +87,12 @@ export async function POST(request: Request) {
         }
 
         // 🛡️ Webhook Target Resolution (Unified Express Monolith)
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
         if (!appUrl) {
             console.error("🚨 [FATAL_CONFIG] Webhook URL resolution failed: Missing environment variables.");
             throw new Error("FATAL: NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_SITE_URL is undefined.");
         }
         
-        const WEBHOOK_TARGET = appUrl.replace(/\/$/, "");
+        const WEBHOOK_TARGET = appUrl;
         const webhookFullUrl = `${WEBHOOK_TARGET}/webhook/evolution?tenantId=${tenantId}`;
         
         console.log(`[INSTANCE FACTORY] Webhook Target: ${webhookFullUrl}`);

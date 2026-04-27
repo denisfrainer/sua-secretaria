@@ -42,11 +42,11 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
   const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const [activeAppointment, setActiveAppointment] = useState<Appointment | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-  const [services, setServices] = useState<{ name: string; price: string }[]>([]);
+  const [services, setServices] = useState<{ name: string; price: string; duration?: number }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
-  const { appointments, upsertAppointment, blockSlots, deleteAppointment } = useAppointments(selectedDate);
+  const { appointments, googleEvents, upsertAppointment, blockSlots, deleteAppointment } = useAppointments(selectedDate);
 
   useEffect(() => {
     async function fetchBusinessConfig() {
@@ -67,17 +67,8 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
   const handleSlotClick = (slot: Date) => {
     setSelectedAppointmentId(null);
     setActiveAppointment(null);
-    setSelectedSlots(prev => {
-      const exists = prev.some(s => s.getTime() === slot.getTime());
-      if (exists) {
-        const filtered = prev.filter(s => s.getTime() !== slot.getTime());
-        console.log("📍 Slots Selected (Removed):", filtered);
-        return filtered;
-      }
-      const newSelection = [...prev, slot];
-      console.log("📍 Slots Selected (Added):", newSelection);
-      return newSelection;
-    });
+    setSelectedSlots([slot]);
+    setIsModalOpen(true);
   };
 
   const handleAppointmentClick = (app: Appointment) => {
@@ -88,6 +79,11 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
   };
 
   const handleConfirm = async (data: { type: 'SCHEDULE' | 'BLOCK'; name?: string; phone?: string; notes?: string; service_type?: string; startTime?: string; appointmentDate?: string }) => {
+    // Resolve the duration from the selected service
+    const matchedService = services.find(s => s.name === data.service_type);
+    const durationMinutes = matchedService?.duration || 30; // fallback 30min
+    console.log(`📐 Duration resolved: ${durationMinutes}min for service "${data.service_type}"`);
+
     try {
       if (activeAppointment) {
         // Edit/Update logic
@@ -100,7 +96,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
           const newDate = new Date(data.appointmentDate + 'T00:00:00');
           newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
           startTimeISO = newDate.toISOString();
-          endTimeISO = new Date(newDate.getTime() + 60 * 60000).toISOString();
+          endTimeISO = new Date(newDate.getTime() + durationMinutes * 60000).toISOString();
           appDate = data.appointmentDate;
         }
 
@@ -113,7 +109,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
           start_time: startTimeISO,
           end_time: endTimeISO,
           appointment_date: appDate,
-          status: data.type === 'BLOCK' ? 'blocked' : 'confirmed'
+          status: 'confirmed'
         });
       } else if (data.type === 'BLOCK') {
         await blockSlots(selectedSlots, ownerId);
@@ -124,7 +120,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
           owner_id: ownerId,
           appointment_date: format(slot, 'yyyy-MM-dd'),
           start_time: slot.toISOString(),
-          end_time: new Date(slot.getTime() + 60 * 60000).toISOString(), // 60 min default
+          end_time: new Date(slot.getTime() + durationMinutes * 60000).toISOString(),
           client_name: data.name,
           lead_phone: data.phone,
           notes: data.notes,
@@ -216,6 +212,7 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
         <CalendarGrid 
           selectedDate={selectedDate}
           appointments={appointments}
+          googleEvents={googleEvents}
           selectedSlots={selectedSlots}
           onSlotClick={handleSlotClick}
           onAppointmentClick={handleAppointmentClick}
@@ -223,65 +220,13 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
         />
       </div>
 
-      {/* 3. ACTION BAR (Floating Contextual Bar for Selection ONLY) */}
-      <AnimatePresence>
-        {selectedSlots.length > 0 && (
-          <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-50"
-          >
-            <div className="bg-[#1a2b4b] text-white rounded-[2.5rem] p-4 shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-xl">
-              {/* OPTIONS FOR NEW SELECTION */}
-              <div className="flex flex-col w-full gap-4 px-2 py-2">
-                  <div className="flex items-center justify-center border-b border-white/5 pb-2">
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-300">
-                      {selectedSlots.length} {selectedSlots.length === 1 ? 'Horário Selecionado' : 'Horários Selecionados'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => setSelectedSlots([])}
-                      className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all shrink-0"
-                      title="Deselecionar"
-                    >
-                      <X size={20} />
-                    </button>
-
-                    <div className="flex flex-1 gap-2">
-                      <button 
-                        onClick={async () => {
-                          await blockSlots(selectedSlots, ownerId);
-                          setSelectedSlots([]);
-                        }}
-                        className="flex-1 bg-red-500 text-white h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
-                      >
-                        <Lock size={14} />
-                        Bloquear
-                      </button>
-                      
-                      <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex-[1.5] bg-[#1e61ff] text-white h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
-                      >
-                        Agendar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* 4. ACTION MODAL */}
       <ActionModal 
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setActiveAppointment(null);
+          setSelectedSlots([]);
         }}
         selectedSlots={selectedSlots}
         onConfirm={handleConfirm}
@@ -301,14 +246,9 @@ export function SchedulingCalendar({ ownerId }: SchedulingCalendarProps) {
       <AppointmentOptionsModal
         isOpen={isOptionsModalOpen}
         onClose={() => setIsOptionsModalOpen(false)}
-        clientName={activeAppointment?.client_name || ''}
-        onReschedule={() => setIsModalOpen(true)}
-        onCancel={async () => {
-          if (activeAppointment) {
-            await upsertAppointment({ ...activeAppointment, status: 'cancelled' });
-            setActiveAppointment(null);
-          }
-        }}
+        appointment={activeAppointment}
+        services={services}
+        onSave={handleConfirm}
         onDelete={async () => {
           if (activeAppointment) {
             await deleteAppointment(activeAppointment.id);

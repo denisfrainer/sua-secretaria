@@ -160,9 +160,10 @@ export function ServiceDrawer({
                     onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
                     className="w-full px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
                   >
-                    {[15, 30, 45, 60, 90, 120, 150, 180].map((t) => (
-                      <option key={t} value={t}>{t} minutos</option>
-                    ))}
+                    <option value={30}>30 min</option>
+                    <option value={60}>1 hora</option>
+                    <option value={90}>1h 30min</option>
+                    <option value={120}>2 horas</option>
                   </select>
                 </div>
               </div>

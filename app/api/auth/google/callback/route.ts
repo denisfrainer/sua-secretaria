@@ -1,33 +1,59 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { verifyOnboardingToken } from '@/lib/auth/jwt';
-import { sendWhatsAppMessage } from '@/lib/whatsapp/sender';
-import { getPairingCode } from '@/lib/evolution/pairing';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  console.log('\n--- 🛡️ GOOGLE CALLBACK START ---');
+  
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const state = requestUrl.searchParams.get('state');
   const error = requestUrl.searchParams.get('error');
 
+  console.log('1. Authorization code received:', !!code);
+  console.log('2. State token received:', !!state);
+  console.log('3. Error from Google:', error || 'none');
+
   // 1. Validate Google OAuth Errors
   if (error) {
     console.error('💥 [OAUTH:CALLBACK] Google reported an error:', error);
-    return NextResponse.redirect(new URL(`/dashboard?error=${error}`, requestUrl.origin));
+    return NextResponse.redirect(new URL(`/dashboard/settings/integrations?error=${error}`, requestUrl.origin));
   }
 
-  // 2. Validate JWT State (Headless Identification)
-  if (!state) {
-    console.error('💥 [OAUTH:CALLBACK] No state provided.');
-    return NextResponse.redirect(new URL('/login?error=invalid_state', requestUrl.origin));
+  // ================================================================
+  // 2. IDENTIFY THE USER
+  //    Two strategies: JWT state (headless/onboarding) or Supabase session (dashboard)
+  // ================================================================
+  let profileId: string | null = null;
+
+  if (state) {
+    // Strategy A: JWT-encoded state from headless/onboarding flows
+    profileId = await verifyOnboardingToken(state);
+    console.log('4a. JWT state decoded profileId:', profileId || 'FAILED');
   }
 
-  const profileId = await verifyOnboardingToken(state);
   if (!profileId) {
-    console.error('💥 [OAUTH:CALLBACK] Invalid or expired JWT state.');
-    return NextResponse.redirect(new URL('/login?error=expired_state', requestUrl.origin));
+    // Strategy B: Active Supabase session from dashboard flow
+    // The /api/auth/google route uses cookie-based CSRF state, NOT a JWT state.
+    // When initiated from the dashboard, the user has an active session.
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        profileId = user.id;
+        console.log('4b. Supabase session profileId:', profileId);
+      }
+    } catch (e) {
+      console.warn('4b. Supabase session lookup failed:', e);
+    }
+  }
+
+  if (!profileId) {
+    console.error('💥 [OAUTH:CALLBACK] Could not identify user from state or session.');
+    return NextResponse.redirect(new URL('/login?error=invalid_state', requestUrl.origin));
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -57,65 +83,96 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await tokenResponse.json();
     
+    console.log('5. Token exchange HTTP status:', tokenResponse.status);
+    console.log('6. Refresh Token extracted:', !!tokenData.refresh_token);
+    console.log('7. Access Token extracted:', !!tokenData.access_token);
+    
     if (!tokenResponse.ok) {
       console.error('💥 [OAUTH:CALLBACK] Token exchange failed:', tokenData);
       throw new Error(tokenData.error_description || 'Token exchange failed');
     }
 
     if (!tokenData.refresh_token) {
-      console.warn('⚠️ [OAUTH:CALLBACK] No refresh token returned. User might need to re-consent.');
+      console.warn('⚠️ [OAUTH:CALLBACK] No refresh token returned. User might need to re-consent with prompt=consent.');
     }
 
-    // 4. Fetch Profile to get phone number
-    const { data: profile } = await supabaseAdmin
+    // ================================================================
+    // 4. PERSIST REFRESH TOKEN TO PROFILES TABLE
+    //    BUG FIX: `undefined` is silently dropped by Supabase .update().
+    //    We must use `null` coalescing, never `|| undefined`.
+    // ================================================================
+    const refreshTokenValue = tokenData.refresh_token || null;
+
+    console.log('8. Value to write to DB (google_refresh_token):', refreshTokenValue ? `${refreshTokenValue.substring(0, 10)}...` : 'NULL - WILL NOT UPDATE');
+
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date().toISOString()
+    };
+
+    // Only write the token if we actually received one.
+    // If Google didn't send a refresh_token (re-auth without prompt=consent),
+    // we must NOT overwrite the existing one with null.
+    if (refreshTokenValue) {
+      updatePayload.google_refresh_token = refreshTokenValue;
+    }
+
+    const { data: updateResult, error: updateError } = await supabaseAdmin
       .from('profiles')
-      .select('phone')
+      .update(updatePayload)
       .eq('id', profileId)
+      .select('id, google_refresh_token')
       .single();
-
-    if (!profile || !profile.phone) {
-      throw new Error('Profile or phone not found for token update');
-    }
-
-    // 5. Persist Refresh Token & Transition State
-    const { error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({ 
-        google_refresh_token: tokenData.refresh_token || undefined,
-        conversation_state: 'PAYWALL',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', profileId);
 
     if (updateError) {
       console.error('💥 [OAUTH:CALLBACK] DB update failed:', updateError);
       throw updateError;
     }
 
-    console.log(`✅ [AUTH_SYNC] Refresh token captured for user: ${profileId}`);
+    console.log('9. DB write confirmed. google_refresh_token is now:', updateResult?.google_refresh_token ? 'SET' : 'STILL NULL');
 
-    // 6. TRIGGER ELIZA - Headless pairing and payment link
+    // ================================================================
+    // 5. ALSO PERSIST TO BUSINESS_CONFIG (Dual-Write for Eliza Worker)
+    // ================================================================
     const { data: bConfig } = await supabaseAdmin
       .from('business_config')
-      .select('instance_name')
+      .select('id, context_json')
       .eq('owner_id', profileId)
       .maybeSingle();
 
-    const targetInstance = bConfig?.instance_name || `${process.env.NEXT_PUBLIC_INSTANCE_PREFIX || 'secretaria'}-master`;
+    if (bConfig) {
+      const existingContext = bConfig.context_json || {};
+      await supabaseAdmin
+        .from('business_config')
+        .update({
+          context_json: {
+            ...existingContext,
+            google_calendar: {
+              ...(existingContext.google_calendar || {}),
+              refresh_token: refreshTokenValue || existingContext.google_calendar?.refresh_token,
+              access_token: tokenData.access_token,
+              expiry_date: tokenData.expires_in
+                ? Date.now() + tokenData.expires_in * 1000
+                : undefined,
+              updated_at: new Date().toISOString(),
+            },
+          },
+        })
+        .eq('id', bConfig.id);
 
-    const pairingCode = await getPairingCode(profile.phone);
-    const checkoutLink = "https://suasecretaria.com.br/precos";
-    
-    const elizaMessage = `🎯 *Agenda Conectada com Sucesso!*\n\nAgora só falta o passo final para sua assistente começar a trabalhar no seu número oficial.\n\nFiz o seguinte:\n1. Gerei seu código de pareamento: *${pairingCode || 'GERANDO...'}*\n2. Liberei o acesso ao seu painel.\n\n*O que fazer agora?*\nNo seu WhatsApp, vá em *Aparelhos Conectados* > *Conectar com número de telefone* e insira o código acima.\n\nPara ativar o plano e começar hoje mesmo: ${checkoutLink}`;
-    
-    await sendWhatsAppMessage(profile.phone, elizaMessage, undefined, targetInstance);
+      console.log('10. business_config context_json updated with calendar tokens.');
+    } else {
+      console.warn('⚠️ [OAUTH:CALLBACK] Business configuration not found for user ID:', profileId, '— Skipping context_json write. This is OK for first-time users.');
+    }
 
-    // 7. Success Redirect
-    return NextResponse.redirect(new URL('/auth/success', requestUrl.origin));
+    console.log(`✅ [OAUTH:CALLBACK] Complete. Redirecting to integrations page.`);
+    console.log('--- 🛡️ GOOGLE CALLBACK END ---\n');
+
+    // 6. Success Redirect — back to integrations page so user sees the green status
+    return NextResponse.redirect(new URL('/dashboard/settings/integrations?success=google_connected', requestUrl.origin));
 
   } catch (err: any) {
     console.error('💥 [OAUTH:CALLBACK] Unexpected error:', err.message);
-    return NextResponse.redirect(new URL(`/dashboard?error=sync_failed&message=${encodeURIComponent(err.message)}`, requestUrl.origin));
+    console.log('--- 🛡️ GOOGLE CALLBACK END (ERROR) ---\n');
+    return NextResponse.redirect(new URL(`/dashboard/settings/integrations?error=sync_failed&message=${encodeURIComponent(err.message)}`, requestUrl.origin));
   }
 }
-

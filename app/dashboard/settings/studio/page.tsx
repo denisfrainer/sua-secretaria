@@ -421,38 +421,29 @@ export default function BusinessSettingsPage() {
       animate="visible"
       className="flex flex-col gap-2 pb-32 overflow-x-hidden"
     >
-      {/* Header with Back Button */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-6">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard"
-            className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-all active:scale-95"
-          >
-            <ArrowLeft size={20} className="text-gray-900" />
-          </Link>
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-black text-gray-950 tracking-tight leading-none">Configuração do negócio</h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">
-              ESTABELECIMENTO & SERVIÇOS
-            </p>
-          </div>
-        </div>
-      </motion.div>
+      {/* Simplified Header: Back Button + Tabs */}
+      <motion.div variants={itemVariants} className="flex items-center gap-4 mb-6 mt-2">
+        <Link
+          href="/dashboard"
+          className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-all active:scale-95"
+        >
+          <ArrowLeft size={20} className="text-gray-900" />
+        </Link>
 
-      {/* Tab Switcher */}
-      <motion.div variants={itemVariants} className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-4">
-        <button
-          onClick={() => setActiveTab('studio')}
-          className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'studio' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Studio
-        </button>
-        <button
-          onClick={() => setActiveTab('services')}
-          className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'services' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Serviços
-        </button>
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
+          <button
+            onClick={() => setActiveTab('studio')}
+            className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'studio' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Studio
+          </button>
+          <button
+            onClick={() => setActiveTab('services')}
+            className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'services' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Serviços
+          </button>
+        </div>
       </motion.div>
 
       {activeTab === 'studio' ? (
@@ -828,12 +819,16 @@ export default function BusinessSettingsPage() {
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                               <Clock size={14} />
                             </div>
-                            <input
-                              type="number"
+                            <select
                               value={service.duration}
                               onChange={(e) => updateServiceField(service.id, 'duration', Number(e.target.value))}
-                              className="bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full h-10 pl-8 pr-3 transition-all text-sm font-medium"
-                            />
+                              className="bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full h-10 pl-8 pr-3 transition-all text-sm font-medium appearance-none cursor-pointer"
+                            >
+                              <option value={30}>30 min</option>
+                              <option value={60}>1 hora</option>
+                              <option value={90}>1h 30min</option>
+                              <option value={120}>2 horas</option>
+                            </select>
                           </div>
                         </div>
                       </div>
