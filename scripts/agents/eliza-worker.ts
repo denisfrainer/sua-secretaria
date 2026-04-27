@@ -384,32 +384,52 @@ async function processLead(lead: any) {
 // ==============================================================
 // 🔄 POLLING ENGINE
 // ==============================================================
-let isPolling = false;
+// ==============================================================
+// 🔄 IMMORTAL POLLING ENGINE (Heartbeat)
+// ==============================================================
 
-function startPolling() {
-    console.log('🚀 [BOOT] Eliza Legacy Engine Polling (leads_lobo)...');
+/**
+ * Immortal recursive polling loop.
+ * Uses setTimeout to prevent overlapping ticks and ensures
+ * the engine stays alive even after fatal errors.
+ */
+async function pollLeads() {
+    try {
+        // 1. Fetch leads queued for processing
+        const { data: leads, error } = await supabaseAdmin
+            .from('leads_lobo')
+            .select('*')
+            .eq('status', 'eliza_processing')
+            .limit(2); // Small batch to keep it fast
 
-    setInterval(async () => {
-        if (isPolling) return;
-        isPolling = true;
-
-        try {
-            const { data: leads, error } = await supabaseAdmin
-                .from('leads_lobo')
-                .select('*')
-                .eq('status', 'eliza_processing')
-                .limit(2);
-
-            if (error) console.error(`❌ [POLL ERROR]`, error.message);
-            else if (leads && leads.length > 0) {
-                for (const l of leads) await processLead(l);
+        if (error) {
+            console.error(`❌ [POLL ERROR] Database query failed:`, error.message);
+        } else if (leads && leads.length > 0) {
+            console.log(`📡 [HEARTBEAT] Found ${leads.length} leads to process.`);
+            
+            // Process each lead sequentially to avoid rate limits/concurrency issues
+            for (const lead of leads) {
+                try {
+                    await processLead(lead);
+                } catch (leadErr: any) {
+                    console.error(`💥 [POLL] Critical failure processing lead ${lead.phone}:`, leadErr.message);
+                    
+                    // Emergency status move to prevent infinite loops
+                    await supabaseAdmin.from('leads_lobo').update({ 
+                        status: 'error',
+                        updated_at: new Date().toISOString()
+                    }).eq('id', lead.id);
+                }
             }
-        } catch (e: any) {
-            console.error(`❌ [POLL CRASH]`, e.message);
-        } finally {
-            isPolling = false;
         }
-    }, 5000);
+    } catch (fatalError: any) {
+        // Isolate the crash. Do NOT let it kill the process.
+        console.error('🚨 [POLLING ENGINE FATAL ERROR]:', fatalError.stack || fatalError.message);
+    } finally {
+        // CRITICAL: Always schedule the next heartbeat, even if a crash occurred.
+        // This makes the worker "immortal".
+        setTimeout(pollLeads, 5000); 
+    }
 }
 
 // ==============================================================
@@ -418,6 +438,6 @@ function startPolling() {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`\n🌐 Server (Webhook & Health) running on port ${PORT}`);
-    console.log('🚀 [BOOT] Server started. Igniting polling engine...');
-    startPolling();
+    console.log('🚀 [BOOT] Server started. Igniting immortal polling engine...');
+    pollLeads(); // Start the recursive loop
 });
