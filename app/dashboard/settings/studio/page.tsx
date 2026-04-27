@@ -470,8 +470,8 @@ export default function BusinessSettingsPage() {
       animate="visible"
       className="flex flex-col gap-2 pb-32 overflow-x-hidden"
     >
-      {/* Simplified Header: Back Button + Tabs */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4 mb-6 mt-2">
+      {/* Simplified Header: Back Button + Tabs Below */}
+      <motion.div variants={itemVariants} className="flex flex-col items-start gap-6 mb-10 mt-8 px-1">
         <Link
           href="/dashboard"
           className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0 hover:bg-gray-50 transition-all active:scale-95"
@@ -479,16 +479,16 @@ export default function BusinessSettingsPage() {
           <ArrowLeft size={20} className="text-gray-900" />
         </Link>
 
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
+        <div className="flex bg-slate-100 p-2 rounded-3xl w-fit">
           <button
             onClick={() => setActiveTab('studio')}
-            className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'studio' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`px-12 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'studio' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
           >
             Studio
           </button>
           <button
             onClick={() => setActiveTab('services')}
-            className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'services' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`px-12 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'services' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
           >
             Serviços
           </button>

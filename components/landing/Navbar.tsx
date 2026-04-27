@@ -17,13 +17,13 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-[100] bg-white/80 backdrop-blur-md border-b border-slate-100 h-20 flex items-center">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center">
           <Image
-            src="/assets/eliza.png"
-            alt="Sua SecretarIA Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8"
+            src="/assets/belezap.png"
+            alt="Belezap Logo"
+            width={120}
+            height={40}
+            className="w-32 h-auto"
           />
         </Link>
 

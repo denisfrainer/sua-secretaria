@@ -14,7 +14,7 @@ export function Header() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setIsLoggedIn(!!user);
     });
-    
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session);
@@ -36,15 +36,14 @@ export function Header() {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-              <a href="/" className="flex items-center gap-2">
-                <Image
-                  src="/assets/eliza.png"
-                  alt="Sua SecretarIA"
-                  width={32}
-                  height={32}
-                  className="w-8 h-auto"
+            <a href="/" className="flex items-center">
+              <Image
+                src="/assets/belezap.png"
+                alt="Belezap"
+                width={120}
+                height={40}
+                className="w-32 h-auto"
               />
-              <span className="font-bold text-lg text-slate-900">Sua SecretarIA</span>
             </a>
 
             {/* Desktop Nav */}
@@ -59,7 +58,7 @@ export function Header() {
                 </a>
               ))}
               <div className="h-4 w-px bg-slate-200"></div>
-              
+
               {isLoggedIn ? (
                 <Link
                   href="/dashboard"
@@ -68,8 +67,8 @@ export function Header() {
                   Ir para Painel
                 </Link>
               ) : (
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors"
                 >
                   Entrar
@@ -87,14 +86,14 @@ export function Header() {
             {/* Mobile Controls */}
             <div className="md:hidden flex items-center gap-3">
               {!isLoggedIn && (
-                 <div className="mr-2">
-                   <Link 
-                     href="/login" 
-                     className="text-sm font-bold text-slate-700 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-50"
-                   >
-                     Entrar
-                   </Link>
-                 </div>
+                <div className="mr-2">
+                  <Link
+                    href="/login"
+                    className="text-sm font-bold text-slate-700 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-50"
+                  >
+                    Entrar
+                  </Link>
+                </div>
               )}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}

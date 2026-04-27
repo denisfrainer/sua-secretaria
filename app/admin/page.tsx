@@ -38,20 +38,20 @@ function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange:
             role="switch"
             aria-checked={enabled}
             initial={false}
-            animate={{ 
+            animate={{
                 backgroundColor: enabled ? '#34C759' : '#FF3B30',
                 opacity: loading ? 0.6 : 1
             }}
             onClick={() => !loading && onChange()}
             className={`relative w-[58px] h-[32px] rounded-full shrink-0 shadow-inner ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
         >
-            <motion.span 
+            <motion.span
                 layout
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 className={`
                     absolute top-[2px] left-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md flex items-center justify-center
                     ${enabled ? 'translate-x-[26px]' : 'translate-x-0'}
-                `} 
+                `}
             >
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
             </motion.span>
@@ -64,7 +64,7 @@ function IosToggle({ enabled, onChange, loading }: { enabled: boolean; onChange:
 // ==============================================================
 function MetricCard({ label, value, Icon, iconColor }: { label: string; value: string | number; Icon: any; iconColor: string }) {
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm flex items-center justify-between transition-all hover:border-blue-100 group"
@@ -101,10 +101,10 @@ export default function AdminDashboard() {
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token') || '';
         setAdminKey(token);
-        if (!token) { 
-            setAuthorized(false); 
-            setLoading(false); 
-            return; 
+        if (!token) {
+            setAuthorized(false);
+            setLoading(false);
+            return;
         }
         setAuthorized(true);
     }, []);
@@ -146,16 +146,16 @@ export default function AdminDashboard() {
         setLoading(true);
         try {
             const res = await fetch(`/api/admin/leads?token=${encodeURIComponent(adminKey)}`);
-            if (!res.ok) { 
-                setAuthorized(false); 
-                return; 
+            if (!res.ok) {
+                setAuthorized(false);
+                return;
             }
             const { leads: data } = await res.json();
             setLeads(data || []);
-        } catch (err) { 
-            console.error('❌', err); 
-        } finally { 
-            setLoading(false); 
+        } catch (err) {
+            console.error('❌', err);
+        } finally {
+            setLoading(false);
         }
     }, [adminKey]);
 
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 flex items-center justify-center transition-transform hover:scale-110 active:rotate-3">
-                            <Image src="/assets/eliza.png" width={32} height={32} alt="Sua SecretarIA" className="w-8 h-8 object-contain" />
+                            <Image src="/assets/belezap.png" width={32} height={32} alt="Sua SecretarIA" className="w-8 h-8 object-contain" />
                         </div>
                         <h1 className="text-[24px] font-bold text-slate-900 font-outfit tracking-tight">Hello, wizard</h1>
                     </div>
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
                     {/* Eliza Toggle (Raw Icon) */}
                     <div className="p-4 flex items-center justify-start gap-4">
                         <div className="flex items-center w-[48px] h-[48px] justify-center">
-                            <Image src="/assets/eliza.png" width={48} height={48} alt="Eliza" className="w-[48px] h-[48px] object-contain" />
+                            <Image src="/assets/belezap.png" width={48} height={48} alt="Eliza" className="w-[48px] h-[48px] object-contain" />
                         </div>
                         <IosToggle enabled={elizaActive} loading={elizaLoading} onChange={() => toggleAgent('eliza_active', elizaActive, setElizaActive, setElizaLoading)} />
                     </div>
@@ -248,7 +248,7 @@ export default function AdminDashboard() {
                 <MetricCard label="In contact" value={talking} Icon={MessageCircle} iconColor="text-indigo-500" />
                 <MetricCard label="Profits" value={closed} Icon={DollarSign} iconColor="text-[#34C759]" />
                 <MetricCard label="Conversion rate" value={`${conversionRate}%`} Icon={TrendingUp} iconColor="text-[#34C759]" />
-                
+
                 {/* Footer Quote */}
                 <footer className="mt-8 pb-6 flex justify-center">
                     <p className="text-[16px] text-slate-500 font-outfit lowercase tracking-tight opacity-70">

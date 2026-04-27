@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect('/login');
-  
+
   const userId = user.id;
   console.log('[ROUTING_GUARD] Bypassing business_config check.');
 
@@ -30,18 +30,18 @@ export default async function DashboardLayout({
       <header className="w-full h-16 flex items-center justify-between px-6 sticky top-0 z-50">
         {/* Background layer for glassmorphism */}
         <div className="absolute inset-0 bg-[#fafafa]/90 backdrop-blur-md border-b border-black/5 -z-10 pointer-events-none" />
-        
+
         {/* LEFT: Logo Group */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="flex items-center hover:opacity-80 transition-opacity"
         >
-          <Image 
-            src="/assets/eliza.png" 
-            width={24} 
-            height={24} 
-            alt="Sua SecretarIA" 
-            className="object-contain"
+          <Image
+            src="/assets/belezap.png"
+            width={110}
+            height={32}
+            alt="Belezap"
+            className="w-28 h-auto object-contain"
           />
         </Link>
 

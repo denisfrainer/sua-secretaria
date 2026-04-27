@@ -2,11 +2,11 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Check, 
-  Lock, 
-  CreditCard, 
+import {
+  ArrowLeft,
+  Check,
+  Lock,
+  CreditCard,
   ShieldCheck,
   Smartphone,
   Info
@@ -44,7 +44,7 @@ function CheckoutContent() {
     <div className="flex flex-col lg:flex-row min-h-screen">
       {/* Left Pane: Summary */}
       <div className="w-full lg:w-[45%] bg-[#fcfcfc] border-b lg:border-b-0 lg:border-r border-black/[0.03] p-8 md:p-12 lg:p-20 flex flex-col">
-        <Link 
+        <Link
           href="/dashboard/settings/payments"
           className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors mb-12 group"
         >
@@ -54,7 +54,7 @@ function CheckoutContent() {
 
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-3">
-            <Image src="/assets/eliza.png" width={32} height={32} alt="Sua SecretarIA" />
+            <Image src="/assets/belezap.png" width={32} height={32} alt="Sua SecretarIA" />
             <span className="text-xl font-black tracking-tight">Sua SecretarIA</span>
           </div>
 
@@ -93,7 +93,7 @@ function CheckoutContent() {
       {/* Right Pane: Payment Form */}
       <div className="flex-1 bg-white p-8 md:p-12 lg:p-20 flex flex-col items-center">
         <div className="w-full max-w-md flex flex-col gap-10">
-          
+
           {/* Express Checkout */}
           <div className="flex flex-col gap-4">
             <button className="w-full h-12 rounded-xl bg-black text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
@@ -117,27 +117,27 @@ function CheckoutContent() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-black text-gray-900 ml-1">Dados de Pagamento</label>
-              
+
               {/* Mock Stripe Element Input */}
               <div className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50/30 flex flex-col gap-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
                     <CreditCard size={20} className="text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Número do cartão" 
+                    <input
+                      type="text"
+                      placeholder="Número do cartão"
                       className="bg-transparent border-none outline-none w-full text-base font-medium placeholder:text-gray-400"
                     />
                   </div>
                   <div className="flex items-center gap-4">
-                    <input 
-                      type="text" 
-                      placeholder="MM / YY" 
+                    <input
+                      type="text"
+                      placeholder="MM / YY"
                       className="bg-transparent border-none outline-none w-1/2 text-base font-medium placeholder:text-gray-400"
                     />
-                    <input 
-                      type="text" 
-                      placeholder="CVC" 
+                    <input
+                      type="text"
+                      placeholder="CVC"
                       className="bg-transparent border-none outline-none w-1/2 text-base font-medium placeholder:text-gray-400"
                     />
                   </div>
@@ -147,9 +147,9 @@ function CheckoutContent() {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-black text-gray-900 ml-1">E-mail para recibo</label>
-              <input 
-                type="email" 
-                placeholder="seu@email.com" 
+              <input
+                type="email"
+                placeholder="seu@email.com"
                 className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50/30 outline-none focus:border-blue-500/50 transition-colors text-base font-medium placeholder:text-gray-400"
               />
             </div>
