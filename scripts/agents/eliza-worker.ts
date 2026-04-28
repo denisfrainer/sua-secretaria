@@ -716,28 +716,6 @@ ${businessContext}
 # 5. CURRENT LEAD STATE (CRITICAL)
 ${dynamicInstruction}
 `;
-
-        const ownerPhone = normalizePhone(process.env.OWNER_PHONE || '554899999999');
-
-        if (clientNumber === ownerPhone) {
-            console.log(`👑 [ROUTING] Número do chefe detectado (${clientNumber}). Desativando modo Eliza. Ativando Admin Mode.`);
-
-            systemInstruction = `# 1. IDENTITY & PURPOSE
-You are the AI Operations Assistant. You are speaking DIRECTLY TO THE BUSINESS OWNER, not a client.
-Your ONLY job is to help the owner update the business rules, prices, and services.
-
-# 2. CURRENT BUSINESS CONTEXT
-${businessContext}
-
-# 3. EXECUTION RULES (STRICT 2-STEP PROTOCOL)
-- STEP 1 (DRAFT & ASK): When the owner requests a change (via text or audio), DO NOT call the 'update_business_context' tool immediately. First, reply with a bulleted list of the exact changes you understood and explicitly ask for confirmation.
-  Example: "Confirming changes: 
-  - Added Axilla Hair Removal (R$ 50)
-  - Changed Nail price to R$ 45. 
-  Do you confirm?"
-- STEP 2 (EXECUTE): ONLY AFTER the owner explicitly replies confirming the changes (e.g., "yes", "confirm", "ok", "pode mandar"), generate the FULL comprehensive updated context and execute the 'update_business_context' tool.
-- STEP 3 (FINISH): After executing the tool, reply briefly to the owner. Example: "Done. Context updated."`;
-        }
         // =========================================================
         console.log(`\n================= 🤖 FINAL CONSTRUCTED SYSTEM PROMPT 🤖 =================`);
         console.log(systemInstruction);
@@ -1143,18 +1121,6 @@ http.createServer((req: any, res: any) => {
                             .update(updatePayload)
                             .eq('id', config.id);
 
-                            // 🔄 [SYNC] Propagate trial status to user profile for Header/UI usage
-                            if (updatePayload.plan_tier === 'TRIAL') {
-                                console.log(`🔄 [SYNC] Syncing FORCED TRIAL status to profile for owner: ${config.owner_id}`);
-                                await supabaseAdmin
-                                    .from('profiles')
-                                    .update({
-                                        plan_tier: 'TRIAL',
-                                        trial_ends_at: updatePayload.trial_ends_at
-                                    })
-                                    .eq('id', config.owner_id);
-                            }
-                        }
                     } catch (err: any) {
                         console.error(`💥 [CONNECTION] Unhandled exception:`, err.message, err.stack);
                     }
@@ -1339,229 +1305,44 @@ http.createServer((req: any, res: any) => {
                     clientMessage = messageObj.conversation || messageObj.extendedTextMessage?.text || '';
                 }
 
-                const ownerPhone = normalizePhone(process.env.OWNER_PHONE || '554899999999');
-                const isOwner = clientNumber === ownerPhone;
-
                 if (clientMessage && clientMessage.trim().length > 0) {
-                    // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
-                    if (isFromMe || isOwner) {
-                        const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
+                    console.log(`📥 [INGESTION] Processing message from ${clientNumber}: "${clientMessage.substring(0, 50)}..."`);
 
-                        if (isAPI) {
-                            return; // Eliza response, ignore
-                        } else {
-                            const cmd = clientMessage.trim();
+                    // 1. PURE UPSERT TO LEADS_LOBO
+                    const payload = {
+                        phone: clientNumber,
+                        status: 'eliza_processing',
+                        name: 'Lead inbound',
+                        ai_paused: false,
+                        needs_human: false,
+                        instance_name: instanceName,
+                        owner_id: tenantId,
+                        updated_at: new Date().toISOString()
+                    };
 
-                            if (cmd === '/pausar') {
-                                await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                                console.log(`⏸️ [COMANDO] IA pausada manualmente para ${clientNumber}.`);
-                                return;
-                            } else if (cmd === '/retomar') {
-                                await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false, status: 'organic_inbound' }).eq('phone', clientNumber);
-                                console.log(`▶️ [COMANDO] IA retomada manualmente para ${clientNumber}.`);
-                                return;
-                            }
+                    const { error: upsertError } = await supabaseAdmin
+                        .from('leads_lobo')
+                        .upsert(payload, { onConflict: 'phone' });
 
-                            console.log(`🛡️ [FOGO AMIGO] Denis assumiu o controle via ${isOwner ? 'OWNER_PHONE' : 'DIRECT'}. Travando a IA para o lead ${clientNumber}.`);
-                            await supabaseAdmin.from('leads_lobo').update({
-                                needs_human: true,
-                                ai_paused: true,
-                                status: 'human_handling'
-                            }).eq('phone', clientNumber);
-
-                            return;
-                        }
+                    if (upsertError) {
+                        console.error(`❌ [SUPABASE ERROR] Ingestion failed for ${clientNumber}:`, upsertError.message);
+                        return;
                     }
 
-                    if (clientMessage) {
-                        console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
+                    // 2. PURE UPSERT TO MESSAGES
+                    const { error: msgError } = await supabaseAdmin.from('messages').upsert({
+                        lead_phone: clientNumber, 
+                        role: 'user', 
+                        content: clientMessage, 
+                        message_id: incomingMessageId,
+                        instance_name: instanceName
+                    }, { onConflict: 'message_id' });
 
-                        const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
-                        const msgLower = clientMessage.toLowerCase();
-                        if (autoReplyKeywords.some((kw: string) => msgLower.includes(kw))) {
-                            console.log(`🛡️ [SHIELD] Auto-reply detected. Ignorando.`);
-                            return;
-                        }
-
-                        let query = supabaseAdmin
-                            .from('leads_lobo')
-                            .select('*')
-                            .eq('phone', clientNumber)
-                            .eq('instance_name', instanceName);
-
-                        if (tenantId) {
-                            query = query.eq('owner_id', tenantId);
-                        }
-
-                        let { data: lead, error: fetchError } = await query.maybeSingle();
-
-                        if (fetchError) {
-                            console.error(`❌ [SUPABASE ERROR] Failed to fetch lead ${clientNumber}:`, fetchError.message);
-                            return;
-                        }
-
-                        if (lead) {
-                            await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
-
-                            if (lead.updated_at) {
-                                const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
-                                if (timeSinceContact < 2000) {
-                                    console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
-                                    return;
-                                }
-                            }
-
-                            if ((lead.reply_count || 0) >= 10) {
-                                console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
-                                await supabaseAdmin.from('leads_lobo').update({
-                                    is_locked: true,
-                                    status: 'needs_human',
-                                    ai_paused: true,
-                                    needs_human: true
-                                }).eq('phone', clientNumber);
-                                return;
-                            }
-
-                            if (lead.is_locked === true) {
-                                console.log(`🔒 [GUARD] Lead is_locked=true. Ignoring message from ${clientNumber}.`);
-                                return;
-                            }
-
-                            if (lead.ai_paused === true || lead.needs_human === true) {
-                                console.log(`🔓 [GUARD] Lead was paused. New message received — unpausing for AI.`);
-                                await supabaseAdmin.from('leads_lobo').update({
-                                    ai_paused: false,
-                                    needs_human: false
-                                }).eq('id', lead.id);
-                            }
-                        }
-
-                        if (!lead) {
-                            console.log(`🆕 [LEAD] Creating new lead for ${clientNumber} (instance: ${instanceName})`);
-                            const payload = {
-                                phone: clientNumber,
-                                status: 'eliza_processing',
-                                name: 'Lead inbound',
-                                message_buffer: '',
-                                is_processing: false,
-                                ai_paused: false,
-                                needs_human: false,
-                                is_locked: false,
-                                instance_name: instanceName,
-                                owner_id: tenantId
-                            };
-
-                            console.log(`\n================= 🛸 CONSOLE.GOD (UPSERT PRE-FLIGHT) 🛸 =================`);
-                            console.log(`📱 Phone: ${clientNumber}`);
-                            console.log(`🤖 Instance: ${instanceName}`);
-                            console.log(`🔑 Tenant/Owner: ${tenantId}`);
-                            console.log(`🛡️ isFromMe: ${isFromMe}`);
-                            console.log(`📦 Payload:`, JSON.stringify(payload, null, 2));
-                            console.log(`========================================================================\n`);
-
-                            let { data: newLead, error: insertError } = await supabaseAdmin
-                                .from('leads_lobo')
-                                .upsert(payload, { onConflict: 'phone' })
-                                .select()
-                                .single();
-
-                            if (insertError) {
-                                if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
-                                    const { data: fallbackLead } = await supabaseAdmin
-                                        .from('leads_lobo')
-                                        .select('*')
-                                        .eq('phone', clientNumber)
-                                        .single();
-                                    newLead = fallbackLead;
-                                } else {
-                                    console.error(`❌ [SUPABASE ERROR] Failed to CREATE lead:`, insertError.message);
-                                    return;
-                                }
-                            }
-                            lead = newLead;
-                        }
-
-                        // --- SALVAMENTO E GATILHO (IDEMPOTENT) ---
-                        // FIX: Use upsert with onConflict for message_id to handle Evolution API retries
-                        const { error: msgInsertError } = await supabaseAdmin.from('messages').upsert({
-                            lead_phone: clientNumber, 
-                            role: 'user', 
-                            content: clientMessage, 
-                            message_id: incomingMessageId,
-                            instance_name: instanceName
-                        }, { onConflict: 'message_id' });
-
-                        if (msgInsertError) {
-                            console.error(`❌ [SUPABASE ERROR] Failed to upsert message:`, msgInsertError.message);
-                        }
-
-                        // --- BRANCH A: STATIC MENU ---
-                        if (instanceName === 'demo-menu') {
-                            console.log(`🚦 [ROUTER] Branch A: Static Menu acionado para ${clientNumber}`);
-                            const msgClean = clientMessage.trim().toLowerCase();
-
-                            let menuResponse = "";
-                            let newStatus = "waiting_menu_choice";
-
-                            if (msgClean === '1') {
-                                menuResponse = "Você escolheu a Opção 1: Informações sobre nossos serviços.\n💅 Manicure: R$ 45,00\n💆‍♀️ Limpeza de Pele: R$ 120,00\n\nDigite 0 para voltar ao menu principal.";
-                            } else if (msgClean === '2') {
-                                menuResponse = "Você escolheu a Opção 2: Falar com atendente humano. Um momento, por favor, nossa equipe já vai te atender.";
-                                newStatus = "human_handling";
-                                await supabaseAdmin.from('leads_lobo').update({
-                                    status: newStatus,
-                                    needs_human: true,
-                                    ai_paused: true
-                                }).eq('id', lead.id);
-                            } else if (msgClean === '3') {
-                                menuResponse = "Você escolheu a Opção 3: Horários de funcionamento.\n🕒 Funcionamos das 08:00 às 18:00 de segunda a sexta.\n\nDigite 0 para voltar ao menu principal.";
-                            } else {
-                                menuResponse = "Olá! Bem-vindo ao *Menu Estático de Teste*.\n\nEscolha uma opção:\n1️⃣ Nossos serviços e preços\n2️⃣ Falar com atendente\n3️⃣ Horários de funcionamento";
-                            }
-
-                            await sendWhatsAppPresence(clientNumber, 'composing');
-                            await sendWhatsAppMessage(clientNumber, menuResponse, 1000);
-                            await supabaseAdmin.from('leads_lobo').update({ status: newStatus }).eq('id', lead.id);
-                            return;
-                        }
-
-                        // --- BRANCH B: AI AGENT ---
-                        if (instanceName !== 'demo-menu') {
-                            console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
-
-                            let configQuery = supabaseAdmin.from('business_config').select('context_json').eq('instance_name', instanceName);
-                            if (tenantId) configQuery = configQuery.eq('owner_id', tenantId);
-
-                            const { data: bConfig } = await configQuery.maybeSingle();
-                            const instanceEnabled = bConfig?.context_json?.is_ai_enabled;
-
-                            const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
-                            const globalEnabled = !elizaSwitch || elizaSwitch.value?.enabled !== false;
-
-                            let shouldProceed = instanceEnabled === true ? true : (instanceEnabled === false ? false : globalEnabled);
-
-                            if (!shouldProceed) {
-                                console.log(`🛑 [PAUSE] Lead ${clientNumber} ignored (Instance: ${instanceEnabled}, Global: ${globalEnabled}).`);
-                                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
-                                return;
-                            }
-
-                            const { error: triggerError } = await supabaseAdmin.from('leads_lobo').update({
-                                status: 'eliza_processing',
-                                ai_paused: false,
-                                needs_human: false,
-                                instance_name: instanceName,
-                                updated_at: new Date().toISOString()
-                            }).eq('phone', clientNumber);
-
-                            if (triggerError) {
-                                console.error(`❌ [SUPABASE ERROR] Failed to trigger eliza_processing for ${clientNumber}:`, triggerError.message);
-                                return;
-                            }
-
-                            console.log(`🚀 [WEBHOOK SUCCESS] Lead ${clientNumber} ready for Worker: status=eliza_processing, ai_paused=false, needs_human=false.`);
-                        }
+                    if (msgError) {
+                        console.error(`❌ [SUPABASE ERROR] Message ingestion failed:`, msgError.message);
                     }
+
+                    console.log(`🚀 [WEBHOOK SUCCESS] Ingested ${clientNumber} into leads_lobo & messages. Release.`);
                 }
 
             } catch (error: any) {
