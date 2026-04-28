@@ -295,7 +295,10 @@ http.createServer((req, res) => {
                 if (eventNormalized === 'CONNECTION_UPDATE') {
                     const state = payload.data?.state || payload.data?.status || payload.state;
                     if (state) {
-                        const statusStr = String(state).toUpperCase();
+                        let statusStr = String(state).toUpperCase();
+                        if (statusStr === 'OPEN') statusStr = 'CONNECTED';
+                        if (statusStr === 'CLOSE' || statusStr === 'DISCONNECTED') statusStr = 'DISCONNECTED';
+                        
                         await supabaseAdmin.from('business_config')
                             .update({ status: statusStr, updated_at: new Date().toISOString() })
                             .eq('instance_name', instanceName);

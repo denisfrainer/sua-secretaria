@@ -90,8 +90,10 @@ export async function POST(request: Request) {
         }
 
         // 5. Webhook Target Resolution
-        const railwayWorkerUrl = process.env.RAILWAY_WEBHOOK_URL || "https://sua-secretaria.up.railway.app";
-        const webhookFullUrl = `${railwayWorkerUrl}/api/webhook/evolution?tenantId=${tenantId}`;
+        const railwayWorkerUrl = (process.env.RAILWAY_WEBHOOK_URL || "https://sua-secretaria.up.railway.app").replace(/\/$/, "");
+        const webhookFullUrl = railwayWorkerUrl.endsWith('/api/webhook/evolution') 
+            ? `${railwayWorkerUrl}?tenantId=${tenantId}`
+            : `${railwayWorkerUrl}/api/webhook/evolution?tenantId=${tenantId}`;
         console.log(`[INSTANCE_FACTORY] Webhook Target: ${webhookFullUrl}`);
 
         // ============================================================
