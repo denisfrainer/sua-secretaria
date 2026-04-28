@@ -14,4 +14,4 @@ cmds = ["npm run build"]
 
 [phases.start]
 # Override the start phase to boot both the web server and the polling engine
-cmd = 'npx concurrently "next start -p $PORT" "ELIZA_PORT=3000 npx tsx scripts/agents/eliza-worker.ts"'
+cmd = 'npx concurrently "next start -p $PORT" "npx tsx scripts/agents/eliza-worker.ts"'
