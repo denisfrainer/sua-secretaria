@@ -310,6 +310,7 @@ http.createServer((req, res) => {
                 }
 
                 if (eventNormalized !== 'MESSAGES_UPSERT') {
+                    console.log(`🔕 [SILENT DROP] Ignored event type: ${eventNormalized}`);
                     res.writeHead(200);
                     res.end('Ignored event');
                     return;
@@ -317,6 +318,7 @@ http.createServer((req, res) => {
 
                 let dataObj = Array.isArray(payload.data) ? payload.data[0] : payload.data;
                 if (!dataObj) {
+                    console.warn(`🔕 [SILENT DROP] No dataObj found in payload.`);
                     res.writeHead(200);
                     res.end('No data object');
                     return;
@@ -327,6 +329,7 @@ http.createServer((req, res) => {
                     : dataObj;
 
                 if (!msgItem || !msgItem?.key) {
+                    console.warn(`🔕 [SILENT DROP] No msgItem or msgItem.key found in dataObj.`);
                     res.writeHead(200);
                     res.end('No key');
                     return;
@@ -336,6 +339,7 @@ http.createServer((req, res) => {
                 const isFromMe = msgItem?.key?.fromMe === true;
                 console.log('🕵️ [PARSER] isFromMe:', isFromMe);
                 if (isFromMe) {
+                    console.log('🔕 [SILENT DROP] Ignored fromMe message (anti-loop).');
                     res.writeHead(200);
                     res.end('Ignored fromMe');
                     return;
@@ -348,6 +352,7 @@ http.createServer((req, res) => {
                 }
 
                 if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) {
+                    console.warn(`🔕 [SILENT DROP] Ignored group or invalid JID: "${remoteJid}"`);
                     res.writeHead(200);
                     res.end('Ignored group or invalid JID');
                     return;
@@ -376,6 +381,7 @@ http.createServer((req, res) => {
                 const isDocument = !!msgData.documentMessage;
 
                 if (!text && !isAudio && !isImage && !isVideo && !isDocument) {
+                    console.warn(`🔕 [SILENT DROP] No processable text or media found. Extracted text was empty.`);
                     res.writeHead(200);
                     res.end('No processable content');
                     return;
