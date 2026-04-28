@@ -207,7 +207,7 @@ async function processLead(lead: any) {
  * the engine stays alive even after fatal errors.
  */
 async function pollLeads() {
-    console.log('💓 [HEARTBEAT] Scanning leads_lobo for eliza_processing...');
+    console.log('💓 [HEARTBEAT] Scanning leads_lobo for eliza_processing leads...');
     try {
         // 1. Fetch leads queued for processing
         const { data: leads, error } = await supabaseAdmin
@@ -257,6 +257,7 @@ const PORT = process.env.PORT || 3000;
 
 http.createServer((req, res) => {
     console.log('🚨 [INBOUND] Method:', req.method, 'URL:', req.url);
+    console.log('📡 [HEADERS]:', JSON.stringify(req.headers));
 
     // Healthcheck
     if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
@@ -275,9 +276,9 @@ http.createServer((req, res) => {
         req.on('end', async () => {
             try {
                 console.log('📦 [RAW BODY]:', body);
-                const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+                const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
                 const tenantId = parsedUrl.searchParams.get('tenantId');
-                console.log('🆔 [TENANT_ID]:', tenantId);
+                console.log('🆔 [TENANT_ID FROM URL]:', tenantId);
 
                 const payload = JSON.parse(body);
 
@@ -364,7 +365,14 @@ http.createServer((req, res) => {
                 else if (isDocument) content = '[DOCUMENT]';
 
                 const instanceName = payload.instance || payload.instanceName || payload.data?.instance || parsedUrl.searchParams.get('instance') || 'Unknown';
-                console.log('🕵️ [PARSER] InstanceName:', instanceName);
+                
+                console.log('🔍 [PARSER TRACE]:', {
+                    eventName: eventNormalized,
+                    instanceName,
+                    isFromMe,
+                    rawJid: dataObj?.messages?.[0]?.key?.remoteJid || dataObj?.key?.remoteJid || remoteJid,
+                    clientNumber
+                });
 
                 console.log(`\n📥 [WEBHOOK INGEST] Received from ${clientNumber} on instance ${instanceName}`);
 
@@ -398,18 +406,22 @@ http.createServer((req, res) => {
                     return;
                 }
 
-                const { data, error } = await supabaseAdmin.from('leads_lobo').upsert({
-                    phone: clientNumber, // Must be normalized
-                    status: 'eliza_processing', // CRITICAL TRIGGER
-                    instance_name: instanceName,
-                    owner_id: activeOwnerId, // Phase 2: Foreign key mapping
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'phone' });
+                try {
+                    const { data, error } = await supabaseAdmin.from('leads_lobo').upsert({
+                        phone: clientNumber, // Must be normalized
+                        status: 'eliza_processing', // CRITICAL TRIGGER
+                        instance_name: instanceName,
+                        owner_id: activeOwnerId, // CRITICAL: Ensure this maps correctly
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'phone' });
 
-                if (error) {
-                    console.error('❌ [DB ERROR]:', JSON.stringify(error));
-                } else {
-                    console.log('✅ [DB SUCCESS]: Lead upserted.');
+                    if (error) {
+                        console.error('❌ [DB INSERT ERROR]:', JSON.stringify(error, null, 2));
+                    } else {
+                        console.log('✅ [DB SUCCESS]: Lead queued in leads_lobo.');
+                    }
+                } catch (e) {
+                    console.error('🔥 [CRITICAL DB CRASH]:', e);
                 }
 
                 console.log(`✅ [WEBHOOK] Queued ${clientNumber} for Eliza.`);
