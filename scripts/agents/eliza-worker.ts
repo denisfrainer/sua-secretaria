@@ -1164,22 +1164,43 @@ http.createServer((req: any, res: any) => {
                 }
 
                 // --- 💬 MESSAGE PROCESSING ---
-
                 let dataObj = Array.isArray(body.data) ? body.data[0] : body.data;
                 if (!dataObj) return;
 
+                // 1. EXTRACT CORE VARIABLES (Early Resolution to prevent ReferenceErrors)
                 const remoteJid = dataObj.key?.remoteJid || '';
+                const rawJid = (dataObj.key?.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
+                    ? String(dataObj.key.remoteJidAlt)
+                    : String(remoteJid);
+                
+                const clientNumber = normalizePhone(rawJid);
+                const incomingMessageId = dataObj.key?.id;
+                const messageObj = dataObj.message;
+                const isFromMe = dataObj.key?.fromMe === true;
+
+                // 2. HARDEN TENANT ID (Recovery Path)
+                if (!tenantId) {
+                    console.log(`🔍 [RECOVERY] tenantId missing from URL. Attempting lookup for instance: ${instanceName}`);
+                    const { data: config } = await supabaseAdmin
+                        .from('business_config')
+                        .select('owner_id')
+                        .eq('instance_name', instanceName)
+                        .maybeSingle();
+                    
+                    if (config?.owner_id) {
+                        tenantId = config.owner_id;
+                        console.log(`✅ [RECOVERY] tenantId recovered: ${tenantId}`);
+                    } else {
+                        console.warn(`⚠️ [RECOVERY] Failed to recover tenantId for ${instanceName}. Upsert may fail.`);
+                    }
+                }
+
+                // 3. SECURITY SHIELDS
                 if (remoteJid.endsWith('@g.us')) {
                     console.log('🔇 [WEBHOOK] Grupo ignorado:', remoteJid);
                     return;
                 }
 
-                if (!dataObj.key) return;
-
-                const isFromMe = dataObj.key.fromMe === true;
-
-                // 🛡️ [TRAVA DE FOGO AMIGO] Optimized Self-Messaging Detection
-                // Drops any message originated from the bot itself (both from key.fromMe and API patterns)
                 if (isFromMe) {
                     const bypassNumber = process.env.BYPASS_NUMBER ? normalizePhone(process.env.BYPASS_NUMBER) : null;
                     if (bypassNumber && clientNumber === bypassNumber) {
@@ -1189,15 +1210,6 @@ http.createServer((req: any, res: any) => {
                         return;
                     }
                 }
-
-                const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
-                    ? String(dataObj.key.remoteJidAlt)
-                    : String(dataObj.key.remoteJid);
-
-                const clientNumber = normalizePhone(rawJid);
-
-                const incomingMessageId = dataObj.key.id;
-                const messageObj = dataObj.message;
 
                 let clientMessage = '';
 
@@ -1435,12 +1447,13 @@ http.createServer((req: any, res: any) => {
                                 owner_id: tenantId
                             };
 
-                            console.log(`📋 [UPSERT_DEBUG] Preparing leads_lobo upsert:`, {
-                                phone: clientNumber,
-                                instance: instanceName,
-                                owner_id: tenantId,
-                                status: payload.status
-                            });
+                            console.log(`\n================= 🛸 CONSOLE.GOD (UPSERT PRE-FLIGHT) 🛸 =================`);
+                            console.log(`📱 Phone: ${clientNumber}`);
+                            console.log(`🤖 Instance: ${instanceName}`);
+                            console.log(`🔑 Tenant/Owner: ${tenantId}`);
+                            console.log(`🛡️ isFromMe: ${isFromMe}`);
+                            console.log(`📦 Payload:`, JSON.stringify(payload, null, 2));
+                            console.log(`========================================================================\n`);
 
                             let { data: newLead, error: insertError } = await supabaseAdmin
                                 .from('leads_lobo')
