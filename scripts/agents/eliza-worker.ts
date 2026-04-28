@@ -283,9 +283,28 @@ http.createServer((req, res) => {
 
                 const payload = JSON.parse(body);
 
-                // 1. Process MESSAGES_UPSERT only
+                // 1. Process Event Type
                 const eventRaw = String(payload.event || payload.type || payload.apiType || '');
                 const eventNormalized = eventRaw.toUpperCase().replace(/\./g, '_');
+
+                const instanceName = payload.instance || payload.instanceName || payload.data?.instance || parsedUrl.searchParams.get('instance') || 'Unknown';
+
+                // ============================================================
+                // 🚪 CROSS-PLATFORM CONNECTION STATE HANDLER
+                // ============================================================
+                if (eventNormalized === 'CONNECTION_UPDATE') {
+                    const state = payload.data?.state || payload.data?.status || payload.state;
+                    if (state) {
+                        const statusStr = String(state).toUpperCase();
+                        await supabaseAdmin.from('business_config')
+                            .update({ status: statusStr, updated_at: new Date().toISOString() })
+                            .eq('instance_name', instanceName);
+                        console.log(`🔄 [CONNECTION] Instance ${instanceName} status updated to ${statusStr}`);
+                    }
+                    res.writeHead(200);
+                    res.end('Connection Update processed');
+                    return; // End execution for this event type
+                }
 
                 if (eventNormalized !== 'MESSAGES_UPSERT') {
                     res.writeHead(200);
@@ -365,8 +384,6 @@ http.createServer((req, res) => {
                 else if (isVideo) content = '[VIDEO]';
                 else if (isDocument) content = '[DOCUMENT]';
 
-                const instanceName = payload.instance || payload.instanceName || payload.data?.instance || parsedUrl.searchParams.get('instance') || 'Unknown';
-                
                 console.log('🔍 [PARSER TRACE]:', {
                     eventName: eventNormalized,
                     instanceName,
