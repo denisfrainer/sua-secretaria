@@ -1181,8 +1181,13 @@ http.createServer((req: any, res: any) => {
                 // 🛡️ [TRAVA DE FOGO AMIGO] Optimized Self-Messaging Detection
                 // Drops any message originated from the bot itself (both from key.fromMe and API patterns)
                 if (isFromMe) {
-                    console.log(`🛡️ [WEBHOOK] Dropping self-originated message (Fogo Amigo).`);
-                    return;
+                    const bypassNumber = process.env.BYPASS_NUMBER ? normalizePhone(process.env.BYPASS_NUMBER) : null;
+                    if (bypassNumber && clientNumber === bypassNumber) {
+                        console.log(`🧪 [TESTING] Bypassing fromMe filter for test number: ${clientNumber}`);
+                    } else {
+                        console.log(`🛡️ [FILTER] Dropped message from ${remoteJid}: fromMe is true (Self-messaging/Anti-loop)`);
+                        return;
+                    }
                 }
 
                 const rawJid = (dataObj.key.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
@@ -1190,12 +1195,6 @@ http.createServer((req: any, res: any) => {
                     : String(dataObj.key.remoteJid);
 
                 const clientNumber = normalizePhone(rawJid);
-
-                // 🛡️ [THE GHOST FILTER] Ignore messages from the bot's own number
-                const BOT_NUMBER = '554898097754';
-                if (clientNumber === BOT_NUMBER) {
-                    return; // Silent return
-                }
 
                 const incomingMessageId = dataObj.key.id;
                 const messageObj = dataObj.message;
@@ -1435,6 +1434,13 @@ http.createServer((req: any, res: any) => {
                                 instance_name: instanceName,
                                 owner_id: tenantId
                             };
+
+                            console.log(`📋 [UPSERT_DEBUG] Preparing leads_lobo upsert:`, {
+                                phone: clientNumber,
+                                instance: instanceName,
+                                owner_id: tenantId,
+                                status: payload.status
+                            });
 
                             let { data: newLead, error: insertError } = await supabaseAdmin
                                 .from('leads_lobo')
