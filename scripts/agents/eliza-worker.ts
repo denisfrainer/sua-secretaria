@@ -268,13 +268,14 @@ http.createServer((req, res) => {
 
     // Webhook Ingestion
     if (req.method === 'POST') {
-        let body = '';
+        const chunks: Buffer[] = [];
         req.on('data', chunk => {
-            body += chunk.toString();
+            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
         });
 
         req.on('end', async () => {
             try {
+                const body = Buffer.concat(chunks).toString('utf8');
                 console.log('📦 [RAW BODY]:', body);
                 const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
                 const tenantId = parsedUrl.searchParams.get('tenantId');
@@ -335,7 +336,7 @@ http.createServer((req, res) => {
                 console.log('🕵️ [PARSER] Phone:', clientNumber, '(Raw:', rawNumber, ')');
 
                 // 3. Extract Text and Instance Name
-                const messageObj = msgItem.message || {};
+                const messageObj = msgItem.message?.ephemeralMessage?.message || msgItem.message || {};
                 let text = messageObj.conversation
                     || messageObj.extendedTextMessage?.text
                     || messageObj.imageMessage?.caption
@@ -412,6 +413,10 @@ http.createServer((req, res) => {
                         status: 'eliza_processing', // CRITICAL TRIGGER
                         instance_name: instanceName,
                         owner_id: activeOwnerId, // CRITICAL: Ensure this maps correctly
+                        lead_source: 'inbound',
+                        menu_step: 0,
+                        ai_paused: false,
+                        needs_human: false,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'phone' });
 
