@@ -207,6 +207,7 @@ async function processLead(lead: any) {
  * the engine stays alive even after fatal errors.
  */
 async function pollLeads() {
+    console.log('💓 [HEARTBEAT] Scanning leads_lobo for eliza_processing...');
     try {
         // 1. Fetch leads queued for processing
         const { data: leads, error } = await supabaseAdmin
@@ -255,6 +256,8 @@ async function pollLeads() {
 const PORT = process.env.PORT || 3000;
 
 http.createServer((req, res) => {
+    console.log('🚨 [INBOUND] Method:', req.method, 'URL:', req.url);
+
     // Healthcheck
     if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
         res.writeHead(200);
@@ -271,6 +274,11 @@ http.createServer((req, res) => {
 
         req.on('end', async () => {
             try {
+                console.log('📦 [RAW BODY]:', body);
+                const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+                const tenantId = parsedUrl.searchParams.get('tenantId');
+                console.log('🆔 [TENANT_ID]:', tenantId);
+
                 const payload = JSON.parse(body);
 
                 // 1. Process MESSAGES_UPSERT only
@@ -302,6 +310,7 @@ http.createServer((req, res) => {
 
                 // Strictly ignore loops (messages sent by the bot itself)
                 const isFromMe = msgItem.key.fromMe === true;
+                console.log('🕵️ [PARSER] isFromMe:', isFromMe);
                 if (isFromMe) {
                     res.writeHead(200);
                     res.end('Ignored fromMe');
@@ -322,6 +331,7 @@ http.createServer((req, res) => {
 
                 const rawNumber = remoteJid.split('@')[0];
                 const clientNumber = normalizePhone(rawNumber);
+                console.log('🕵️ [PARSER] Phone:', clientNumber, '(Raw:', rawNumber, ')');
 
                 // 3. Extract Text and Instance Name
                 const messageObj = msgItem.message || {};
@@ -333,6 +343,8 @@ http.createServer((req, res) => {
                     || messageObj.listResponseMessage?.title
                     || messageObj.templateButtonReplyMessage?.selectedDisplayText
                     || '';
+                
+                console.log('🕵️ [PARSER] Extracted Text:', text.substring(0, 50));
 
                 const isAudio = !!messageObj.audioMessage;
                 const isImage = !!messageObj.imageMessage;
@@ -351,8 +363,8 @@ http.createServer((req, res) => {
                 else if (isVideo) content = '[VIDEO]';
                 else if (isDocument) content = '[DOCUMENT]';
 
-                const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-                const instanceName = payload.instance || payload.instanceName || payload.data?.instance || url.searchParams.get('instance') || 'Unknown';
+                const instanceName = payload.instance || payload.instanceName || payload.data?.instance || parsedUrl.searchParams.get('instance') || 'Unknown';
+                console.log('🕵️ [PARSER] InstanceName:', instanceName);
 
                 console.log(`\n📥 [WEBHOOK INGEST] Received from ${clientNumber} on instance ${instanceName}`);
 
@@ -368,13 +380,37 @@ http.createServer((req, res) => {
                     created_at: new Date().toISOString()
                 }, { onConflict: 'message_id' });
 
-                // 4. THE QUEUEING UPSERT (Exactly as requested)
-                await supabaseAdmin.from('leads_lobo').upsert({
+                // 4. THE QUEUEING UPSERT (Phase 2 Fix - Owner ID Mapping)
+                let activeOwnerId = tenantId;
+                if (!activeOwnerId && instanceName && instanceName !== 'Unknown') {
+                    const { data: bConfig } = await supabaseAdmin
+                        .from('business_config')
+                        .select('owner_id')
+                        .eq('instance_name', instanceName)
+                        .maybeSingle();
+                    activeOwnerId = bConfig?.owner_id;
+                }
+
+                if (!activeOwnerId) {
+                    console.error(`❌ [WEBHOOK] LEAD DROPPED: Could not resolve owner_id | phone=${clientNumber} | instance=${instanceName}`);
+                    res.writeHead(200);
+                    res.end('Dropped: No owner_id');
+                    return;
+                }
+
+                const { data, error } = await supabaseAdmin.from('leads_lobo').upsert({
                     phone: clientNumber, // Must be normalized
                     status: 'eliza_processing', // CRITICAL TRIGGER
                     instance_name: instanceName,
+                    owner_id: activeOwnerId, // Phase 2: Foreign key mapping
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'phone' });
+
+                if (error) {
+                    console.error('❌ [DB ERROR]:', JSON.stringify(error));
+                } else {
+                    console.log('✅ [DB SUCCESS]: Lead upserted.');
+                }
 
                 console.log(`✅ [WEBHOOK] Queued ${clientNumber} for Eliza.`);
                 res.writeHead(200);
