@@ -3,12 +3,12 @@ import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '../../lib/supabase/admin';
 import { sendWhatsAppMessage } from '../../lib/whatsapp/sender';
 import { processMenuState } from '../handlers/menu-handler';
+import { normalizePhone } from '../../lib/utils/phone';
 
 /**
- * ELIZA WORKER - PURE POLLING ENGINE
- * Webhook ingestion is now handled by the Next.js API route
- * at app/api/webhook/evolution/route.ts
- * This worker ONLY polls leads_lobo and processes AI responses.
+ * ELIZA WORKER - NATIVE WEBHOOK INGESTION & POLLING ENGINE
+ * Reverted to native http.createServer to handle Evolution webhooks
+ * directly and process leads asynchronously.
  */
 
 const ai = new GoogleGenAI({
@@ -16,7 +16,7 @@ const ai = new GoogleGenAI({
 });
 
 const MODEL_TIERS = [
-    'gemini-3.1-flash-lite-preview', 
+    'gemini-3.1-flash-lite-preview',
     'gemini-3-flash-preview',
     'gemini-2.5-flash'
 ];
@@ -124,7 +124,7 @@ async function processLead(lead: any) {
         if (historyError) throw new Error(`History fetch error: ${historyError.message}`);
 
         const chatHistory = (rawHistory as unknown as Message[] || []).reverse();
-        
+
         if (chatHistory.length === 0) {
             chatHistory.push({ role: 'user', content: 'Olá', created_at: new Date().toISOString() });
         }
@@ -178,7 +178,7 @@ async function processLead(lead: any) {
         await sendWhatsAppMessage(phone, responseText, 1000, instanceName);
 
         // 7. Update Status
-        await supabaseAdmin.from('leads_lobo').update({ 
+        await supabaseAdmin.from('leads_lobo').update({
             status: 'replied',
             updated_at: new Date().toISOString()
         }).eq('id', lead.id);
@@ -187,7 +187,7 @@ async function processLead(lead: any) {
 
     } catch (error: any) {
         console.error(`💥 [ELIZA FATAL] ${phone}:`, error.message);
-        await supabaseAdmin.from('leads_lobo').update({ 
+        await supabaseAdmin.from('leads_lobo').update({
             status: 'error',
             updated_at: new Date().toISOString()
         }).eq('id', lead.id);
@@ -220,16 +220,16 @@ async function pollLeads() {
             console.error(`❌ [POLL ERROR] Database query failed:`, error.message);
         } else if (leads && leads.length > 0) {
             console.log(`📡 [HEARTBEAT] Found ${leads.length} leads to process.`);
-            
+
             // Process each lead sequentially to avoid rate limits/concurrency issues
             for (const lead of leads) {
                 try {
                     await processLead(lead);
                 } catch (leadErr: any) {
                     console.error(`💥 [POLL] Critical failure processing lead ${lead.phone}:`, leadErr.message);
-                    
+
                     // Emergency status move to prevent infinite loops
-                    await supabaseAdmin.from('leads_lobo').update({ 
+                    await supabaseAdmin.from('leads_lobo').update({
                         status: 'error',
                         updated_at: new Date().toISOString()
                     }).eq('id', lead.id);
@@ -242,27 +242,157 @@ async function pollLeads() {
     } finally {
         // CRITICAL: Always schedule the next heartbeat, even if a crash occurred.
         // This makes the worker "immortal".
-        setTimeout(pollLeads, 5000); 
+        setTimeout(pollLeads, 5000);
     }
 }
 
 // ==============================================================
-// 🚀 BOOT: PURE POLLING ENGINE + MINIMAL HEALTHCHECK
+// 🚀 BOOT: WEBHOOK INGESTION + IMMORTAL POLLING ENGINE
 // ==============================================================
-// Healthcheck on a background port so Railway knows the process is alive.
-// Webhook ingestion is handled by the Next.js API route.
-const HEALTH_PORT = process.env.ELIZA_PORT || 3001;
+// This single server handles both incoming Evolution API webhooks AND
+// the background polling engine loop. We bind to PORT (injected by Railway).
+
+const PORT = process.env.PORT || 3000;
 
 http.createServer((req, res) => {
+    // Healthcheck
     if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
         res.writeHead(200);
-        res.end('Eliza Polling Engine Online');
+        res.end('Eliza Polling Engine & Webhook Online');
         return;
     }
+
+    // Webhook Ingestion
+    if (req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body);
+
+                // 1. Process MESSAGES_UPSERT only
+                const eventRaw = String(payload.event || payload.type || payload.apiType || '');
+                const eventNormalized = eventRaw.toUpperCase().replace(/\./g, '_');
+
+                if (eventNormalized !== 'MESSAGES_UPSERT') {
+                    res.writeHead(200);
+                    res.end('Ignored event');
+                    return;
+                }
+
+                let dataObj = Array.isArray(payload.data) ? payload.data[0] : payload.data;
+                if (!dataObj) {
+                    res.writeHead(200);
+                    res.end('No data object');
+                    return;
+                }
+
+                const msgItem = (dataObj.messages && Array.isArray(dataObj.messages))
+                    ? dataObj.messages[0]
+                    : dataObj;
+
+                if (!msgItem || !msgItem.key) {
+                    res.writeHead(200);
+                    res.end('No key');
+                    return;
+                }
+
+                // Strictly ignore loops (messages sent by the bot itself)
+                const isFromMe = msgItem.key.fromMe === true;
+                if (isFromMe) {
+                    res.writeHead(200);
+                    res.end('Ignored fromMe');
+                    return;
+                }
+
+                // 2. Extract and Normalize Phone
+                let remoteJid = msgItem.key.remoteJid || '';
+                if (msgItem.key.remoteJidAlt && String(msgItem.key.remoteJidAlt).includes('@s.whatsapp.net')) {
+                    remoteJid = String(msgItem.key.remoteJidAlt);
+                }
+
+                if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) {
+                    res.writeHead(200);
+                    res.end('Ignored group or invalid JID');
+                    return;
+                }
+
+                const rawNumber = remoteJid.split('@')[0];
+                const clientNumber = normalizePhone(rawNumber);
+
+                // 3. Extract Text and Instance Name
+                const messageObj = msgItem.message || {};
+                let text = messageObj.conversation
+                    || messageObj.extendedTextMessage?.text
+                    || messageObj.imageMessage?.caption
+                    || messageObj.videoMessage?.caption
+                    || messageObj.buttonsResponseMessage?.selectedDisplayText
+                    || messageObj.listResponseMessage?.title
+                    || messageObj.templateButtonReplyMessage?.selectedDisplayText
+                    || '';
+
+                const isAudio = !!messageObj.audioMessage;
+                const isImage = !!messageObj.imageMessage;
+                const isVideo = !!messageObj.videoMessage;
+                const isDocument = !!messageObj.documentMessage;
+
+                if (!text && !isAudio && !isImage && !isVideo && !isDocument) {
+                    res.writeHead(200);
+                    res.end('No processable content');
+                    return;
+                }
+
+                let content = text;
+                if (isAudio) content = '[AUDIO]';
+                else if (isImage) content = '[IMAGE]';
+                else if (isVideo) content = '[VIDEO]';
+                else if (isDocument) content = '[DOCUMENT]';
+
+                const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+                const instanceName = payload.instance || payload.instanceName || payload.data?.instance || url.searchParams.get('instance') || 'Unknown';
+
+                console.log(`\n📥 [WEBHOOK INGEST] Received from ${clientNumber} on instance ${instanceName}`);
+
+                const messageId = msgItem.key.id || `gen_${Math.random().toString(36).substring(7)}`;
+
+                // Optional: Persist the raw message in DB for history
+                await supabaseAdmin.from('messages').upsert({
+                    lead_phone: clientNumber,
+                    role: 'user',
+                    content: content,
+                    message_id: messageId,
+                    instance_name: instanceName,
+                    created_at: new Date().toISOString()
+                }, { onConflict: 'message_id' });
+
+                // 4. THE QUEUEING UPSERT (Exactly as requested)
+                await supabaseAdmin.from('leads_lobo').upsert({
+                    phone: clientNumber, // Must be normalized
+                    status: 'eliza_processing', // CRITICAL TRIGGER
+                    instance_name: instanceName,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'phone' });
+
+                console.log(`✅ [WEBHOOK] Queued ${clientNumber} for Eliza.`);
+                res.writeHead(200);
+                res.end('Webhook Ingested Successfully');
+
+            } catch (err: any) {
+                console.error('❌ [WEBHOOK ERROR] Failed to parse/ingest payload:', err.message);
+                res.writeHead(200);
+                res.end('Error ingested but returning 200');
+            }
+        });
+        return;
+    }
+
     res.writeHead(404);
     res.end();
-}).listen(HEALTH_PORT, () => {
-    console.log(`\n🌐 Healthcheck listening on port ${HEALTH_PORT}`);
+}).listen(PORT, () => {
+    console.log(`\n🌐 Eliza Worker Server listening on port ${PORT}`);
     console.log('🚀 [BOOT] Igniting immortal polling engine...');
     pollLeads(); // Start the recursive loop
 });
