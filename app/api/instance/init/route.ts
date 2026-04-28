@@ -29,7 +29,8 @@ export async function POST(request: Request) {
         const rawInstanceName = cleanName.startsWith(prefix) 
             ? cleanName 
             : `${prefix}${cleanName}`;
-        const finalInstanceName = rawInstanceName.substring(0, 20); // Limit to 20 chars for Baileys compatibility
+        const randomHash = Math.random().toString(36).substring(2, 6);
+        const finalInstanceName = `${rawInstanceName.substring(0, 15)}-${randomHash}`; // Limit chars and ensure uniqueness
 
         console.log(`[INSTANCE_FACTORY] Resolved name: ${finalInstanceName} | Tenant: ${tenantId}`);
 
@@ -226,24 +227,31 @@ export async function POST(request: Request) {
             throw new Error(`Instance failed to initialize after ${maxQrRetries} attempts. Final 404.`);
         }
 
-        // 10. Set webhook explicitly (Belt-and-suspenders)
+        // 10. Set webhook explicitly (The "Double Tap")
         try {
-            await fetch(`${baseUrl}/webhook/set/${finalInstanceName}`, {
+            console.log(`🔗 [EVOLUTION] Forcing webhook registration for ${finalInstanceName}`);
+            const webhookRes = await fetch(`${baseUrl}/webhook/set/${finalInstanceName}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
                 body: JSON.stringify({
                     webhook: {
-                        url: webhookFullUrl,
                         enabled: true,
+                        url: webhookFullUrl,
                         webhookByEvents: false,
                         events: [
-                            "MESSAGES_UPSERT",
-                            "CONNECTION_UPDATE"
+                            "MESSAGES_UPSERT", 
+                            "CONNECTION_UPDATE", 
+                            "MESSAGES_UPDATE", 
+                            "SEND_MESSAGE"
                         ]
                     }
                 }),
             });
-        } catch (e) {}
+            const webhookData = await webhookRes.json();
+            console.log(`✅ [EVOLUTION] Webhook double-tap response:`, webhookData);
+        } catch (e: any) {
+            console.error(`❌ [EVOLUTION] Webhook double-tap failed:`, e.message);
+        }
 
         console.log(`✅ [EVOLUTION] Instance ${finalInstanceName} initialized successfully.`);
 

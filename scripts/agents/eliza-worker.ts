@@ -455,6 +455,8 @@ http.createServer((req, res) => {
 
             } catch (err: any) {
                 console.error('❌ [WEBHOOK ERROR] Failed to parse/ingest payload:', err.message);
+                const bodyStr = Buffer.concat(chunks).toString('utf8');
+                console.error('📦 [CRASHING PAYLOAD]:', bodyStr);
                 res.writeHead(200);
                 res.end('Error ingested but returning 200');
             }
