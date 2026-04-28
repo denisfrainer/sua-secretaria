@@ -1033,6 +1033,10 @@ http.createServer((req: any, res: any) => {
 
                 console.log(`🚦 [ROUTER] Event: ${rawEvent} (→${eventName}) | Instance: ${instanceName} | Tenant: ${tenantId || 'GLOBAL/NULL'}`);
 
+                if (instanceName === 'unknown' || !instanceName) {
+                    console.warn(`⚠️ [ROUTER] Warning: instanceName is "${instanceName}". This may cause lookup failures.`);
+                }
+
                 // ================================================================
                 // 🔌 CONNECTION UPDATE HANDLER — fail-fast, then hard return
                 // ================================================================
@@ -1139,11 +1143,6 @@ http.createServer((req: any, res: any) => {
                             .update(updatePayload)
                             .eq('id', config.id);
 
-                        if (updateError) {
-                            console.error(`❌ [CONNECTION] Update failed for config.id=${config.id}:`, updateError.message);
-                        } else {
-                            console.log(`✅ [CONNECTION] ${instanceName} (owner: ${config.owner_id}) → ${newStatus} ${updatePayload.plan_tier ? '(TRIAL FORCED)' : ''}`);
-
                             // 🔄 [SYNC] Propagate trial status to user profile for Header/UI usage
                             if (updatePayload.plan_tier === 'TRIAL') {
                                 console.log(`🔄 [SYNC] Syncing FORCED TRIAL status to profile for owner: ${config.owner_id}`);
@@ -1170,9 +1169,9 @@ http.createServer((req: any, res: any) => {
                 // 1. EXTRACT CORE VARIABLES (Early Resolution to prevent ReferenceErrors)
                 const remoteJid = dataObj.key?.remoteJid || '';
                 
-                // ROBUST JID RESOLUTION: Search every possible candidate for a valid WhatsApp JID
+                // ROBUST JID RESOLUTION: Strictly prioritize key.participant (physical sender) -> key.remoteJidAlt -> key.remoteJid
                 const jidCandidates = [
-                    dataObj.key?.participant,     // v2 physical sender
+                    dataObj.key?.participant,     // v2 physical sender (PRIORITY)
                     dataObj.key?.remoteJidAlt,    // v2 alternative
                     dataObj.key?.remoteJid,       // v1/v2 standard
                     dataObj.participant,           // v1 legacy
@@ -1185,7 +1184,16 @@ http.createServer((req: any, res: any) => {
                 const messageObj = dataObj.message;
                 const isFromMe = dataObj.key?.fromMe === true;
 
-                // 🛡️ [GUARD] Physical payloads often have null messages for retries/stickers/reactions
+                console.log(`🔍 [JID_DEBUG] rawJid="${rawJid}" | normalized="${clientNumber}" | remoteJid="${remoteJid}"`);
+
+                if (!clientNumber || clientNumber === '55' || clientNumber.length < 5) {
+                    console.error(`🛡️ [GUARD] Aborting: Failed to resolve valid JID from payload.`);
+                    console.error(`🛡️ [DEBUG] Payload keys:`, JSON.stringify(Object.keys(dataObj.key || {})));
+                    console.error(`🛡️ [DEBUG] jidCandidates values:`, JSON.stringify(jidCandidates));
+                    return;
+                }
+
+                // 🛡️ [GUARD] Strict Null Message Check
                 if (!messageObj) {
                     console.log(`🔇 [ROUTER] Dropped message from ${clientNumber}: message object is null (likely a sticker, reaction, or system event)`);
                     return;
@@ -1274,7 +1282,7 @@ http.createServer((req: any, res: any) => {
                             }
                         }
                     } catch (error: any) {
-                        console.error(`❌ [DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message}`);
+                        console.error('❌ [WEBHOOK CRASH] (Audio Extraction):', error.message, error.stack);
                     }
                 }
 
@@ -1323,7 +1331,7 @@ http.createServer((req: any, res: any) => {
                             }
                         }
                     } catch (imageError: any) {
-                        console.error(`❌ [DEBUG IMAGE] Fatal error extracting image: ${imageError.message}`);
+                        console.error('❌ [WEBHOOK CRASH] (Image Extraction):', imageError.message, imageError.stack);
                     }
                 }
 
@@ -1556,8 +1564,8 @@ http.createServer((req: any, res: any) => {
                     }
                 }
 
-            } catch (error) {
-                console.error('❌ [WEBHOOK CRASH]:', error);
+            } catch (error: any) {
+                console.error('❌ [WEBHOOK CRASH]:', error.message, error.stack);
             }
         });
         return;
