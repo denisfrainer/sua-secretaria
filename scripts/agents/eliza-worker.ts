@@ -436,9 +436,10 @@ http.createServer((req, res) => {
                 try {
                     const { data, error } = await supabaseAdmin.from('leads_lobo').upsert({
                         phone: clientNumber, // Must be normalized
-                        status: 'eliza_processing', // CRITICAL TRIGGER
+                        owner_id: activeOwnerId,
                         instance_name: instanceName,
-                        owner_id: activeOwnerId, // CRITICAL: Ensure this maps correctly
+                        status: 'eliza_processing',
+                        name: 'Lead inbound',
                         lead_source: 'inbound',
                         menu_step: 0,
                         ai_paused: false,
@@ -447,12 +448,17 @@ http.createServer((req, res) => {
                     }, { onConflict: 'phone' });
 
                     if (error) {
-                        console.error('❌ [DB INSERT ERROR]:', JSON.stringify(error, null, 2));
-                    } else {
-                        console.log('✅ [DB SUCCESS]: Lead queued in leads_lobo.');
+                        console.error('❌ [SUPABASE UPSERT ERROR]:', error.message, error.details, error.hint);
+                        res.writeHead(200);
+                        res.end('DB Upsert Error');
+                        return;
                     }
-                } catch (e) {
-                    console.error('🔥 [CRITICAL DB CRASH]:', e);
+                    console.log(`✅ [DB SUCCESS]: Lead ${clientNumber} queued as inbound.`);
+                } catch (e: any) {
+                    console.error('🔥 [CRITICAL DB CRASH]:', e.message, e.stack);
+                    res.writeHead(200);
+                    res.end('Critical DB Crash');
+                    return;
                 }
 
                 console.log(`✅ [WEBHOOK] Queued ${clientNumber} for Eliza.`);
