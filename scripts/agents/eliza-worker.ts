@@ -326,14 +326,14 @@ http.createServer((req, res) => {
                     ? dataObj.messages[0]
                     : dataObj;
 
-                if (!msgItem || !msgItem.key) {
+                if (!msgItem || !msgItem?.key) {
                     res.writeHead(200);
                     res.end('No key');
                     return;
                 }
 
                 // Strictly ignore loops (messages sent by the bot itself)
-                const isFromMe = msgItem.key.fromMe === true;
+                const isFromMe = msgItem?.key?.fromMe === true;
                 console.log('🕵️ [PARSER] isFromMe:', isFromMe);
                 if (isFromMe) {
                     res.writeHead(200);
@@ -342,9 +342,9 @@ http.createServer((req, res) => {
                 }
 
                 // 2. Extract and Normalize Phone
-                let remoteJid = msgItem.key.remoteJid || '';
-                if (msgItem.key.remoteJidAlt && String(msgItem.key.remoteJidAlt).includes('@s.whatsapp.net')) {
-                    remoteJid = String(msgItem.key.remoteJidAlt);
+                let remoteJid = msgItem?.key?.remoteJid || '';
+                if (msgItem?.key?.remoteJidAlt && String(msgItem?.key?.remoteJidAlt).includes('@s.whatsapp.net')) {
+                    remoteJid = String(msgItem?.key?.remoteJidAlt);
                 }
 
                 if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) {
@@ -358,22 +358,22 @@ http.createServer((req, res) => {
                 console.log('🕵️ [PARSER] Phone:', clientNumber, '(Raw:', rawNumber, ')');
 
                 // 3. Extract Text and Instance Name
-                const messageObj = msgItem.message?.ephemeralMessage?.message || msgItem.message || {};
-                let text = messageObj.conversation
-                    || messageObj.extendedTextMessage?.text
-                    || messageObj.imageMessage?.caption
-                    || messageObj.videoMessage?.caption
-                    || messageObj.buttonsResponseMessage?.selectedDisplayText
-                    || messageObj.listResponseMessage?.title
-                    || messageObj.templateButtonReplyMessage?.selectedDisplayText
+                const msgData = msgItem?.message?.ephemeralMessage?.message || msgItem?.message || payload.data?.message || payload.data || {};
+                let text = msgData.conversation
+                    || msgData.extendedTextMessage?.text
+                    || msgData.imageMessage?.caption
+                    || msgData.videoMessage?.caption
+                    || msgData.buttonsResponseMessage?.selectedDisplayText
+                    || msgData.listResponseMessage?.title
+                    || msgData.templateButtonReplyMessage?.selectedDisplayText
                     || '';
                 
-                console.log('🕵️ [PARSER] Extracted Text:', text.substring(0, 50));
+                console.log('🕵️ [PARSER] Extracted Text:', text ? text.substring(0, 50) : '');
 
-                const isAudio = !!messageObj.audioMessage;
-                const isImage = !!messageObj.imageMessage;
-                const isVideo = !!messageObj.videoMessage;
-                const isDocument = !!messageObj.documentMessage;
+                const isAudio = !!msgData.audioMessage;
+                const isImage = !!msgData.imageMessage;
+                const isVideo = !!msgData.videoMessage;
+                const isDocument = !!msgData.documentMessage;
 
                 if (!text && !isAudio && !isImage && !isVideo && !isDocument) {
                     res.writeHead(200);
@@ -397,7 +397,7 @@ http.createServer((req, res) => {
 
                 console.log(`\n📥 [WEBHOOK INGEST] Received from ${clientNumber} on instance ${instanceName}`);
 
-                const messageId = msgItem.key.id || `gen_${Math.random().toString(36).substring(7)}`;
+                const messageId = msgItem?.key?.id || `gen_${Math.random().toString(36).substring(7)}`;
 
                 // Optional: Persist the raw message in DB for history
                 await supabaseAdmin.from('messages').upsert({
@@ -454,7 +454,7 @@ http.createServer((req, res) => {
                 res.end('Webhook Ingested Successfully');
 
             } catch (err: any) {
-                console.error('❌ [WEBHOOK ERROR] Failed to parse/ingest payload:', err.message);
+                console.error('🔥 [PARSER CRASH]:', err?.message, err?.stack);
                 const bodyStr = Buffer.concat(chunks).toString('utf8');
                 console.error('📦 [CRASHING PAYLOAD]:', bodyStr);
                 res.writeHead(200);
