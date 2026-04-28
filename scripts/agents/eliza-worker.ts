@@ -1169,14 +1169,27 @@ http.createServer((req: any, res: any) => {
 
                 // 1. EXTRACT CORE VARIABLES (Early Resolution to prevent ReferenceErrors)
                 const remoteJid = dataObj.key?.remoteJid || '';
-                const rawJid = (dataObj.key?.remoteJidAlt && String(dataObj.key.remoteJidAlt).includes('@s.whatsapp.net'))
-                    ? String(dataObj.key.remoteJidAlt)
-                    : String(remoteJid);
                 
+                // ROBUST JID RESOLUTION: Search every possible candidate for a valid WhatsApp JID
+                const jidCandidates = [
+                    dataObj.key?.participant,     // v2 physical sender
+                    dataObj.key?.remoteJidAlt,    // v2 alternative
+                    dataObj.key?.remoteJid,       // v1/v2 standard
+                    dataObj.participant,           // v1 legacy
+                    body.sender                   // Z-API variant
+                ];
+                
+                const rawJid = jidCandidates.find(c => typeof c === 'string' && c.includes('@s.whatsapp.net')) || String(remoteJid);
                 const clientNumber = normalizePhone(rawJid);
                 const incomingMessageId = dataObj.key?.id;
                 const messageObj = dataObj.message;
                 const isFromMe = dataObj.key?.fromMe === true;
+
+                // 🛡️ [GUARD] Physical payloads often have null messages for retries/stickers/reactions
+                if (!messageObj) {
+                    console.log(`🔇 [ROUTER] Dropped message from ${clientNumber}: message object is null (likely a sticker, reaction, or system event)`);
+                    return;
+                }
 
                 // 2. HARDEN TENANT ID (Recovery Path)
                 if (!tenantId) {
@@ -1215,18 +1228,16 @@ http.createServer((req: any, res: any) => {
 
                 // --- 🎙️ ÁUDIO E 💬 TEXTO ---
                 if (messageObj.audioMessage) {
-                    console.log(`🎙️[WEBHOOK] Áudio recebido de ${clientNumber}.`);
+                    console.log(`🎙️ [WEBHOOK] Áudio recebido de ${clientNumber}.`);
 
                     try {
-                        // Configurações da sua Evolution API
                         const evoUrl = process.env.EVOLUTION_API_URL || 'https://api.revivafotos.com.br';
-                        // instanceName now inherited from outer router scope
                         const evoKey = process.env.EVOLUTION_API_KEY || process.env.WOLF_SECRET_TOKEN || '';
 
-                        console.log(`📡[DEBUG AUDIO] Pedindo para Evolution descriptografar o áudio...`);
+                        console.log(`📡 [DEBUG AUDIO] Pedindo para Evolution descriptografar o áudio...`);
 
-                        // O ESCUDO: Pedimos para a Evolution pegar a mensagem, descriptografar a mídia e devolver o Base64 limpo
-                        const mediaRes = await fetch(`${evoUrl} /chat/getBase64FromMediaMessage / ${instanceName} `, {
+                        // FIX: URL spaces removed
+                        const mediaRes = await fetch(`${evoUrl}/chat/getBase64FromMediaMessage/${instanceName}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1236,7 +1247,7 @@ http.createServer((req: any, res: any) => {
                         });
 
                         if (!mediaRes.ok) {
-                            console.error(`❌[DEBUG AUDIO] Erro na descriptografia da Evolution: ${mediaRes.status} `);
+                            console.error(`❌ [DEBUG AUDIO] Erro na descriptografia da Evolution: ${mediaRes.status}`);
                         } else {
                             const mediaData = await mediaRes.json();
 
@@ -1244,31 +1255,30 @@ http.createServer((req: any, res: any) => {
                                 const audioBase64 = mediaData.base64;
                                 const cleanMimeType = (mediaData.mimetype || "audio/ogg").split(';')[0];
 
-                                console.log(`🔍[DEBUG AUDIO] Áudio descriptografado: ${audioBase64.length} chars | Formato: ${cleanMimeType} `);
+                                console.log(`🔍 [DEBUG AUDIO] Áudio descriptografado: ${audioBase64.length} chars | Formato: ${cleanMimeType}`);
 
                                 if (audioBase64.length < 500) {
-                                    console.log(`⚠️[DEBUG AUDIO] Base64 muito curto.Áudio vazio.Abortando.`);
+                                    console.log(`⚠️ [DEBUG AUDIO] Base64 muito curto. Áudio vazio. Abortando.`);
                                 } else {
                                     const transcript = await transcribeAudioWithGemini(audioBase64, cleanMimeType);
 
                                     if (transcript && transcript !== "[SILÊNCIO]") {
                                         clientMessage = transcript;
-                                        console.log(`📝[VOICE] Áudio transcrito com sucesso: "${clientMessage}"`);
+                                        console.log(`📝 [VOICE] Áudio transcrito com sucesso: "${clientMessage}"`);
                                     } else {
-                                        console.log(`⚠️[VOICE] Transcrição falhou ou áudio mudo.`);
+                                        console.log(`⚠️ [VOICE] Transcrição falhou ou áudio mudo.`);
                                     }
                                 }
                             } else {
-                                console.error(`❌[DEBUG AUDIO] Evolution não retornou o Base64 no payload.`);
+                                console.error(`❌ [DEBUG AUDIO] Evolution não retornou o Base64 no payload.`);
                             }
                         }
                     } catch (error: any) {
-                        console.error(`❌[DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message} `);
+                        console.error(`❌ [DEBUG AUDIO] Erro fatal ao extrair áudio: ${error.message}`);
                     }
                 }
 
                 // --- 🖼️ IMAGEM (PHOTO RESTORATION VISION) ---
-                // Isolated parallel block — does NOT interfere with audioMessage pipeline
                 if (!clientMessage && messageObj.imageMessage) {
                     console.log(`🖼️ [WEBHOOK] Imagem recebida de ${clientNumber}. Iniciando pipeline de visão...`);
 
@@ -1326,51 +1336,42 @@ http.createServer((req: any, res: any) => {
 
                 if (clientMessage && clientMessage.trim().length > 0) {
                     // --- LÓGICA DE ADMIN / SILENT HANDOFF ---
-                    // ==============================================================
-                    // 🛡️ A TRAVA GOD TIER (SILENT HANDOFF & FOGO AMIGO)
-                    // ==============================================================
                     if (isFromMe || isOwner) {
-                        // Verifica se a mensagem foi enviada pelo próprio sistema (Eliza) via API
                         const isAPI = incomingMessageId && (incomingMessageId.startsWith('BAE5') || incomingMessageId.startsWith('B2B') || incomingMessageId.length > 32);
 
                         if (isAPI) {
-                            // É a Eliza respondendo. Ignoramos para não criar loop.
-                            return;
+                            return; // Eliza response, ignore
                         } else {
-                            // É VOCÊ (Denis/Humano) digitando diretamente no WhatsApp ou pelo OWNER_PHONE.
                             const cmd = clientMessage.trim();
 
                             if (cmd === '/pausar') {
                                 await supabaseAdmin.from('leads_lobo').update({ ai_paused: true }).eq('phone', clientNumber);
-                                console.log(`⏸️[COMANDO] IA pausada manualmente para ${clientNumber}.`);
+                                console.log(`⏸️ [COMANDO] IA pausada manualmente para ${clientNumber}.`);
                                 return;
                             } else if (cmd === '/retomar') {
                                 await supabaseAdmin.from('leads_lobo').update({ ai_paused: false, needs_human: false, status: 'organic_inbound' }).eq('phone', clientNumber);
-                                console.log(`▶️[COMANDO] IA retomada manualmente para ${clientNumber}.`);
+                                console.log(`▶️ [COMANDO] IA retomada manualmente para ${clientNumber}.`);
                                 return;
                             }
 
-                            // SILENT HANDOFF: Se você digitou qualquer outra coisa, trava a IA para este lead permanentemente.
-                            console.log(`🛡️[FOGO AMIGO] Denis assumiu o controle via ${isOwner ? 'OWNER_PHONE' : 'DIRECT'}. Travando a IA para o lead ${clientNumber}.`);
+                            console.log(`🛡️ [FOGO AMIGO] Denis assumiu o controle via ${isOwner ? 'OWNER_PHONE' : 'DIRECT'}. Travando a IA para o lead ${clientNumber}.`);
                             await supabaseAdmin.from('leads_lobo').update({
                                 needs_human: true,
                                 ai_paused: true,
                                 status: 'human_handling'
                             }).eq('phone', clientNumber);
 
-                            return; // Mata a execução do webhook aqui. A IA não vai nem ler o resto.
+                            return;
                         }
                     }
 
                     if (clientMessage) {
-
                         console.log(`📥 NOVA MENSAGEM de ${clientNumber}: "${clientMessage}"`);
 
-                        // --- BLINDAGENS DE SEGURANÇA ---
                         const autoReplyKeywords = ['bem-vindo', 'digite 1', 'mensagem automática', 'em breve retornaremos'];
                         const msgLower = clientMessage.toLowerCase();
                         if (autoReplyKeywords.some((kw: string) => msgLower.includes(kw))) {
-                            console.log(`🛡️[SHIELD] Auto - reply(Keywords).Ignorando.`);
+                            console.log(`🛡️ [SHIELD] Auto-reply detected. Ignorando.`);
                             return;
                         }
 
@@ -1392,26 +1393,24 @@ http.createServer((req: any, res: any) => {
                         }
 
                         if (lead) {
-                            const { error: updError } = await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
-                            if (updError) console.error(`⚠️ [SUPABASE WARN] Failed to update lead replied status:`, updError.message);
+                            await supabaseAdmin.from('leads_lobo').update({ replied: true }).eq('phone', clientNumber);
 
                             if (lead.updated_at) {
                                 const timeSinceContact = Date.now() - new Date(lead.updated_at).getTime();
                                 if (timeSinceContact < 2000) {
-                                    console.log(`🛡️[SHIELD] Auto - reply(Rápido demais).Ignorando.`);
+                                    console.log(`🛡️ [SHIELD] Auto-reply (Rápido demais). Ignorando.`);
                                     return;
                                 }
                             }
 
                             if ((lead.reply_count || 0) >= 10) {
-                                console.log(`🚨[CIRCUIT BREAKER] Bot Loop.Travando ${clientNumber}.`);
-                                const { error: lockError } = await supabaseAdmin.from('leads_lobo').update({
+                                console.log(`🚨 [CIRCUIT BREAKER] Bot Loop. Travando ${clientNumber}.`);
+                                await supabaseAdmin.from('leads_lobo').update({
                                     is_locked: true,
                                     status: 'needs_human',
                                     ai_paused: true,
                                     needs_human: true
                                 }).eq('phone', clientNumber);
-                                if (lockError) console.error(`❌ [SUPABASE ERROR] Failed to lock lead:`, lockError.message);
                                 return;
                             }
 
@@ -1420,15 +1419,12 @@ http.createServer((req: any, res: any) => {
                                 return;
                             }
 
-                            // If lead was previously paused/handed-off, a new inbound message
-                            // means the human interaction is over — unpause and let AI resume.
                             if (lead.ai_paused === true || lead.needs_human === true) {
-                                console.log(`🔓 [GUARD] Lead was paused (ai_paused=${lead.ai_paused}, needs_human=${lead.needs_human}). New message received — unpausing for AI.`);
-                                const { error: unpauseError } = await supabaseAdmin.from('leads_lobo').update({
+                                console.log(`🔓 [GUARD] Lead was paused. New message received — unpausing for AI.`);
+                                await supabaseAdmin.from('leads_lobo').update({
                                     ai_paused: false,
                                     needs_human: false
                                 }).eq('id', lead.id);
-                                if (unpauseError) console.error(`❌ [SUPABASE ERROR] Failed to unpause lead:`, unpauseError.message);
                             }
                         }
 
@@ -1461,38 +1457,34 @@ http.createServer((req: any, res: any) => {
                                 .select()
                                 .single();
 
-                            // Graceful Error Handling for extreme race conditions (duplicate key despite upsert)
                             if (insertError) {
                                 if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
-                                    console.warn(`⚠️ [WEBHOOK RACE] Duplicate key violation caught for ${clientNumber}. Attempting fallback fetch.`);
-                                    const { data: fallbackLead, error: fallbackError } = await supabaseAdmin
+                                    const { data: fallbackLead } = await supabaseAdmin
                                         .from('leads_lobo')
                                         .select('*')
                                         .eq('phone', clientNumber)
                                         .single();
-
-                                    if (fallbackError || !fallbackLead) {
-                                        console.error(`❌ [SUPABASE ERROR] Fallback fetch failed for:`, clientNumber);
-                                        return;
-                                    }
                                     newLead = fallbackLead;
-                                    insertError = null;
                                 } else {
-                                    console.error(`❌ [SUPABASE ERROR] Failed to CREATE lead:`, insertError.message, insertError.details);
-                                    return; // Stop if we can't create the lead
+                                    console.error(`❌ [SUPABASE ERROR] Failed to CREATE lead:`, insertError.message);
+                                    return;
                                 }
                             }
                             lead = newLead;
                         }
 
-                        // --- SALVAMENTO E GATILHO ---
-                        const { error: msgInsertError } = await supabaseAdmin.from('messages').insert({
-                            lead_phone: clientNumber, role: 'user', content: clientMessage, message_id: incomingMessageId
-                        });
+                        // --- SALVAMENTO E GATILHO (IDEMPOTENT) ---
+                        // FIX: Use upsert with onConflict for message_id to handle Evolution API retries
+                        const { error: msgInsertError } = await supabaseAdmin.from('messages').upsert({
+                            lead_phone: clientNumber, 
+                            role: 'user', 
+                            content: clientMessage, 
+                            message_id: incomingMessageId,
+                            instance_name: instanceName
+                        }, { onConflict: 'message_id' });
 
                         if (msgInsertError) {
-                            console.error(`❌ [SUPABASE ERROR] Failed to insert message:`, msgInsertError.message);
-                            // We might want to continue, but usually, if the message isn't saved, AI will lack context.
+                            console.error(`❌ [SUPABASE ERROR] Failed to upsert message:`, msgInsertError.message);
                         }
 
                         // --- BRANCH A: STATIC MENU ---
@@ -1508,12 +1500,11 @@ http.createServer((req: any, res: any) => {
                             } else if (msgClean === '2') {
                                 menuResponse = "Você escolheu a Opção 2: Falar com atendente humano. Um momento, por favor, nossa equipe já vai te atender.";
                                 newStatus = "human_handling";
-                                const { error: menuUpdError } = await supabaseAdmin.from('leads_lobo').update({
+                                await supabaseAdmin.from('leads_lobo').update({
                                     status: newStatus,
                                     needs_human: true,
                                     ai_paused: true
                                 }).eq('id', lead.id);
-                                if (menuUpdError) console.error(`❌ [SUPABASE ERROR] Failed to update lead in menu branch:`, menuUpdError.message);
                             } else if (msgClean === '3') {
                                 menuResponse = "Você escolheu a Opção 3: Horários de funcionamento.\n🕒 Funcionamos das 08:00 às 18:00 de segunda a sexta.\n\nDigite 0 para voltar ao menu principal.";
                             } else {
@@ -1522,56 +1513,31 @@ http.createServer((req: any, res: any) => {
 
                             await sendWhatsAppPresence(clientNumber, 'composing');
                             await sendWhatsAppMessage(clientNumber, menuResponse, 1000);
-
-                            // Apenas atualiza o status se for a ramificação do menu
-                            const { error: finalMenuUpd } = await supabaseAdmin.from('leads_lobo').update({ status: newStatus }).eq('id', lead.id);
-                            if (finalMenuUpd) console.error(`⚠️ [SUPABASE WARN] Failed to update lead status:`, finalMenuUpd.message);
-
-                            console.log(`🚦 [ROUTER] Branch A finalizada.`);
-                            return; // CRITICAL: Ends webhook execution here so the AI engine is never engaged
+                            await supabaseAdmin.from('leads_lobo').update({ status: newStatus }).eq('id', lead.id);
+                            return;
                         }
 
                         // --- BRANCH B: AI AGENT ---
-                        // Dynamic Routing: Any instance that is NOT the static menu is routed to the AI Agent
                         if (instanceName !== 'demo-menu') {
                             console.log(`🎯 [ROUTER] Routing instance ${instanceName} to AI Agent processing.`);
 
-                            // 1. FETCH INSTANCE CONFIG (Primary Truth)
                             let configQuery = supabaseAdmin.from('business_config').select('context_json').eq('instance_name', instanceName);
                             if (tenantId) configQuery = configQuery.eq('owner_id', tenantId);
 
                             const { data: bConfig } = await configQuery.maybeSingle();
-                            const instanceEnabled = bConfig?.context_json?.is_ai_enabled; // true, false, or undefined
+                            const instanceEnabled = bConfig?.context_json?.is_ai_enabled;
 
-                            // 2. FETCH GLOBAL SWITCH (Maintenance Mode)
                             const { data: elizaSwitch } = await supabaseAdmin.from('system_settings').select('value').eq('key', 'eliza_active').maybeSingle();
                             const globalEnabled = !elizaSwitch || elizaSwitch.value?.enabled !== false;
 
-                            // 3. APPLY HIERARCHY: Instance Overrides Global
-                            let shouldProceed = false;
-
-                            if (instanceEnabled === true) {
-                                console.log(`✅ [SWITCH] Instance ${instanceName} explicitly ENABLED. Bypassing global status.`);
-                                shouldProceed = true;
-                            } else if (instanceEnabled === false) {
-                                console.log(`⏸️ [SWITCH] Instance ${instanceName} explicitly DISABLED.`);
-                                shouldProceed = false;
-                            } else {
-                                // Instance config missing or flag unset -> Follow Global Switch
-                                console.log(`🔍 [SWITCH] No instance-level preference. Following Global Switch: ${globalEnabled ? 'ENABLED' : 'DISABLED'}`);
-                                shouldProceed = globalEnabled;
-                            }
+                            let shouldProceed = instanceEnabled === true ? true : (instanceEnabled === false ? false : globalEnabled);
 
                             if (!shouldProceed) {
                                 console.log(`🛑 [PAUSE] Lead ${clientNumber} ignored (Instance: ${instanceEnabled}, Global: ${globalEnabled}).`);
-                                await supabaseAdmin.from('leads_lobo').update({
-                                    status: 'needs_human',
-                                    needs_human: true
-                                }).eq('phone', clientNumber);
+                                await supabaseAdmin.from('leads_lobo').update({ status: 'needs_human', needs_human: true }).eq('phone', clientNumber);
                                 return;
                             }
 
-                            // 🎯 ALL GATES PASSED: Engage AI Engine
                             const { error: triggerError } = await supabaseAdmin.from('leads_lobo').update({
                                 status: 'eliza_processing',
                                 ai_paused: false,
@@ -1589,6 +1555,7 @@ http.createServer((req: any, res: any) => {
                         }
                     }
                 }
+
             } catch (error) {
                 console.error('❌ [WEBHOOK CRASH]:', error);
             }
