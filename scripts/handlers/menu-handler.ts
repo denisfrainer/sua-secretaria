@@ -31,7 +31,7 @@ export interface MenuResult {
 // CONSTANTS
 // ==============================================================
 
-const SITE_URL = 'https://sua-secretaria.netlify.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://vitrine-manicure.netlify.app';
 
 // ==============================================================
 // STATE MACHINE

@@ -22,6 +22,29 @@ export default async function middleware(request: NextRequest) {
   
   // ⚡ INFRASTRUCTURE TRACE: Inbound Heartbeat
   console.log(`📡 [WEB HEARTBEAT] Hit: ${pathname}${request.nextUrl.search}`);
+  console.log('[INFRA_AUDIT] Request hostname detected:', { hostname: request.nextUrl.hostname, timestamp: new Date().toISOString() });
+
+  // ⚡ SEO REDIRECT: Redirect old domain to the new domain
+  const hostname = request.nextUrl.hostname;
+  if (hostname === 'sua-secretaria.netlify.app') {
+    console.log(`📡 [INFRA_REDIRECT] Redirecting old domain request to new domain: ${request.url}`);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.hostname = 'vitrine-manicure.netlify.app';
+    redirectUrl.port = '';
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  // 0. FEATURE FLAG: Block /dashboard and /admin if dark launch is disabled
+  const isDarkLaunch = process.env.NEXT_PUBLIC_DARK_LAUNCH === 'true';
+  const isDashboardRoute = pathname.startsWith('/dashboard');
+  const isAdminRoute = pathname.startsWith('/admin');
+  
+  if (!isDarkLaunch && isAdminRoute) {
+    console.log(`📡 [MIDDLEWARE_BLOCK] Blocked access to admin path ${pathname} (Dark Launch Disabled). Redirecting to root.`);
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
 
   // 1. NEGATIVE MATCHER: Fast-track public routes
   // If the path is NOT reserved AND is not the root landing page, skip middleware entirely.
