@@ -24,20 +24,20 @@ const jakarta = Plus_Jakarta_Sans({
 
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://suasecretaria.netlify.app'),
-    title: "Sua SecretarIA",
-    description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
+    metadataBase: new URL('https://vitrine-manicure.netlify.app'),
+    title: "Vitrine Nails",
+    description: "A vitrine virtual da sua manicure",
     openGraph: {
-        title: "Sua SecretarIA - Seu funcionário de IA",
-        description: "Um funcionário de IA que atende seu WhatsApp, qualifica clientes e agenda reuniões e até recebe pagamentos automaticamente. 24 horas por dia, 7 dias por semana.",
+        title: "Vitrine Nails",
+        description: "A vitrine virtual da sua manicure",
         locale: 'pt_BR',
         type: 'website',
         images: [
             {
-                url: 'https://suasecretaria.netlify.app/og-image.jpg',
+                url: 'https://vitrine-manicure.netlify.app/og-image.jpg',
                 width: 1200,
                 height: 630,
-                alt: 'Sua SecretarIA',
+                alt: 'Vitrine Nails',
             },
         ],
     },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'Sua SecretarIA',
+        title: 'Vitrine Nails',
     },
 };
 

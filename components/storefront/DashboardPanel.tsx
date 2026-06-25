@@ -1,23 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
-import { 
-  User, 
-  Sparkles, 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  Clock, 
-  DollarSign, 
+import {
+  User,
+  Sparkles,
+  Plus,
+  Trash2,
+  Edit3,
+  Clock,
+  DollarSign,
   Image as ImageIcon,
   CheckCircle,
   AlertCircle,
   Loader2,
   FolderOpen
 } from 'lucide-react';
-import { 
-  VitrineProfile, 
-  VitrineService, 
+import {
+  VitrineProfile,
+  VitrineService,
   VitrinePortfolioItem,
   upsertProfile,
   createService,
@@ -141,10 +141,10 @@ export default function DashboardPanel({
             price: priceNum,
             duration: durationNum
           });
-          
-          setServicesList(prev => prev.map(s => 
-            s.id === editingServiceId 
-              ? { ...s, title: serviceTitle, description: serviceDesc || null, price: priceNum, duration: durationNum } 
+
+          setServicesList(prev => prev.map(s =>
+            s.id === editingServiceId
+              ? { ...s, title: serviceTitle, description: serviceDesc || null, price: priceNum, duration: durationNum }
               : s
           ));
           showSuccess('Serviço atualizado com sucesso!');
@@ -156,7 +156,7 @@ export default function DashboardPanel({
             price: priceNum,
             duration: durationNum
           });
-          
+
           // Re-fetch or locally append with temporary ID
           setServicesList(prev => [...prev, {
             id: crypto.randomUUID(),
@@ -265,11 +265,10 @@ export default function DashboardPanel({
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/90 backdrop-blur-md border-t border-rose-100/60 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] px-6 py-3 flex items-center justify-around">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center justify-center gap-1.5 py-1 px-3 transition-all cursor-pointer ${
-            activeTab === 'profile'
+          className={`flex flex-col items-center justify-center gap-1.5 py-1 px-3 transition-all cursor-pointer ${activeTab === 'profile'
               ? 'text-rose-600 scale-105 font-bold'
               : 'text-slate-400 font-medium'
-          }`}
+            }`}
         >
           <User size={20} className={activeTab === 'profile' ? 'stroke-[2.5]' : 'stroke-2'} />
           <span className="text-[10px] tracking-tight">Perfil</span>
@@ -277,11 +276,10 @@ export default function DashboardPanel({
 
         <button
           onClick={() => setActiveTab('services')}
-          className={`flex flex-col items-center justify-center gap-1.5 py-1 px-3 transition-all cursor-pointer ${
-            activeTab === 'services'
+          className={`flex flex-col items-center justify-center gap-1.5 py-1 px-3 transition-all cursor-pointer ${activeTab === 'services'
               ? 'text-rose-600 scale-105 font-bold'
               : 'text-slate-400 font-medium'
-          }`}
+            }`}
         >
           <Sparkles size={20} className={activeTab === 'services' ? 'stroke-[2.5]' : 'stroke-2'} />
           <span className="text-[10px] tracking-tight">Serviços</span>
@@ -289,11 +287,10 @@ export default function DashboardPanel({
 
         <button
           onClick={() => setActiveTab('portfolio')}
-          className={`flex flex-col items-center justify-center gap-1.5 py-1 px-3 transition-all cursor-pointer ${
-            activeTab === 'portfolio'
+          className={`flex flex-col items-center justify-center gap-1.5 py-1 px-3 transition-all cursor-pointer ${activeTab === 'portfolio'
               ? 'text-rose-600 scale-105 font-bold'
               : 'text-slate-400 font-medium'
-          }`}
+            }`}
         >
           <ImageIcon size={20} className={activeTab === 'portfolio' ? 'stroke-[2.5]' : 'stroke-2'} />
           <span className="text-[10px] tracking-tight">Portfólio</span>
@@ -304,11 +301,10 @@ export default function DashboardPanel({
       <div className="hidden md:flex w-64 shrink-0 flex-col gap-2 p-2 bg-white rounded-3xl border border-rose-100/50 shadow-sm">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-black transition-all border cursor-pointer w-full text-left ${
-            activeTab === 'profile'
+          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-black transition-all border cursor-pointer w-full text-left ${activeTab === 'profile'
               ? 'bg-rose-50 border-rose-100 text-rose-600 shadow-sm'
               : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50/50'
-          }`}
+            }`}
         >
           <User size={16} />
           Perfil Profissional
@@ -316,11 +312,10 @@ export default function DashboardPanel({
 
         <button
           onClick={() => setActiveTab('services')}
-          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-black transition-all border cursor-pointer w-full text-left ${
-            activeTab === 'services'
+          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-black transition-all border cursor-pointer w-full text-left ${activeTab === 'services'
               ? 'bg-rose-50 border-rose-100 text-rose-600 shadow-sm'
               : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50/50'
-          }`}
+            }`}
         >
           <Sparkles size={16} />
           Meus Serviços
@@ -328,11 +323,10 @@ export default function DashboardPanel({
 
         <button
           onClick={() => setActiveTab('portfolio')}
-          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-black transition-all border cursor-pointer w-full text-left ${
-            activeTab === 'portfolio'
+          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-black transition-all border cursor-pointer w-full text-left ${activeTab === 'portfolio'
               ? 'bg-rose-50 border-rose-100 text-rose-600 shadow-sm'
               : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50/50'
-          }`}
+            }`}
         >
           <ImageIcon size={16} />
           Portfólio & Galeria
@@ -341,7 +335,7 @@ export default function DashboardPanel({
 
       {/* Main Panel Content Area */}
       <div className="flex-1 w-full flex flex-col gap-6">
-        
+
         {/* Success/Error Alerts */}
         {successMsg && (
           <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl flex items-start gap-2.5 text-sm font-semibold animate-in slide-in-from-top-4 duration-300">
@@ -403,7 +397,7 @@ export default function DashboardPanel({
                 <div className="flex flex-col gap-1.5 md:col-span-2">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Link da sua Vitrine</label>
                   <div className="flex items-center bg-white border border-slate-200/80 rounded-2xl overflow-hidden focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-100 transition-all">
-                    <span className="pl-4 pr-1 text-sm font-semibold text-slate-400 select-none">belezap.com/</span>
+                    <span className="pl-4 pr-1 text-sm font-semibold text-slate-400 select-none">vitrinails.com/</span>
                     <input
                       type="text"
                       value={profileSlug}
@@ -466,7 +460,7 @@ export default function DashboardPanel({
                 <h3 className="text-sm font-black text-slate-800">
                   {editingServiceId ? '📝 Editando Serviço selecionado' : '➕ Adicionar Novo Serviço'}
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-black text-slate-500 uppercase">Título do Serviço</label>
@@ -605,7 +599,7 @@ export default function DashboardPanel({
               {/* Portfolio upload url form */}
               <form onSubmit={handleAddPortfolio} className="p-5 rounded-2xl bg-rose-50/30 border border-rose-100/50 flex flex-col gap-4">
                 <h3 className="text-sm font-black text-slate-800">➕ Adicionar Foto de Trabalho</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-black text-slate-500 uppercase">URL do Item (Unsplash/Link de imagem)</label>
