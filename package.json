@@ -5,9 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "concurrently \"next start\" \"tsx scripts/agents/eliza-worker.ts\"",
-    "lint": "eslint",
-    "eliza:start": "tsx scripts/agents/eliza-worker.ts"
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.1",

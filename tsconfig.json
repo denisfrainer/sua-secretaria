@@ -39,8 +39,7 @@
   "exclude": [
     "node_modules",
     "scratch",
-    "scripts",
-    "dark-launch-archive"
+    "scripts"
   ],
   "ts-node": {
     "esm": true,
