@@ -13,7 +13,8 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  FolderOpen
+  FolderOpen,
+  ExternalLink
 } from 'lucide-react';
 import {
   VitrineProfile,
@@ -53,6 +54,7 @@ export default function DashboardPanel({
   const [profileWhatsapp, setProfileWhatsapp] = useState(initialProfile?.whatsapp || '');
   const [profileCover, setProfileCover] = useState(initialProfile?.cover_photo_url || '');
   const [profileSlug, setProfileSlug] = useState(initialProfile?.slug || '');
+  const [profileAvatar, setProfileAvatar] = useState(initialProfile?.avatar_url || '');
 
   // Services State
   const [servicesList, setServicesList] = useState<VitrineService[]>(initialServices);
@@ -102,7 +104,8 @@ export default function DashboardPanel({
           bio: profileBio || null,
           whatsapp: profileWhatsapp,
           cover_photo_url: profileCover || null,
-          slug: profileSlug || null
+          slug: profileSlug || null,
+          avatar_url: profileAvatar || null
         });
         showSuccess('Configurações de perfil atualizadas com sucesso!');
       } catch (err: any) {
@@ -409,6 +412,17 @@ export default function DashboardPanel({
                       placeholder="Ex: rubia-nails"
                       className="w-full pr-4 py-3 bg-transparent text-sm font-semibold outline-none text-slate-700 placeholder:text-slate-300"
                     />
+                    {profileSlug && (
+                      <a
+                        href={`/${profileSlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mr-3 px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-600 border border-rose-100 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <ExternalLink size={12} className="stroke-[2.5]" />
+                        Testar
+                      </a>
+                    )}
                   </div>
                 </div>
 
@@ -423,7 +437,18 @@ export default function DashboardPanel({
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5 md:col-span-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">URL Foto de Perfil (Unsplash ou link de imagem)</label>
+                  <input
+                    type="url"
+                    value={profileAvatar}
+                    onChange={e => setProfileAvatar(e.target.value)}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="px-4 py-3 bg-white border border-slate-200/80 rounded-2xl text-sm font-semibold outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all text-slate-700 placeholder:text-slate-300"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-wider">URL Banner de Capa (Unsplash ou link de imagem)</label>
                   <input
                     type="url"

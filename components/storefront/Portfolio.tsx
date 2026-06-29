@@ -49,22 +49,37 @@ const DEFAULT_PORTFOLIO: PortfolioItem[] = [
   }
 ];
 
-export function Portfolio() {
+interface DatabasePortfolioItem {
+  id: string;
+  image_url: string;
+  category: string;
+}
+
+export function Portfolio({ items }: { items?: DatabasePortfolioItem[] }) {
   const [filter, setFilter] = useState<string>('Todos');
   const [activePhoto, setActivePhoto] = useState<PortfolioItem | null>(null);
 
+  const portfolioItems: PortfolioItem[] = items && items.length > 0
+    ? items.map(item => ({
+        id: item.id,
+        title: item.category || 'Item de Portfólio',
+        category: (item.category as any) || 'Alongamento',
+        imageUrl: item.image_url
+      }))
+    : DEFAULT_PORTFOLIO;
+
   useEffect(() => {
     console.log('[STOREFRONT_MOUNT] Portfolio mounted', {
-      itemsCount: DEFAULT_PORTFOLIO.length,
+      itemsCount: portfolioItems.length,
       currentFilter: filter
     });
-  }, [filter]);
+  }, [filter, portfolioItems.length]);
 
   const categories = ['Todos', 'Alongamento', 'Nail Art', 'Blindagem', 'Esmaltação'];
 
   const filteredItems = filter === 'Todos'
-    ? DEFAULT_PORTFOLIO
-    : DEFAULT_PORTFOLIO.filter(item => item.category === filter);
+    ? portfolioItems
+    : portfolioItems.filter(item => item.category === filter);
 
   const handleOpenPhoto = (item: PortfolioItem) => {
     console.log('[STOREFRONT_ACTION] Portfolio item zoom triggered', {

@@ -11,6 +11,7 @@ export interface VitrineProfile {
   whatsapp: string;
   cover_photo_url: string | null;
   slug: string | null;
+  avatar_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -40,17 +41,36 @@ export interface VitrinePortfolioItem {
 
 export async function getProfile(userId: string): Promise<VitrineProfile | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  
+  // Fetch from vitrine_profiles
+  const { data: vitrineData, error: vitrineError } = await supabase
     .from('vitrine_profiles')
     .select('*')
     .eq('user_id', userId)
     .maybeSingle();
 
-  if (error) {
-    console.error('❌ [DB_READ_ERROR] getProfile:', error.message);
+  if (vitrineError) {
+    console.error('❌ [DB_READ_ERROR] getProfile (vitrine_profiles):', vitrineError.message);
     return null;
   }
-  return data;
+
+  // Fetch avatar_url from profiles
+  const { data: baseData, error: baseError } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (baseError) {
+    console.error('❌ [DB_READ_ERROR] getProfile (profiles):', baseError.message);
+  }
+
+  if (!vitrineData) return null;
+
+  return {
+    ...vitrineData,
+    avatar_url: baseData?.avatar_url || null
+  };
 }
 
 export async function upsertProfile(payload: Omit<VitrineProfile, 'user_id'>) {
@@ -60,7 +80,7 @@ export async function upsertProfile(payload: Omit<VitrineProfile, 'user_id'>) {
 
   console.log('[DB_MUTATION] upsertProfile:', { userId: user.id, ...payload });
 
-  const record: VitrineProfile = {
+  const record: Omit<VitrineProfile, 'avatar_url'> = {
     user_id: user.id,
     name: payload.name,
     bio: payload.bio,
@@ -70,13 +90,28 @@ export async function upsertProfile(payload: Omit<VitrineProfile, 'user_id'>) {
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase
+  // Update vitrine_profiles
+  const { error: vitrineError } = await supabase
     .from('vitrine_profiles')
     .upsert(record);
 
-  if (error) {
-    console.error('❌ [DB_MUTATION_ERROR] upsertProfile:', error.message);
-    throw new Error('Falha ao salvar configurações do perfil.');
+  if (vitrineError) {
+    console.error('❌ [DB_MUTATION_ERROR] upsertProfile (vitrine_profiles):', vitrineError.message);
+    throw new Error('Falha ao salvar configurações do perfil vitrine.');
+  }
+
+  // Update base profile with avatar_url and display_name
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({
+      avatar_url: payload.avatar_url,
+      display_name: payload.name
+    })
+    .eq('id', user.id);
+
+  if (profileError) {
+    console.error('❌ [DB_MUTATION_ERROR] upsertProfile (profiles):', profileError.message);
+    // Non-blocking error: we will still return success if the main storefront profile saved.
   }
 
   revalidatePath('/');
