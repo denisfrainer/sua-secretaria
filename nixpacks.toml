@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python3", "python3Packages.pip", "gcc", "nodejs_20"]
+nixPkgs = ["python3", "python3Packages.pip", "gcc", "nodejs_24"]
 
 [phases.install]
 # Instalamos as dependências de Python e Node

@@ -24,7 +24,7 @@ const jakarta = Plus_Jakarta_Sans({
 
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://vitrine-manicure.netlify.app'),
+    metadataBase: new URL('https://roletavantajosa.netlify.app'),
     title: "Roleta Vantajosa",
     description: "A forma divertida de atrair clientes e vender mais",
     openGraph: {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
         type: 'website',
         images: [
             {
-                url: 'https://vitrine-manicure.netlify.app/og-image.jpg',
+                url: 'https://roletavantajosa.netlify.app/og-image.jpg',
                 width: 1200,
                 height: 630,
                 alt: 'Roleta Vantajosa',
