@@ -25,11 +25,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://vitrine-manicure.netlify.app'),
-    title: "Vitrine Nails",
-    description: "A vitrine virtual da sua manicure",
+    title: "Roleta Vantajosa",
+    description: "A forma divertida de atrair clientes e vender mais",
     openGraph: {
-        title: "Vitrine Nails",
-        description: "A vitrine virtual da sua manicure",
+        title: "Roleta Vantajosa",
+        description: "A forma divertida de atrair clientes e vender mais",
         locale: 'pt_BR',
         type: 'website',
         images: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
                 url: 'https://vitrine-manicure.netlify.app/og-image.jpg',
                 width: 1200,
                 height: 630,
-                alt: 'Vitrine Nails',
+                alt: 'Roleta Vantajosa',
             },
         ],
     },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'Vitrine Nails',
+        title: 'Roleta Vantajosa',
     },
 };
 

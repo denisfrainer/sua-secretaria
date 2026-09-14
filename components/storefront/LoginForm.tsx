@@ -18,7 +18,7 @@ export default function LoginForm() {
 
   useEffect(() => {
     console.log('[STOREFRONT_MOUNT] LoginForm mounted');
-    
+
     if (searchParams.get('clear_session') === 'true') {
       console.log('[AUTH_STATE] URL request to clear session client-side');
     }
@@ -87,7 +87,7 @@ export default function LoginForm() {
         <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100/50 mb-3 animate-pulse mx-auto">
           <Sparkles size={24} className="fill-rose-50" />
         </div>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Vitrine Virtual</h1>
+        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Roleta Vantajosa</h1>
         <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
           {isSignUp ? 'Criar Nova Conta' : 'Painel Administrativo'}
         </p>

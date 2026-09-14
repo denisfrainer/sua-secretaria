@@ -41,7 +41,7 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
             <Sparkles size={16} className="fill-rose-50" />
           </div>
           <span className="text-md font-black text-rose-600 tracking-tight font-jakarta">
-            Nails Panel
+            Roleta Vantajosa
           </span>
         </Link>
 
